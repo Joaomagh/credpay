@@ -169,6 +169,63 @@ Fixtures de teste nunca usarão arquivos pessoais, credenciais reais ou serviço
 
 Ausência acidental de ferramenta, endereço inválido, erro genérico de DNS ou mensagem de erro isolada não provam bloqueio. A evidência deve identificar o estado ou mecanismo responsável pela negação. Mudanças na imagem, configuração, Docker Desktop, Engine, VM ou host invalidam a aplicabilidade automática de evidências anteriores e exigem nova execução dos testes afetados.
 
+## 4.3 Perfis e parâmetros propostos do sandbox
+
+Esta seção separa o primeiro estágio mínimo de futuros runtimes de desenvolvimento. Os valores e ferramentas abaixo são propostas para revisão; ainda não foram implementados, medidos ou aprovados como configuração final.
+
+### Hipótese pendente de topologia
+
+A topologia em que o Codex permanece como controlador fora do container e envia comandos para um worker restrito dentro dele é apenas uma hipótese. Ela ainda não é decisão aprovada porque não foi definido um mecanismo técnico que impeça o controlador de executar comandos diretamente no host e contornar o sandbox.
+
+O primeiro estágio pode validar os controles de um container isolado sem afirmar que toda execução do Codex passa por ele. Escolher a topologia final e seu mecanismo de enforcement exigirá aprovação explícita e testes próprios.
+
+### Primeiro estágio: `sandbox-core`
+
+O primeiro estágio proposto é um perfil mínimo para validar mounts, identidade, filesystem, capabilities, rede, recursos e ciclo de vida. Ele não inclui Java, Maven, clientes genéricos de rede nem o cliente Codex.
+
+| Recurso | Valor proposto | Estado |
+|---|---:|---|
+| CPU | 1 CPU | pendente de validação |
+| Memória | 1 GiB | pendente de validação |
+| Swap | desabilitado | pendente de validação |
+| Processos | 128 PIDs | pendente de validação |
+| `/tmp` | 256 MiB | pendente de validação |
+
+Os valores representam limites máximos propostos para o `sandbox-core`, não reservas ou requisitos de desempenho. O `/tmp` continuará previsto como `tmpfs`, descartável e com `noexec`. O bind mount do workspace não recebe cota simples de armazenamento por esses parâmetros e permanece como risco residual.
+
+### Ferramentas mínimas propostas para o `sandbox-core`
+
+| Grupo | Ferramentas | Finalidade |
+|---|---|---|
+| Shell | shell POSIX | executar comandos não interativos mínimos |
+| Versionamento | Git | inspecionar o estado e o diff do workspace |
+| Arquivos | `cp`, `mv`, `mkdir`, `find`, `stat` | manipular fixtures e inspecionar arquivos autorizados |
+| Texto | `grep`, `sed`, `awk`, `sort`, `head`, `tail`, `wc`, `diff`, `xargs` | inspecionar conteúdo e produzir evidências simples |
+| Identidade e ambiente | `id`, `env` | verificar usuário, grupo e allowlist de ambiente |
+| Sistema | `mount`, `ps` | verificar mounts e processos visíveis |
+| Integridade | `sha256sum` | identificar configuração e artefatos de teste |
+
+O inventário efetivo da imagem deverá ser comparado com esta lista. Dependências transitivas trazidas pela imagem-base não serão consideradas automaticamente aprovadas. Gerenciadores de pacotes, Docker CLI, Docker Compose, `sudo`, `su`, SSH, clientes de nuvem, gerenciadores de credenciais, Java, Maven, outros runtimes e clientes genéricos como `curl` e `wget` ficam fora do `sandbox-core`.
+
+O teste AJ-NET-01 precisará de uma forma controlada de realizar conexões. A escolha entre imagem diagnóstica derivada ou modo de execução separado permanece pendente; a ausência de cliente de rede no `sandbox-core` não será aceita como evidência de bloqueio.
+
+### Perfil futuro: `sandbox-java`
+
+O `sandbox-java` será um perfil futuro derivado do `sandbox-core`. Java 21, Maven e qualquer estratégia de cache de dependências somente poderão ser adicionados quando existir necessidade aprovada de compilar ou testar código Java. A inclusão exigirá novo inventário, análise de superfície, limites medidos e repetição dos testes negativos afetados.
+
+### Decisões que exigem aprovação explícita
+
+| Decisão | Motivo da aprovação |
+|---|---|
+| imagem-base, versão e digest | definem a superfície e a reprodutibilidade do runtime |
+| valores finais de CPU, memória, swap, PIDs e `/tmp` | afetam disponibilidade e proteção do host |
+| lista final de ferramentas e pacotes do `sandbox-core` | cada ferramenta amplia capacidade e superfície de ataque |
+| identidade UID/GID e mapeamento de permissões | precisam funcionar com o workspace no Docker Desktop |
+| topologia Codex/controlador e mecanismo de enforcement | determinam se comandos podem contornar o worker |
+| método diagnóstico para AJ-NET-01 | adiciona capacidade de rede ao contexto de teste |
+| criação do `sandbox-java` | adiciona JDK, Maven, cache e novos requisitos de recursos |
+| estratégia de dependências sem egress | pode introduzir cache, mount ou origem adicional de artefatos |
+
 ## 5. Estrutura do repositório
 
 No estado atual:

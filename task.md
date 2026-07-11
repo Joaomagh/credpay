@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Definir os parâmetros concretos de recursos, runtime e ferramentas antes de implementar o sandbox.
+- [ ] Aprovar imagem-base, limites e ferramentas do `sandbox-core` antes da implementação.
