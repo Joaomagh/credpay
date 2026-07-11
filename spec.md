@@ -1,0 +1,256 @@
+# CredPay — Especificação Técnica Viva
+
+> Fonte de verdade do sistema que existe hoje. Preencher somente com decisão tomada, contrato aceito ou comportamento comprovado. Planos futuros ficam em `CREDPAY_PLAN.md`; próximas ações ficam em `task.md`.
+
+**Última atualização:** 2026-07-11  
+**Fase atual:** 1 — Governança e sandbox  
+**Estado:** documentação-base em revisão; nenhum código de negócio iniciado
+
+## 1. Contexto e limites atuais
+
+CredPay é um laboratório de processamento assíncrono de transações, sem dinheiro ou integrações financeiras reais. Terá dois serviços independentes em monorepo:
+
+- `transacoes-service`: recebe pedidos, valida regras de entrada, mantém o estado consultável e publica eventos;
+- `processamento-service`: consome pedidos de processamento, decide o resultado e publica o evento correspondente.
+
+**Ainda não implementado:** módulos, APIs, bancos, filas, contratos e infraestrutura. Eles serão registrados aqui quando nascerem de incrementos aprovados.
+
+## 2. Arquitetura vigente
+
+### Contexto
+
+```text
+Cliente → transacoes-service ⇄ PostgreSQL
+                    ↓ RabbitMQ ↑
+          processamento-service ⇄ PostgreSQL
+```
+
+A mensageria é assíncrona, com consistência eventual e expectativa de entrega pelo menos uma vez. O mecanismo exato de publicação confiável, idempotência e retorno de resultado será decidido/testado no incremento correspondente.
+
+### Responsabilidades e propriedade dos dados
+
+| Componente | Responsabilidade | Dados próprios |
+|---|---|---|
+| transacoes-service | entrada e visão consultável da transação | a definir |
+| processamento-service | decisão de processamento | a definir |
+| RabbitMQ | transporte, retry/DLQ conforme configuração futura | mensagens, não fonte de verdade |
+
+## 3. Stack e versões verificadas
+
+| Área | Tecnologia | Versão fixada | Evidência |
+|---|---|---:|---|
+| Linguagem | Java | 21 (alvo) | ainda não fixada no build |
+| Framework | Spring Boot | 3.x (alvo) | ainda não fixada |
+| Banco | PostgreSQL | a definir | — |
+| Mensageria | RabbitMQ | a definir | — |
+| Testes | JUnit 5, Mockito, Testcontainers | a definir | — |
+
+Substituir “alvo” por versão exata e comando de verificação quando o build existir.
+
+## 4. Configuração e segredos
+
+Nenhuma variável existe ainda. Registrar cada uma quando for consumida pelo código/configuração.
+
+| Serviço | Variável | Obrigatória | Valor padrão | Propósito | Sensível |
+|---|---|---|---|---|---|
+| — | — | — | — | — | — |
+
+Valores reais nunca entram neste documento. `.env.example` usa placeholders; arquivos locais de segredo devem ser ignorados pelo Git.
+
+## 4.1 Modelo de ameaça do AI-Jail
+
+### Objetivo e ativos protegidos
+
+O AI-Jail deve reduzir o alcance de um agente ou processo executado no sandbox caso ele se comporte de forma incorreta, seja induzido por prompt injection ou execute uma ferramenta maliciosa. Os ativos protegidos são:
+
+- arquivos fora do workspace do CredPay, incluindo outros repositórios e dados pessoais do host;
+- credenciais, tokens, chaves SSH, arquivos de configuração sensíveis, variáveis de ambiente e sessões autenticadas do host;
+- Docker socket, daemon Docker e recursos de outros containers;
+- integridade e disponibilidade do host, do Docker Desktop e de sua VM;
+- confidencialidade e integridade do workspace, limitando alterações ao que o incremento autorizou;
+- serviços e redes locais ou remotos que não tenham sido explicitamente liberados.
+
+O código-fonte do próprio workspace não é secreto para o sandbox: ele precisa ser legível e, durante incrementos autorizados, gravável. Backups, histórico Git e revisão de diff continuam necessários porque o sandbox não impede toda alteração indevida dentro desse workspace.
+
+### Acessos permitidos
+
+O desenho do sandbox poderá conceder somente:
+
+- leitura do workspace montado e escrita nele quando exigida pelo incremento aprovado;
+- diretórios temporários isolados e descartáveis necessários às ferramentas;
+- ferramentas locais previamente incluídas na imagem e processos sem privilégio;
+- rede negada por padrão; exceções de egress devem ter destino e finalidade explícitos e ser aplicadas por proxy ou firewall verificável;
+- variáveis não sensíveis estritamente necessárias à execução.
+
+Não são permitidos mounts da home, raiz do host, credenciais, Docker socket ou sockets equivalentes; modo privilegiado; capabilities adicionais sem justificativa; acesso genérico à rede local ou à internet; nem herança de segredos do ambiente do host.
+
+### Ameaças consideradas
+
+- leitura, cópia, modificação ou exclusão de arquivos fora do workspace;
+- descoberta ou exfiltração de segredos por arquivos, variáveis, mounts, rede ou metadados acessíveis;
+- escape do container por configuração insegura, Docker socket, excesso de capabilities, dispositivos ou falha da plataforma;
+- elevação de privilégio dentro do container e abuso de binários `setuid`/`setgid`;
+- acesso lateral ao host, à rede local, a outros containers ou a serviços de nuvem;
+- egress não autorizado, inclusive DNS e conexões diretas que contornem uma allowlist;
+- persistência fora dos mounts autorizados ou sobrevivência de processos após o descarte do sandbox;
+- consumo abusivo de CPU, memória, processos ou disco capaz de degradar o host;
+- comandos destrutivos ou mudanças fora do escopo dentro do workspace.
+
+Estão fora deste modelo inicial ataques físicos, comprometimento prévio do host/Docker Desktop, vulnerabilidades desconhecidas no kernel, hypervisor ou firmware e proteção do conteúdo do workspace contra um processo que recebeu legitimamente escrita nele.
+
+### Limites de confiança do Docker Desktop e do host
+
+Docker Desktop, daemon Docker, sua VM Linux, kernel/hypervisor, sistema operacional do host e controles de rede externos pertencem à base confiável. O sandbox não os protege caso já estejam comprometidos e não constitui uma fronteira equivalente a uma máquina física separada. Uma vulnerabilidade de escape pode invalidar as restrições do container.
+
+O usuário do host que inicia o container também permanece confiável: seus privilégios e a configuração de compartilhamento de arquivos determinam o alcance máximo possível. Usuário não-root, capabilities reduzidas e mounts mínimos diminuem impacto, mas não eliminam a confiança na plataforma. Rede Docker `bridge`, sozinha, não bloqueia egress nem implementa allowlist. As garantias documentadas valerão apenas para a versão e configuração efetivamente testadas do Docker Desktop/host.
+
+### Critérios de testes negativos
+
+O sandbox somente poderá ser chamado de verificado quando testes reproduzíveis demonstrarem que:
+
+1. caminhos do host fora do workspace e arquivos sensíveis conhecidos não podem ser lidos, criados, alterados ou removidos;
+2. home, configuração Git/SSH, credenciais de provedores e segredos do host não aparecem em mounts, variáveis ou locais convencionais;
+3. Docker socket não existe no container e comandos contra o daemon do host falham;
+4. o processo executa como usuário não-root, não consegue elevar privilégio e não possui capabilities além das aprovadas;
+5. dispositivos e interfaces perigosas não estão disponíveis, e o modo privilegiado está desativado;
+6. egress para destino não autorizado, acesso à rede local, a outros containers e a endpoints de metadados falham; destinos explicitamente permitidos funcionam somente pelo mecanismo definido;
+7. limites configurados de CPU, memória, processos e armazenamento são observáveis e impedem expansão além do valor aprovado;
+8. escrita persiste apenas nos mounts autorizados; dados temporários e processos desaparecem ao remover o sandbox;
+9. tentativas controladas de alteração fora do escopo no workspace são detectáveis por `git status` e `git diff`.
+
+Cada teste deve registrar comando, resultado esperado, resultado observado, versão/configuração da plataforma e evidência sem segredos. Falhar por ausência acidental de uma ferramenta ou por erro de DNS não prova uma política de bloqueio; o teste deve alcançar e validar o controle responsável pela negação.
+
+### Riscos residuais
+
+- falhas ou comprometimento do Docker Desktop, daemon, VM, kernel/hypervisor ou host podem permitir escape ou acesso aos ativos;
+- um processo com escrita no workspace pode corromper ou apagar seu conteúdo, inclusive arquivos não relacionados ao incremento;
+- dados legítimos do workspace podem ser exfiltrados para qualquer destino liberado, e allowlists não inspecionam necessariamente o conteúdo;
+- dependências e ferramentas previamente incluídas podem conter código malicioso ou vulnerável;
+- limites de recursos reduzem, mas não eliminam, negação de serviço contra o host;
+- mudanças de versão ou configuração podem invalidar evidências anteriores e exigem repetição dos testes;
+- testes negativos cobrem cenários conhecidos e não provam ausência de todas as rotas de escape.
+
+## 5. Estrutura do repositório
+
+No estado atual:
+
+```text
+credpay/
+├── skills/
+├── CLAUDE.md
+├── CREDPAY_PLAN.md
+├── spec.md
+└── task.md
+```
+
+Atualizar somente após criar diretórios/arquivos.
+
+## 6. Contratos
+
+### API HTTP
+
+Nenhum endpoint implementado.
+
+| Método e rota | Request/response | Erros | Teste de contrato |
+|---|---|---|---|
+| — | — | — | — |
+
+### Eventos
+
+Nenhum evento implementado.
+
+| Evento/versão | Produtor | Consumidor | Campos | Garantias |
+|---|---|---|---|---|
+| — | — | — | — | — |
+
+Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, chave de negócio e política de compatibilidade.
+
+## 7. Modelo e regras implementadas
+
+Nenhuma regra de negócio implementada. Cada entrada futura deve apontar para o teste que prova o comportamento.
+
+| Regra | Casos/edge cases | Evidência automatizada |
+|---|---|---|
+| — | — | — |
+
+## 8. Persistência e consistência
+
+Nenhuma migration criada. Registrar ownership, tabelas, constraints, índices e estratégia de concorrência quando existirem.
+
+| Serviço | Migration | Mudança | Motivo |
+|---|---|---|---|
+| — | — | — | — |
+
+## 9. Mensageria e tratamento de falhas
+
+Ainda não configurado. Decisões futuras devem cobrir exchange, queue, routing key, durabilidade, ack, prefetch, retry/backoff, DLQ, idempotência e publicação confiável — somente quando testadas.
+
+## 10. Observabilidade e SLOs de aprendizado
+
+Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
+
+Não declarar SLO de produção fictício; usar objetivos de experimento local claramente rotulados.
+
+## 11. Comandos reproduzíveis
+
+Nenhum comando verificado ainda.
+
+```bash
+# build
+# teste focado
+# suíte completa
+# lint
+# subir/parar infraestrutura
+# smoke test
+```
+
+## 12. Decisões de arquitetura (ADR resumido)
+
+### ADR-001 — Monorepo com serviços independentes
+
+- **Status:** aceita
+- **Contexto:** projeto solo, 5–10 h/semana e avaliação de portfólio.
+- **Decisão:** um repositório, com build/imagem/configuração/dados separados por serviço.
+- **Consequências:** operação e navegação simples; exige disciplina para não compartilhar domínio ou banco indevidamente.
+
+### ADR-002 — Frontend fora da v1
+
+- **Status:** aceita
+- **Contexto:** o aprendizado prioritário é backend distribuído, Kubernetes e observabilidade.
+- **Decisão:** demonstrar por OpenAPI, scripts e Grafana.
+- **Consequências:** mais tempo para confiabilidade; experiência visual limitada, mitigada pelo roteiro de demo.
+
+## 13. Hurdles e aprendizados reais
+
+> Sem quantidade obrigatória. Adicionar somente após reproduzir e entender o problema.
+
+### H-001 — Codificação incorreta dos documentos iniciais
+
+- **Sintoma:** acentos e símbolos apareciam como `Ã§` e `â€”` na leitura.
+- **Causa provável:** bytes UTF-8 interpretados por uma codificação incompatível em alguma etapa.
+- **Correção:** recriar os documentos em UTF-8 e verificar sua leitura no repositório.
+- **Prevenção:** `.editorconfig`/configuração UTF-8 será avaliada na fundação.
+
+## 14. Patterns realmente implementados
+
+> Sem meta numérica. Registrar problema, local e trade-off; remover se o problema deixar de existir.
+
+| Pattern | Local | Problema resolvido | Trade-off | Evidência |
+|---|---|---|---|---|
+| — | — | — | — | — |
+
+## 15. Registro de experimentos
+
+| Data | Hipótese | Procedimento | Resultado | Aprendizado/próxima ação |
+|---|---|---|---|---|
+| — | — | — | — | — |
+
+## 16. Checklist por incremento
+
+- [ ] critério de aceitação entendido e escopo mantido;
+- [ ] teste falhou pelo motivo esperado antes da implementação, quando aplicável;
+- [ ] teste focado e suíte afetada verdes;
+- [ ] logs sem segredos e warnings relevantes tratados;
+- [ ] documentação/contratos/migrations atualizados;
+- [ ] João consegue explicar a decisão e o trade-off;
+- [ ] `task.md` aponta um único próximo passo.
