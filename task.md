@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Definir os testes negativos e o contrato de evidências do sandbox antes da implementação.
+- [ ] Definir os parâmetros concretos de recursos, runtime e ferramentas antes de implementar o sandbox.
