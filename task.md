@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Preparar o próximo incremento do projeto backend a partir de `CREDPAY_PLAN.md`, sem implementar ainda.
+- [ ] Definir e aprovar a baseline mínima do `transacoes-service`: versões, coordenadas Maven, dependências iniciais, estrutura e verificações de scaffolding, sem criar o módulo ainda.
