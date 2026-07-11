@@ -47,6 +47,86 @@ A mensageria é assíncrona, com consistência eventual e expectativa de entrega
 
 Substituir “alvo” por versão exata e comando de verificação quando o build existir.
 
+### 3.1 Baseline aprovada do `transacoes-service`
+
+Esta baseline define o scaffolding futuro do primeiro serviço. Ela está aprovada, mas ainda não foi materializada em arquivos nem verificada por build. Nenhuma dependência foi baixada.
+
+| Item | Decisão |
+|---|---|
+| Java | 21 LTS |
+| Spring Boot | 3.5.16 |
+| Build | Maven Wrapper com Maven 3.9.16 |
+| `groupId` | `br.com.credpay` |
+| `artifactId` | `transacoes-service` |
+| Versão do artefato | `0.0.1-SNAPSHOT` |
+| Packaging | `jar` |
+| Package base | `br.com.credpay.transacoes` |
+
+O serviço terá build independente, com `pom.xml` e Maven Wrapper próprios. O package base conterá a classe de aplicação e será a raiz do component scan. Packages de camadas não serão criados vazios; surgirão apenas quando um incremento exigir classes reais.
+
+#### Dependências iniciais aprovadas
+
+| Dependência | Escopo | Motivo para entrar no scaffolding |
+|---|---|---|
+| `spring-boot-starter-web` | principal | fornece Spring MVC e servidor HTTP embarcado para o futuro contrato REST e para o health check HTTP |
+| `spring-boot-starter-actuator` | principal | fornece `/actuator/health`, verificação operacional exigida na fundação |
+| `spring-boot-starter-test` | teste | fornece suporte de teste do Spring Boot, JUnit Jupiter e AssertJ para verificar o contexto e sustentar os próximos ciclos TDD |
+
+Mockito poderá chegar transitivamente pelo starter de teste, mas somente será usado em fronteiras que dificultem teste unitário. Nenhuma versão transitiva será sobrescrita sem necessidade; o gerenciamento de dependências do Spring Boot será a referência inicial.
+
+#### Estrutura mínima futura
+
+```text
+transacoes-service/
+├── .mvn/
+│   └── wrapper/
+│       └── maven-wrapper.properties
+├── src/
+│   ├── main/
+│   │   ├── java/br/com/credpay/transacoes/
+│   │   │   └── TransacoesServiceApplication.java
+│   │   └── resources/
+│   │       └── application.yml
+│   └── test/
+│       └── java/br/com/credpay/transacoes/
+│           └── TransacoesServiceApplicationTest.java
+├── mvnw
+├── mvnw.cmd
+└── pom.xml
+```
+
+O teste inicial verificará apenas que o contexto mínimo sobe. Como scaffolding sem comportamento, ele não exige red prévio; o primeiro comportamento de negócio posterior seguirá red, green e refactor.
+
+#### Comandos de verificação esperados
+
+Estes comandos são o contrato de verificação do incremento futuro e ainda não foram executados:
+
+```powershell
+java -version
+.\mvnw.cmd --version
+.\mvnw.cmd -Dtest=TransacoesServiceApplicationTest test
+.\mvnw.cmd package
+.\mvnw.cmd spring-boot:run
+Invoke-RestMethod http://localhost:8080/actuator/health
+```
+
+Os resultados esperados são Java 21, Maven 3.9.16, teste e package verdes, aplicação iniciada e health com estado `UP`. Os comandos reproduzíveis da seção 11 somente serão preenchidos depois dessa execução real.
+
+#### Fora da baseline inicial
+
+- PostgreSQL, driver JDBC, Spring Data JPA e Flyway;
+- RabbitMQ e Spring AMQP;
+- Testcontainers;
+- Bean Validation e OpenAPI;
+- Spring Security e Resilience4j;
+- Lombok e DevTools;
+- registry Prometheus e observabilidade completa;
+- Dockerfile, Docker Compose e Kubernetes;
+- endpoints de transação, DTOs, entidades e regras de domínio;
+- `processamento-service`;
+- parent POM ou agregador Maven na raiz;
+- Checkstyle, análise de dependências, pipeline CI e imagens OCI.
+
 ## 4. Configuração e segredos
 
 Nenhuma variável existe ainda. Registrar cada uma quando for consumida pelo código/configuração.

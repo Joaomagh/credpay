@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Definir e aprovar a baseline mínima do `transacoes-service`: versões, coordenadas Maven, dependências iniciais, estrutura e verificações de scaffolding, sem criar o módulo ainda.
+- [ ] Criar o scaffolding mínimo do `transacoes-service` com build e teste verdes, sem regra de negócio.
