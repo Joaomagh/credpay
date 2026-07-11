@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Aprovar imagem-base, limites e ferramentas do `sandbox-core` antes da implementação.
+- [ ] Preparar o próximo incremento do projeto backend a partir de `CREDPAY_PLAN.md`, sem implementar ainda.
