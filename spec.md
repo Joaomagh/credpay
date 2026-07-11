@@ -220,6 +220,28 @@ Nenhum comando verificado ainda.
 - **Decisão:** demonstrar por OpenAPI, scripts e Grafana.
 - **Consequências:** mais tempo para confiabilidade; experiência visual limitada, mitigada pelo roteiro de demo.
 
+### ADR-003 — Contrato mínimo do sandbox AI-Jail
+
+- **Status:** aceita; desenho ainda não implementado nem testado
+- **Contexto:** o agente precisa trabalhar no CredPay sem receber acesso desnecessário ao host, a credenciais, ao daemon Docker ou à rede. O modelo de ameaça da seção 4.1 define os ativos e riscos; esta ADR transforma esses requisitos em um contrato de execução mínimo.
+- **Decisão:** o sandbox será desenhado com negação por padrão e concessões explícitas:
+  - o workspace do CredPay será o único bind mount do host;
+  - o workspace será gravável apenas em incrementos que autorizem edição; inspeções usarão mount somente leitura quando a ferramenta de execução permitir;
+  - o filesystem raiz do container será somente leitura;
+  - dados transitórios usarão `/tmp` em `tmpfs`, sem execução, com tamanho limitado e descarte junto do container; outros diretórios graváveis só poderão ser adicionados após necessidade comprovada;
+  - o processo executará como usuário não-root, sem `sudo` e sem binários `setuid` ou `setgid`;
+  - todas as Linux capabilities serão removidas, `no-new-privileges` será habilitado e modo privilegiado será proibido;
+  - Docker socket, outros sockets do host, dispositivos e diretórios da home do host não serão montados;
+  - variáveis de ambiente serão construídas por allowlist; credenciais e ambiente do host não serão herdados;
+  - a rede ficará desativada por padrão;
+  - uma necessidade futura de egress exigirá aprovação, destinos e finalidade documentados e bloqueio aplicado por proxy ou firewall verificável; uma rede Docker `bridge` não satisfaz esse requisito;
+  - CPU, memória, quantidade de processos e armazenamento temporário terão limites explícitos, dimensionados e registrados antes da implementação;
+  - somente ferramentas previamente incluídas e aprovadas estarão disponíveis durante a execução; instalação ou download em runtime será proibido.
+- **Política de ferramentas:** a imagem não incluirá Docker CLI nem ferramentas de administração do host. A lista mínima e as versões do runtime do agente ainda precisam ser verificadas antes da implementação. Java 21, Maven e ferramentas do projeto só entram quando um incremento demonstrar a necessidade e o Navigator aprovar sua inclusão.
+- **Operação:** cada execução será efêmera. Persistência será limitada ao workspace explicitamente montado; processos e dados temporários deverão desaparecer quando o container for removido.
+- **Evidência exigida:** estas decisões são requisitos de desenho, não garantias atuais. Cada controle somente será considerado verificado após teste negativo reproduzível registrar plataforma/versão, comando, resultado esperado, resultado observado e mecanismo que causou o bloqueio.
+- **Consequências:** o desenho reduz o alcance de erro ou abuso, mas escrita autorizada ainda pode danificar o workspace. Filesystem somente leitura pode revelar a necessidade de novos `tmpfs`. Rede negada impede downloads e operações remotas. Ferramentas adicionais aumentam a superfície de ataque. Docker Desktop, daemon, VM, kernel/hypervisor e host permanecem na base confiável.
+
 ## 13. Hurdles e aprendizados reais
 
 > Sem quantidade obrigatória. Adicionar somente após reproduzir e entender o problema.

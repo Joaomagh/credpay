@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Desenhar o sandbox mínimo (mounts, usuário, credenciais, capabilities, rede e ferramentas) sem implementá-lo ainda.
+- [ ] Definir os testes negativos e o contrato de evidências do sandbox antes da implementação.
