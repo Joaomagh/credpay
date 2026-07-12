@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Criar o scaffolding mínimo do `transacoes-service` com build e teste verdes, sem regra de negócio.
+- [ ] Definir o primeiro comportamento de negócio em TDD: uma transação válida nasce `PENDENTE`, sem persistência ainda.

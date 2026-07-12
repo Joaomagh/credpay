@@ -3,8 +3,8 @@
 > Fonte de verdade do sistema que existe hoje. Preencher somente com decisão tomada, contrato aceito ou comportamento comprovado. Planos futuros ficam em `CREDPAY_PLAN.md`; próximas ações ficam em `task.md`.
 
 **Última atualização:** 2026-07-11  
-**Fase atual:** 1 — Governança e sandbox  
-**Estado:** documentação-base em revisão; nenhum código de negócio iniciado
+**Fase atual:** 2 — Fundação reproduzível
+**Estado:** scaffolding do `transacoes-service` verificado; nenhum código de negócio iniciado
 
 ## 1. Contexto e limites atuais
 
@@ -13,7 +13,9 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 - `transacoes-service`: recebe pedidos, valida regras de entrada, mantém o estado consultável e publica eventos;
 - `processamento-service`: consome pedidos de processamento, decide o resultado e publica o evento correspondente.
 
-**Ainda não implementado:** módulos, APIs, bancos, filas, contratos e infraestrutura. Eles serão registrados aqui quando nascerem de incrementos aprovados.
+**Implementado:** scaffolding mínimo do `transacoes-service`, sem endpoint ou regra de negócio.
+
+**Ainda não implementado:** `processamento-service`, APIs de negócio, bancos, filas, contratos e infraestrutura. Eles serão registrados aqui quando nascerem de incrementos aprovados.
 
 ## 2. Arquitetura vigente
 
@@ -39,8 +41,9 @@ A mensageria é assíncrona, com consistência eventual e expectativa de entrega
 
 | Área | Tecnologia | Versão fixada | Evidência |
 |---|---|---:|---|
-| Linguagem | Java | 21 (alvo) | ainda não fixada no build |
-| Framework | Spring Boot | 3.x (alvo) | ainda não fixada |
+| Linguagem | Java | 21 | `java -version`: 21.0.6 |
+| Framework | Spring Boot | 3.5.16 | parent fixado no `transacoes-service/pom.xml`; teste verde |
+| Build | Maven Wrapper | 3.9.16 | `transacoes-service/mvnw.cmd --version` |
 | Banco | PostgreSQL | a definir | — |
 | Mensageria | RabbitMQ | a definir | — |
 | Testes | JUnit 5, Mockito, Testcontainers | a definir | — |
@@ -49,7 +52,7 @@ Substituir “alvo” por versão exata e comando de verificação quando o buil
 
 ### 3.1 Baseline aprovada do `transacoes-service`
 
-Esta baseline define o scaffolding futuro do primeiro serviço. Ela está aprovada, mas ainda não foi materializada em arquivos nem verificada por build. Nenhuma dependência foi baixada.
+Esta baseline define o scaffolding do primeiro serviço. Ela foi materializada e verificada em 2026-07-11, sem regra de negócio.
 
 | Item | Decisão |
 |---|---|
@@ -78,6 +81,7 @@ Mockito poderá chegar transitivamente pelo starter de teste, mas somente será 
 
 ```text
 transacoes-service/
+├── .gitignore
 ├── .mvn/
 │   └── wrapper/
 │       └── maven-wrapper.properties
@@ -97,9 +101,9 @@ transacoes-service/
 
 O teste inicial verificará apenas que o contexto mínimo sobe. Como scaffolding sem comportamento, ele não exige red prévio; o primeiro comportamento de negócio posterior seguirá red, green e refactor.
 
-#### Comandos de verificação esperados
+#### Comandos de verificação
 
-Estes comandos são o contrato de verificação do incremento futuro e ainda não foram executados:
+Executados com sucesso em 2026-07-11:
 
 ```powershell
 java -version
@@ -110,7 +114,9 @@ java -version
 Invoke-RestMethod http://localhost:8080/actuator/health
 ```
 
-Os resultados esperados são Java 21, Maven 3.9.16, teste e package verdes, aplicação iniciada e health com estado `UP`. Os comandos reproduzíveis da seção 11 somente serão preenchidos depois dessa execução real.
+Resultados observados: Java 21.0.6, Maven 3.9.16, um teste executado sem falhas, package verde, JAR executável e health com estado `UP`.
+
+O teste e o package emitiram warning de autoanexação do Mockito/Byte Buddy no Java 21. Nenhum mock foi escrito neste incremento. O warning não quebrou o build, mas deve ser resolvido ou conscientemente aceito antes de a JVM futura bloquear carregamento dinâmico de agentes.
 
 #### Fora da baseline inicial
 
@@ -312,6 +318,13 @@ No estado atual:
 
 ```text
 credpay/
+├── transacoes-service/
+│   ├── .mvn/wrapper/
+│   ├── src/main/
+│   ├── src/test/
+│   ├── mvnw
+│   ├── mvnw.cmd
+│   └── pom.xml
 ├── skills/
 ├── CLAUDE.md
 ├── CREDPAY_PLAN.md
@@ -319,7 +332,7 @@ credpay/
 └── task.md
 ```
 
-Atualizar somente após criar diretórios/arquivos.
+`transacoes-service/target/` é saída local de build e está ignorado pelo Git.
 
 ## 6. Contratos
 
@@ -369,15 +382,24 @@ Não declarar SLO de produção fictício; usar objetivos de experimento local c
 
 ## 11. Comandos reproduzíveis
 
-Nenhum comando verificado ainda.
+Executar dentro de `transacoes-service/` no PowerShell:
 
-```bash
-# build
+```powershell
+# versões
+java -version
+.\mvnw.cmd --version
+
 # teste focado
-# suíte completa
-# lint
-# subir/parar infraestrutura
-# smoke test
+.\mvnw.cmd -Dtest=TransacoesServiceApplicationTest test
+
+# suíte e package
+.\mvnw.cmd package
+
+# ambiente local
+.\mvnw.cmd spring-boot:run
+
+# smoke test, com a aplicação ativa
+Invoke-RestMethod http://localhost:8080/actuator/health
 ```
 
 ## 12. Decisões de arquitetura (ADR resumido)
