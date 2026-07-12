@@ -4,7 +4,7 @@
 
 **Última atualização:** 2026-07-11  
 **Fase atual:** 2 — Fundação reproduzível
-**Estado:** scaffolding do `transacoes-service` verificado; nenhum código de negócio iniciado
+**Estado:** primeiro comportamento de domínio implementado por TDD; sem endpoint ou persistência
 
 ## 1. Contexto e limites atuais
 
@@ -13,7 +13,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 - `transacoes-service`: recebe pedidos, valida regras de entrada, mantém o estado consultável e publica eventos;
 - `processamento-service`: consome pedidos de processamento, decide o resultado e publica o evento correspondente.
 
-**Implementado:** scaffolding mínimo do `transacoes-service`, sem endpoint ou regra de negócio.
+**Implementado:** scaffolding mínimo do `transacoes-service` e criação de transação válida com estado inicial `PENDENTE`.
 
 **Ainda não implementado:** `processamento-service`, APIs de negócio, bancos, filas, contratos e infraestrutura. Eles serão registrados aqui quando nascerem de incrementos aprovados.
 
@@ -356,11 +356,17 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 
 ## 7. Modelo e regras implementadas
 
-Nenhuma regra de negócio implementada. Cada entrada futura deve apontar para o teste que prova o comportamento.
-
 | Regra | Casos/edge cases | Evidência automatizada |
 |---|---|---|
-| — | — | — |
+| Uma transação válida nasce `PENDENTE` | fixture válida usa `10.00` e `BRL`; validação de valor e moeda ainda não implementada | `TransacaoTest.criar_deveDefinirStatusPendente_quandoTransacaoForValida` |
+
+### Evidência TDD — estado inicial `PENDENTE`
+
+- **Red:** `mvnw.cmd -Dtest=TransacaoTest test` falhou na compilação do teste porque `Transacao` e `StatusTransacao` ainda não existiam.
+- **Green focado:** após criar somente `Transacao` e `StatusTransacao`, o mesmo comando executou 1 teste, com 0 falhas e 0 erros.
+- **Suíte:** `mvnw.cmd test` executou 2 testes, com 0 falhas e 0 erros.
+- **Implementação mínima:** `StatusTransacao` contém apenas `PENDENTE`; `Transacao.criar(valor, moeda)` define esse estado e `status()` permite observá-lo.
+- **Limite:** valor e moeda ainda não são validados, persistidos nem expostos por API.
 
 ## 8. Persistência e consistência
 
@@ -391,6 +397,7 @@ java -version
 
 # teste focado
 .\mvnw.cmd -Dtest=TransacoesServiceApplicationTest test
+.\mvnw.cmd -Dtest=TransacaoTest test
 
 # suíte e package
 .\mvnw.cmd package
@@ -463,7 +470,7 @@ Invoke-RestMethod http://localhost:8080/actuator/health
 
 | Data | Hipótese | Procedimento | Resultado | Aprendizado/próxima ação |
 |---|---|---|---|---|
-| — | — | — | — | — |
+| 2026-07-11 | uma transação válida deve iniciar `PENDENTE` | executar red sem tipos de domínio; criar implementação mínima; repetir teste focado e suíte | red pelo motivo esperado; green focado e 2 testes verdes na suíte | testar o limite inferior do valor em novo ciclo TDD |
 
 ## 16. Checklist por incremento
 
