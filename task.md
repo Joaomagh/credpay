@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Definir o próximo comportamento em TDD: uma transação não pode ser criada com valor zero, sem persistência.
+- [ ] Definir o próximo comportamento em TDD: uma transação não pode ser criada com valor negativo, sem persistência.
