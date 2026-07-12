@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Definir o primeiro comportamento de negócio em TDD: uma transação válida nasce `PENDENTE`, sem persistência ainda.
+- [ ] Definir o próximo comportamento em TDD: uma transação não pode ser criada com valor zero, sem persistência.
