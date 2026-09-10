@@ -427,6 +427,38 @@ java -version
 Invoke-RestMethod http://localhost:8080/actuator/health
 ```
 
+### Integração contínua
+
+O `transacoes-service` possui um workflow mínimo em `.github/workflows/transacoes-service-ci.yml` para executar a mesma verificação Maven em ambiente Linux.
+
+| Item | Decisão |
+|---|---|
+| Gatilhos | pull requests com mudanças no serviço ou no workflow; pushes relevantes para `main` |
+| Runner | `ubuntu-latest`, com timeout de 10 minutos |
+| Java | Temurin 21 por `actions/setup-java` |
+| Maven | Wrapper do repositório com `--batch-mode --no-transfer-progress verify` |
+| Cache | dependências Maven, com chave derivada de `transacoes-service/pom.xml` |
+| Permissões | somente `contents: read` |
+| Concorrência | execução anterior da mesma referência é cancelada quando fica obsoleta |
+| Actions externas | referências fixadas por SHA, com a versão legível em comentário |
+
+A validação local equivalente é `mvnw.cmd --batch-mode --no-transfer-progress verify` no Windows. A evidência definitiva do runner Linux ficará pendente até a primeira execução do workflow no GitHub. Não há publicação, segredo, imagem ou deploy; CD permanece fora até existirem artefato e ambiente aprovados.
+
+#### Evolução planejada do CI/CD
+
+Cada capacidade será adicionada apenas quando existir o risco correspondente e uma forma objetiva de validá-la.
+
+| Momento | Evolução planejada | Condição para entrar |
+|---|---|---|
+| Baseline atual | build, testes e geração do JAR com Maven `verify` | módulo Java e testes existentes |
+| Persistência | PostgreSQL com Testcontainers e validação das migrations Flyway | primeiro adapter de persistência |
+| Mensageria | RabbitMQ com Testcontainers e cenários de publicação, consumo e reentrega | primeiro contrato de evento |
+| Qualidade | análise estática, estilo e relatórios de testes úteis | base de código suficiente para revelar problemas reais |
+| Imagem | build, smoke test e análise de vulnerabilidades do container | Dockerfile aprovado e implementado |
+| CD | publicação e implantação controladas, health check e estratégia de rollback | artefato, ambiente e política de entrega aprovados |
+
+Cobertura, scanners e outras ferramentas serão sinais auxiliares, não metas isoladas. O pipeline não será ampliado apenas para aumentar a lista de tecnologias.
+
 ## 12. Decisões de arquitetura (ADR resumido)
 
 ### ADR-001 — Monorepo com serviços independentes
@@ -491,6 +523,7 @@ Invoke-RestMethod http://localhost:8080/actuator/health
 | 2026-07-11 | uma transação válida deve iniciar `PENDENTE` | executar red sem tipos de domínio; criar implementação mínima; repetir teste focado e suíte | red pelo motivo esperado; green focado e 2 testes verdes na suíte | testar o limite inferior do valor em novo ciclo TDD |
 | 2026-07-11 | uma transação com valor zero deve ser rejeitada | adicionar teste de exceção; confirmar que nada era lançado; implementar somente condição igual a zero | red com 1 falha; green focado com 2 testes e suíte com 3 testes | testar valor negativo sem ampliar outras validações |
 | 2026-09-10 | uma transação com valor negativo deve ser rejeitada | adicionar teste com `-0.01`; confirmar que nada era lançado; ampliar somente a condição de sinal | red com 1 falha; green focado com 3 testes e suíte com 4 testes | definir CI mínimo para executar as verificações em cada PR |
+| 2026-09-10 | o build do `transacoes-service` deve ser verificado automaticamente | criar workflow com Java 21, Maven Wrapper, cache, permissões mínimas e filtro de caminhos; executar localmente o mesmo objetivo Maven | `verify` local gerou o JAR e executou 4 testes sem falhas; execução no GitHub ainda pendente | confirmar o resultado do primeiro job Linux antes de considerar o CI comprovado |
 
 ## 16. Checklist por incremento
 

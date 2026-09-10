@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Definir e aprovar o CI mínimo do `transacoes-service`: gatilhos, versão do Java, comandos Maven e critérios de sucesso, sem implementar CD ainda.
+- [ ] Revisar e atualizar o `README.md` para refletir o estado implementado do `transacoes-service` e do CI, sem antecipar funcionalidades planejadas.
