@@ -28,4 +28,14 @@ class TransacaoTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("valor deve ser maior que zero");
     }
+
+    @Test
+    void criar_deveRejeitar_quandoValorForNegativo() {
+        var valor = new BigDecimal("-0.01");
+        var moeda = Currency.getInstance("BRL");
+
+        assertThatThrownBy(() -> Transacao.criar(valor, moeda))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("valor deve ser maior que zero");
+    }
 }

@@ -12,7 +12,7 @@ final class Transacao {
     }
 
     static Transacao criar(BigDecimal valor, Currency moeda) {
-        if (valor.signum() == 0) {
+        if (valor.signum() <= 0) {
             throw new IllegalArgumentException("valor deve ser maior que zero");
         }
 
