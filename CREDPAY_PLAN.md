@@ -125,9 +125,10 @@ As durações são estimativas, não prazos. Cada sessão deve produzir uma evid
 - criar os dois módulos Spring Boot e a infraestrutura local;
 - fixar versões e migrations iniciais;
 - expor health checks sem regra de negócio;
+- estabelecer CI mínimo para executar build e testes automaticamente em cada mudança relevante;
 - documentar comandos mínimos.
 
-**Saída:** build e ambiente local reproduzíveis.
+**Saída:** build local e CI reproduzíveis, além de ambiente local documentado.
 
 ### Fase 3 — Primeiro incremento TDD
 
@@ -163,9 +164,10 @@ As durações são estimativas, não prazos. Cada sessão deve produzir uma evid
 
 **Saída:** demo local repetível e dashboard útil.
 
-### Fase 7 — CI/CD e portfólio
+### Fase 7 — Entrega, CD e portfólio
 
-- pipeline de build, testes, qualidade e imagens;
+- evoluir o CI com verificações de qualidade e imagens;
+- implementar CD somente quando houver artefato e destino de implantação definidos;
 - README com arquitetura, quickstart, decisões, limitações e roteiro de demo;
 - preparar uma explicação de 3 minutos e perguntas de entrevista baseadas no projeto.
 

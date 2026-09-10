@@ -1,0 +1,48 @@
+name: Transaction Service CI
+
+on:
+  pull_request:
+    paths:
+      - "transacoes-service/**"
+      - ".github/workflows/transacoes-service-ci.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "transacoes-service/**"
+      - ".github/workflows/transacoes-service-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: transacoes-service-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Maven verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: transacoes-service
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Java 21
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: transacoes-service/pom.xml
+
+      - name: Make Maven Wrapper executable
+        run: chmod +x mvnw
+
+      - name: Verify transaction service
+        run: ./mvnw --batch-mode --no-transfer-progress verify
