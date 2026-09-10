@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Revisar e atualizar o `README.md` para refletir o estado implementado do `transacoes-service` e do CI, sem antecipar funcionalidades planejadas.
+- [ ] Definir em TDD que uma transação não pode ser criada com valor nulo, sem persistência.

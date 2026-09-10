@@ -1,49 +1,98 @@
 # CredPay
 
-> Laboratório de engenharia backend para estudar, construir e explicar um fluxo assíncrono de transações com decisões técnicas verificáveis.
+[![Transaction Service CI](https://github.com/Joaomagh/credpay/actions/workflows/transacoes-service-ci.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/transacoes-service-ci.yml)
 
-O CredPay é um projeto educacional e de portfólio orientado a aprendizado prático em **Java**, **Spring Boot**, sistemas distribuídos e operação de software. A proposta não é simular um banco completo nem apenas reunir tecnologias: cada capacidade será introduzida por um incremento pequeno, acompanhada de testes, decisões registradas e limitações explícitas.
+> Laboratório de engenharia backend para construir e explicar, com evidências, um fluxo assíncrono de transações.
+
+O CredPay é um projeto educacional e de portfólio em evolução. Seu foco não é imitar um banco nem acumular tecnologias, mas exercitar decisões que aparecem em sistemas backend reais: regras de domínio, consistência eventual, idempotência, publicação confiável, recuperação de falhas, observabilidade e entrega reproduzível.
+
+Cada capacidade entra em um incremento pequeno, testado e documentado. Assim, o repositório mostra não apenas o resultado, mas também o raciocínio de engenharia que levou até ele.
 
 ## Status atual
 
-**Fase 1 — Governança e sandbox do agente.**
+O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD de domínio.
 
 | Estado | Entrega |
 |---|---|
-| Concluído | acordo de trabalho, plano incremental e especificação técnica viva |
-| Concluído | modelo de ameaça inicial do AI-Jail |
-| Próximo | desenho do sandbox mínimo, ainda sem implementação |
-| Planejado | aplicações Spring Boot, bancos, mensageria, observabilidade, Kubernetes e CI/CD |
+| Implementado | `transacoes-service` com Java 21, Spring Boot 3.5.16 e Maven Wrapper 3.9.16 |
+| Implementado | health check do Spring Boot Actuator |
+| Implementado | transação válida nasce `PENDENTE` |
+| Implementado | valores zero e negativo são rejeitados pelo domínio |
+| Implementado | 4 testes automatizados verdes |
+| Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
+| Documentado | threat model e baseline conservadora do sandbox AI-Jail |
+| Ainda não implementado | API de transações, persistência, RabbitMQ, `processamento-service`, containers, Kubernetes e CD |
 
-Ainda não existem módulos de aplicação, endpoints, bancos, filas ou infraestrutura executável. As tecnologias e funcionalidades descritas adiante são **arquitetura e stack-alvo**, não entregas prontas. O estado factual do projeto é mantido em [`spec.md`](spec.md).
+O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 
-## Objetivo do projeto
+## O problema de engenharia estudado
 
-O domínio escolhido é um fluxo pequeno de processamento assíncrono de transações financeiras fictícias. Ele cria um contexto concreto para estudar problemas relevantes de backend: consistência eventual, entrega de mensagens pelo menos uma vez, idempotência, publicação confiável, recuperação de falhas e observabilidade.
+Uma transação financeira fictícia entra no sistema, é registrada como `PENDENTE`, segue para processamento e, posteriormente, chega a um estado final consultável. Esse fluxo cria um contexto pequeno para estudar problemas relevantes para empresas que operam sistemas distribuídos:
 
-O resultado esperado é um sistema que possa ser demonstrado e, principalmente, explicado: quais riscos existem, por que cada decisão foi tomada, como os testes sustentam o comportamento e quais limites permanecem.
+- como manter o serviço de entrada disponível quando o processamento demora ou fica indisponível;
+- como lidar com mensagens duplicadas e entrega pelo menos uma vez;
+- como evitar a perda de um evento entre banco e mensageria;
+- como recuperar falhas sem produzir estados inconsistentes;
+- como diagnosticar o caminho de uma transação por logs, métricas e traces.
 
-Este projeto não movimenta dinheiro e não integra PIX, cartões, instituições financeiras ou serviços de produção.
+O CredPay não processa dinheiro real e não integra PIX, cartões ou instituições financeiras.
 
-## O que este projeto busca demonstrar
+### Por que o fluxo planejado é assíncrono?
 
-- desenvolvimento backend com Java 21 e Spring Boot 3;
-- desenho de serviços com responsabilidades e dados separados;
-- comunicação orientada a eventos com RabbitMQ;
-- consistência eventual e consumidores idempotentes;
-- TDD em ciclos curtos de red, green e refactor;
-- testes de contrato, unidade, integração e cenários de falha;
-- persistência com PostgreSQL, JPA e migrations Flyway;
-- observabilidade por logs estruturados, métricas e traces;
-- execução reproduzível com containers e Kubernetes local;
-- threat modeling e controles de execução para agentes de IA;
-- documentação de decisões, trade-offs, experimentos e riscos residuais.
+O cliente precisa receber rapidamente a confirmação de que o pedido foi aceito, mas a decisão final pode acontecer depois. Separar entrada e processamento por eventos reduz o acoplamento entre serviços e permite absorver picos ou indisponibilidades temporárias.
 
-Esses itens serão considerados demonstrados somente quando houver implementação e evidência correspondente. Até lá, permanecem objetivos do roadmap.
+Essa escolha também traz custos que o projeto pretende tornar visíveis: consistência eventual, duplicação, ordenação, retries, DLQ e observabilidade. O objetivo não é afirmar que assíncrono é sempre melhor. Validações imediatas e a resposta de aceitação continuam síncronas; o processamento posterior é que será desacoplado.
+
+## O que existe hoje
+
+O `transacoes-service` contém o scaffolding executável e um domínio propositalmente mínimo:
+
+```text
+transacoes-service/
+├── src/main/java/br/com/credpay/transacoes/
+│   ├── TransacoesServiceApplication.java
+│   └── dominio/
+│       ├── StatusTransacao.java
+│       └── Transacao.java
+├── src/test/java/br/com/credpay/transacoes/
+│   ├── TransacoesServiceApplicationTest.java
+│   └── dominio/TransacaoTest.java
+├── mvnw
+├── mvnw.cmd
+└── pom.xml
+```
+
+Regras comprovadas até aqui:
+
+1. uma transação válida nasce `PENDENTE`;
+2. valor igual a zero é rejeitado;
+3. valor negativo é rejeitado.
+
+Não há endpoint de negócio, DTO, camada de aplicação, repository, JPA, banco, evento, ID ou timestamp. Esses elementos só serão adicionados quando um comportamento exigir.
+
+## Executando o estado atual
+
+Pré-requisito: JDK 21. Na primeira execução, o Maven Wrapper precisa acessar a internet para obter o Maven e as dependências declaradas.
+
+No PowerShell:
+
+```powershell
+cd transacoes-service
+.\mvnw.cmd --batch-mode --no-transfer-progress verify
+.\mvnw.cmd spring-boot:run
+```
+
+Com a aplicação ativa, em outro terminal:
+
+```powershell
+Invoke-RestMethod http://localhost:8080/actuator/health
+```
+
+Em Linux ou macOS, use `./mvnw` no lugar de `.\mvnw.cmd`. O único endpoint disponível atualmente é o health check operacional; ainda não existe API de transações.
 
 ## Arquitetura planejada
 
-O monorepo terá dois aplicativos Spring Boot independentes. Cada serviço será responsável por seu próprio modelo, configuração, build, imagem e dados.
+O monorepo terá dois aplicativos Spring Boot independentes, cada um responsável por seu build, configuração, modelo e dados.
 
 ```text
 Cliente
@@ -59,90 +108,58 @@ RabbitMQ ───────────► processamento-service ────
 
 Fluxo planejado da v1:
 
-1. `transacoes-service` valida a entrada e persiste uma transação `PENDENTE`;
-2. um evento `TransacaoCriada` é publicado de forma confiável;
-3. `processamento-service` consome o evento e decide entre `APROVADA` e `REJEITADA`;
-4. o resultado retorna por um evento `TransacaoProcessada`;
+1. `transacoes-service` valida e persiste uma transação `PENDENTE`;
+2. publica `TransacaoCriada` de forma confiável;
+3. `processamento-service` consome e decide o resultado;
+4. publica `TransacaoProcessada`;
 5. `transacoes-service` atualiza o estado consultável;
-6. logs, métricas e traces permitem acompanhar o fluxo e diagnosticar falhas.
+6. sinais observáveis permitem acompanhar e diagnosticar o fluxo.
 
-A entrega da mensageria será tratada como **pelo menos uma vez**. Por isso, duplicação, idempotência, retry limitado, DLQ e publicação confiável serão requisitos testados, não pressupostos.
-
-### Stack-alvo
-
-| Área | Tecnologias planejadas | Finalidade |
-|---|---|---|
-| Aplicação | Java 21, Spring Boot 3, Maven | serviços backend independentes |
-| Dados | PostgreSQL, Spring Data JPA, Flyway | persistência e migrations reproduzíveis |
-| Mensageria | RabbitMQ, Spring AMQP | fluxo assíncrono e tratamento de reentrega |
-| Testes | JUnit 5, AssertJ, Mockito, Testcontainers | comportamento e infraestrutura real nas bordas |
-| Contrato | Bean Validation, OpenAPI | API pequena e explícita |
-| Observabilidade | Actuator, Micrometer, Prometheus, Grafana | diagnóstico baseado em evidência |
-| Plataforma | Docker Compose, Kubernetes local | execução e operação reproduzíveis |
-| Entrega | GitHub Actions e verificações de qualidade | feedback automatizado e rastreabilidade |
-
-Versões exatas só serão declaradas após serem fixadas e verificadas no build.
+Essa arquitetura ainda é um alvo. O projeto não apresenta componentes planejados como se já estivessem prontos.
 
 ## Práticas de engenharia
 
-### Desenvolvimento incremental e TDD
+### TDD em incrementos pequenos
 
-O trabalho é dividido em incrementos verticais pequenos. Para comportamento de negócio, o ciclo obrigatório é:
+Comportamentos de negócio seguem o ciclo red → green → refactor:
 
-1. descrever um comportamento observável;
-2. criar o menor teste e confirmar a falha pelo motivo esperado;
-3. implementar apenas o necessário para o teste passar;
-4. executar o teste focado e a suíte afetada;
-5. refatorar sem alterar comportamento;
-6. registrar somente o que foi comprovado.
+1. escrever o menor teste para um comportamento observável;
+2. confirmar que ele falha pelo motivo esperado;
+3. implementar somente o necessário para passar;
+4. executar o teste focado e toda a suíte afetada;
+5. registrar resultado, limite e próximo passo.
 
-Mocks são reservados a fronteiras externas quando ajudam a isolar o comportamento. PostgreSQL e RabbitMQ serão exercitados com infraestrutura real nos testes de integração quando essas fronteiras forem implementadas.
+Os ciclos já executados e suas falhas esperadas estão registrados em [`spec.md`](spec.md#7-modelo-e-regras-implementadas).
 
-### Decisões e aprendizado verificável
+### CI como controle evolutivo
 
-Decisões arquiteturais, contratos e limitações não ficam apenas no código. O repositório mantém uma especificação viva, um plano de longo prazo e uma única próxima tarefa. Problemas e patterns são registrados apenas quando surgem de uma necessidade real — não para preencher uma lista de palavras-chave.
+O workflow atual executa Maven `verify` em pull requests relevantes e em mudanças do serviço na `main`. Ele valida compilação, testes e geração do JAR num runner Linux com Java 21. Também usa cache Maven, timeout, cancelamento de execuções obsoletas, permissões somente de leitura e actions externas fixadas por SHA.
 
-Essa documentação de processo é pública de propósito. Ela permite avaliar não só o resultado final, mas também a evolução do raciocínio: definição de escopo, análise de risco, critérios de aceitação, evidências e correções de percurso. A assistência de IA faz parte do processo, com decisões de direção e aprovação mantidas pelo responsável pelo projeto.
+O CI crescerá quando surgirem riscos concretos: Testcontainers com PostgreSQL e RabbitMQ, migrations, contratos, qualidade estática e imagem de container. CD ainda não existe; será definido apenas quando houver uma imagem, um ambiente de destino e uma estratégia de rollback.
+
+### Documentação como evidência
+
+A documentação de processo é pública de propósito. Ela permite avaliar decisões, trade-offs, critérios de aceitação, testes, limitações e correções de percurso. A assistência de IA faz parte do processo, enquanto direção, escopo e decisões estruturais permanecem sob responsabilidade do autor.
 
 ## Segurança e AI-Jail
 
-A primeira fase começa pela segurança do próprio ambiente de desenvolvimento assistido. O modelo de ameaça do AI-Jail identifica arquivos externos ao workspace, credenciais, Docker socket, host e redes não autorizadas como ativos a proteger contra comportamento incorreto, prompt injection ou ferramentas maliciosas.
+O projeto documentou um threat model para limitar o alcance de agentes e ferramentas durante o desenvolvimento. A baseline do `sandbox-core` prevê usuário não-root, recursos limitados, filesystem e mounts mínimos, nenhum Docker socket ou segredo do host e rede negada por padrão.
 
-O sandbox planejado parte de alguns princípios:
-
-- usuário não-root e capabilities mínimas;
-- somente o workspace necessário montado;
-- nenhum Docker socket, segredo ou home do host exposto;
-- rede negada por padrão, com exceções aplicadas por controle verificável;
-- limites de recursos e armazenamento descartável;
-- testes negativos para filesystem, credenciais, privilégio, rede e persistência.
-
-O threat model também registra limites importantes: Docker Desktop, daemon, VM, kernel/hypervisor e host permanecem parte da base confiável. Um container restringido reduz alcance, mas não equivale a uma máquina física isolada. Nenhuma garantia de sandbox será apresentada como concluída antes da implementação e dos testes negativos. Os detalhes estão em [`spec.md`](spec.md#41-modelo-de-ameaça-do-ai-jail).
+O sandbox ainda não foi implementado. Docker Desktop, daemon, VM, kernel/hypervisor e host permanecem parte da base confiável; portanto, nenhuma garantia de isolamento é apresentada como comprovada. O contrato, os testes negativos esperados e os riscos residuais estão em [`spec.md`](spec.md#41-modelo-de-ameaça-do-ai-jail).
 
 ## Roadmap
 
 | Fase | Objetivo | Estado |
 |---|---|---|
-| 1 | governança, threat model e sandbox verificável | em andamento |
-| 2 | fundação dos dois serviços e ambiente local reproduzível | planejada |
-| 3 | primeiro incremento TDD e integração com PostgreSQL | planejada |
-| 4 | fluxo assíncrono, idempotência, outbox, retry e DLQ | planejada |
-| 5 | experimentos de falha e resiliência orientada por evidência | planejada |
+| 1 | governança, threat model e contrato do sandbox | documentação concluída; sandbox pendente |
+| 2 | fundação reproduzível e CI mínimo | `transacoes-service` e CI implementados; restante pendente |
+| 3 | regras de domínio em TDD e primeira integração PostgreSQL | em andamento |
+| 4 | API, fluxo assíncrono, idempotência, outbox, retry e DLQ | planejada |
+| 5 | experimentos de falha e resiliência | planejada |
 | 6 | Kubernetes local e observabilidade | planejada |
-| 7 | CI/CD, documentação de execução e roteiro de demonstração | planejada |
+| 7 | evolução do CI, CD e roteiro de demonstração | planejada |
 
-O plano detalhado, os critérios de saída e o que está fora da v1 estão em [`CREDPAY_PLAN.md`](CREDPAY_PLAN.md).
-
-## Como acompanhar a evolução
-
-Cada incremento deve produzir uma evidência pequena e verificável. Para acompanhar o projeto sem confundir intenção com implementação:
-
-1. consulte [`task.md`](task.md) para o próximo passo único;
-2. consulte [`spec.md`](spec.md) para fatos, decisões e comportamentos já aceitos ou comprovados;
-3. consulte [`CREDPAY_PLAN.md`](CREDPAY_PLAN.md) para direção e fases futuras;
-4. acompanhe o histórico de commits para ver cada mudança no contexto em que foi introduzida.
-
-Comandos de build, testes e execução local serão publicados aqui quando existirem e forem verificados.
+O plano detalhado e os critérios de saída estão em [`CREDPAY_PLAN.md`](CREDPAY_PLAN.md).
 
 ## Documentação do projeto
 
@@ -151,11 +168,11 @@ Comandos de build, testes e execução local serão publicados aqui quando exist
 | [`CLAUDE.md`](CLAUDE.md) | acordo de trabalho, autonomia, segurança e protocolo dos incrementos |
 | [`CREDPAY_PLAN.md`](CREDPAY_PLAN.md) | visão, arquitetura-alvo, fases e controle de escopo |
 | [`spec.md`](spec.md) | fonte de verdade técnica, ADRs, contratos e evidências atuais |
-| [`task.md`](task.md) | próximo passo único aprovado |
+| [`task.md`](task.md) | próximo passo único |
 | [`skills/`](skills/) | guias repetíveis para TDD, endpoints e testes de integração |
 
 ## Escopo e uso
 
-CredPay é um estudo educacional e não deve ser usado para processar dados ou transações financeiras reais. Autenticação de usuários, frontend, PIX, cartões, antifraude real, transação distribuída, multi-região e alta disponibilidade de produção estão fora do escopo da v1.
+CredPay é um estudo educacional. Frontend, autenticação, PIX, cartão, antifraude real, transação distribuída, multi-região e alta disponibilidade de produção estão fora da v1.
 
-O repositório ainda não declara uma licença de software. Até que uma licença seja adicionada explicitamente, o conteúdo está disponível para leitura e avaliação, sem concessão automática de direitos de reutilização ou distribuição.
+O repositório ainda não declara uma licença. Até que uma licença seja adicionada explicitamente, o conteúdo pode ser lido e avaliado, mas não há concessão automática de direitos de reutilização ou distribuição.
