@@ -442,7 +442,7 @@ O `transacoes-service` possui um workflow mínimo em `.github/workflows/transaco
 | Concorrência | execução anterior da mesma referência é cancelada quando fica obsoleta |
 | Actions externas | referências fixadas por SHA, com a versão legível em comentário |
 
-A validação local equivalente é `mvnw.cmd --batch-mode --no-transfer-progress verify` no Windows. A evidência definitiva do runner Linux ficará pendente até a primeira execução do workflow no GitHub. Não há publicação, segredo, imagem ou deploy; CD permanece fora até existirem artefato e ambiente aprovados.
+A validação local equivalente é `mvnw.cmd --batch-mode --no-transfer-progress verify` no Windows. A [primeira execução no GitHub Actions](https://github.com/Joaomagh/credpay/actions/runs/34542670040) concluiu o job `Maven verify` com sucesso em 32 segundos no runner Linux. Não há publicação, segredo, imagem ou deploy; CD permanece fora até existirem artefato e ambiente aprovados.
 
 #### Evolução planejada do CI/CD
 
@@ -523,7 +523,7 @@ Cobertura, scanners e outras ferramentas serão sinais auxiliares, não metas is
 | 2026-07-11 | uma transação válida deve iniciar `PENDENTE` | executar red sem tipos de domínio; criar implementação mínima; repetir teste focado e suíte | red pelo motivo esperado; green focado e 2 testes verdes na suíte | testar o limite inferior do valor em novo ciclo TDD |
 | 2026-07-11 | uma transação com valor zero deve ser rejeitada | adicionar teste de exceção; confirmar que nada era lançado; implementar somente condição igual a zero | red com 1 falha; green focado com 2 testes e suíte com 3 testes | testar valor negativo sem ampliar outras validações |
 | 2026-09-10 | uma transação com valor negativo deve ser rejeitada | adicionar teste com `-0.01`; confirmar que nada era lançado; ampliar somente a condição de sinal | red com 1 falha; green focado com 3 testes e suíte com 4 testes | definir CI mínimo para executar as verificações em cada PR |
-| 2026-09-10 | o build do `transacoes-service` deve ser verificado automaticamente | criar workflow com Java 21, Maven Wrapper, cache, permissões mínimas e filtro de caminhos; executar localmente o mesmo objetivo Maven | `verify` local gerou o JAR e executou 4 testes sem falhas; execução no GitHub ainda pendente | confirmar o resultado do primeiro job Linux antes de considerar o CI comprovado |
+| 2026-09-10 | o build do `transacoes-service` deve ser verificado automaticamente | criar workflow com Java 21, Maven Wrapper, cache, permissões mínimas e filtro de caminhos; executar localmente e em PR | `verify` local gerou o JAR e executou 4 testes sem falhas; primeiro job Linux passou em 32 segundos | CI mínimo comprovado; evoluir somente quando novos riscos entrarem no sistema |
 
 ## 16. Checklist por incremento
 
