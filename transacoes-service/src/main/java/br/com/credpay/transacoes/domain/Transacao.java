@@ -20,6 +20,10 @@ final class Transacao {
             throw new IllegalArgumentException("valor deve ser maior que zero");
         }
 
+        if (moeda == null) {
+            throw new IllegalArgumentException("moeda deve ser informada");
+        }
+
         return new Transacao(StatusTransacao.PENDENTE);
     }
 
