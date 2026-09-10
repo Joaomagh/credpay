@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Definir em TDD que uma transação não pode ser criada com valor nulo, sem persistência.
+- [ ] Definir em TDD que uma transação não pode ser criada sem moeda, sem persistência.

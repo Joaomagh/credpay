@@ -38,4 +38,13 @@ class TransacaoTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("valor deve ser maior que zero");
     }
+
+    @Test
+    void criar_deveRejeitar_quandoValorForNulo() {
+        var moeda = Currency.getInstance("BRL");
+
+        assertThatThrownBy(() -> Transacao.criar(null, moeda))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("valor deve ser informado");
+    }
 }
