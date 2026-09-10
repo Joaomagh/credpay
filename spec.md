@@ -2,9 +2,11 @@
 
 > Fonte de verdade do sistema que existe hoje. Preencher somente com decisão tomada, contrato aceito ou comportamento comprovado. Planos futuros ficam em `CREDPAY_PLAN.md`; próximas ações ficam em `task.md`.
 
-**Última atualização:** 2026-07-11  
+**Última atualização:** 2026-09-10
+
 **Fase atual:** 2 — Fundação reproduzível
-**Estado:** primeiro comportamento de domínio implementado por TDD; sem endpoint ou persistência
+
+**Estado:** scaffolding, CI mínimo e três regras iniciais de domínio implementados; sem endpoint ou persistência
 
 ## 1. Contexto e limites atuais
 
@@ -13,7 +15,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 - `transacoes-service`: recebe pedidos, valida regras de entrada, mantém o estado consultável e publica eventos;
 - `processamento-service`: consome pedidos de processamento, decide o resultado e publica o evento correspondente.
 
-**Implementado:** scaffolding mínimo do `transacoes-service` e criação de transação válida com estado inicial `PENDENTE`.
+**Implementado:** scaffolding mínimo do `transacoes-service`, CI com Maven `verify` e três regras de domínio: estado inicial `PENDENTE` e rejeição de valores zero ou negativo.
 
 **Ainda não implementado:** `processamento-service`, APIs de negócio, bancos, filas, contratos e infraestrutura. Eles serão registrados aqui quando nascerem de incrementos aprovados.
 
