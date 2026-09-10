@@ -358,8 +358,9 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 
 | Regra | Casos/edge cases | Evidência automatizada |
 |---|---|---|
-| Uma transação válida nasce `PENDENTE` | fixture válida usa `10.00` e `BRL`; valor zero é rejeitado, mas valor negativo, `null` e moeda ainda não são validados | `TransacaoTest.criar_deveDefinirStatusPendente_quandoTransacaoForValida` |
-| Uma transação não pode ser criada com valor zero | lança `IllegalArgumentException` com mensagem `valor deve ser maior que zero`; não rejeita negativos antecipadamente | `TransacaoTest.criar_deveRejeitar_quandoValorForZero` |
+| Uma transação válida nasce `PENDENTE` | fixture válida usa `10.00` e `BRL`; valores zero e negativo são rejeitados, mas `null` e moeda ainda não são validados | `TransacaoTest.criar_deveDefinirStatusPendente_quandoTransacaoForValida` |
+| Uma transação não pode ser criada com valor zero | lança `IllegalArgumentException` com mensagem `valor deve ser maior que zero` | `TransacaoTest.criar_deveRejeitar_quandoValorForZero` |
+| Uma transação não pode ser criada com valor negativo | o menor caso testado usa `-0.01`; lança `IllegalArgumentException` com a mesma mensagem da fronteira zero | `TransacaoTest.criar_deveRejeitar_quandoValorForNegativo` |
 
 ### Evidência TDD — estado inicial `PENDENTE`
 
@@ -375,7 +376,15 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 - **Green focado:** após adicionar a condição `valor.signum() == 0` em `Transacao.criar`, o mesmo comando executou 2 testes, com 0 falhas e 0 erros.
 - **Suíte:** `mvnw.cmd test` executou 3 testes, com 0 falhas e 0 erros.
 - **Erro de domínio atual:** `IllegalArgumentException` com mensagem `valor deve ser maior que zero`.
-- **Limite:** valor negativo, valor `null` e moeda inválida ainda não são rejeitados.
+- **Limite daquele ciclo:** valor negativo ainda não era rejeitado; essa regra foi adicionada no ciclo seguinte. Valor `null` e moeda inválida continuam sem validação.
+
+### Evidência TDD — rejeição de valor negativo
+
+- **Red:** após adicionar somente o novo teste, `mvnw.cmd -Dtest=TransacaoTest test` executou 3 testes e falhou apenas no caso negativo com `Expecting code to raise a throwable`.
+- **Green focado:** após alterar a condição de `valor.signum() == 0` para `valor.signum() <= 0`, o mesmo comando executou 3 testes, com 0 falhas e 0 erros.
+- **Suíte:** `mvnw.cmd test` executou 4 testes, com 0 falhas e 0 erros.
+- **Erro de domínio atual:** `IllegalArgumentException` com mensagem `valor deve ser maior que zero`.
+- **Limite:** valor `null` e moeda inválida ainda não são rejeitados. Não há persistência nem API.
 
 ## 8. Persistência e consistência
 
@@ -481,6 +490,7 @@ Invoke-RestMethod http://localhost:8080/actuator/health
 |---|---|---|---|---|
 | 2026-07-11 | uma transação válida deve iniciar `PENDENTE` | executar red sem tipos de domínio; criar implementação mínima; repetir teste focado e suíte | red pelo motivo esperado; green focado e 2 testes verdes na suíte | testar o limite inferior do valor em novo ciclo TDD |
 | 2026-07-11 | uma transação com valor zero deve ser rejeitada | adicionar teste de exceção; confirmar que nada era lançado; implementar somente condição igual a zero | red com 1 falha; green focado com 2 testes e suíte com 3 testes | testar valor negativo sem ampliar outras validações |
+| 2026-09-10 | uma transação com valor negativo deve ser rejeitada | adicionar teste com `-0.01`; confirmar que nada era lançado; ampliar somente a condição de sinal | red com 1 falha; green focado com 3 testes e suíte com 4 testes | definir CI mínimo para executar as verificações em cada PR |
 
 ## 16. Checklist por incremento
 

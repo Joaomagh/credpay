@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Definir o próximo comportamento em TDD: uma transação não pode ser criada com valor negativo, sem persistência.
+- [ ] Definir e aprovar o CI mínimo do `transacoes-service`: gatilhos, versão do Java, comandos Maven e critérios de sucesso, sem implementar CD ainda.
