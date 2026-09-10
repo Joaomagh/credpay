@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Definir em TDD que uma transação não pode ser criada sem moeda, sem persistência.
+- [ ] Definir e aprovar o contrato HTTP mínimo de `POST /transacoes` — request, resposta de aceitação e erros — antes de implementar o endpoint.

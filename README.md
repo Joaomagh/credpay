@@ -17,8 +17,8 @@ O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD
 | Implementado | `transacoes-service` com Java 21, Spring Boot 3.5.16 e Maven Wrapper 3.9.16 |
 | Implementado | health check do Spring Boot Actuator |
 | Implementado | transação válida nasce `PENDENTE` |
-| Implementado | valores nulo, zero e negativo são rejeitados pelo domínio |
-| Implementado | 5 testes automatizados verdes |
+| Implementado | valor ausente ou não positivo e moeda ausente são rejeitados pelo domínio |
+| Implementado | 6 testes automatizados verdes |
 | Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
 | Ainda não implementado | API de transações, persistência, RabbitMQ, `processamento-service`, containers, Kubernetes e CD |
@@ -67,7 +67,8 @@ Regras comprovadas até aqui:
 1. uma transação válida nasce `PENDENTE`;
 2. valor igual a zero é rejeitado;
 3. valor negativo é rejeitado;
-4. valor nulo é rejeitado com erro de domínio explícito.
+4. valor nulo é rejeitado com erro de domínio explícito;
+5. moeda nula é rejeitada com erro de domínio explícito.
 
 Não há endpoint de negócio, DTO, camada de aplicação, repository, JPA, banco, evento, ID ou timestamp. Esses elementos só serão adicionados quando um comportamento exigir.
 

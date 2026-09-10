@@ -47,4 +47,13 @@ class TransacaoTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("valor deve ser informado");
     }
+
+    @Test
+    void criar_deveRejeitar_quandoMoedaForNula() {
+        var valor = new BigDecimal("10.00");
+
+        assertThatThrownBy(() -> Transacao.criar(valor, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("moeda deve ser informada");
+    }
 }
