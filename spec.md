@@ -6,7 +6,7 @@
 
 **Fase atual:** 2 — Fundação reproduzível
 
-**Estado:** scaffolding, CI mínimo e três regras iniciais de domínio implementados; sem endpoint ou persistência
+**Estado:** scaffolding, CI mínimo e quatro regras iniciais de domínio implementados; sem endpoint ou persistência
 
 ## 1. Contexto e limites atuais
 
@@ -15,7 +15,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 - `transacoes-service`: recebe pedidos, valida regras de entrada, mantém o estado consultável e publica eventos;
 - `processamento-service`: consome pedidos de processamento, decide o resultado e publica o evento correspondente.
 
-**Implementado:** scaffolding mínimo do `transacoes-service`, CI com Maven `verify` e três regras de domínio: estado inicial `PENDENTE` e rejeição de valores zero ou negativo.
+**Implementado:** scaffolding mínimo do `transacoes-service`, CI com Maven `verify` e quatro regras de domínio: estado inicial `PENDENTE` e rejeição de valores nulo, zero ou negativo.
 
 **Ainda não implementado:** `processamento-service`, APIs de negócio, bancos, filas, contratos e infraestrutura. Eles serão registrados aqui quando nascerem de incrementos aprovados.
 
@@ -360,9 +360,10 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 
 | Regra | Casos/edge cases | Evidência automatizada |
 |---|---|---|
-| Uma transação válida nasce `PENDENTE` | fixture válida usa `10.00` e `BRL`; valores zero e negativo são rejeitados, mas `null` e moeda ainda não são validados | `TransacaoTest.criar_deveDefinirStatusPendente_quandoTransacaoForValida` |
+| Uma transação válida nasce `PENDENTE` | fixture válida usa `10.00` e `BRL`; valores nulo, zero e negativo são rejeitados, mas moeda ainda não é validada | `TransacaoTest.criar_deveDefinirStatusPendente_quandoTransacaoForValida` |
 | Uma transação não pode ser criada com valor zero | lança `IllegalArgumentException` com mensagem `valor deve ser maior que zero` | `TransacaoTest.criar_deveRejeitar_quandoValorForZero` |
 | Uma transação não pode ser criada com valor negativo | o menor caso testado usa `-0.01`; lança `IllegalArgumentException` com a mesma mensagem da fronteira zero | `TransacaoTest.criar_deveRejeitar_quandoValorForNegativo` |
+| Uma transação não pode ser criada com valor nulo | lança `IllegalArgumentException` com mensagem `valor deve ser informado`, antes de avaliar o sinal | `TransacaoTest.criar_deveRejeitar_quandoValorForNulo` |
 
 ### Evidência TDD — estado inicial `PENDENTE`
 
@@ -386,7 +387,15 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 - **Green focado:** após alterar a condição de `valor.signum() == 0` para `valor.signum() <= 0`, o mesmo comando executou 3 testes, com 0 falhas e 0 erros.
 - **Suíte:** `mvnw.cmd test` executou 4 testes, com 0 falhas e 0 erros.
 - **Erro de domínio atual:** `IllegalArgumentException` com mensagem `valor deve ser maior que zero`.
-- **Limite:** valor `null` e moeda inválida ainda não são rejeitados. Não há persistência nem API.
+- **Limite daquele ciclo:** valor `null` e moeda ainda não eram rejeitados; a validação de valor nulo foi adicionada no ciclo seguinte. Não há persistência nem API.
+
+### Evidência TDD — rejeição de valor nulo
+
+- **Red:** após adicionar somente o novo teste, `mvnw.cmd -Dtest=TransacaoTest test` executou 4 testes e falhou apenas no caso nulo: era esperada `IllegalArgumentException`, mas `valor.signum()` produziu `NullPointerException`.
+- **Green focado:** após adicionar uma guarda de nulo antes da validação de sinal, o mesmo comando executou 4 testes, com 0 falhas e 0 erros.
+- **Suíte e build:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 5 testes, com 0 falhas e 0 erros, e gerou o JAR.
+- **Erro de domínio:** `IllegalArgumentException` com mensagem `valor deve ser informado`.
+- **Limite:** moeda nula ainda não é rejeitada. Não há persistência nem API.
 
 ## 8. Persistência e consistência
 
@@ -526,6 +535,7 @@ Cobertura, scanners e outras ferramentas serão sinais auxiliares, não metas is
 | 2026-07-11 | uma transação com valor zero deve ser rejeitada | adicionar teste de exceção; confirmar que nada era lançado; implementar somente condição igual a zero | red com 1 falha; green focado com 2 testes e suíte com 3 testes | testar valor negativo sem ampliar outras validações |
 | 2026-09-10 | uma transação com valor negativo deve ser rejeitada | adicionar teste com `-0.01`; confirmar que nada era lançado; ampliar somente a condição de sinal | red com 1 falha; green focado com 3 testes e suíte com 4 testes | definir CI mínimo para executar as verificações em cada PR |
 | 2026-09-10 | o build do `transacoes-service` deve ser verificado automaticamente | criar workflow com Java 21, Maven Wrapper, cache, permissões mínimas e filtro de caminhos; executar localmente e em PR | `verify` local gerou o JAR e executou 4 testes sem falhas; primeiro job Linux passou em 32 segundos | CI mínimo comprovado; evoluir somente quando novos riscos entrarem no sistema |
+| 2026-09-10 | uma transação com valor nulo deve falhar com erro de domínio explícito | adicionar teste que espera `IllegalArgumentException`; confirmar o `NullPointerException` atual; adicionar guarda mínima e repetir verificações | red com 1 falha; green focado com 4 testes e `verify` com 5 testes | validar moeda ausente no próximo ciclo TDD |
 
 ## 16. Checklist por incremento
 
