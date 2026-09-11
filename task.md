@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Implementar em TDD `422 Unprocessable Entity` com `application/problem+json` quando `POST /transacoes` receber valor igual a zero, sem persistência.
+- [ ] Implementar em TDD `422 Problem Details` com a mensagem `moeda deve ser informada` quando `POST /transacoes` receber moeda ausente ou nula, sem persistência.
