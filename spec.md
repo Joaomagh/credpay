@@ -17,7 +17,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Implementado:** scaffolding mínimo do `transacoes-service`, CI com Maven `verify`, cinco regras de domínio e o happy path de `POST /transacoes`, que retorna uma representação não persistida com UUID e estado `PENDENTE`.
 
-**Ainda não implementado:** persistência e consulta de transações, contrato completo de erros HTTP, `processamento-service`, filas, contratos de eventos e infraestrutura. A API já retorna `422 Problem Details` para valor zero.
+**Ainda não implementado:** persistência e consulta de transações, contrato completo de erros HTTP, `processamento-service`, filas, contratos de eventos e infraestrutura. A API já retorna `422 Problem Details` para valor zero e moeda ausente ou nula.
 
 ## 2. Arquitetura vigente
 
@@ -340,11 +340,11 @@ credpay/
 
 ### API HTTP
 
-O contrato abaixo foi aprovado em 2026-09-10. O happy path e a resposta `422` para valor zero foram implementados em 2026-09-11. Os demais cenários de erro ainda exigem cobertura HTTP própria. A criação síncrona confirma que uma representação nasceu `PENDENTE`, mas ela ainda não é persistida; a decisão final de processamento permanece assíncrona.
+O contrato abaixo foi aprovado em 2026-09-10. O happy path e as respostas `422` para valor zero e moeda ausente ou nula foram implementados em 2026-09-11. Os demais cenários de erro ainda exigem cobertura HTTP própria. A criação síncrona confirma que uma representação nasceu `PENDENTE`, mas ela ainda não é persistida; a decisão final de processamento permanece assíncrona.
 
 | Método e rota | Request/response | Erros | Teste de contrato |
 |---|---|---|---|
-| `POST /transacoes` | JSON com `valor` e `moeda`; `201 Created`, `Location` e representação `PENDENTE` | planejado: `400` para JSON ilegível; `422` para entrada que viola o domínio; corpo `application/problem+json` | `TransacaoControllerTest.deveCriarTransacaoPendente` |
+| `POST /transacoes` | JSON com `valor` e `moeda`; `201 Created`, `Location` e representação `PENDENTE` | comprovado: `422` para valor zero e moeda ausente/nula; demais cenários abaixo ainda exigem verificação | `TransacaoControllerTest` e `TransacaoHttpTest` |
 
 #### Criação de transação
 
@@ -380,7 +380,7 @@ Resposta de sucesso:
 
 O `201` não significa que a transação foi aprovada. Ele confirma a criação do recurso; `APROVADA` ou `REJEITADA` serão resultados posteriores do fluxo assíncrono.
 
-O contrato de erros prevê `Content-Type: application/problem+json` e os campos padrão `type`, `title`, `status`, `detail` e `instance`. O caso de valor zero está comprovado; os demais permanecem como critérios a verificar:
+O contrato de erros prevê `Content-Type: application/problem+json` e os campos padrão `type`, `title`, `status`, `detail` e `instance`. Valor zero e moeda ausente/nula estão comprovados; os demais permanecem como critérios a verificar:
 
 | Situação | Status | `title` | `detail` esperado |
 |---|---:|---|---|
@@ -468,12 +468,20 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 ### Evidência TDD — resposta HTTP para valor zero
 
 - **Entrega:** [PR #11](https://github.com/Joaomagh/credpay/pull/11), com tratamento HTTP e teste sem mocks.
+- **CI e merge:** [execução Linux #12](https://github.com/Joaomagh/credpay/actions/runs/34648508957) aprovada para `ee15881`; merge confirmado em `27c3b18`.
 - **Red:** `mvnw.cmd -Dtest=TransacaoHttpTest test` executou 1 teste com 1 erro: `ServletException` causada pela `IllegalArgumentException` do domínio, ainda sem tradução HTTP.
 - **Green:** `TransacaoExceptionHandler` traduz `IllegalArgumentException` em `ProblemDetail` com status `422` e título `Transação inválida`; o teste focado passou.
 - **Aceite comprovado:** JSON com `valor: 0` e `moeda: BRL` produz `application/problem+json`, `type: about:blank`, `status: 422`, `detail: valor deve ser maior que zero`, `instance: /transacoes` e nenhum `Location`.
 - **Integração:** o teste usa `@SpringBootTest` e `MockMvc`, com controller, caso de uso e domínio reais, sem mocks; não abre uma porta de rede.
 - **Suíte:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 9 testes sem falhas e gerou o JAR. O wrapper funcionou no ambiente autorizado, sem mudanças no script.
-- **Limite:** o handler está restrito ao controller de transações, mas captura a categoria `IllegalArgumentException`; outros argumentos inválidos podem passar por ele. Isso não comprova os demais cenários do contrato. Moeda ausente ainda precisa de tratamento e teste próprios.
+- **Limite daquele ciclo:** o handler está restrito ao controller de transações, mas captura a categoria `IllegalArgumentException`; outros argumentos inválidos podem passar por ele. Isso não comprova os demais cenários do contrato. Moeda ausente foi tratada no ciclo seguinte.
+
+### Evidência TDD — resposta HTTP para moeda ausente ou nula
+
+- **Red:** o teste parametrizado enviou `{"valor":10.00}` e `{"valor":10.00,"moeda":null}`; ambos produziram `ServletException` causada por `NullPointerException` em `Currency.getInstance(null)`. O cenário de valor zero continuou verde.
+- **Green:** o controller preserva a ausência da moeda como `null` ao chamar o caso de uso; o domínio aplica a validação existente e o handler retorna `422` com `detail: moeda deve ser informada`.
+- **Evidência:** `mvnw.cmd -Dtest=TransacaoHttpTest test` executou 3 casos sem falhas; `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 11 testes sem falhas e gerou o JAR.
+- **Limite:** código de moeda inválido ainda exige mensagem segura e teste próprio. Não houve nova dependência, persistência ou mudança na regra de domínio.
 
 ## 8. Persistência e consistência
 

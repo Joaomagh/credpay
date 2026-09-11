@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Implementar em TDD `422 Problem Details` com a mensagem `moeda deve ser informada` quando `POST /transacoes` receber moeda ausente ou nula, sem persistência.
+- [ ] Implementar em TDD `422 Problem Details` com mensagem acionável quando `POST /transacoes` receber código de moeda inválido, sem persistência.

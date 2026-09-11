@@ -7,6 +7,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,6 +35,25 @@ class TransacaoHttpTest {
                 .andExpect(jsonPath("$.title").value("Transação inválida"))
                 .andExpect(jsonPath("$.status").value(422))
                 .andExpect(jsonPath("$.detail").value("valor deve ser maior que zero"))
+                .andExpect(jsonPath("$.instance").value("/transacoes"))
+                .andExpect(header().doesNotExist("Location"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "{\"valor\":10.00}",
+            "{\"valor\":10.00,\"moeda\":null}"
+    })
+    void criar_deveRetornar422_quandoMoedaForAusenteOuNula(String request) throws Exception {
+        mockMvc.perform(post("/transacoes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(request))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Transação inválida"))
+                .andExpect(jsonPath("$.status").value(422))
+                .andExpect(jsonPath("$.detail").value("moeda deve ser informada"))
                 .andExpect(jsonPath("$.instance").value("/transacoes"))
                 .andExpect(header().doesNotExist("Location"));
     }

@@ -24,7 +24,7 @@ public class TransacaoController {
 
     @PostMapping
     ResponseEntity<TransacaoResponse> criar(@RequestBody TransacaoRequest request) {
-        var moeda = Currency.getInstance(request.moeda());
+        var moeda = request.moeda() == null ? null : Currency.getInstance(request.moeda());
         var resultado = criarTransacao.executar(request.valor(), moeda);
         var location = URI.create("/transacoes/" + resultado.id());
         var response = new TransacaoResponse(
