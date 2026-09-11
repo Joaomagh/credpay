@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Definir e aprovar o contrato HTTP mínimo de `POST /transacoes` — request, resposta de aceitação e erros — antes de implementar o endpoint.
+- [ ] Implementar em TDD somente o happy path MVC de `POST /transacoes`, retornando `201 Created`, `Location` e estado `PENDENTE`, com caso de uso simulado e sem persistência.

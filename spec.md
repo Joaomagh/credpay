@@ -6,7 +6,7 @@
 
 **Fase atual:** 2 — Fundação reproduzível
 
-**Estado:** scaffolding, CI mínimo e cinco regras iniciais de domínio implementados; sem endpoint ou persistência
+**Estado:** scaffolding, CI mínimo, cinco regras iniciais de domínio e contrato de criação aprovados; sem endpoint ou persistência
 
 ## 1. Contexto e limites atuais
 
@@ -17,7 +17,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Implementado:** scaffolding mínimo do `transacoes-service`, CI com Maven `verify` e cinco regras de domínio: estado inicial `PENDENTE`, rejeição de valores nulo, zero ou negativo e rejeição de moeda nula.
 
-**Ainda não implementado:** `processamento-service`, APIs de negócio, bancos, filas, contratos e infraestrutura. Eles serão registrados aqui quando nascerem de incrementos aprovados.
+**Ainda não implementado:** `processamento-service`, endpoints de negócio, bancos, filas, contratos de eventos e infraestrutura. Eles serão registrados aqui quando nascerem de incrementos aprovados.
 
 ## 2. Arquitetura vigente
 
@@ -340,11 +340,56 @@ credpay/
 
 ### API HTTP
 
-Nenhum endpoint implementado.
+O contrato abaixo foi aprovado em 2026-09-10, mas ainda não está implementado. A criação síncrona confirma que o recurso foi criado e nasceu `PENDENTE`; a decisão final de processamento permanece assíncrona.
 
 | Método e rota | Request/response | Erros | Teste de contrato |
 |---|---|---|---|
-| — | — | — | — |
+| `POST /transacoes` | JSON com `valor` e `moeda`; `201 Created`, `Location` e representação `PENDENTE` | `400` para JSON ilegível; `422` para entrada que viola o domínio; corpo `application/problem+json` | planejado: `TransacaoControllerTest.criar_deveRetornar201_quandoRequisicaoForValida` |
+
+#### Criação de transação
+
+Request com `Content-Type: application/json`:
+
+```json
+{
+  "valor": 10.00,
+  "moeda": "BRL"
+}
+```
+
+- `valor`: número decimal obrigatório e maior que zero;
+- `moeda`: código alfabético ISO 4217 obrigatório, em letras maiúsculas;
+- o cliente não informa ID nem status.
+
+Resposta de sucesso:
+
+- status `201 Created`, pois a transação passa a existir como recurso, embora seu processamento final seja assíncrono;
+- header `Location: /transacoes/{id}`;
+- `Content-Type: application/json`;
+- ID gerado pelo servidor no formato UUID;
+- status inicial `PENDENTE`.
+
+```json
+{
+  "id": "7b8b61c2-9f63-4d74-9f8d-89cb52de0ed9",
+  "valor": 10.00,
+  "moeda": "BRL",
+  "status": "PENDENTE"
+}
+```
+
+O `201` não significa que a transação foi aprovada. Ele confirma a criação do recurso; `APROVADA` ou `REJEITADA` serão resultados posteriores do fluxo assíncrono.
+
+Respostas de erro usam `Content-Type: application/problem+json` e os campos padrão `type`, `title`, `status`, `detail` e `instance`:
+
+| Situação | Status | `title` | `detail` esperado |
+|---|---:|---|---|
+| corpo ausente, JSON malformado ou tipo JSON incompatível | `400 Bad Request` | `Requisição inválida` | descrição segura do erro de leitura |
+| `valor` ausente ou nulo | `422 Unprocessable Entity` | `Transação inválida` | `valor deve ser informado` |
+| `valor` igual ou menor que zero | `422 Unprocessable Entity` | `Transação inválida` | `valor deve ser maior que zero` |
+| `moeda` ausente, nula ou código ISO 4217 inválido | `422 Unprocessable Entity` | `Transação inválida` | descrição acionável do problema com a moeda |
+
+O contrato não inclui persistência, consulta, idempotência, autenticação, OpenAPI ou publicação de evento neste estágio. Cada capacidade terá teste e decisão próprios.
 
 ### Eventos
 
