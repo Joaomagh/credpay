@@ -10,7 +10,7 @@ Cada capacidade entra em um incremento pequeno, testado e documentado. Assim, o 
 
 ## Status atual
 
-O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD de domínio.
+O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD do domínio e da API.
 
 | Estado | Entrega |
 |---|---|
@@ -18,10 +18,11 @@ O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD
 | Implementado | health check do Spring Boot Actuator |
 | Implementado | transação válida nasce `PENDENTE` |
 | Implementado | valor ausente ou não positivo e moeda ausente são rejeitados pelo domínio |
-| Implementado | 6 testes automatizados verdes |
+| Implementado | `POST /transacoes` cria uma representação não persistida com UUID e estado `PENDENTE` |
+| Implementado | 8 testes automatizados verdes |
 | Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
-| Ainda não implementado | API de transações, persistência, RabbitMQ, `processamento-service`, containers, Kubernetes e CD |
+| Ainda não implementado | persistência, consulta, respostas de erro da API, RabbitMQ, `processamento-service`, containers, Kubernetes e CD |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 
@@ -51,11 +52,17 @@ O `transacoes-service` contém o scaffolding executável e um domínio proposita
 transacoes-service/
 ├── src/main/java/br/com/credpay/transacoes/
 │   ├── TransacoesServiceApplication.java
+│   ├── api/TransacaoController.java
+│   ├── application/
+│   │   ├── CriarTransacao.java
+│   │   └── CriarTransacaoService.java
 │   └── domain/
 │       ├── StatusTransacao.java
 │       └── Transacao.java
 ├── src/test/java/br/com/credpay/transacoes/
 │   ├── TransacoesServiceApplicationTest.java
+│   ├── api/TransacaoControllerTest.java
+│   ├── application/CriarTransacaoServiceTest.java
 │   └── domain/TransacaoTest.java
 ├── mvnw
 ├── mvnw.cmd
@@ -70,7 +77,7 @@ Regras comprovadas até aqui:
 4. valor nulo é rejeitado com erro de domínio explícito;
 5. moeda nula é rejeitada com erro de domínio explícito.
 
-Não há endpoint de negócio, DTO, camada de aplicação, repository, JPA, banco, evento, ID ou timestamp. Esses elementos só serão adicionados quando um comportamento exigir.
+O endpoint de criação já possui adaptador MVC e um caso de uso mínimo. O UUID existe apenas na resposta: ainda não há repository, JPA, banco, consulta, evento ou timestamp, e nada sobrevive ao processo da aplicação.
 
 ## Executando o estado atual
 
@@ -88,9 +95,15 @@ Com a aplicação ativa, em outro terminal:
 
 ```powershell
 Invoke-RestMethod http://localhost:8080/actuator/health
+
+Invoke-RestMethod `
+  -Method Post `
+  -Uri http://localhost:8080/transacoes `
+  -ContentType 'application/json' `
+  -Body '{"valor":10.00,"moeda":"BRL"}'
 ```
 
-Em Linux ou macOS, use `./mvnw` no lugar de `.\mvnw.cmd`. O único endpoint disponível atualmente é o health check operacional; ainda não existe API de transações.
+Em Linux ou macOS, use `./mvnw` no lugar de `.\mvnw.cmd`. O `POST /transacoes` retorna `201 Created`, `Location` e uma representação `PENDENTE`, mas ainda não persiste o recurso.
 
 ## Arquitetura planejada
 

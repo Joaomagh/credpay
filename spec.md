@@ -2,11 +2,11 @@
 
 > Fonte de verdade do sistema que existe hoje. Preencher somente com decisão tomada, contrato aceito ou comportamento comprovado. Planos futuros ficam em `CREDPAY_PLAN.md`; próximas ações ficam em `task.md`.
 
-**Última atualização:** 2026-09-10
+**Última atualização:** 2026-09-11
 
 **Fase atual:** 2 — Fundação reproduzível
 
-**Estado:** scaffolding, CI mínimo, cinco regras iniciais de domínio e contrato de criação aprovados; sem endpoint ou persistência
+**Estado:** scaffolding, CI mínimo, cinco regras iniciais de domínio e happy path de criação HTTP implementados; sem persistência
 
 ## 1. Contexto e limites atuais
 
@@ -15,9 +15,9 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 - `transacoes-service`: recebe pedidos, valida regras de entrada, mantém o estado consultável e publica eventos;
 - `processamento-service`: consome pedidos de processamento, decide o resultado e publica o evento correspondente.
 
-**Implementado:** scaffolding mínimo do `transacoes-service`, CI com Maven `verify` e cinco regras de domínio: estado inicial `PENDENTE`, rejeição de valores nulo, zero ou negativo e rejeição de moeda nula.
+**Implementado:** scaffolding mínimo do `transacoes-service`, CI com Maven `verify`, cinco regras de domínio e o happy path de `POST /transacoes`, que retorna uma representação não persistida com UUID e estado `PENDENTE`.
 
-**Ainda não implementado:** `processamento-service`, endpoints de negócio, bancos, filas, contratos de eventos e infraestrutura. Eles serão registrados aqui quando nascerem de incrementos aprovados.
+**Ainda não implementado:** persistência e consulta de transações, respostas HTTP de erro, `processamento-service`, filas, contratos de eventos e infraestrutura. Eles serão registrados aqui quando nascerem de incrementos aprovados.
 
 ## 2. Arquitetura vigente
 
@@ -340,11 +340,11 @@ credpay/
 
 ### API HTTP
 
-O contrato abaixo foi aprovado em 2026-09-10, mas ainda não está implementado. A criação síncrona confirma que o recurso foi criado e nasceu `PENDENTE`; a decisão final de processamento permanece assíncrona.
+O contrato abaixo foi aprovado em 2026-09-10. Seu happy path foi implementado em 2026-09-11; as respostas de erro permanecem planejadas. A criação síncrona confirma que uma representação nasceu `PENDENTE`, mas ela ainda não é persistida; a decisão final de processamento permanece assíncrona.
 
 | Método e rota | Request/response | Erros | Teste de contrato |
 |---|---|---|---|
-| `POST /transacoes` | JSON com `valor` e `moeda`; `201 Created`, `Location` e representação `PENDENTE` | `400` para JSON ilegível; `422` para entrada que viola o domínio; corpo `application/problem+json` | planejado: `TransacaoControllerTest.criar_deveRetornar201_quandoRequisicaoForValida` |
+| `POST /transacoes` | JSON com `valor` e `moeda`; `201 Created`, `Location` e representação `PENDENTE` | planejado: `400` para JSON ilegível; `422` para entrada que viola o domínio; corpo `application/problem+json` | `TransacaoControllerTest.deveCriarTransacaoPendente` |
 
 #### Criação de transação
 
@@ -389,7 +389,7 @@ Respostas de erro usam `Content-Type: application/problem+json` e os campos padr
 | `valor` igual ou menor que zero | `422 Unprocessable Entity` | `Transação inválida` | `valor deve ser maior que zero` |
 | `moeda` ausente, nula ou código ISO 4217 inválido | `422 Unprocessable Entity` | `Transação inválida` | descrição acionável do problema com a moeda |
 
-O contrato não inclui persistência, consulta, idempotência, autenticação, OpenAPI ou publicação de evento neste estágio. Cada capacidade terá teste e decisão próprios.
+O contrato não inclui persistência, consulta, idempotência, autenticação, OpenAPI ou publicação de evento neste estágio. O UUID retornado não identifica um registro durável e não pode ser consultado. Cada capacidade terá teste e decisão próprios.
 
 ### Eventos
 
@@ -410,6 +410,7 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 | Uma transação não pode ser criada com valor negativo | o menor caso testado usa `-0.01`; lança `IllegalArgumentException` com a mesma mensagem da fronteira zero | `TransacaoTest.criar_deveRejeitar_quandoValorForNegativo` |
 | Uma transação não pode ser criada com valor nulo | lança `IllegalArgumentException` com mensagem `valor deve ser informado`, antes de avaliar o sinal | `TransacaoTest.criar_deveRejeitar_quandoValorForNulo` |
 | Uma transação não pode ser criada com moeda nula | lança `IllegalArgumentException` com mensagem `moeda deve ser informada` | `TransacaoTest.criar_deveRejeitar_quandoMoedaForNula` |
+| O happy path HTTP cria uma representação pendente | request `10.00`/`BRL`; retorna `201`, `Location`, UUID, valor, moeda e `PENDENTE` | `TransacaoControllerTest.deveCriarTransacaoPendente` |
 
 ### Evidência TDD — estado inicial `PENDENTE`
 
@@ -450,6 +451,17 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 - **Suíte e build:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 6 testes, com 0 falhas e 0 erros, e gerou o JAR.
 - **Erro de domínio:** `IllegalArgumentException` com mensagem `moeda deve ser informada`.
 - **Limite:** a transação ainda não armazena valor ou moeda e não possui ID ou timestamp. Não há persistência nem API.
+
+### Evidência TDD — happy path de `POST /transacoes`
+
+- **Red MVC:** após adicionar somente `TransacaoControllerTest`, a compilação falhou pela ausência de `TransacaoController`, `CriarTransacao` e `Resultado`.
+- **Green MVC:** após criar o controller e a porta do caso de uso, o teste MVC isolado executou 1 teste, com 0 falhas e 0 erros, usando `@MockitoBean` para simular a aplicação.
+- **Red aplicação:** `CriarTransacaoServiceTest` falhou na compilação pela ausência de `CriarTransacaoService`.
+- **Green aplicação:** a implementação mínima criou o domínio, gerou um UUID e devolveu `PENDENTE`, sem repository ou infraestrutura; o teste focado executou 1 teste sem falhas.
+- **Suíte e build:** Maven 3.9.16 com `verify` executou 8 testes, com 0 falhas e 0 erros, e gerou o JAR executável. O contexto Spring completo iniciou com o controller conectado ao caso de uso.
+- **Smoke test do JAR:** uma chamada real a `POST /transacoes` retornou `201`, `Location: /transacoes/{uuid}`, `Content-Type: application/json` e o corpo esperado com estado `PENDENTE`.
+- **Limite:** a resposta não é persistida, não pode ser consultada e não publica evento. Os erros HTTP `400` e `422` ainda não foram implementados.
+- **Nota de ambiente:** nesta execução Windows, `mvnw.cmd` parou antes do Maven por uma falha do script ao avaliar `~/.m2`; as evidências foram repetidas com a distribuição Maven 3.9.16 já instalada pelo wrapper. O workflow Linux continua usando `./mvnw`.
 
 ## 8. Persistência e consistência
 
@@ -579,7 +591,7 @@ Cobertura, scanners e outras ferramentas serão sinais auxiliares, não metas is
 
 | Pattern | Local | Problema resolvido | Trade-off | Evidência |
 |---|---|---|---|---|
-| — | — | — | — | — |
+| Porta de caso de uso | `application/CriarTransacao.java` | desacoplar o adaptador HTTP da execução da criação | uma abstração adicional para um único caso de uso | `TransacaoControllerTest` substitui a porta por mock; contexto completo usa `CriarTransacaoService` |
 
 ## 15. Registro de experimentos
 
@@ -591,6 +603,7 @@ Cobertura, scanners e outras ferramentas serão sinais auxiliares, não metas is
 | 2026-09-10 | o build do `transacoes-service` deve ser verificado automaticamente | criar workflow com Java 21, Maven Wrapper, cache, permissões mínimas e filtro de caminhos; executar localmente e em PR | `verify` local gerou o JAR e executou 4 testes sem falhas; primeiro job Linux passou em 32 segundos | CI mínimo comprovado; evoluir somente quando novos riscos entrarem no sistema |
 | 2026-09-10 | uma transação com valor nulo deve falhar com erro de domínio explícito | adicionar teste que espera `IllegalArgumentException`; confirmar o `NullPointerException` atual; adicionar guarda mínima e repetir verificações | red com 1 falha; green focado com 4 testes e `verify` com 5 testes | validar moeda ausente no próximo ciclo TDD |
 | 2026-09-10 | uma transação sem moeda deve ser rejeitada | adicionar teste com valor válido e moeda nula; confirmar que nenhuma exceção era lançada; adicionar guarda mínima | red com 1 falha; green focado com 5 testes e `verify` com 6 testes | definir o contrato HTTP mínimo de criação antes de implementar o endpoint |
+| 2026-09-11 | o happy path HTTP deve criar uma representação `PENDENTE` sem persistência | testar o adaptador MVC com caso de uso simulado; depois testar e implementar o caso de uso mínimo para manter a aplicação inicializável | dois reds de compilação pelo motivo esperado; testes focados verdes; `verify` com 8 testes e JAR gerado | implementar uma resposta `422 Problem Details` para valor zero |
 
 ## 16. Checklist por incremento
 
