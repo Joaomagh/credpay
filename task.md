@@ -1,7 +1,7 @@
 # CredPay — Tarefas
 
-> Uma sessão = um resultado pequeno e verificável. Atualizar ao encerrar; não iniciar “Próximo” sem aprovação do Navigator.
+> Uma sessão = um resultado pequeno e verificável. Atualizar ao encerrar; executar apenas o próximo comportamento aprovado e registrar evidências antes de avançar.
 
 ## Próximo
 
-- [ ] Implementar em TDD somente o happy path MVC de `POST /transacoes`, retornando `201 Created`, `Location` e estado `PENDENTE`, com caso de uso simulado e sem persistência.
+- [ ] Implementar em TDD `422 Unprocessable Entity` com `application/problem+json` quando `POST /transacoes` receber valor igual a zero, sem persistência.

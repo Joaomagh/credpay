@@ -3,7 +3,7 @@ package br.com.credpay.transacoes.domain;
 import java.math.BigDecimal;
 import java.util.Currency;
 
-final class Transacao {
+public final class Transacao {
 
     private final StatusTransacao status;
 
@@ -11,7 +11,7 @@ final class Transacao {
         this.status = status;
     }
 
-    static Transacao criar(BigDecimal valor, Currency moeda) {
+    public static Transacao criar(BigDecimal valor, Currency moeda) {
         if (valor == null) {
             throw new IllegalArgumentException("valor deve ser informado");
         }
@@ -27,7 +27,7 @@ final class Transacao {
         return new Transacao(StatusTransacao.PENDENTE);
     }
 
-    StatusTransacao status() {
+    public StatusTransacao status() {
         return status;
     }
 }
