@@ -19,10 +19,11 @@ O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD
 | Implementado | transação válida nasce `PENDENTE` |
 | Implementado | valor ausente ou não positivo e moeda ausente são rejeitados pelo domínio |
 | Implementado | `POST /transacoes` cria uma representação não persistida com UUID e estado `PENDENTE` |
-| Implementado | 8 testes automatizados verdes |
+| Implementado | `422 Problem Details` para criação com valor zero, testado com controller, caso de uso e domínio reais |
+| Implementado | 9 testes automatizados verdes |
 | Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
-| Ainda não implementado | persistência, consulta, respostas de erro da API, RabbitMQ, `processamento-service`, containers, Kubernetes e CD |
+| Ainda não implementado | persistência, consulta, contrato completo de erros da API, RabbitMQ, `processamento-service`, containers, Kubernetes e CD |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 
@@ -53,6 +54,7 @@ transacoes-service/
 ├── src/main/java/br/com/credpay/transacoes/
 │   ├── TransacoesServiceApplication.java
 │   ├── api/TransacaoController.java
+│   ├── api/TransacaoExceptionHandler.java
 │   ├── application/
 │   │   ├── CriarTransacao.java
 │   │   └── CriarTransacaoService.java
@@ -62,6 +64,7 @@ transacoes-service/
 ├── src/test/java/br/com/credpay/transacoes/
 │   ├── TransacoesServiceApplicationTest.java
 │   ├── api/TransacaoControllerTest.java
+│   ├── api/TransacaoHttpTest.java
 │   ├── application/CriarTransacaoServiceTest.java
 │   └── domain/TransacaoTest.java
 ├── mvnw

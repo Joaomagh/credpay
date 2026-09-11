@@ -17,7 +17,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Implementado:** scaffolding mínimo do `transacoes-service`, CI com Maven `verify`, cinco regras de domínio e o happy path de `POST /transacoes`, que retorna uma representação não persistida com UUID e estado `PENDENTE`.
 
-**Ainda não implementado:** persistência e consulta de transações, respostas HTTP de erro, `processamento-service`, filas, contratos de eventos e infraestrutura. Eles serão registrados aqui quando nascerem de incrementos aprovados.
+**Ainda não implementado:** persistência e consulta de transações, contrato completo de erros HTTP, `processamento-service`, filas, contratos de eventos e infraestrutura. A API já retorna `422 Problem Details` para valor zero.
 
 ## 2. Arquitetura vigente
 
@@ -340,7 +340,7 @@ credpay/
 
 ### API HTTP
 
-O contrato abaixo foi aprovado em 2026-09-10. Seu happy path foi implementado em 2026-09-11; as respostas de erro permanecem planejadas. A criação síncrona confirma que uma representação nasceu `PENDENTE`, mas ela ainda não é persistida; a decisão final de processamento permanece assíncrona.
+O contrato abaixo foi aprovado em 2026-09-10. O happy path e a resposta `422` para valor zero foram implementados em 2026-09-11. Os demais cenários de erro ainda exigem cobertura HTTP própria. A criação síncrona confirma que uma representação nasceu `PENDENTE`, mas ela ainda não é persistida; a decisão final de processamento permanece assíncrona.
 
 | Método e rota | Request/response | Erros | Teste de contrato |
 |---|---|---|---|
@@ -380,7 +380,7 @@ Resposta de sucesso:
 
 O `201` não significa que a transação foi aprovada. Ele confirma a criação do recurso; `APROVADA` ou `REJEITADA` serão resultados posteriores do fluxo assíncrono.
 
-Respostas de erro usam `Content-Type: application/problem+json` e os campos padrão `type`, `title`, `status`, `detail` e `instance`:
+O contrato de erros prevê `Content-Type: application/problem+json` e os campos padrão `type`, `title`, `status`, `detail` e `instance`. O caso de valor zero está comprovado; os demais permanecem como critérios a verificar:
 
 | Situação | Status | `title` | `detail` esperado |
 |---|---:|---|---|
@@ -455,6 +455,7 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 ### Evidência TDD — happy path de `POST /transacoes`
 
 - **Entrega:** [PR #10](https://github.com/Joaomagh/credpay/pull/10), com implementação, testes e documentação do happy path.
+- **CI e merge:** [execução Linux #9](https://github.com/Joaomagh/credpay/actions/runs/34648072809) aprovada para `ff5076d`; merge confirmado em `f75f663`.
 - **Red MVC:** após adicionar somente `TransacaoControllerTest`, a compilação falhou pela ausência de `TransacaoController`, `CriarTransacao` e `Resultado`.
 - **Green MVC:** após criar o controller e a porta do caso de uso, o teste MVC isolado executou 1 teste, com 0 falhas e 0 erros, usando `@MockitoBean` para simular a aplicação.
 - **Red aplicação:** `CriarTransacaoServiceTest` falhou na compilação pela ausência de `CriarTransacaoService`.
@@ -463,6 +464,15 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 - **Smoke test do JAR:** uma chamada real a `POST /transacoes` retornou `201`, `Location: /transacoes/{uuid}`, `Content-Type: application/json` e o corpo esperado com estado `PENDENTE`.
 - **Limite:** a resposta não é persistida, não pode ser consultada e não publica evento. Os erros HTTP `400` e `422` ainda não foram implementados.
 - **Nota de ambiente:** nesta execução Windows, `mvnw.cmd` parou antes do Maven por uma falha do script ao avaliar `~/.m2`; as evidências foram repetidas com a distribuição Maven 3.9.16 já instalada pelo wrapper. O workflow Linux continua usando `./mvnw`.
+
+### Evidência TDD — resposta HTTP para valor zero
+
+- **Red:** `mvnw.cmd -Dtest=TransacaoHttpTest test` executou 1 teste com 1 erro: `ServletException` causada pela `IllegalArgumentException` do domínio, ainda sem tradução HTTP.
+- **Green:** `TransacaoExceptionHandler` traduz `IllegalArgumentException` em `ProblemDetail` com status `422` e título `Transação inválida`; o teste focado passou.
+- **Aceite comprovado:** JSON com `valor: 0` e `moeda: BRL` produz `application/problem+json`, `type: about:blank`, `status: 422`, `detail: valor deve ser maior que zero`, `instance: /transacoes` e nenhum `Location`.
+- **Integração:** o teste usa `@SpringBootTest` e `MockMvc`, com controller, caso de uso e domínio reais, sem mocks; não abre uma porta de rede.
+- **Suíte:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 9 testes sem falhas e gerou o JAR. O wrapper funcionou no ambiente autorizado, sem mudanças no script.
+- **Limite:** o handler está restrito ao controller de transações, mas captura a categoria `IllegalArgumentException`; outros argumentos inválidos podem passar por ele. Isso não comprova os demais cenários do contrato. Moeda ausente ainda precisa de tratamento e teste próprios.
 
 ## 8. Persistência e consistência
 
