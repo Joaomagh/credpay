@@ -17,7 +17,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Implementado:** scaffolding mínimo do `transacoes-service`, CI com Maven `verify`, cinco regras de domínio e o happy path de `POST /transacoes`, que retorna uma representação não persistida com UUID e estado `PENDENTE`.
 
-**Ainda não implementado:** persistência e consulta de transações, contrato completo de erros HTTP, `processamento-service`, filas, contratos de eventos e infraestrutura. A API já retorna `422 Problem Details` para valor zero e moeda ausente, nula ou inválida.
+**Ainda não implementado:** persistência e consulta de transações, cobertura completa do contrato HTTP, `processamento-service`, filas, contratos de eventos e infraestrutura. A API já retorna `422 Problem Details` para valor zero e moeda ausente, nula ou inválida, além de `400 Problem Details` para falhas de leitura do corpo.
 
 ## 2. Arquitetura vigente
 
@@ -344,7 +344,7 @@ O contrato abaixo foi aprovado em 2026-09-10. O happy path e as respostas `422` 
 
 | Método e rota | Request/response | Erros | Teste de contrato |
 |---|---|---|---|
-| `POST /transacoes` | JSON com `valor` e `moeda`; `201 Created`, `Location` e representação `PENDENTE` | comprovado: `422` para valor zero e moeda ausente/nula/inválida; demais cenários abaixo ainda exigem verificação | `TransacaoControllerTest` e `TransacaoHttpTest` |
+| `POST /transacoes` | JSON com `valor` e `moeda`; `201 Created`, `Location` e representação `PENDENTE` | comprovado: `400` para corpo ilegível e `422` para valor zero e moeda ausente/nula/inválida; valor negativo/ausente/nulo ainda exige teste HTTP próprio | `TransacaoControllerTest` e `TransacaoHttpTest` |
 
 #### Criação de transação
 
@@ -380,11 +380,11 @@ Resposta de sucesso:
 
 O `201` não significa que a transação foi aprovada. Ele confirma a criação do recurso; `APROVADA` ou `REJEITADA` serão resultados posteriores do fluxo assíncrono.
 
-O contrato de erros prevê `Content-Type: application/problem+json` e os campos padrão `type`, `title`, `status`, `detail` e `instance`. Valor zero e moeda ausente/nula/inválida estão comprovados; os demais permanecem como critérios a verificar:
+O contrato de erros usa `Content-Type: application/problem+json` e os campos padrão `type`, `title`, `status`, `detail` e `instance`. Corpo ilegível, valor zero e moeda ausente/nula/inválida estão comprovados; valor negativo/ausente/nulo ainda exige cobertura HTTP:
 
 | Situação | Status | `title` | `detail` esperado |
 |---|---:|---|---|
-| corpo ausente, JSON malformado ou tipo JSON incompatível | `400 Bad Request` | `Requisição inválida` | descrição segura do erro de leitura |
+| corpo ausente/nulo, JSON malformado ou tipo JSON incompatível | `400 Bad Request` | `Requisição inválida` | `corpo deve conter um JSON válido com valor numérico e moeda textual` |
 | `valor` ausente ou nulo | `422 Unprocessable Entity` | `Transação inválida` | `valor deve ser informado` |
 | `valor` igual ou menor que zero | `422 Unprocessable Entity` | `Transação inválida` | `valor deve ser maior que zero` |
 | `moeda` ausente ou nula | `422 Unprocessable Entity` | `Transação inválida` | `moeda deve ser informada` |
@@ -488,11 +488,20 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 
 ### Evidência TDD — resposta HTTP para código de moeda inválido
 
+- **Entrega:** [PR #13](https://github.com/Joaomagh/credpay/pull/13); [CI Linux #17](https://github.com/Joaomagh/credpay/actions/runs/34718184490) verde para `f40bdc6`; merge em `83018d8`.
 - **Red:** `mvnw.cmd -Dtest=TransacaoHttpTest test` executou 7 casos; os 4 novos (`ZZZ`, vazio, `brl` e ` BRL `) falharam por ausência de `$.detail`. Os 3 anteriores passaram.
 - **Green:** o adaptador HTTP traduz somente a falha de `Currency.getInstance` para uma mensagem estável e acionável. Não há normalização silenciosa de espaços ou caixa; moeda ausente continua sendo validada pelo domínio.
 - **Verificação:** teste focado com 7 casos verdes; `mvnw.cmd --batch-mode --no-transfer-progress verify` com 15 testes sem falhas e JAR gerado.
 - **Revisão:** mensagem não inclui o valor enviado nem detalhes internos da JVM; `pom.xml` e domínio não mudaram. O warning conhecido de autoanexação Mockito/Byte Buddy permanece.
 - **Limite:** a validação usa o catálogo de moedas do JDK, não uma lista de moedas comercialmente suportadas. Erros de leitura JSON serão tratados no próximo incremento.
+
+### Evidência TDD — resposta HTTP para corpo ilegível
+
+- **Red:** teste HTTP com 12 casos, 5 falhas `Content type not set`. Corpo vazio, JSON literal `null`, JSON incompleto e objetos no lugar de valor/moeda retornavam `400` sem representação Problem Details no MockMvc.
+- **Green:** o advice existente trata `HttpMessageNotReadableException` com `400`, título `Requisição inválida` e mensagem fixa; não devolve mensagem do parser, stack trace ou conteúdo do pedido.
+- **Verificação:** `mvnw.cmd -Dtest=TransacaoHttpTest test` com 12 casos verdes; `mvnw.cmd --batch-mode --no-transfer-progress verify` com 20 testes verdes e JAR gerado.
+- **Revisão:** tratamento limitado ao controller de transações; sem alteração no domínio, dependências ou `pom.xml`. Warning conhecido Mockito/Byte Buddy permanece.
+- **Limite:** os testes cobrem falhas de leitura, não impõem ainda uma política estrita para todas as coerções escalares do Jackson. Cobertura HTTP de valor negativo/ausente/nulo e sucesso com contexto real será concluída no próximo incremento.
 
 ## 8. Persistência e consistência
 

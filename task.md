@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Implementar em TDD `400 Problem Details` seguro para corpo ausente, JSON malformado ou tipo incompatível em `POST /transacoes`, sem persistência.
+- [ ] Completar a cobertura HTTP com contexto real para criação válida e valor negativo/ausente/nulo, sem persistência; registrar como testes de regressão os comportamentos que já estiverem verdes.
