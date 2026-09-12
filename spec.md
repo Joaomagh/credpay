@@ -17,7 +17,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Implementado:** scaffolding mínimo do `transacoes-service`, CI com Maven `verify`, cinco regras de domínio e o happy path de `POST /transacoes`, que retorna uma representação não persistida com UUID e estado `PENDENTE`.
 
-**Ainda não implementado:** persistência e consulta de transações, política estrita de tipos JSON, `processamento-service`, filas, contratos de eventos e infraestrutura. A API já retorna `422 Problem Details` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida, além de `400 Problem Details` para falhas de leitura do corpo.
+**Ainda não implementado:** persistência e consulta de transações, rejeição de coerções escalares no campo `moeda`, `processamento-service`, filas, contratos de eventos e infraestrutura. A API já retorna `422 Problem Details` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida, além de `400 Problem Details` para falhas de leitura do corpo e valor monetário textual.
 
 ## 2. Arquitetura vigente
 
@@ -357,7 +357,7 @@ Request com `Content-Type: application/json`:
 }
 ```
 
-- `valor`: número decimal obrigatório e maior que zero;
+- `valor`: número JSON obrigatório e maior que zero, lido como `BigDecimal`; `10` e `10.00` são aceitos, mas textos como `"10.00"`, `"0"`, vazio ou espaços retornam `400` sem conversão automática;
 - `moeda`: código alfabético ISO 4217 obrigatório, em letras maiúsculas;
 - o cliente não informa ID nem status.
 
@@ -385,6 +385,7 @@ O contrato de erros usa `Content-Type: application/problem+json` e os campos pad
 | Situação | Status | `title` | `detail` esperado |
 |---|---:|---|---|
 | corpo ausente/nulo, JSON malformado ou tipo JSON incompatível | `400 Bad Request` | `Requisição inválida` | `corpo deve conter um JSON válido com valor numérico e moeda textual` |
+| `valor` enviado como texto, inclusive vazio ou espaços | `400 Bad Request` | `Requisição inválida` | `corpo deve conter um JSON válido com valor numérico e moeda textual` |
 | `valor` ausente ou nulo | `422 Unprocessable Entity` | `Transação inválida` | `valor deve ser informado` |
 | `valor` igual ou menor que zero | `422 Unprocessable Entity` | `Transação inválida` | `valor deve ser maior que zero` |
 | `moeda` ausente ou nula | `422 Unprocessable Entity` | `Transação inválida` | `moeda deve ser informada` |
@@ -507,12 +508,23 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 ### Revisão e regressão — contrato HTTP com contexto real
 
 - **Entrega:** [PR #15](https://github.com/Joaomagh/credpay/pull/15), com testes de regressão e atualização dos documentos.
+- **CI e merge:** [CI Linux #22](https://github.com/Joaomagh/credpay/actions/runs/34718913568) verde para `ee2b7e5`; merge em `9ca45af`.
 - **Objetivo:** cobrir criação válida e valor negativo/ausente/nulo com controller, caso de uso e domínio reais. O teste MVC isolado continua cobrindo a fronteira separadamente.
 - **Resultado:** os novos casos passaram na primeira execução; são testes de regressão de comportamento existente, não um novo ciclo red/green. Nenhum código de produção foi alterado.
 - **Sucesso:** `201`, valor/moeda/estado esperados, UUID canônico e `Location` contendo exatamente o ID da resposta.
 - **Erros:** `422` com Problem Details completo e sem `Location`; mensagens `valor deve ser informado` e `valor deve ser maior que zero` conforme o caso.
 - **Verificação:** teste HTTP focado com 16 casos verdes; Maven Wrapper `verify` com 24 testes verdes e JAR gerado. `pom.xml` e `src/main` inalterados.
 - **Revisão periódica:** falta tornar explícita a rejeição de valor monetário textual no JSON, sem coerção silenciosa. Persistência e consulta continuam ausentes; warnings Mockito/Byte Buddy permanecem registrados.
+
+### Evidência TDD — valor monetário textual no JSON
+
+- **Red:** `mvnw.cmd -Dtest=TransacaoHttpTest test` executou 20 casos; os 4 novos falharam: `"10.00"` retornava `201`, enquanto `"0"`, vazio e espaços retornavam `422` após conversão para número ou nulo.
+- **Green:** `api/JacksonConfiguration` customiza o mapper gerenciado pelo Spring para rejeitar `String` e `EmptyString` ao desserializar `BigDecimal`. O handler existente traduz a falha de leitura para `400 Problem Details` com mensagem segura.
+- **Regressão:** número inteiro `10` e decimal `10.00` continuam retornando `201`; ausência/nulo e números não positivos mantêm suas respostas `422`.
+- **Verificação final:** teste HTTP focado com 21 casos verdes; Maven Wrapper `verify` com 29 testes sem falhas e JAR gerado. `pom.xml`, controller e domínio não mudaram; nenhuma dependência foi adicionada.
+- **Trade-off:** a configuração se aplica a todo `BigDecimal` desserializado pelo mapper gerenciado deste serviço, não apenas ao campo atual. Não altera serialização, cálculo, escala ou arredondamento. Futuras entradas `BigDecimal` devem seguir esse contrato ou declarar uma exceção testada.
+- **Revisão:** números/booleanos no campo `moeda` ainda exigem ciclo próprio. O warning conhecido Mockito/Byte Buddy permanece.
+- **Referência:** [API de coerção Jackson](https://www.javadoc.io/static/com.fasterxml.jackson.core/jackson-databind/2.19.2/com/fasterxml/jackson/databind/cfg/MutableCoercionConfig.html); comportamento comprovado com as dependências já fixadas pelo projeto.
 
 ## 8. Persistência e consistência
 

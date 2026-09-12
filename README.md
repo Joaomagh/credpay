@@ -21,10 +21,11 @@ O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD
 | Implementado | `POST /transacoes` cria uma representação não persistida com UUID e estado `PENDENTE` |
 | Implementado | `422 Problem Details` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida, com contexto real |
 | Implementado | `400 Problem Details` seguro para corpo ausente/nulo, JSON malformado ou estrutura incompatível |
-| Implementado | 24 testes automatizados verdes, incluindo sucesso HTTP sem mocks |
+| Implementado | valor monetário textual no JSON é rejeitado com `400`, sem conversão silenciosa |
+| Implementado | 29 testes automatizados verdes, incluindo sucesso HTTP sem mocks |
 | Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
-| Ainda não implementado | persistência, consulta, tipos JSON estritos, RabbitMQ, `processamento-service`, containers, Kubernetes e CD |
+| Ainda não implementado | persistência, consulta, tipos JSON estritos para moeda, RabbitMQ, `processamento-service`, containers, Kubernetes e CD |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 
@@ -56,6 +57,7 @@ transacoes-service/
 │   ├── TransacoesServiceApplication.java
 │   ├── api/TransacaoController.java
 │   ├── api/TransacaoExceptionHandler.java
+│   ├── api/JacksonConfiguration.java
 │   ├── application/
 │   │   ├── CriarTransacao.java
 │   │   └── CriarTransacaoService.java
