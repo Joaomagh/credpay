@@ -530,6 +530,7 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 
 ### Evidência TDD — moeda não textual no JSON
 
+- **Entrega:** [PR #17](https://github.com/Joaomagh/credpay/pull/17), com rejeição de coerção de moeda e testes HTTP.
 - **Red:** teste HTTP com 25 casos; os 4 novos (`123`, `1.5`, `true`, `false`) falharam por retornar `422` em vez de `400`, após conversão automática para texto.
 - **Green:** a configuração Jackson rejeita coerções de `Integer`, `Float` e `Boolean` para `String`. O handler de leitura existente retorna `400 Problem Details`, sem incluir o valor recebido ou mensagens internas.
 - **Verificação:** `mvnw.cmd -Dtest=TransacaoHttpTest test` com 25 casos verdes; `mvnw.cmd --batch-mode --no-transfer-progress verify` com 33 testes verdes e JAR gerado.
