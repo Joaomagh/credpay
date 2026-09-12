@@ -1,11 +1,15 @@
 package br.com.credpay.transacoes.api;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.UUID;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -21,6 +25,42 @@ class TransacaoHttpTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Test
+    void criar_deveRetornar201ComStatusPendente_quandoTransacaoForValida() throws Exception {
+        var response = mockMvc.perform(post("/transacoes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"valor\":10.00,\"moeda\":\"BRL\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.valor").value(10.00))
+                .andExpect(jsonPath("$.moeda").value("BRL"))
+                .andExpect(jsonPath("$.status").value("PENDENTE"))
+                .andReturn().getResponse();
+
+        var id = objectMapper.readTree(response.getContentAsByteArray()).get("id").asText();
+        assertThat(UUID.fromString(id).toString()).isEqualTo(id);
+        assertThat(response.getHeader("Location")).isEqualTo("/transacoes/" + id);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"{\"moeda\":\"BRL\"}", "{\"valor\":null,\"moeda\":\"BRL\"}"})
+    void criar_deveRetornar422_quandoValorForAusenteOuNulo(String request) throws Exception {
+        mockMvc.perform(post("/transacoes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(request))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Transação inválida"))
+                .andExpect(jsonPath("$.status").value(422))
+                .andExpect(jsonPath("$.detail").value("valor deve ser informado"))
+                .andExpect(jsonPath("$.instance").value("/transacoes"))
+                .andExpect(header().doesNotExist("Location"));
+    }
 
     @ParameterizedTest
     @ValueSource(strings = {
@@ -45,13 +85,12 @@ class TransacaoHttpTest {
                 .andExpect(header().doesNotExist("Location"));
     }
 
-    @Test
-    void criar_deveRetornar422_quandoValorForZero() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"0", "-0.01"})
+    void criar_deveRetornar422_quandoValorForZeroOuNegativo(String valor) throws Exception {
         mockMvc.perform(post("/transacoes")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"valor":0,"moeda":"BRL"}
-                                """))
+                        .content("{\"valor\":%s,\"moeda\":\"BRL\"}".formatted(valor)))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.type").value("about:blank"))

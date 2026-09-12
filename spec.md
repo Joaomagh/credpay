@@ -6,7 +6,7 @@
 
 **Fase atual:** 2 — Fundação reproduzível
 
-**Estado:** scaffolding, CI mínimo, cinco regras iniciais de domínio e happy path de criação HTTP implementados; sem persistência
+**Estado:** scaffolding, CI, cinco regras de domínio e criação HTTP com respostas `201`, `400` e `422` testadas; sem persistência
 
 ## 1. Contexto e limites atuais
 
@@ -17,7 +17,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Implementado:** scaffolding mínimo do `transacoes-service`, CI com Maven `verify`, cinco regras de domínio e o happy path de `POST /transacoes`, que retorna uma representação não persistida com UUID e estado `PENDENTE`.
 
-**Ainda não implementado:** persistência e consulta de transações, cobertura completa do contrato HTTP, `processamento-service`, filas, contratos de eventos e infraestrutura. A API já retorna `422 Problem Details` para valor zero e moeda ausente, nula ou inválida, além de `400 Problem Details` para falhas de leitura do corpo.
+**Ainda não implementado:** persistência e consulta de transações, política estrita de tipos JSON, `processamento-service`, filas, contratos de eventos e infraestrutura. A API já retorna `422 Problem Details` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida, além de `400 Problem Details` para falhas de leitura do corpo.
 
 ## 2. Arquitetura vigente
 
@@ -340,11 +340,11 @@ credpay/
 
 ### API HTTP
 
-O contrato abaixo foi aprovado em 2026-09-10. O happy path e as respostas `422` para valor zero e moeda ausente ou nula foram implementados em 2026-09-11; códigos de moeda inválidos ganharam mensagem estável em 2026-09-12. Os demais cenários de erro ainda exigem cobertura HTTP própria. A criação síncrona confirma que uma representação nasceu `PENDENTE`, mas ela ainda não é persistida; o processamento assíncrono permanece planejado.
+O contrato abaixo foi aprovado em 2026-09-10. Até 2026-09-12, há testes HTTP do happy path, falhas de leitura e validações de valor/moeda. Isso não implica cobertura exaustiva: coerções escalares do Jackson ainda exigem política e testes próprios. A criação síncrona confirma que uma representação nasceu `PENDENTE`, mas ela ainda não é persistida; o processamento assíncrono permanece planejado.
 
 | Método e rota | Request/response | Erros | Teste de contrato |
 |---|---|---|---|
-| `POST /transacoes` | JSON com `valor` e `moeda`; `201 Created`, `Location` e representação `PENDENTE` | comprovado: `400` para corpo ilegível e `422` para valor zero e moeda ausente/nula/inválida; valor negativo/ausente/nulo ainda exige teste HTTP próprio | `TransacaoControllerTest` e `TransacaoHttpTest` |
+| `POST /transacoes` | JSON com `valor` e `moeda`; `201 Created`, `Location` e representação `PENDENTE` | `400` para corpo ilegível; `422` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida | `TransacaoControllerTest` e `TransacaoHttpTest` |
 
 #### Criação de transação
 
@@ -380,7 +380,7 @@ Resposta de sucesso:
 
 O `201` não significa que a transação foi aprovada. Ele confirma a criação do recurso; `APROVADA` ou `REJEITADA` serão resultados posteriores do fluxo assíncrono.
 
-O contrato de erros usa `Content-Type: application/problem+json` e os campos padrão `type`, `title`, `status`, `detail` e `instance`. Corpo ilegível, valor zero e moeda ausente/nula/inválida estão comprovados; valor negativo/ausente/nulo ainda exige cobertura HTTP:
+O contrato de erros usa `Content-Type: application/problem+json` e os campos padrão `type`, `title`, `status`, `detail` e `instance`. Os cenários da tabela têm exemplos comprovados por `TransacaoHttpTest`, sem mocks:
 
 | Situação | Status | `title` | `detail` esperado |
 |---|---:|---|---|
@@ -497,11 +497,21 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 
 ### Evidência TDD — resposta HTTP para corpo ilegível
 
+- **Entrega:** [PR #14](https://github.com/Joaomagh/credpay/pull/14); [CI Linux #19](https://github.com/Joaomagh/credpay/actions/runs/34718467849) verde para `3e34747`; merge em `06441d1`.
 - **Red:** teste HTTP com 12 casos, 5 falhas `Content type not set`. Corpo vazio, JSON literal `null`, JSON incompleto e objetos no lugar de valor/moeda retornavam `400` sem representação Problem Details no MockMvc.
 - **Green:** o advice existente trata `HttpMessageNotReadableException` com `400`, título `Requisição inválida` e mensagem fixa; não devolve mensagem do parser, stack trace ou conteúdo do pedido.
 - **Verificação:** `mvnw.cmd -Dtest=TransacaoHttpTest test` com 12 casos verdes; `mvnw.cmd --batch-mode --no-transfer-progress verify` com 20 testes verdes e JAR gerado.
 - **Revisão:** tratamento limitado ao controller de transações; sem alteração no domínio, dependências ou `pom.xml`. Warning conhecido Mockito/Byte Buddy permanece.
 - **Limite:** os testes cobrem falhas de leitura, não impõem ainda uma política estrita para todas as coerções escalares do Jackson. Cobertura HTTP de valor negativo/ausente/nulo e sucesso com contexto real será concluída no próximo incremento.
+
+### Revisão e regressão — contrato HTTP com contexto real
+
+- **Objetivo:** cobrir criação válida e valor negativo/ausente/nulo com controller, caso de uso e domínio reais. O teste MVC isolado continua cobrindo a fronteira separadamente.
+- **Resultado:** os novos casos passaram na primeira execução; são testes de regressão de comportamento existente, não um novo ciclo red/green. Nenhum código de produção foi alterado.
+- **Sucesso:** `201`, valor/moeda/estado esperados, UUID canônico e `Location` contendo exatamente o ID da resposta.
+- **Erros:** `422` com Problem Details completo e sem `Location`; mensagens `valor deve ser informado` e `valor deve ser maior que zero` conforme o caso.
+- **Verificação:** teste HTTP focado com 16 casos verdes; Maven Wrapper `verify` com 24 testes verdes e JAR gerado. `pom.xml` e `src/main` inalterados.
+- **Revisão periódica:** falta tornar explícita a rejeição de valor monetário textual no JSON, sem coerção silenciosa. Persistência e consulta continuam ausentes; warnings Mockito/Byte Buddy permanecem registrados.
 
 ## 8. Persistência e consistência
 
