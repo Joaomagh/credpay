@@ -40,6 +40,23 @@ class TransacaoHttpTest {
     }
 
     @ParameterizedTest
+    @ValueSource(strings = {"ZZZ", "", "brl", " BRL "})
+    void criar_deveRetornar422_quandoCodigoDaMoedaForInvalido(String moeda) throws Exception {
+        mockMvc.perform(post("/transacoes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"valor\":10.00,\"moeda\":\"%s\"}".formatted(moeda)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Transação inválida"))
+                .andExpect(jsonPath("$.status").value(422))
+                .andExpect(jsonPath("$.detail").value(
+                        "moeda deve ser um código ISO 4217 válido em letras maiúsculas"))
+                .andExpect(jsonPath("$.instance").value("/transacoes"))
+                .andExpect(header().doesNotExist("Location"));
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {
             "{\"valor\":10.00}",
             "{\"valor\":10.00,\"moeda\":null}"
