@@ -2,7 +2,7 @@
 
 > Fonte de verdade do sistema que existe hoje. Preencher somente com decisão tomada, contrato aceito ou comportamento comprovado. Planos futuros ficam em `CREDPAY_PLAN.md`; próximas ações ficam em `task.md`.
 
-**Última atualização:** 2026-09-11
+**Última atualização:** 2026-09-12
 
 **Fase atual:** 2 — Fundação reproduzível
 
@@ -17,7 +17,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Implementado:** scaffolding mínimo do `transacoes-service`, CI com Maven `verify`, cinco regras de domínio e o happy path de `POST /transacoes`, que retorna uma representação não persistida com UUID e estado `PENDENTE`.
 
-**Ainda não implementado:** persistência e consulta de transações, contrato completo de erros HTTP, `processamento-service`, filas, contratos de eventos e infraestrutura. A API já retorna `422 Problem Details` para valor zero e moeda ausente ou nula.
+**Ainda não implementado:** persistência e consulta de transações, contrato completo de erros HTTP, `processamento-service`, filas, contratos de eventos e infraestrutura. A API já retorna `422 Problem Details` para valor zero e moeda ausente, nula ou inválida.
 
 ## 2. Arquitetura vigente
 
@@ -340,11 +340,11 @@ credpay/
 
 ### API HTTP
 
-O contrato abaixo foi aprovado em 2026-09-10. O happy path e as respostas `422` para valor zero e moeda ausente ou nula foram implementados em 2026-09-11. Os demais cenários de erro ainda exigem cobertura HTTP própria. A criação síncrona confirma que uma representação nasceu `PENDENTE`, mas ela ainda não é persistida; a decisão final de processamento permanece assíncrona.
+O contrato abaixo foi aprovado em 2026-09-10. O happy path e as respostas `422` para valor zero e moeda ausente ou nula foram implementados em 2026-09-11; códigos de moeda inválidos ganharam mensagem estável em 2026-09-12. Os demais cenários de erro ainda exigem cobertura HTTP própria. A criação síncrona confirma que uma representação nasceu `PENDENTE`, mas ela ainda não é persistida; o processamento assíncrono permanece planejado.
 
 | Método e rota | Request/response | Erros | Teste de contrato |
 |---|---|---|---|
-| `POST /transacoes` | JSON com `valor` e `moeda`; `201 Created`, `Location` e representação `PENDENTE` | comprovado: `422` para valor zero e moeda ausente/nula; demais cenários abaixo ainda exigem verificação | `TransacaoControllerTest` e `TransacaoHttpTest` |
+| `POST /transacoes` | JSON com `valor` e `moeda`; `201 Created`, `Location` e representação `PENDENTE` | comprovado: `422` para valor zero e moeda ausente/nula/inválida; demais cenários abaixo ainda exigem verificação | `TransacaoControllerTest` e `TransacaoHttpTest` |
 
 #### Criação de transação
 
@@ -380,14 +380,15 @@ Resposta de sucesso:
 
 O `201` não significa que a transação foi aprovada. Ele confirma a criação do recurso; `APROVADA` ou `REJEITADA` serão resultados posteriores do fluxo assíncrono.
 
-O contrato de erros prevê `Content-Type: application/problem+json` e os campos padrão `type`, `title`, `status`, `detail` e `instance`. Valor zero e moeda ausente/nula estão comprovados; os demais permanecem como critérios a verificar:
+O contrato de erros prevê `Content-Type: application/problem+json` e os campos padrão `type`, `title`, `status`, `detail` e `instance`. Valor zero e moeda ausente/nula/inválida estão comprovados; os demais permanecem como critérios a verificar:
 
 | Situação | Status | `title` | `detail` esperado |
 |---|---:|---|---|
 | corpo ausente, JSON malformado ou tipo JSON incompatível | `400 Bad Request` | `Requisição inválida` | descrição segura do erro de leitura |
 | `valor` ausente ou nulo | `422 Unprocessable Entity` | `Transação inválida` | `valor deve ser informado` |
 | `valor` igual ou menor que zero | `422 Unprocessable Entity` | `Transação inválida` | `valor deve ser maior que zero` |
-| `moeda` ausente, nula ou código ISO 4217 inválido | `422 Unprocessable Entity` | `Transação inválida` | descrição acionável do problema com a moeda |
+| `moeda` ausente ou nula | `422 Unprocessable Entity` | `Transação inválida` | `moeda deve ser informada` |
+| código de `moeda` inválido | `422 Unprocessable Entity` | `Transação inválida` | `moeda deve ser um código ISO 4217 válido em letras maiúsculas` |
 
 O contrato não inclui persistência, consulta, idempotência, autenticação, OpenAPI ou publicação de evento neste estágio. O UUID retornado não identifica um registro durável e não pode ser consultado. Cada capacidade terá teste e decisão próprios.
 
@@ -479,10 +480,19 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 ### Evidência TDD — resposta HTTP para moeda ausente ou nula
 
 - **Entrega:** [PR #12](https://github.com/Joaomagh/credpay/pull/12), com teste parametrizado e reutilização da validação de domínio.
+- **CI e merge:** [execução Linux #15](https://github.com/Joaomagh/credpay/actions/runs/34649016292) aprovada para `cebb0b0`; merge confirmado em `4d4e8a7`.
 - **Red:** o teste parametrizado enviou `{"valor":10.00}` e `{"valor":10.00,"moeda":null}`; ambos produziram `ServletException` causada por `NullPointerException` em `Currency.getInstance(null)`. O cenário de valor zero continuou verde.
 - **Green:** o controller preserva a ausência da moeda como `null` ao chamar o caso de uso; o domínio aplica a validação existente e o handler retorna `422` com `detail: moeda deve ser informada`.
 - **Evidência:** `mvnw.cmd -Dtest=TransacaoHttpTest test` executou 3 casos sem falhas; `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 11 testes sem falhas e gerou o JAR.
 - **Limite:** código de moeda inválido ainda exige mensagem segura e teste próprio. Não houve nova dependência, persistência ou mudança na regra de domínio.
+
+### Evidência TDD — resposta HTTP para código de moeda inválido
+
+- **Red:** `mvnw.cmd -Dtest=TransacaoHttpTest test` executou 7 casos; os 4 novos (`ZZZ`, vazio, `brl` e ` BRL `) falharam por ausência de `$.detail`. Os 3 anteriores passaram.
+- **Green:** o adaptador HTTP traduz somente a falha de `Currency.getInstance` para uma mensagem estável e acionável. Não há normalização silenciosa de espaços ou caixa; moeda ausente continua sendo validada pelo domínio.
+- **Verificação:** teste focado com 7 casos verdes; `mvnw.cmd --batch-mode --no-transfer-progress verify` com 15 testes sem falhas e JAR gerado.
+- **Revisão:** mensagem não inclui o valor enviado nem detalhes internos da JVM; `pom.xml` e domínio não mudaram. O warning conhecido de autoanexação Mockito/Byte Buddy permanece.
+- **Limite:** a validação usa o catálogo de moedas do JDK, não uma lista de moedas comercialmente suportadas. Erros de leitura JSON serão tratados no próximo incremento.
 
 ## 8. Persistência e consistência
 

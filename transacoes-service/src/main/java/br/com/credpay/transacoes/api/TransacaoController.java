@@ -24,7 +24,7 @@ public class TransacaoController {
 
     @PostMapping
     ResponseEntity<TransacaoResponse> criar(@RequestBody TransacaoRequest request) {
-        var moeda = request.moeda() == null ? null : Currency.getInstance(request.moeda());
+        var moeda = converterMoeda(request.moeda());
         var resultado = criarTransacao.executar(request.valor(), moeda);
         var location = URI.create("/transacoes/" + resultado.id());
         var response = new TransacaoResponse(
@@ -34,6 +34,18 @@ public class TransacaoController {
                 resultado.status().name());
 
         return ResponseEntity.created(location).body(response);
+    }
+
+    private Currency converterMoeda(String codigo) {
+        if (codigo == null) {
+            return null;
+        }
+        try {
+            return Currency.getInstance(codigo);
+        } catch (IllegalArgumentException exception) {
+            throw new IllegalArgumentException(
+                    "moeda deve ser um código ISO 4217 válido em letras maiúsculas", exception);
+        }
     }
 
     record TransacaoRequest(BigDecimal valor, String moeda) {

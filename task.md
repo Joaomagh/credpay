@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Implementar em TDD `422 Problem Details` com mensagem acionável quando `POST /transacoes` receber código de moeda inválido, sem persistência.
+- [ ] Implementar em TDD `400 Problem Details` seguro para corpo ausente, JSON malformado ou tipo incompatível em `POST /transacoes`, sem persistência.
