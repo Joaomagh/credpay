@@ -20,7 +20,8 @@ O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD
 | Implementado | valor ausente ou não positivo e moeda ausente são rejeitados pelo domínio |
 | Implementado | `POST /transacoes` cria uma representação não persistida com UUID e estado `PENDENTE` |
 | Implementado | `422 Problem Details` para valor zero e moeda ausente/nula/inválida, testado com controller, caso de uso e domínio reais |
-| Implementado | 15 testes automatizados verdes |
+| Implementado | `400 Problem Details` seguro para corpo ausente/nulo, JSON malformado ou estrutura incompatível |
+| Implementado | 20 testes automatizados verdes |
 | Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
 | Ainda não implementado | persistência, consulta, contrato completo de erros da API, RabbitMQ, `processamento-service`, containers, Kubernetes e CD |

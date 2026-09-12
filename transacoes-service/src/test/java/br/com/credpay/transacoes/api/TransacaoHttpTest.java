@@ -22,6 +22,29 @@ class TransacaoHttpTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "",
+            "null",
+            "{\"valor\":",
+            "{\"valor\":{},\"moeda\":\"BRL\"}",
+            "{\"valor\":10.00,\"moeda\":{}}"
+    })
+    void criar_deveRetornar400_quandoCorpoNaoPuderSerLido(String request) throws Exception {
+        mockMvc.perform(post("/transacoes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(request))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Requisição inválida"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.detail").value(
+                        "corpo deve conter um JSON válido com valor numérico e moeda textual"))
+                .andExpect(jsonPath("$.instance").value("/transacoes"))
+                .andExpect(header().doesNotExist("Location"));
+    }
+
     @Test
     void criar_deveRetornar422_quandoValorForZero() throws Exception {
         mockMvc.perform(post("/transacoes")
