@@ -10,7 +10,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.UUID;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,11 +28,12 @@ class TransacaoHttpTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Test
-    void criar_deveRetornar201ComStatusPendente_quandoTransacaoForValida() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"10.00", "10"})
+    void criar_deveRetornar201ComStatusPendente_quandoTransacaoForValida(String valor) throws Exception {
         var response = mockMvc.perform(post("/transacoes")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"valor\":10.00,\"moeda\":\"BRL\"}"))
+                        .content("{\"valor\":%s,\"moeda\":\"BRL\"}".formatted(valor)))
                 .andExpect(status().isCreated())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.valor").value(10.00))
@@ -44,6 +44,23 @@ class TransacaoHttpTest {
         var id = objectMapper.readTree(response.getContentAsByteArray()).get("id").asText();
         assertThat(UUID.fromString(id).toString()).isEqualTo(id);
         assertThat(response.getHeader("Location")).isEqualTo("/transacoes/" + id);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"10.00", "0", "", "   "})
+    void criar_deveRetornar400_quandoValorForTexto(String valor) throws Exception {
+        mockMvc.perform(post("/transacoes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"valor\":\"%s\",\"moeda\":\"BRL\"}".formatted(valor)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Requisição inválida"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.detail").value(
+                        "corpo deve conter um JSON válido com valor numérico e moeda textual"))
+                .andExpect(jsonPath("$.instance").value("/transacoes"))
+                .andExpect(header().doesNotExist("Location"));
     }
 
     @ParameterizedTest

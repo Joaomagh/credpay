@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Rejeitar em TDD valor monetário enviado como texto no JSON de `POST /transacoes`, retornando `400 Problem Details`, sem coerção silenciosa ou persistência.
+- [ ] Rejeitar em TDD moeda enviada como número ou booleano no JSON de `POST /transacoes`, retornando `400 Problem Details`, sem coerção silenciosa ou persistência.
