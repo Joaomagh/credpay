@@ -119,6 +119,23 @@ class TransacaoHttpTest {
     }
 
     @ParameterizedTest
+    @ValueSource(strings = {"123", "1.5", "true", "false"})
+    void criar_deveRetornar400_quandoMoedaNaoForTexto(String moeda) throws Exception {
+        mockMvc.perform(post("/transacoes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"valor\":10.00,\"moeda\":%s}".formatted(moeda)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Requisição inválida"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.detail").value(
+                        "corpo deve conter um JSON válido com valor numérico e moeda textual"))
+                .andExpect(jsonPath("$.instance").value("/transacoes"))
+                .andExpect(header().doesNotExist("Location"));
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {"ZZZ", "", "brl", " BRL "})
     void criar_deveRetornar422_quandoCodigoDaMoedaForInvalido(String moeda) throws Exception {
         mockMvc.perform(post("/transacoes")

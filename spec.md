@@ -17,7 +17,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Implementado:** scaffolding mínimo do `transacoes-service`, CI com Maven `verify`, cinco regras de domínio e o happy path de `POST /transacoes`, que retorna uma representação não persistida com UUID e estado `PENDENTE`.
 
-**Ainda não implementado:** persistência e consulta de transações, rejeição de coerções escalares no campo `moeda`, `processamento-service`, filas, contratos de eventos e infraestrutura. A API já retorna `422 Problem Details` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida, além de `400 Problem Details` para falhas de leitura do corpo e valor monetário textual.
+**Ainda não implementado:** persistência e consulta de transações, `processamento-service`, filas, contratos de eventos e infraestrutura. A API já retorna `422 Problem Details` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida, além de `400 Problem Details` para falhas de leitura, valor textual e moeda numérica/booleana.
 
 ## 2. Arquitetura vigente
 
@@ -340,7 +340,7 @@ credpay/
 
 ### API HTTP
 
-O contrato abaixo foi aprovado em 2026-09-10. Até 2026-09-12, há testes HTTP do happy path, falhas de leitura e validações de valor/moeda. Isso não implica cobertura exaustiva: coerções escalares do Jackson ainda exigem política e testes próprios. A criação síncrona confirma que uma representação nasceu `PENDENTE`, mas ela ainda não é persistida; o processamento assíncrono permanece planejado.
+O contrato abaixo foi aprovado em 2026-09-10. Até 2026-09-12, há testes HTTP do happy path, falhas de leitura, validações de valor/moeda e rejeição das coerções escalares explicitadas abaixo. Isso não implica cobertura exaustiva de todas as entradas JSON. A criação síncrona confirma que uma representação nasceu `PENDENTE`, mas ela ainda não é persistida; o processamento assíncrono permanece planejado.
 
 | Método e rota | Request/response | Erros | Teste de contrato |
 |---|---|---|---|
@@ -358,7 +358,7 @@ Request com `Content-Type: application/json`:
 ```
 
 - `valor`: número JSON obrigatório e maior que zero, lido como `BigDecimal`; `10` e `10.00` são aceitos, mas textos como `"10.00"`, `"0"`, vazio ou espaços retornam `400` sem conversão automática;
-- `moeda`: código alfabético ISO 4217 obrigatório, em letras maiúsculas;
+- `moeda`: texto com código alfabético ISO 4217 obrigatório, em letras maiúsculas; números e booleanos JSON retornam `400` sem conversão automática para texto;
 - o cliente não informa ID nem status.
 
 Resposta de sucesso:
@@ -386,6 +386,7 @@ O contrato de erros usa `Content-Type: application/problem+json` e os campos pad
 |---|---:|---|---|
 | corpo ausente/nulo, JSON malformado ou tipo JSON incompatível | `400 Bad Request` | `Requisição inválida` | `corpo deve conter um JSON válido com valor numérico e moeda textual` |
 | `valor` enviado como texto, inclusive vazio ou espaços | `400 Bad Request` | `Requisição inválida` | `corpo deve conter um JSON válido com valor numérico e moeda textual` |
+| `moeda` enviada como número ou booleano | `400 Bad Request` | `Requisição inválida` | `corpo deve conter um JSON válido com valor numérico e moeda textual` |
 | `valor` ausente ou nulo | `422 Unprocessable Entity` | `Transação inválida` | `valor deve ser informado` |
 | `valor` igual ou menor que zero | `422 Unprocessable Entity` | `Transação inválida` | `valor deve ser maior que zero` |
 | `moeda` ausente ou nula | `422 Unprocessable Entity` | `Transação inválida` | `moeda deve ser informada` |
@@ -518,6 +519,7 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 
 ### Evidência TDD — valor monetário textual no JSON
 
+- **Entrega:** [PR #16](https://github.com/Joaomagh/credpay/pull/16); [CI Linux #24](https://github.com/Joaomagh/credpay/actions/runs/34719823665) verde para `1839eea`; merge em `c0f2ac7`.
 - **Red:** `mvnw.cmd -Dtest=TransacaoHttpTest test` executou 20 casos; os 4 novos falharam: `"10.00"` retornava `201`, enquanto `"0"`, vazio e espaços retornavam `422` após conversão para número ou nulo.
 - **Green:** `api/JacksonConfiguration` customiza o mapper gerenciado pelo Spring para rejeitar `String` e `EmptyString` ao desserializar `BigDecimal`. O handler existente traduz a falha de leitura para `400 Problem Details` com mensagem segura.
 - **Regressão:** número inteiro `10` e decimal `10.00` continuam retornando `201`; ausência/nulo e números não positivos mantêm suas respostas `422`.
@@ -525,6 +527,16 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 - **Trade-off:** a configuração se aplica a todo `BigDecimal` desserializado pelo mapper gerenciado deste serviço, não apenas ao campo atual. Não altera serialização, cálculo, escala ou arredondamento. Futuras entradas `BigDecimal` devem seguir esse contrato ou declarar uma exceção testada.
 - **Revisão:** números/booleanos no campo `moeda` ainda exigem ciclo próprio. O warning conhecido Mockito/Byte Buddy permanece.
 - **Referência:** [API de coerção Jackson](https://www.javadoc.io/static/com.fasterxml.jackson.core/jackson-databind/2.19.2/com/fasterxml/jackson/databind/cfg/MutableCoercionConfig.html); comportamento comprovado com as dependências já fixadas pelo projeto.
+
+### Evidência TDD — moeda não textual no JSON
+
+- **Entrega:** [PR #17](https://github.com/Joaomagh/credpay/pull/17), com rejeição de coerção de moeda e testes HTTP.
+- **Red:** teste HTTP com 25 casos; os 4 novos (`123`, `1.5`, `true`, `false`) falharam por retornar `422` em vez de `400`, após conversão automática para texto.
+- **Green:** a configuração Jackson rejeita coerções de `Integer`, `Float` e `Boolean` para `String`. O handler de leitura existente retorna `400 Problem Details`, sem incluir o valor recebido ou mensagens internas.
+- **Verificação:** `mvnw.cmd -Dtest=TransacaoHttpTest test` com 25 casos verdes; `mvnw.cmd --batch-mode --no-transfer-progress verify` com 33 testes verdes e JAR gerado.
+- **Regressão:** `BRL` permanece aceito; moeda ausente/nula e códigos textuais inválidos mantêm `422`; a rejeição de valor textual segue ativa. `pom.xml`, domínio e controller não mudaram.
+- **Trade-off:** aplica-se aos campos `String` lidos pelo mapper gerenciado do serviço. Futuras entradas textuais devem respeitar esse contrato. Não muda serialização nem introduz validação de negócio no parser.
+- **Revisão periódica:** o domínio ainda valida valor/moeda sem conservá-los na instância; o caso de uso devolve esses dados diretamente da entrada. O próximo incremento preservará os dados validados na transação, com TDD e sem banco. Warning Mockito/Byte Buddy permanece conhecido.
 
 ## 8. Persistência e consistência
 

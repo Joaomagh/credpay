@@ -12,6 +12,14 @@ import org.springframework.context.annotation.Configuration;
 class JacksonConfiguration {
 
     @Bean
+    Jackson2ObjectMapperBuilderCustomizer rejeitarNumeroOuBooleanoComoTexto() {
+        return builder -> builder.postConfigurer(mapper -> mapper.coercionConfigFor(String.class)
+                .setCoercion(CoercionInputShape.Integer, CoercionAction.Fail)
+                .setCoercion(CoercionInputShape.Float, CoercionAction.Fail)
+                .setCoercion(CoercionInputShape.Boolean, CoercionAction.Fail));
+    }
+
+    @Bean
     Jackson2ObjectMapperBuilderCustomizer rejeitarTextoComoBigDecimal() {
         return builder -> builder.postConfigurer(mapper -> mapper.coercionConfigFor(BigDecimal.class)
                 .setCoercion(CoercionInputShape.String, CoercionAction.Fail)

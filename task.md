@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Rejeitar em TDD moeda enviada como número ou booleano no JSON de `POST /transacoes`, retornando `400 Problem Details`, sem coerção silenciosa ou persistência.
+- [ ] Preservar valor e moeda validados na instância de `Transacao` em TDD e usar esses dados no resultado da criação, sem persistência, ID de domínio ou timestamp.
