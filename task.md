@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Provar que buscar uma transação por UUID inexistente retorna vazio, sem converter falhas de infraestrutura em ausência, ainda sem conectar o endpoint ao banco.
+- [ ] Provar que uma inserção em transação revertida não fica visível em leitura posterior, ainda sem conectar o endpoint ao banco.
