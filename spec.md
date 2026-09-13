@@ -712,6 +712,7 @@ Antes do código de persistência, disponibilizar o engine Linux e confirmar ver
 
 ### 8.5 Constraint monetária no PostgreSQL
 
+- **Entrega:** [PR #24](https://github.com/Joaomagh/credpay/pull/24).
 - **Red:** após adicionar somente o teste parametrizado, PostgreSQL 17.11 com V1 aceitou por SQL direto `0`, `-0.01`, `NaN`, `Infinity` e `-Infinity`. O teste focado executou 7 casos: os 2 round-trips válidos passaram e os 5 casos novos falharam com `Expecting code to raise a throwable`.
 - **Green:** a migration V2 adiciona `ck_transacoes_valor_positivo_finito`, exigindo `valor > 0` e excluindo explicitamente os três valores especiais do tipo `numeric`. Nenhuma validação Java, dependência ou contrato HTTP mudou.
 - **Evidência do controle:** o teste usa `JdbcTemplate` e `INSERT` direto, sem fábrica de domínio ou adapter JPA, e exige `DataIntegrityViolationException` com o nome da constraint na stack trace. Assim, a falha é atribuída ao controle do banco, não a outra validação da aplicação.
