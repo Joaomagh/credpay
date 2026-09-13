@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Definir e verificar a baseline mínima de persistência: dependências compatíveis com o Spring Boot, imagem PostgreSQL com versão/digest e executor local/CI para Testcontainers, sem implementar o adapter ou conectar o endpoint ao banco ainda.
+- [ ] Disponibilizar e validar o executor Docker Linux para a baseline PostgreSQL/Testcontainers da seção 8.2 de `spec.md`, comprovando engine acessível e compatibilidade antes de iniciar o adapter em TDD; não conectar o endpoint ao banco ainda.

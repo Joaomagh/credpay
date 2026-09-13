@@ -557,6 +557,7 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 ### Evidência TDD — identidade UUID no domínio
 
 - **Entrega:** [PR #20](https://github.com/Joaomagh/credpay/pull/20), com identidade no domínio, integração no caso de uso, testes e documentação.
+- **CI e merge:** [CI Linux #33](https://github.com/Joaomagh/credpay/actions/runs/34737914142) verde para `cb37690`; merge em `1d28c94`.
 - **Red de preservação:** após adicionar somente o teste parametrizado com dois UUIDs conhecidos, `mvnw.cmd -Dtest=TransacaoTest test` falhou na compilação porque a fábrica ainda não aceitava UUID. Nenhum caso executou nessa etapa.
 - **Green de preservação:** a fábrica passou a receber `UUID`, conservado em campo privado final e exposto por `id()`. Os chamadores foram migrados para a nova assinatura; 9 casos de domínio passaram.
 - **Red de nulidade:** adicionando somente o teste de ID nulo, o mesmo comando executou 10 casos com uma falha `Expecting code to raise a throwable`; os 9 anteriores passaram.
@@ -642,6 +643,41 @@ Depois do round-trip, ciclos separados deverão provar ID ausente, colisão sem 
 - O executor de Testcontainers precisa acessar o daemon Docker e, inicialmente, obter imagens. Isso é incompatível com o `sandbox-core` diagnóstico sem Docker socket/rede; este contrato não afirma que os testes rodarão dentro do AI-Jail. Um executor de desenvolvimento confiável deverá ser explicitado antes da execução.
 - A ordem será: identidade no domínio em TDD; baseline de dependências/imagem e ambiente; round-trip do adapter em TDD; testes de constraints e limites monetários; somente depois conectar o endpoint à persistência.
 - Permanecem fora: implementação neste incremento, consulta HTTP, idempotência, atualização de status, timestamp/auditoria, outbox, RabbitMQ, segundo serviço, Docker Compose, Kubernetes e CD. A existência do contrato não altera o status atual de aplicação sem persistência.
+
+### 8.2 Baseline de dependências e executor de persistência
+
+Decisão documental em 2026-09-13. As dependências abaixo ainda não foram adicionadas; a compatibilidade em execução deverá ser comprovada pelo primeiro teste PostgreSQL, não apenas pelo gerenciamento de versões.
+
+| Dependência futura | Escopo Maven | Versão gerenciada | Motivo |
+|---|---|---|---|
+| `org.springframework.boot:spring-boot-starter-data-jpa` | compile | 3.5.16 | JPA, transações locais e Hibernate para o adapter |
+| `org.postgresql:postgresql` | runtime | 42.7.11 | driver JDBC do PostgreSQL |
+| `org.flywaydb:flyway-core` | compile | 11.7.2 | aplicar migrations versionadas |
+| `org.flywaydb:flyway-database-postgresql` | runtime | 11.7.2 | suporte específico do Flyway ao PostgreSQL |
+| `org.testcontainers:junit-jupiter` | test | 1.21.4 | ciclo de vida dos containers nos testes JUnit |
+| `org.testcontainers:postgresql` | test | 1.21.4 | PostgreSQL descartável com URL e portas dinâmicas |
+
+Não sobrescrever versões nem importar outro BOM: o parent Spring Boot existente gerencia esse conjunto. `mvnw.cmd -o help:effective-pom`, sem downloads, confirmou Flyway 11.7.2, PostgreSQL JDBC 42.7.11, Testcontainers 1.21.4 e Hibernate 6.6.53.Final. A [tabela oficial do Spring Boot 3.5](https://docs.spring.io/spring-boot/3.5/appendix/dependency-versions/coordinates.html) foi conferida. A tabela acima é baseline futura, não inventário de dependências instaladas.
+
+O teste usará `@DynamicPropertySource` para configurar a conexão, conforme o guia local; `spring-boot-testcontainers` não é necessário nessa opção. H2, RabbitMQ, bibliotecas de migração alternativas, Docker Compose e dependências de observabilidade permanecem fora. Ao adicionar JPA/Flyway, preservar explicitamente a inicialização e as regressões HTTP; não desabilitar globalmente as auto-configurações para ocultar falhas do teste de integração.
+
+#### Imagem PostgreSQL
+
+- Escolha: `postgres:17.11-bookworm`, linha estável suportada com patch atual consultado, baseada em Debian. Não usar a tag ilustrativa `16-alpine` do guia nem `latest`.
+- Digest do índice publicado: `sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0`.
+- Digest da imagem Linux amd64: `sha256:7bade6d532592ca8ce7ee32def7399dad2607c4ea5583839fc4352a095a11ea6`.
+- Referência futura no teste: `postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0`.
+- Evidência: metadados consultados na [API pública do Docker Hub](https://hub.docker.com/v2/repositories/library/postgres/tags/17.11-bookworm), tag confirmada no [catálogo de imagens oficiais](https://github.com/docker-library/official-images/blob/master/library/postgres) e versão conferida na [política de versões PostgreSQL](https://www.postgresql.org/support/versioning/). Nenhuma imagem foi baixada ou executada neste incremento. Fixar digest não elimina vulnerabilidades: atualizações exigem revisão e repetição dos testes.
+
+#### Executor e pendência real de ambiente
+
+O executor planejado é Maven no host de desenvolvimento confiável com Docker Desktop em modo Linux; no CI, Maven no runner Linux hospedado do GitHub Actions. Esse ambiente não é o `sandbox-core`: Testcontainers precisa do daemon Docker e de acesso aos registros para obter imagens. Usar apenas fixtures fictícias e containers descartáveis do projeto, sem mounts de dados pessoais. Não configurar daemon remoto sem autenticação nem aplicar limpeza global de containers/volumes.
+
+Em 2026-09-13, `docker version` identificou CLI 28.4.0, mas não conseguiu acessar o servidor. A repetição autorizada falhou porque o pipe `dockerDesktopLinuxEngine` não foi encontrado. Isso comprova engine inacessível nessa sessão, não ausência de instalação do Docker Desktop. Nenhum container foi criado; a infraestrutura ainda não está pronta para comprovar o round-trip. Os [requisitos de runtime do Testcontainers](https://java.testcontainers.org/supported_docker_environment/) exigem um runtime compatível acessível.
+
+Antes do código de persistência, disponibilizar o engine Linux e confirmar versão/API do servidor; depois validar obtenção da imagem fixada e compatibilidade real com Testcontainers 1.21.4, incluindo descarte. O CI também deverá executar o teste, não ignorá-lo por ausência de Docker. Não atualizar dependências ou forçar versão da API Docker para esconder incompatibilidade sem diagnóstico.
+
+**Validação deste incremento:** revisão documental, consulta offline ao POM efetivo, consulta dos metadados da imagem e diagnóstico Docker. Sem testes de aplicação novos ou reexecutados; os 39 testes verdes e CI do PR #20 são evidências anteriores. Persistência continua não implementada.
 
 ## 9. Mensageria e tratamento de falhas
 
