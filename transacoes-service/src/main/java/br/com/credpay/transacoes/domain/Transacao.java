@@ -5,9 +5,13 @@ import java.util.Currency;
 
 public final class Transacao {
 
+    private final BigDecimal valor;
+    private final Currency moeda;
     private final StatusTransacao status;
 
-    private Transacao(StatusTransacao status) {
+    private Transacao(BigDecimal valor, Currency moeda, StatusTransacao status) {
+        this.valor = valor;
+        this.moeda = moeda;
         this.status = status;
     }
 
@@ -24,7 +28,15 @@ public final class Transacao {
             throw new IllegalArgumentException("moeda deve ser informada");
         }
 
-        return new Transacao(StatusTransacao.PENDENTE);
+        return new Transacao(valor, moeda, StatusTransacao.PENDENTE);
+    }
+
+    public BigDecimal valor() {
+        return valor;
+    }
+
+    public Currency moeda() {
+        return moeda;
     }
 
     public StatusTransacao status() {

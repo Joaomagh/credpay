@@ -6,7 +6,7 @@
 
 **Fase atual:** 2 — Fundação reproduzível
 
-**Estado:** scaffolding, CI, cinco regras de domínio e criação HTTP com respostas `201`, `400` e `422` testadas; sem persistência
+**Estado:** scaffolding, CI, domínio com valor/moeda preservados e criação HTTP com respostas `201`, `400` e `422` testadas; sem persistência
 
 ## 1. Contexto e limites atuais
 
@@ -15,7 +15,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 - `transacoes-service`: recebe pedidos, valida regras de entrada, mantém o estado consultável e publica eventos;
 - `processamento-service`: consome pedidos de processamento, decide o resultado e publica o evento correspondente.
 
-**Implementado:** scaffolding mínimo do `transacoes-service`, CI com Maven `verify`, cinco regras de domínio e o happy path de `POST /transacoes`, que retorna uma representação não persistida com UUID e estado `PENDENTE`.
+**Implementado:** scaffolding mínimo do `transacoes-service`, CI com Maven `verify`, validações de domínio, preservação de valor/moeda na transação e `POST /transacoes`, que retorna uma representação não persistida com UUID e estado `PENDENTE`.
 
 **Ainda não implementado:** persistência e consulta de transações, `processamento-service`, filas, contratos de eventos e infraestrutura. A API já retorna `422 Problem Details` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida, além de `400 Problem Details` para falhas de leitura, valor textual e moeda numérica/booleana.
 
@@ -413,6 +413,7 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 | Uma transação não pode ser criada com valor negativo | o menor caso testado usa `-0.01`; lança `IllegalArgumentException` com a mesma mensagem da fronteira zero | `TransacaoTest.criar_deveRejeitar_quandoValorForNegativo` |
 | Uma transação não pode ser criada com valor nulo | lança `IllegalArgumentException` com mensagem `valor deve ser informado`, antes de avaliar o sinal | `TransacaoTest.criar_deveRejeitar_quandoValorForNulo` |
 | Uma transação não pode ser criada com moeda nula | lança `IllegalArgumentException` com mensagem `moeda deve ser informada` | `TransacaoTest.criar_deveRejeitar_quandoMoedaForNula` |
+| Uma transação preserva seus dados monetários validados | mantém valor, escala decimal e moeda em campos finais, sem arredondamento; fixtures `10.00/BRL` e `123.456/USD` | `TransacaoTest.criar_devePreservarValorEMoeda_quandoTransacaoForValida` |
 | O happy path HTTP cria uma representação pendente | request `10.00`/`BRL`; retorna `201`, `Location`, UUID, valor, moeda e `PENDENTE` | `TransacaoControllerTest.deveCriarTransacaoPendente` |
 
 ### Evidência TDD — estado inicial `PENDENTE`
@@ -453,7 +454,7 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 - **Green focado:** após adicionar uma guarda de nulo para a moeda, o mesmo comando executou 5 testes, com 0 falhas e 0 erros.
 - **Suíte e build:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 6 testes, com 0 falhas e 0 erros, e gerou o JAR.
 - **Erro de domínio:** `IllegalArgumentException` com mensagem `moeda deve ser informada`.
-- **Limite:** a transação ainda não armazena valor ou moeda e não possui ID ou timestamp. Não há persistência nem API.
+- **Limite daquele ciclo:** a transação ainda não armazenava valor ou moeda e não possuía ID ou timestamp. Não havia persistência nem API.
 
 ### Evidência TDD — happy path de `POST /transacoes`
 
@@ -531,12 +532,24 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 ### Evidência TDD — moeda não textual no JSON
 
 - **Entrega:** [PR #17](https://github.com/Joaomagh/credpay/pull/17), com rejeição de coerção de moeda e testes HTTP.
+- **CI e merge:** [CI Linux #27](https://github.com/Joaomagh/credpay/actions/runs/34720037972) verde para `0835b0a`; merge em `91a52fc`.
 - **Red:** teste HTTP com 25 casos; os 4 novos (`123`, `1.5`, `true`, `false`) falharam por retornar `422` em vez de `400`, após conversão automática para texto.
 - **Green:** a configuração Jackson rejeita coerções de `Integer`, `Float` e `Boolean` para `String`. O handler de leitura existente retorna `400 Problem Details`, sem incluir o valor recebido ou mensagens internas.
 - **Verificação:** `mvnw.cmd -Dtest=TransacaoHttpTest test` com 25 casos verdes; `mvnw.cmd --batch-mode --no-transfer-progress verify` com 33 testes verdes e JAR gerado.
 - **Regressão:** `BRL` permanece aceito; moeda ausente/nula e códigos textuais inválidos mantêm `422`; a rejeição de valor textual segue ativa. `pom.xml`, domínio e controller não mudaram.
 - **Trade-off:** aplica-se aos campos `String` lidos pelo mapper gerenciado do serviço. Futuras entradas textuais devem respeitar esse contrato. Não muda serialização nem introduz validação de negócio no parser.
 - **Revisão periódica:** o domínio ainda valida valor/moeda sem conservá-los na instância; o caso de uso devolve esses dados diretamente da entrada. O próximo incremento preservará os dados validados na transação, com TDD e sem banco. Warning Mockito/Byte Buddy permanece conhecido.
+
+### Evidência TDD — preservação dos dados monetários no domínio
+
+- **Entrega:** [PR #18](https://github.com/Joaomagh/credpay/pull/18), com domínio, refatoração do caso de uso, testes e documentação.
+- **Red:** após adicionar somente o teste de domínio, a compilação falhou pela ausência de `valor()` e `moeda()`. Nenhum caso foi executado nessa etapa.
+- **Correção do teste:** a primeira tentativa de green revelou uma asserção inexistente (`hasScale`) na versão instalada do AssertJ. Ela foi substituída pela comparação explícita de `scale()`; somente as alterações próprias do domínio foram desfeitas com patch e o red foi repetido, falhando apenas pelos acessores ausentes. Essa falha acidental não foi usada como evidência do comportamento.
+- **Green:** `Transacao` conserva `BigDecimal` e `Currency` em campos privados finais após as validações; acessores permitem leitura, sem setters. O teste focado executou 7 casos sem falhas.
+- **Refatoração:** `CriarTransacaoService` passa a compor o resultado com `transacao.valor()` e `transacao.moeda()`. O contrato externo permanece igual; o teste do caso de uso foi ampliado como regressão, sem alegar novo red.
+- **Verificação final:** `mvnw.cmd '-Dtest=TransacaoTest,CriarTransacaoServiceTest' test` executou 9 casos verdes; `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 36 testes verdes e gerou o JAR.
+- **Aceite:** fixtures `10.00/BRL` e `123.456/USD` preservam valor, escala, moeda e estado `PENDENTE` no domínio e no resultado. Não há arredondamento, conversão de moeda, ID de domínio ou timestamp; `pom.xml`, API e dependências não mudaram.
+- **Revisão:** guardar dados numa instância não é persistência. O UUID continua sendo gerado no caso de uso para a resposta. Antes do primeiro adapter PostgreSQL, é necessário definir identidade persistente, representação monetária e contrato do teste de integração. Warning Mockito/Byte Buddy permanece conhecido.
 
 ## 8. Persistência e consistência
 

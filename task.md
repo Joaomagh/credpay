@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Preservar valor e moeda validados na instância de `Transacao` em TDD e usar esses dados no resultado da criação, sem persistência, ID de domínio ou timestamp.
+- [ ] Definir o contrato mínimo de persistência do `transacoes-service`: identidade, representação monetária, fronteira do repository e primeiro teste PostgreSQL com Testcontainers, antes de adicionar dependências ou implementar o adapter.
