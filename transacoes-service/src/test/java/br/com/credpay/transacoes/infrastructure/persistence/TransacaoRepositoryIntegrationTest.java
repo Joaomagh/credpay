@@ -1,6 +1,7 @@
 package br.com.credpay.transacoes.infrastructure.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.util.Currency;
@@ -12,10 +13,13 @@ import br.com.credpay.transacoes.domain.StatusTransacao;
 import br.com.credpay.transacoes.domain.Transacao;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -59,6 +63,9 @@ class TransacaoRepositoryIntegrationTest {
     @Autowired
     private PlatformTransactionManager transactionManager;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @ParameterizedTest
     @CsvSource({
             "7b8b61c2-9f63-4d74-9f8d-89cb52de0ed9, 10.00, BRL",
@@ -83,5 +90,18 @@ class TransacaoRepositoryIntegrationTest {
         assertThat(persistida.valor().scale()).isEqualTo(valor.scale());
         assertThat(persistida.moeda()).isEqualTo(moeda);
         assertThat(persistida.status()).isEqualTo(StatusTransacao.PENDENTE);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"0", "-0.01", "NaN", "Infinity", "-Infinity"})
+    void banco_deveRejeitarValorNaoPositivoOuNaoFinito_quandoDominioForContornado(String valor) {
+        var id = UUID.randomUUID();
+
+        assertThatThrownBy(() -> jdbcTemplate.update("""
+                INSERT INTO transacoes (id, valor, moeda, status)
+                VALUES (?, CAST(? AS numeric), 'BRL', 'PENDENTE')
+                """, id, valor))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasStackTraceContaining("ck_transacoes_valor_positivo_finito");
     }
 }

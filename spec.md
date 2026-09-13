@@ -6,7 +6,7 @@
 
 **Fase atual:** 2 — Fundação reproduzível
 
-**Estado:** domínio e API testados; repository PostgreSQL/JPA com round-trip após commit comprovado; endpoint ainda não conectado à persistência
+**Estado:** domínio e API testados; repository PostgreSQL/JPA com round-trip após commit e constraint monetária comprovados; endpoint ainda não conectado à persistência
 
 ## 1. Contexto e limites atuais
 
@@ -17,7 +17,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Implementado:** scaffolding mínimo do `transacoes-service`, CI com Maven `verify`, validações de domínio, preservação de UUID/valor/moeda na transação e `POST /transacoes`, que retorna uma representação não persistida com o mesmo UUID do domínio e estado `PENDENTE`.
 
-**Ainda não implementado:** persistência pelo endpoint e consulta HTTP de transações, constraints de negócio do banco, `processamento-service`, filas e contratos de eventos. Existe adapter PostgreSQL validado isoladamente por teste de integração. A API já retorna `422 Problem Details` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida, além de `400 Problem Details` para falhas de leitura, valor textual e moeda numérica/booleana.
+**Ainda não implementado:** persistência pelo endpoint e consulta HTTP de transações, constraints de moeda/status no banco, `processamento-service`, filas e contratos de eventos. Existe adapter PostgreSQL validado isoladamente por teste de integração, e a constraint monetária do banco já foi testada por SQL direto. A API já retorna `422 Problem Details` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida, além de `400 Problem Details` para falhas de leitura, valor textual e moeda numérica/booleana.
 
 ## 2. Arquitetura vigente
 
@@ -575,12 +575,13 @@ A migration de produção abaixo é aplicada pelo Flyway no perfil `persistencia
 | Serviço | Migration | Mudança | Motivo |
 |---|---|---|---|
 | transacoes-service | `V1__create_transacoes.sql` | tabela `transacoes`, UUID como PK, valor `numeric`, moeda `varchar(3)` e status `varchar(16)`, todos obrigatórios | primeiro round-trip com identidade e dados monetários preservados |
+| transacoes-service | `V2__protect_transaction_amount.sql` | constraint `ck_transacoes_valor_positivo_finito` exige valor maior que zero e exclui `NaN`, `Infinity` e `-Infinity` | proteger a invariante monetária mesmo em gravações que contornem o domínio |
 
 ### 8.1 Contrato mínimo da persistência futura
 
 **Entrega documental:** [PR #19](https://github.com/Joaomagh/credpay/pull/19). Revisão de consistência, UTF-8 válido e `git diff --check`; testes não executados neste incremento exclusivamente documental.
 
-**Estado:** identidade, porta/adapter de repository, entidade JPA, migration V1 e primeiro round-trip PostgreSQL implementados. Constraints de negócio, cenários negativos e conexão do endpoint permanecem pendentes; não confundir o contrato completo com cobertura já concluída.
+**Estado:** identidade, porta/adapter de repository, entidade JPA, migrations V1/V2, primeiro round-trip PostgreSQL e constraint monetária implementados. Constraints de moeda/status, outros cenários negativos e conexão do endpoint permanecem pendentes; não confundir o contrato completo com cobertura já concluída.
 
 #### Identidade e propriedade dos dados
 
@@ -603,7 +604,7 @@ A migration de produção abaixo é aplicada pelo Flyway no perfil `persistencia
 
 A primeira integração deverá comprovar valor exato e escala das fixtures `10.00/BRL` e `123.456/USD`. Isso não promete preservar a representação textual original do JSON nem todas as formas de notação científica. Limites de precisão/escala aceitos pela API e tratamento de valores extremos deverão ser definidos e testados antes de conectar o endpoint ao banco; não se converterá falha de armazenamento em arredondamento silencioso.
 
-As constraints da migration protegerão nulidade, chave primária, valor positivo e finito, formato da moeda e estado permitido. A condição de valor também deverá excluir `NaN` e infinitos: apenas verificar `valor > 0` não cobre os valores especiais do PostgreSQL. O catálogo ISO 4217 continuará sendo validado na aplicação; três letras no banco não comprovam que uma moeda existe.
+A V1 protege nulidade e chave primária; a V2 protege valor positivo e finito, excluindo explicitamente `NaN` e infinitos porque apenas verificar `valor > 0` não cobre todos os valores especiais do PostgreSQL. Formato da moeda e estado permitido continuam pendentes. O catálogo ISO 4217 continuará sendo validado na aplicação; três letras no banco não comprovam que uma moeda existe.
 
 Flyway será o dono do schema, usando uma migration versionada em `src/main/resources/db/migration/`. Hibernate apenas validará o mapeamento (`ddl-auto=validate`), sem `create` ou `update`. O mapeamento JPA não poderá impor uma escala diferente da migration. Não haverá tabela exclusiva de teste nem fallback H2.
 
@@ -709,6 +710,16 @@ Antes do código de persistência, disponibilizar o engine Linux e confirmar ver
 - **Revisão:** a configuração sem banco é transitória até conectar o caso de uso. As dependências de produção foram adicionadas por necessidade do adapter, sem novos BOMs ou versões sobrescritas. Warning conhecido Mockito/Byte Buddy permanece. Próximo comportamento: constraint monetária no PostgreSQL, com teste que contorne as validações do domínio.
 - **Incidente após os testes:** o Docker Desktop encerrou com erro ao inicializar o gerenciador de inferência porque não conseguiu remover/acessar `dockerInference`; depois disso, CLI e engine ficaram indisponíveis. O erro ocorreu após o teste focado e o `verify` verdes, sem invalidar seus resultados já concluídos, mas bloqueia novas execuções locais com Testcontainers até reiniciar/diagnosticar o Docker. Nenhum arquivo interno do Docker foi removido e nenhuma limpeza ou reset foi aplicado.
 
+### 8.5 Constraint monetária no PostgreSQL
+
+- **Red:** após adicionar somente o teste parametrizado, PostgreSQL 17.11 com V1 aceitou por SQL direto `0`, `-0.01`, `NaN`, `Infinity` e `-Infinity`. O teste focado executou 7 casos: os 2 round-trips válidos passaram e os 5 casos novos falharam com `Expecting code to raise a throwable`.
+- **Green:** a migration V2 adiciona `ck_transacoes_valor_positivo_finito`, exigindo `valor > 0` e excluindo explicitamente os três valores especiais do tipo `numeric`. Nenhuma validação Java, dependência ou contrato HTTP mudou.
+- **Evidência do controle:** o teste usa `JdbcTemplate` e `INSERT` direto, sem fábrica de domínio ou adapter JPA, e exige `DataIntegrityViolationException` com o nome da constraint na stack trace. Assim, a falha é atribuída ao controle do banco, não a outra validação da aplicação.
+- **Verificação:** teste focado com 7 casos verdes após V1/V2; `mvnw.cmd --batch-mode --no-transfer-progress verify` com 48 testes, zero falhas/erros/skips e JAR gerado. Após fortalecer a asserção da causa, os 7 casos focados foram repetidos e continuaram verdes.
+- **Ambiente:** o Docker Desktop voltou a responder sem limpeza ou reset; Testcontainers conectou ao engine 28.4.0/API 1.51 e criou containers descartáveis. O warning conhecido de autoanexação Mockito/Byte Buddy permanece.
+- **Limites:** a constraint não define precisão/escala máximas, formato da moeda ou status permitido. Colisão de UUID, busca ausente, rollback e conexão do endpoint continuam sem cobertura própria.
+- **Próximo:** provar que uma segunda inserção com o mesmo UUID falha sem sobrescrever o registro original.
+
 ## 9. Mensageria e tratamento de falhas
 
 Ainda não configurado. Decisões futuras devem cobrir exchange, queue, routing key, durabilidade, ack, prefetch, retry/backoff, DLQ, idempotência e publicação confiável — somente quando testadas.
@@ -731,6 +742,7 @@ java -version
 # teste focado
 .\mvnw.cmd -Dtest=TransacoesServiceApplicationTest test
 .\mvnw.cmd -Dtest=TransacaoTest test
+.\mvnw.cmd -Dtest=TransacaoRepositoryIntegrationTest test
 
 # suíte e package
 .\mvnw.cmd package
@@ -842,6 +854,7 @@ Cobertura, scanners e outras ferramentas serão sinais auxiliares, não metas is
 | 2026-09-10 | uma transação com valor nulo deve falhar com erro de domínio explícito | adicionar teste que espera `IllegalArgumentException`; confirmar o `NullPointerException` atual; adicionar guarda mínima e repetir verificações | red com 1 falha; green focado com 4 testes e `verify` com 5 testes | validar moeda ausente no próximo ciclo TDD |
 | 2026-09-10 | uma transação sem moeda deve ser rejeitada | adicionar teste com valor válido e moeda nula; confirmar que nenhuma exceção era lançada; adicionar guarda mínima | red com 1 falha; green focado com 5 testes e `verify` com 6 testes | definir o contrato HTTP mínimo de criação antes de implementar o endpoint |
 | 2026-09-11 | o happy path HTTP deve criar uma representação `PENDENTE` sem persistência | testar o adaptador MVC com caso de uso simulado; depois testar e implementar o caso de uso mínimo para manter a aplicação inicializável | dois reds de compilação pelo motivo esperado; testes focados verdes; `verify` com 8 testes e JAR gerado | implementar uma resposta `422 Problem Details` para valor zero |
+| 2026-09-13 | o banco deve rejeitar valores não positivos ou não finitos mesmo sem passar pelo domínio | fazer INSERT SQL direto de `0`, negativo, `NaN` e infinitos antes/depois da V2 | red com 5 falhas esperadas; green focado com 7 casos e `verify` com 48 testes | provar colisão de UUID sem sobrescrita |
 
 ## 16. Checklist por incremento
 
