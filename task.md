@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Introduzir identidade UUID imutável e não nula em `Transacao` em TDD, gerada uma única vez pelo caso de uso e reutilizada no resultado, sem persistência, timestamp ou dependências novas.
+- [ ] Definir e verificar a baseline mínima de persistência: dependências compatíveis com o Spring Boot, imagem PostgreSQL com versão/digest e executor local/CI para Testcontainers, sem implementar o adapter ou conectar o endpoint ao banco ainda.

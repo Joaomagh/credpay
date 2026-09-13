@@ -12,10 +12,10 @@ final class CriarTransacaoService implements CriarTransacao {
 
     @Override
     public Resultado executar(BigDecimal valor, Currency moeda) {
-        var transacao = Transacao.criar(valor, moeda);
+        var transacao = Transacao.criar(UUID.randomUUID(), valor, moeda);
 
         return new Resultado(
-                UUID.randomUUID(),
+                transacao.id(),
                 transacao.valor(),
                 transacao.moeda(),
                 transacao.status());

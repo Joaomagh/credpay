@@ -2,11 +2,11 @@
 
 > Fonte de verdade do sistema que existe hoje. Preencher somente com decisão tomada, contrato aceito ou comportamento comprovado. Planos futuros ficam em `CREDPAY_PLAN.md`; próximas ações ficam em `task.md`.
 
-**Última atualização:** 2026-09-12
+**Última atualização:** 2026-09-13
 
 **Fase atual:** 2 — Fundação reproduzível
 
-**Estado:** scaffolding, CI, domínio com valor/moeda preservados e criação HTTP com respostas `201`, `400` e `422` testadas; sem persistência
+**Estado:** scaffolding, CI, domínio com UUID imutável e valor/moeda preservados, e criação HTTP com respostas `201`, `400` e `422` testadas; sem persistência
 
 ## 1. Contexto e limites atuais
 
@@ -15,7 +15,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 - `transacoes-service`: recebe pedidos, valida regras de entrada, mantém o estado consultável e publica eventos;
 - `processamento-service`: consome pedidos de processamento, decide o resultado e publica o evento correspondente.
 
-**Implementado:** scaffolding mínimo do `transacoes-service`, CI com Maven `verify`, validações de domínio, preservação de valor/moeda na transação e `POST /transacoes`, que retorna uma representação não persistida com UUID e estado `PENDENTE`.
+**Implementado:** scaffolding mínimo do `transacoes-service`, CI com Maven `verify`, validações de domínio, preservação de UUID/valor/moeda na transação e `POST /transacoes`, que retorna uma representação não persistida com o mesmo UUID do domínio e estado `PENDENTE`.
 
 **Ainda não implementado:** persistência e consulta de transações, `processamento-service`, filas, contratos de eventos e infraestrutura. A API já retorna `422 Problem Details` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida, além de `400 Problem Details` para falhas de leitura, valor textual e moeda numérica/booleana.
 
@@ -414,6 +414,8 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 | Uma transação não pode ser criada com valor nulo | lança `IllegalArgumentException` com mensagem `valor deve ser informado`, antes de avaliar o sinal | `TransacaoTest.criar_deveRejeitar_quandoValorForNulo` |
 | Uma transação não pode ser criada com moeda nula | lança `IllegalArgumentException` com mensagem `moeda deve ser informada` | `TransacaoTest.criar_deveRejeitar_quandoMoedaForNula` |
 | Uma transação preserva seus dados monetários validados | mantém valor, escala decimal e moeda em campos finais, sem arredondamento; fixtures `10.00/BRL` e `123.456/USD` | `TransacaoTest.criar_devePreservarValorEMoeda_quandoTransacaoForValida` |
+| Uma transação preserva sua identidade | recebe UUID explícito na fábrica e o conserva em campo privado final, sem setter; duas fixtures de ID | `TransacaoTest.criar_devePreservarId_quandoTransacaoForValida` |
+| Uma transação não pode ser criada sem identidade | ID nulo lança `IllegalArgumentException` com mensagem `id deve ser informado` | `TransacaoTest.criar_deveRejeitar_quandoIdForNulo` |
 | O happy path HTTP cria uma representação pendente | request `10.00`/`BRL`; retorna `201`, `Location`, UUID, valor, moeda e `PENDENTE` | `TransacaoControllerTest.deveCriarTransacaoPendente` |
 
 ### Evidência TDD — estado inicial `PENDENTE`
@@ -552,6 +554,18 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 - **Aceite:** fixtures `10.00/BRL` e `123.456/USD` preservam valor, escala, moeda e estado `PENDENTE` no domínio e no resultado. Não há arredondamento, conversão de moeda, ID de domínio ou timestamp; `pom.xml`, API e dependências não mudaram.
 - **Revisão:** guardar dados numa instância não é persistência. O UUID continua sendo gerado no caso de uso para a resposta. Antes do primeiro adapter PostgreSQL, é necessário definir identidade persistente, representação monetária e contrato do teste de integração. Warning Mockito/Byte Buddy permanece conhecido.
 
+### Evidência TDD — identidade UUID no domínio
+
+- **Red de preservação:** após adicionar somente o teste parametrizado com dois UUIDs conhecidos, `mvnw.cmd -Dtest=TransacaoTest test` falhou na compilação porque a fábrica ainda não aceitava UUID. Nenhum caso executou nessa etapa.
+- **Green de preservação:** a fábrica passou a receber `UUID`, conservado em campo privado final e exposto por `id()`. Os chamadores foram migrados para a nova assinatura; 9 casos de domínio passaram.
+- **Red de nulidade:** adicionando somente o teste de ID nulo, o mesmo comando executou 10 casos com uma falha `Expecting code to raise a throwable`; os 9 anteriores passaram.
+- **Green de nulidade:** guarda mínima lança `IllegalArgumentException` com mensagem `id deve ser informado` antes das demais validações.
+- **Verificação:** `mvnw.cmd '-Dtest=TransacaoTest,CriarTransacaoServiceTest' test` executou 12 casos verdes; `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 39 testes, zero falhas/erros/skips, e gerou o JAR.
+- **Revisão do fluxo:** o caso de uso chama `UUID.randomUUID()` uma única vez, passa o ID à fábrica e compõe o resultado com `transacao.id()`. Testes de domínio provam preservação; regressões de aplicação/HTTP continuam verdes, incluindo correspondência entre ID da resposta e `Location`. Não foi adicionado mock estático nem abstração de geração apenas para observar chamadas internas.
+- **Ambiente:** uma tentativa de execução combinada parou no wrapper com `Cannot start maven from wrapper`, antes de iniciar testes. A repetição em ambiente autorizado passou sem alterar o wrapper; essa falha operacional não é evidência red. Warning conhecido Mockito/Byte Buddy permanece.
+- **Limites:** identidade em memória não fornece persistência, consulta ou idempotência. Sem timestamp, repository, novo endpoint ou dependências; `pom.xml` e API inalterados. A assinatura Java da fábrica mudou e todos os chamadores do monorepo foram atualizados.
+- **Próximo:** verificar a baseline de dependências, imagem PostgreSQL e executor confiável antes de implementar o adapter e seu teste de integração.
+
 ## 8. Persistência e consistência
 
 Nenhuma migration criada. Registrar ownership, tabelas, constraints, índices e estratégia de concorrência quando existirem.
@@ -564,13 +578,13 @@ Nenhuma migration criada. Registrar ownership, tabelas, constraints, índices e 
 
 **Entrega documental:** [PR #19](https://github.com/Joaomagh/credpay/pull/19). Revisão de consistência, UTF-8 válido e `git diff --check`; testes não executados neste incremento exclusivamente documental.
 
-**Estado:** decisão documental para orientar os próximos incrementos; repository, identidade no domínio, entidade JPA, migration e teste PostgreSQL ainda não existem. Nenhuma dependência foi adicionada nesta etapa.
+**Estado:** identidade UUID no domínio implementada e testada; repository, entidade JPA, migration e teste PostgreSQL permanecem planejados. Nenhuma dependência de persistência foi adicionada.
 
 #### Identidade e propriedade dos dados
 
 - O `transacoes-service` será o único dono da tabela `transacoes`, em banco exclusivo do serviço. O futuro `processamento-service` não acessará essa tabela diretamente.
-- O caso de uso gerará um UUID uma única vez, antes de criar a transação. A fábrica de domínio passará a receber esse UUID, junto de valor e moeda, conservando-o como identidade imutável e não nula.
-- O mesmo ID atravessará domínio, persistência, resultado HTTP e `Location`. O adapter e o banco não gerarão outro ID. O request público continuará sem campo de identidade controlável pelo cliente.
+- O caso de uso gera um UUID uma única vez, antes de criar a transação. A fábrica de domínio recebe esse UUID, junto de valor e moeda, conservando-o como identidade imutável e não nula.
+- O mesmo ID já atravessa domínio, resultado HTTP e `Location`; futuramente também será usado na persistência. O adapter e o banco não gerarão outro ID. O request público continua sem campo de identidade controlável pelo cliente.
 - A leitura reconstruirá a transação com o ID e estado armazenados, sem gerar nova identidade ou reiniciar o estado. No primeiro estágio, o único estado suportado continuará sendo `PENDENTE`.
 - UUID não é chave de idempotência. Repetir uma requisição ainda não terá garantia de deduplicação; essa capacidade permanece em incremento futuro.
 
