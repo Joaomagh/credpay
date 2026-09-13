@@ -697,6 +697,7 @@ Antes do código de persistência, disponibilizar o engine Linux e confirmar ver
 
 ### 8.4 Primeiro round-trip do repository
 
+- **Entrega:** [PR #23](https://github.com/Joaomagh/credpay/pull/23).
 - **Red:** adicionados apenas o teste de integração e as dependências de sua baseline; teste focado falhou pela ausência de `TransacaoRepository` e `TransacaoJpaRepository`. O resultado foi tipado como `Optional<Transacao>` e o red repetido para eliminar mensagens em cascata da inferência; restaram apenas os tipos ausentes. Nenhum teste executou nessa etapa.
 - **Green:** porta em `application`, adapter JPA em `infrastructure/persistence`, entidade separada e migration V1. O adapter usa `persist`, não `merge`, para inserção; `find` e `Optional` para busca. O chamador coordena a transação; o adapter não faz commit independente.
 - **Reconstrução:** o ID armazenado é reutilizado; o mapeamento de estado usa `switch` exaustivo, atualmente com apenas `PENDENTE`. Novos estados exigirão ampliar explicitamente o mapeamento, sem fallback que os reinicie silenciosamente.
