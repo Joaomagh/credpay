@@ -725,12 +725,23 @@ Antes do código de persistência, disponibilizar o engine Linux e confirmar ver
 ### 8.6 Colisão de UUID sem sobrescrita
 
 - **Entrega:** [PR #25](https://github.com/Joaomagh/credpay/pull/25).
+- **CI e merge:** [CI Linux #45](https://github.com/Joaomagh/credpay/actions/runs/34790749602) verde para `ff596d4`; merge em `38af046`.
 - **Teste de caracterização:** a primeira inserção usa `10.00/BRL`; a segunda usa o mesmo UUID com `20.00/USD`. A segunda transação falha com `DataIntegrityViolationException`, SQLState `23505` e referência a `transacoes_pkey`.
 - **Integridade preservada:** depois da transação que falhou, uma nova leitura recupera `10.00/BRL`, escala 2 e `PENDENTE`. Não existe upsert nem sobrescrita silenciosa.
 - **TDD honesto:** o teste nasceu verde porque a PK da V1 e o uso de `EntityManager.persist` já forneciam o comportamento. Nenhum red foi fabricado e nenhum código de produção foi alterado; o valor do incremento é tornar a garantia executável contra regressões.
 - **Verificação:** teste focado com 8 casos verdes; `mvnw.cmd --batch-mode --no-transfer-progress verify` com 49 testes, zero falhas/erros/skips e JAR gerado. PostgreSQL 17.11/Flyway V1-V2/Testcontainers foram usados de verdade.
 - **Limites:** a exceção ainda não é traduzida para um erro de aplicação porque o endpoint não usa o repository. Busca ausente e rollback ainda exigem cobertura própria.
 - **Próximo:** provar que buscar um UUID inexistente retorna vazio sem mascarar erros de infraestrutura.
+
+### 8.7 Busca por UUID inexistente
+
+- **Entrega:** [PR #26](https://github.com/Joaomagh/credpay/pull/26).
+- **Teste de caracterização:** uma busca por UUID fixo que não foi inserido executa SELECT real em outra transação e retorna `Optional.empty()`.
+- **Falhas não mascaradas:** `TransacaoJpaRepository` converte somente o `null` legítimo retornado por `EntityManager.find`. O adapter não captura exceções; indisponibilidade, timeout ou falha SQL continuam propagando e não são apresentados como ausência.
+- **TDD honesto:** o teste nasceu verde porque `Optional.ofNullable(entityManager.find(...))` já implementava o contrato. Nenhuma falha artificial foi criada e nenhum código de produção mudou.
+- **Verificação:** teste focado com 9 casos verdes; `mvnw.cmd --batch-mode --no-transfer-progress verify` com 50 testes, zero falhas/erros/skips e JAR gerado. PostgreSQL 17.11, Flyway V1-V2 e Testcontainers foram executados.
+- **Limites:** não há consulta HTTP nem teste deliberado de indisponibilidade do banco. O próximo cenário isolará rollback antes da conexão do endpoint.
+- **Próximo:** provar que uma inserção em transação revertida não fica visível em leitura posterior.
 
 ## 9. Mensageria e tratamento de falhas
 
@@ -868,6 +879,7 @@ Cobertura, scanners e outras ferramentas serão sinais auxiliares, não metas is
 | 2026-09-11 | o happy path HTTP deve criar uma representação `PENDENTE` sem persistência | testar o adaptador MVC com caso de uso simulado; depois testar e implementar o caso de uso mínimo para manter a aplicação inicializável | dois reds de compilação pelo motivo esperado; testes focados verdes; `verify` com 8 testes e JAR gerado | implementar uma resposta `422 Problem Details` para valor zero |
 | 2026-09-13 | o banco deve rejeitar valores não positivos ou não finitos mesmo sem passar pelo domínio | fazer INSERT SQL direto de `0`, negativo, `NaN` e infinitos antes/depois da V2 | red com 5 falhas esperadas; green focado com 7 casos e `verify` com 48 testes | provar colisão de UUID sem sobrescrita |
 | 2026-09-13 | uma colisão de UUID deve falhar sem sobrescrever a transação original | inserir duas transações distintas com o mesmo ID em commits separados e reler a primeira | teste nasceu verde pela PK/persist; SQLState `23505`; teste focado com 8 casos e `verify` com 49 testes | provar busca ausente sem mascarar falha |
+| 2026-09-13 | UUID inexistente deve retornar ausência sem engolir falhas | buscar ID fixo não inserido em PostgreSQL real e inspecionar a ausência de captura no adapter | teste nasceu verde; SELECT real; teste focado com 9 casos e `verify` com 50 testes | provar rollback da inserção |
 
 ## 16. Checklist por incremento
 

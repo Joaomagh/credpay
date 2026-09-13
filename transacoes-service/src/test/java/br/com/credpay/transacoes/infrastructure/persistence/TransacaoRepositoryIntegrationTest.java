@@ -127,4 +127,15 @@ class TransacaoRepositoryIntegrationTest {
         assertThat(persistida.moeda()).isEqualTo(Currency.getInstance("BRL"));
         assertThat(persistida.status()).isEqualTo(StatusTransacao.PENDENTE);
     }
+
+    @Test
+    void buscarPorId_deveRetornarVazio_quandoTransacaoNaoExistir() {
+        var idInexistente = UUID.fromString("7ac65065-6d2e-45fa-a838-a54155668c9c");
+        var transacoes = new TransactionTemplate(transactionManager);
+
+        Optional<Transacao> encontrada = transacoes.execute(
+                status -> repository.buscarPorId(idInexistente));
+
+        assertThat(encontrada).isEmpty();
+    }
 }
