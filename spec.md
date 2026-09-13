@@ -543,6 +543,7 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 ### Evidência TDD — preservação dos dados monetários no domínio
 
 - **Entrega:** [PR #18](https://github.com/Joaomagh/credpay/pull/18), com domínio, refatoração do caso de uso, testes e documentação.
+- **CI e merge:** [CI Linux #30](https://github.com/Joaomagh/credpay/actions/runs/34732546413) verde para `aed6280`; merge em `dc24122`.
 - **Red:** após adicionar somente o teste de domínio, a compilação falhou pela ausência de `valor()` e `moeda()`. Nenhum caso foi executado nessa etapa.
 - **Correção do teste:** a primeira tentativa de green revelou uma asserção inexistente (`hasScale`) na versão instalada do AssertJ. Ela foi substituída pela comparação explícita de `scale()`; somente as alterações próprias do domínio foram desfeitas com patch e o red foi repetido, falhando apenas pelos acessores ausentes. Essa falha acidental não foi usada como evidência do comportamento.
 - **Green:** `Transacao` conserva `BigDecimal` e `Currency` em campos privados finais após as validações; acessores permitem leitura, sem setters. O teste focado executou 7 casos sem falhas.
@@ -558,6 +559,72 @@ Nenhuma migration criada. Registrar ownership, tabelas, constraints, índices e 
 | Serviço | Migration | Mudança | Motivo |
 |---|---|---|---|
 | — | — | — | — |
+
+### 8.1 Contrato mínimo da persistência futura
+
+**Estado:** decisão documental para orientar os próximos incrementos; repository, identidade no domínio, entidade JPA, migration e teste PostgreSQL ainda não existem. Nenhuma dependência foi adicionada nesta etapa.
+
+#### Identidade e propriedade dos dados
+
+- O `transacoes-service` será o único dono da tabela `transacoes`, em banco exclusivo do serviço. O futuro `processamento-service` não acessará essa tabela diretamente.
+- O caso de uso gerará um UUID uma única vez, antes de criar a transação. A fábrica de domínio passará a receber esse UUID, junto de valor e moeda, conservando-o como identidade imutável e não nula.
+- O mesmo ID atravessará domínio, persistência, resultado HTTP e `Location`. O adapter e o banco não gerarão outro ID. O request público continuará sem campo de identidade controlável pelo cliente.
+- A leitura reconstruirá a transação com o ID e estado armazenados, sem gerar nova identidade ou reiniciar o estado. No primeiro estágio, o único estado suportado continuará sendo `PENDENTE`.
+- UUID não é chave de idempotência. Repetir uma requisição ainda não terá garantia de deduplicação; essa capacidade permanece em incremento futuro.
+
+#### Representação monetária e schema planejado
+
+| Campo | Tipo planejado no PostgreSQL | Invariante |
+|---|---|---|
+| `id` | `uuid` | chave primária; fornecida pela aplicação; imutável |
+| `valor` | `numeric` sem precisão/escala declaradas | obrigatório, finito e maior que zero; sem arredondamento no adapter |
+| `moeda` | `varchar(3)` | obrigatória; exatamente três letras ASCII maiúsculas |
+| `status` | `varchar(16)` | obrigatório; inicialmente somente `PENDENTE` |
+
+`BigDecimal` permanece o tipo Java. Não serão usados `double`, `float` ou o tipo SQL `money`. Uma coluna `numeric(p, s)` pode arredondar a entrada para a escala declarada; por isso não será introduzida uma escala fixa de duas casas que alteraria o comportamento atual. `numeric` sem escala declarada evita essa coerção, mas continua sujeito aos limites de implementação do PostgreSQL. [Referência: tipos numéricos](https://www.postgresql.org/docs/current/datatype-numeric.html).
+
+A primeira integração deverá comprovar valor exato e escala das fixtures `10.00/BRL` e `123.456/USD`. Isso não promete preservar a representação textual original do JSON nem todas as formas de notação científica. Limites de precisão/escala aceitos pela API e tratamento de valores extremos deverão ser definidos e testados antes de conectar o endpoint ao banco; não se converterá falha de armazenamento em arredondamento silencioso.
+
+As constraints da migration protegerão nulidade, chave primária, valor positivo e finito, formato da moeda e estado permitido. A condição de valor também deverá excluir `NaN` e infinitos: apenas verificar `valor > 0` não cobre os valores especiais do PostgreSQL. O catálogo ISO 4217 continuará sendo validado na aplicação; três letras no banco não comprovam que uma moeda existe.
+
+Flyway será o dono do schema, usando uma migration versionada em `src/main/resources/db/migration/`. Hibernate apenas validará o mapeamento (`ddl-auto=validate`), sem `create` ou `update`. O mapeamento JPA não poderá impor uma escala diferente da migration. Não haverá tabela exclusiva de teste nem fallback H2.
+
+#### Fronteira do repository e transações
+
+| Elemento planejado | Responsabilidade | O que não expõe |
+|---|---|---|
+| `application/TransacaoRepository` | porta com `inserir(Transacao)` e `buscarPorId(UUID)`, retornando `Optional<Transacao>` na busca | Spring Data, `EntityManager`, entidades JPA ou detalhes SQL |
+| adapter em `infrastructure/persistence` | implementar a porta, mapear domínio/entidade e consultar PostgreSQL | regras de negócio duplicadas ou objetos JPA na API |
+| entidade JPA separada | representar as quatro colunas da tabela; persistir status por nome, não ordinal | comportamento HTTP ou geração de novo UUID |
+| caso de uso | coordenar a unidade de trabalho de criação | acesso direto ao driver ou ao schema |
+
+`inserir` significa criar um novo registro: colisão de chave deve falhar sem sobrescrever dados existentes. Não será implementado upsert disfarçado de criação. A busca de ID inexistente retorna vazio; indisponibilidade ou erro SQL não podem ser tratados como ausência de registro.
+
+Quando o endpoint for conectado à persistência, a criação ocorrerá numa transação local; `201` somente será enviado após commit bem-sucedido. O teste do adapter será implementado antes dessa conexão. Não haverá evento ou coordenação entre banco e RabbitMQ neste estágio.
+
+#### Primeiro teste de integração e contrato de evidência
+
+O primeiro teste será `TransacaoRepositoryIntegrationTest`, com nome reconhecido pelo Surefire para participar de Maven `test` e `verify`. Usará PostgreSQL real via Testcontainers, migration Flyway de produção e adapter real, sem mocks de banco ou repository. O teste inicial provará escrita e leitura, não apenas que o container iniciou. [Referência: módulo PostgreSQL](https://java.testcontainers.org/modules/databases/postgres/).
+
+| Etapa | Procedimento esperado | Evidência de aceite |
+|---|---|---|
+| Preparação | iniciar container descartável e aplicar a migration em banco vazio | versão/digest da imagem e migration aplicada identificados |
+| Red | executar o teste antes da implementação funcional do adapter/migration | falha atribuível à capacidade ausente, não a Docker indisponível, credencial ou erro acidental do teste |
+| Escrita | inserir transação com UUID fixo de fixture e dados válidos; concluir a transação de escrita | commit bem-sucedido |
+| Leitura | abrir outra transação e outro contexto de persistência, sem cache compartilhado de entidades | recuperar pelo ID e comparar ID, valor, escala da fixture, moeda e `PENDENTE` |
+| Green | repetir teste focado e `verify` | teste de integração realmente executado, zero falhas/erros/skips e regressões anteriores verdes |
+
+O teste não ficará inteiro dentro de uma transação de teste com rollback automático. Escrita e leitura precisam atravessar commits/contextos separados para não gerar um falso positivo vindo do cache JPA. `flush` sem commit não será apresentado como prova de persistência após commit. [Referência: transações em testes Spring](https://docs.spring.io/spring-framework/reference/testing/testcontext-framework/tx.html).
+
+Depois do round-trip, ciclos separados deverão provar ID ausente, colisão sem sobrescrita, rollback e constraints com inserções que não passem pelas guardas do domínio. Esses cenários não serão declarados concluídos pelo primeiro teste.
+
+#### Ambiente, sequência e limites
+
+- Antes de adicionar dependências, verificar a compatibilidade das versões gerenciadas pelo Spring Boot para JPA, driver PostgreSQL, Flyway e Testcontainers. Fixar a imagem PostgreSQL com versão explícita e digest verificado; não usar `latest` nem copiar automaticamente a versão ilustrativa do guia.
+- O teste exigirá Docker disponível localmente e no CI; ausência de Docker será falha de ambiente, não teste aprovado ou ignorado. Credenciais serão fictícias, com portas dinâmicas, dados isolados e descarte automático; reuso de containers não será requisito.
+- O executor de Testcontainers precisa acessar o daemon Docker e, inicialmente, obter imagens. Isso é incompatível com o `sandbox-core` diagnóstico sem Docker socket/rede; este contrato não afirma que os testes rodarão dentro do AI-Jail. Um executor de desenvolvimento confiável deverá ser explicitado antes da execução.
+- A ordem será: identidade no domínio em TDD; baseline de dependências/imagem e ambiente; round-trip do adapter em TDD; testes de constraints e limites monetários; somente depois conectar o endpoint à persistência.
+- Permanecem fora: implementação neste incremento, consulta HTTP, idempotência, atualização de status, timestamp/auditoria, outbox, RabbitMQ, segundo serviço, Docker Compose, Kubernetes e CD. A existência do contrato não altera o status atual de aplicação sem persistência.
 
 ## 9. Mensageria e tratamento de falhas
 

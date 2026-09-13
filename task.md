@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Definir o contrato mínimo de persistência do `transacoes-service`: identidade, representação monetária, fronteira do repository e primeiro teste PostgreSQL com Testcontainers, antes de adicionar dependências ou implementar o adapter.
+- [ ] Introduzir identidade UUID imutável e não nula em `Transacao` em TDD, gerada uma única vez pelo caso de uso e reutilizada no resultado, sem persistência, timestamp ou dependências novas.
