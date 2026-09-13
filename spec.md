@@ -6,7 +6,7 @@
 
 **Fase atual:** 2 — Fundação reproduzível
 
-**Estado:** scaffolding, CI, domínio com UUID imutável e valor/moeda preservados, e criação HTTP com respostas `201`, `400` e `422` testadas; sem persistência
+**Estado:** domínio e API testados; repository PostgreSQL/JPA com round-trip após commit comprovado; endpoint ainda não conectado à persistência
 
 ## 1. Contexto e limites atuais
 
@@ -17,7 +17,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Implementado:** scaffolding mínimo do `transacoes-service`, CI com Maven `verify`, validações de domínio, preservação de UUID/valor/moeda na transação e `POST /transacoes`, que retorna uma representação não persistida com o mesmo UUID do domínio e estado `PENDENTE`.
 
-**Ainda não implementado:** persistência e consulta de transações, `processamento-service`, filas, contratos de eventos e infraestrutura. A API já retorna `422 Problem Details` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida, além de `400 Problem Details` para falhas de leitura, valor textual e moeda numérica/booleana.
+**Ainda não implementado:** persistência pelo endpoint e consulta HTTP de transações, constraints de negócio do banco, `processamento-service`, filas e contratos de eventos. Existe adapter PostgreSQL validado isoladamente por teste de integração. A API já retorna `422 Problem Details` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida, além de `400 Problem Details` para falhas de leitura, valor textual e moeda numérica/booleana.
 
 ## 2. Arquitetura vigente
 
@@ -46,7 +46,7 @@ A mensageria é assíncrona, com consistência eventual e expectativa de entrega
 | Linguagem | Java | 21 | `java -version`: 21.0.6 |
 | Framework | Spring Boot | 3.5.16 | parent fixado no `transacoes-service/pom.xml`; teste verde |
 | Build | Maven Wrapper | 3.9.16 | `transacoes-service/mvnw.cmd --version` |
-| Banco de teste | PostgreSQL | 17.11 | `PostgresRuntimeTest`; imagem fixada por digest, sem persistência da aplicação |
+| Banco | PostgreSQL | 17.11 | testes de runtime e repository com imagem fixada por digest; endpoint ainda não integrado |
 | Mensageria | RabbitMQ | a definir | — |
 | Infraestrutura de teste | Testcontainers | 1.21.4 | gerenciamento Spring Boot e teste PostgreSQL executado |
 
@@ -137,7 +137,7 @@ O teste e o package emitiram warning de autoanexação do Mockito/Byte Buddy no 
 
 ## 4. Configuração e segredos
 
-Nenhuma variável existe ainda. Registrar cada uma quando for consumida pelo código/configuração.
+Nenhuma variável própria do CredPay foi criada. O perfil opcional `persistencia` usa propriedades padrão do Spring para conexão; os testes fornecem URL, usuário e senha fictícia dinamicamente. Sem esse perfil, a aplicação não configura DataSource. Não há credencial padrão de banco para execução da aplicação.
 
 | Serviço | Variável | Obrigatória | Valor padrão | Propósito | Sensível |
 |---|---|---|---|---|---|
@@ -570,17 +570,17 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 
 ## 8. Persistência e consistência
 
-Nenhuma migration criada. Registrar ownership, tabelas, constraints, índices e estratégia de concorrência quando existirem.
+A migration de produção abaixo é aplicada pelo Flyway no perfil `persistencia`, com Hibernate em `validate`. A API ainda não usa o repository.
 
 | Serviço | Migration | Mudança | Motivo |
 |---|---|---|---|
-| — | — | — | — |
+| transacoes-service | `V1__create_transacoes.sql` | tabela `transacoes`, UUID como PK, valor `numeric`, moeda `varchar(3)` e status `varchar(16)`, todos obrigatórios | primeiro round-trip com identidade e dados monetários preservados |
 
 ### 8.1 Contrato mínimo da persistência futura
 
 **Entrega documental:** [PR #19](https://github.com/Joaomagh/credpay/pull/19). Revisão de consistência, UTF-8 válido e `git diff --check`; testes não executados neste incremento exclusivamente documental.
 
-**Estado:** identidade UUID no domínio implementada e testada; repository, entidade JPA, migration e teste PostgreSQL permanecem planejados. Nenhuma dependência de persistência foi adicionada.
+**Estado:** identidade, porta/adapter de repository, entidade JPA, migration V1 e primeiro round-trip PostgreSQL implementados. Constraints de negócio, cenários negativos e conexão do endpoint permanecem pendentes; não confundir o contrato completo com cobertura já concluída.
 
 #### Identidade e propriedade dos dados
 
@@ -642,15 +642,15 @@ Depois do round-trip, ciclos separados deverão provar ID ausente, colisão sem 
 - O teste exigirá Docker disponível localmente e no CI; ausência de Docker será falha de ambiente, não teste aprovado ou ignorado. Credenciais serão fictícias, com portas dinâmicas, dados isolados e descarte automático; reuso de containers não será requisito.
 - O executor de Testcontainers precisa acessar o daemon Docker e, inicialmente, obter imagens. Isso é incompatível com o `sandbox-core` diagnóstico sem Docker socket/rede; este contrato não afirma que os testes rodarão dentro do AI-Jail. Um executor de desenvolvimento confiável deverá ser explicitado antes da execução.
 - A ordem será: identidade no domínio em TDD; baseline de dependências/imagem e ambiente; round-trip do adapter em TDD; testes de constraints e limites monetários; somente depois conectar o endpoint à persistência.
-- Permanecem fora: implementação neste incremento, consulta HTTP, idempotência, atualização de status, timestamp/auditoria, outbox, RabbitMQ, segundo serviço, Docker Compose, Kubernetes e CD. A existência do contrato não altera o status atual de aplicação sem persistência.
+- No incremento documental original, toda implementação estava fora do escopo. O adapter foi posteriormente comprovado na seção 8.4; consulta HTTP, idempotência, atualização de status, timestamp/auditoria, outbox, RabbitMQ, segundo serviço, Docker Compose, Kubernetes e CD continuam pendentes.
 
 ### 8.2 Baseline de dependências e executor de persistência
 
 **Entrega documental:** [PR #21](https://github.com/Joaomagh/credpay/pull/21).
 
-Baseline definida em 2026-09-13. Driver JDBC e módulos Testcontainers já foram adicionados no escopo `test` para validar o executor. JPA e Flyway permanecem futuros; o escopo `runtime` do driver abaixo será usado quando a aplicação precisar de persistência.
+Baseline definida em 2026-09-13 e materializada no primeiro adapter. O driver passou de `test` para `runtime`; JPA e Flyway foram adicionados nos escopos abaixo. Módulos Testcontainers continuam restritos a testes.
 
-| Dependência futura | Escopo Maven | Versão gerenciada | Motivo |
+| Dependência | Escopo Maven | Versão gerenciada | Motivo |
 |---|---|---|---|
 | `org.springframework.boot:spring-boot-starter-data-jpa` | compile | 3.5.16 | JPA, transações locais e Hibernate para o adapter |
 | `org.postgresql:postgresql` | runtime | 42.7.11 | driver JDBC do PostgreSQL |
@@ -659,7 +659,7 @@ Baseline definida em 2026-09-13. Driver JDBC e módulos Testcontainers já foram
 | `org.testcontainers:junit-jupiter` | test | 1.21.4 | ciclo de vida dos containers nos testes JUnit |
 | `org.testcontainers:postgresql` | test | 1.21.4 | PostgreSQL descartável com URL e portas dinâmicas |
 
-Não sobrescrever versões nem importar outro BOM: o parent Spring Boot existente gerencia esse conjunto. `mvnw.cmd -o help:effective-pom`, sem downloads, confirmou Flyway 11.7.2, PostgreSQL JDBC 42.7.11, Testcontainers 1.21.4 e Hibernate 6.6.53.Final. A [tabela oficial do Spring Boot 3.5](https://docs.spring.io/spring-boot/3.5/appendix/dependency-versions/coordinates.html) foi conferida. A tabela acima é baseline futura, não inventário de dependências instaladas.
+Não sobrescrever versões nem importar outro BOM: o parent Spring Boot existente gerencia esse conjunto. `mvnw.cmd -o help:effective-pom`, sem downloads, confirmou Flyway 11.7.2, PostgreSQL JDBC 42.7.11, Testcontainers 1.21.4 e Hibernate 6.6.53.Final. A [tabela oficial do Spring Boot 3.5](https://docs.spring.io/spring-boot/3.5/appendix/dependency-versions/coordinates.html) foi conferida; o teste do adapter comprovou a execução desse conjunto.
 
 O teste usará `@DynamicPropertySource` para configurar a conexão, conforme o guia local; `spring-boot-testcontainers` não é necessário nessa opção. H2, RabbitMQ, bibliotecas de migração alternativas, Docker Compose e dependências de observabilidade permanecem fora. Ao adicionar JPA/Flyway, preservar explicitamente a inicialização e as regressões HTTP; não desabilitar globalmente as auto-configurações para ocultar falhas do teste de integração.
 
@@ -671,11 +671,11 @@ O teste usará `@DynamicPropertySource` para configurar a conexão, conforme o g
 - Referência executada no teste: `postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0`, correspondente à tag `17.11-bookworm`. A forma combinada `tag@digest` foi rejeitada pela verificação de nome do Testcontainers 1.21.4; usar somente o digest preserva a fixação sem contornar a verificação de compatibilidade.
 - Evidência: metadados consultados na [API pública do Docker Hub](https://hub.docker.com/v2/repositories/library/postgres/tags/17.11-bookworm), tag confirmada no [catálogo de imagens oficiais](https://github.com/docker-library/official-images/blob/master/library/postgres) e versão conferida na [política de versões PostgreSQL](https://www.postgresql.org/support/versioning/). Nenhuma imagem foi baixada ou executada neste incremento. Fixar digest não elimina vulnerabilidades: atualizações exigem revisão e repetição dos testes.
 
-#### Executor e pendência real de ambiente
+#### Executor e diagnóstico inicial de ambiente
 
 O executor planejado é Maven no host de desenvolvimento confiável com Docker Desktop em modo Linux; no CI, Maven no runner Linux hospedado do GitHub Actions. Esse ambiente não é o `sandbox-core`: Testcontainers precisa do daemon Docker e de acesso aos registros para obter imagens. Usar apenas fixtures fictícias e containers descartáveis do projeto, sem mounts de dados pessoais. Não configurar daemon remoto sem autenticação nem aplicar limpeza global de containers/volumes.
 
-Em 2026-09-13, `docker version` identificou CLI 28.4.0, mas não conseguiu acessar o servidor. A repetição autorizada falhou porque o pipe `dockerDesktopLinuxEngine` não foi encontrado. Isso comprova engine inacessível nessa sessão, não ausência de instalação do Docker Desktop. Nenhum container foi criado; a infraestrutura ainda não está pronta para comprovar o round-trip. Os [requisitos de runtime do Testcontainers](https://java.testcontainers.org/supported_docker_environment/) exigem um runtime compatível acessível.
+Na verificação inicial de 2026-09-13, `docker version` identificou CLI 28.4.0, mas não conseguiu acessar o servidor. A repetição autorizada falhou porque o pipe `dockerDesktopLinuxEngine` não foi encontrado. Naquele momento, nenhum container foi criado. Esse impedimento foi resolvido posteriormente, conforme seção 8.3. Os [requisitos de runtime do Testcontainers](https://java.testcontainers.org/supported_docker_environment/) exigem um runtime compatível acessível.
 
 Antes do código de persistência, disponibilizar o engine Linux e confirmar versão/API do servidor; depois validar obtenção da imagem fixada e compatibilidade real com Testcontainers 1.21.4, incluindo descarte. O CI também deverá executar o teste, não ignorá-lo por ausência de Docker. Não atualizar dependências ou forçar versão da API Docker para esconder incompatibilidade sem diagnóstico.
 
@@ -684,6 +684,7 @@ Antes do código de persistência, disponibilizar o engine Linux e confirmar ver
 ### 8.3 Executor PostgreSQL comprovado
 
 - **Entrega:** [PR #22](https://github.com/Joaomagh/credpay/pull/22).
+- **CI e merge:** [CI Linux #36](https://github.com/Joaomagh/credpay/actions/runs/34773333605) verde para `6e9c22d`; merge em `60cdd14`.
 - **Recuperação local:** `docker desktop start --timeout 45` expirou. O executável instalado do Docker Desktop foi iniciado em segundo plano; após a inicialização, engine Linux 28.4.0/API 1.51 ficou acessível em Docker Desktop 4.46.0, WSL 2, amd64. Nenhuma configuração do daemon foi alterada.
 - **Implementação:** `PostgresRuntimeTest` usa PostgreSQL real via Testcontainers 1.21.4 e driver 42.7.11, com imagem fixada pelo digest da seção 8.2, porta dinâmica e credenciais fictícias. Consulta `server_version_num = 170011` e envia/recebe `BigDecimal` via JDBC; fixtures `10.00` e `123.456` preservam magnitude e escala.
 - **Escopo:** teste operacional de compatibilidade, não teste de persistência de transação. Não cria tabela, entidade, migration ou repository e não usa contexto Spring. Como configuração/verificação operacional, não se declara um ciclo red/green de negócio.
@@ -691,8 +692,21 @@ Antes do código de persistência, disponibilizar o engine Linux e confirmar ver
 - **Verificação:** `mvnw.cmd --batch-mode --no-transfer-progress -Dtest=PostgresRuntimeTest test`: 2 casos verdes; `mvnw.cmd --batch-mode --no-transfer-progress verify`: 41 testes, zero falhas/erros/skips e JAR gerado. As 39 regressões anteriores permanecem verdes.
 - **Descarte:** consultas `docker ps -a --filter id=...` pelos IDs específicos do PostgreSQL e Ryuk do teste focado retornaram vazio após o encerramento da JVM. Nenhuma limpeza global foi executada. Imagens permanecem em cache; Docker Desktop continua iniciado.
 - **Limite de confiança:** Testcontainers usou o daemon local e o auxiliar `testcontainers/ryuk:0.12.0` para limpeza. Esse auxiliar é selecionado pela biblioteca e não foi fixado por digest neste incremento. Isso não constitui execução dentro do AI-Jail nem comprova seus controles.
-- **Dependências:** somente driver e dois módulos Testcontainers no escopo `test`; o JAR da aplicação não passa a depender de PostgreSQL. JPA e Flyway ainda não entraram. Não há skip automático quando Docker falta; `test`, `package` e `verify` completos agora exigem engine acessível e imagens disponíveis.
+- **Dependências naquele incremento:** somente driver e dois módulos Testcontainers no escopo `test`, sem PostgreSQL no JAR da aplicação. O escopo do driver e a inclusão de JPA/Flyway evoluíram no incremento da seção 8.4. Não há skip automático quando Docker falta; `test`, `package` e `verify` completos exigem engine acessível e imagens disponíveis.
 - **Revisão periódica:** README corrigido quanto ao UUID de domínio e aos pré-requisitos dos testes. Warning conhecido Mockito/Byte Buddy permanece. Próximo incremento: primeiro round-trip do repository, com migration de produção e commits/contextos separados conforme seção 8.1.
+
+### 8.4 Primeiro round-trip do repository
+
+- **Red:** adicionados apenas o teste de integração e as dependências de sua baseline; teste focado falhou pela ausência de `TransacaoRepository` e `TransacaoJpaRepository`. O resultado foi tipado como `Optional<Transacao>` e o red repetido para eliminar mensagens em cascata da inferência; restaram apenas os tipos ausentes. Nenhum teste executou nessa etapa.
+- **Green:** porta em `application`, adapter JPA em `infrastructure/persistence`, entidade separada e migration V1. O adapter usa `persist`, não `merge`, para inserção; `find` e `Optional` para busca. O chamador coordena a transação; o adapter não faz commit independente.
+- **Reconstrução:** o ID armazenado é reutilizado; o mapeamento de estado usa `switch` exaustivo, atualmente com apenas `PENDENTE`. Novos estados exigirão ampliar explicitamente o mapeamento, sem fallback que os reinicie silenciosamente.
+- **Teste real:** `TransacaoRepositoryIntegrationTest`, com `@DataJpaTest`, PostgreSQL fixado por digest, Flyway de produção e Hibernate `validate`; sem H2 ou mocks. O teste desativa a transação externa de teste e usa duas chamadas de `TransactionTemplate`: escrita concluída antes da leitura, com contextos distintos e caches de segundo nível/consulta desabilitados. Logs mostram INSERT e SELECT reais.
+- **Aceite:** duas fixtures de UUID, `10.00/BRL` e `123.456/USD`, preservam identidade, magnitude, escala, moeda e estado após commit. O `numeric` sem escala fixa não arredondou essas fixtures.
+- **Verificação:** `mvnw.cmd --batch-mode --no-transfer-progress -Dtest=TransacaoRepositoryIntegrationTest test`: 2 casos verdes; `mvnw.cmd --batch-mode --no-transfer-progress verify`: 43 testes, zero falhas/erros/skips e JAR gerado. Contexto padrão e regressões HTTP continuam verdes sem DataSource.
+- **Ativação deliberada:** `application.yml` exclui a auto-configuração de DataSource somente quando o perfil `persistencia` não está ativo; no perfil, Flyway/JPA funcionam normalmente, `ddl-auto=validate` e `open-in-view=false`. O adapter é bean apenas nesse perfil. Não há exclusão global que mascare o teste de banco. Ativar o perfil exige configurar conexão; não instala nem inicia PostgreSQL automaticamente fora dos testes.
+- **Limites:** V1 contém PK e NOT NULL, mas ainda não tem CHECKs monetários, de formato de moeda ou de estados. O domínio continua protegendo sua fábrica; gravações SQL diretas ainda não têm todas as guardas planejadas. ID inexistente, colisão sem sobrescrita e rollback exigem cenários próprios. O endpoint não chama o repository, mesmo com o perfil ativo; não há GET, eventos ou timestamp.
+- **Revisão:** a configuração sem banco é transitória até conectar o caso de uso. As dependências de produção foram adicionadas por necessidade do adapter, sem novos BOMs ou versões sobrescritas. Warning conhecido Mockito/Byte Buddy permanece. Próximo comportamento: constraint monetária no PostgreSQL, com teste que contorne as validações do domínio.
+- **Incidente após os testes:** o Docker Desktop encerrou com erro ao inicializar o gerenciador de inferência porque não conseguiu remover/acessar `dockerInference`; depois disso, CLI e engine ficaram indisponíveis. O erro ocorreu após o teste focado e o `verify` verdes, sem invalidar seus resultados já concluídos, mas bloqueia novas execuções locais com Testcontainers até reiniciar/diagnosticar o Docker. Nenhum arquivo interno do Docker foi removido e nenhuma limpeza ou reset foi aplicado.
 
 ## 9. Mensageria e tratamento de falhas
 

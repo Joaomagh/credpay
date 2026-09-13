@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Implementar o primeiro round-trip de `TransacaoRepository` em TDD com PostgreSQL/Testcontainers, entidade JPA separada e migration Flyway, comprovando escrita após commit e leitura em outro contexto, sem conectar o endpoint ao banco ainda.
+- [ ] Proteger o valor monetário no PostgreSQL em TDD: rejeitar zero, negativos, NaN e infinitos por constraint em nova migration, com testes SQL que contornem o domínio, sem conectar o endpoint ao banco ainda.
