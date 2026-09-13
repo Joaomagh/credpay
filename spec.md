@@ -646,6 +646,8 @@ Depois do round-trip, ciclos separados deverão provar ID ausente, colisão sem 
 
 ### 8.2 Baseline de dependências e executor de persistência
 
+**Entrega documental:** [PR #21](https://github.com/Joaomagh/credpay/pull/21).
+
 Decisão documental em 2026-09-13. As dependências abaixo ainda não foram adicionadas; a compatibilidade em execução deverá ser comprovada pelo primeiro teste PostgreSQL, não apenas pelo gerenciamento de versões.
 
 | Dependência futura | Escopo Maven | Versão gerenciada | Motivo |
