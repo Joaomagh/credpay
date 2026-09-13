@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Disponibilizar e validar o executor Docker Linux para a baseline PostgreSQL/Testcontainers da seção 8.2 de `spec.md`, comprovando engine acessível e compatibilidade antes de iniciar o adapter em TDD; não conectar o endpoint ao banco ainda.
+- [ ] Implementar o primeiro round-trip de `TransacaoRepository` em TDD com PostgreSQL/Testcontainers, entidade JPA separada e migration Flyway, comprovando escrita após commit e leitura em outro contexto, sem conectar o endpoint ao banco ainda.

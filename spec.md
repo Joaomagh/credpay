@@ -46,9 +46,9 @@ A mensageria é assíncrona, com consistência eventual e expectativa de entrega
 | Linguagem | Java | 21 | `java -version`: 21.0.6 |
 | Framework | Spring Boot | 3.5.16 | parent fixado no `transacoes-service/pom.xml`; teste verde |
 | Build | Maven Wrapper | 3.9.16 | `transacoes-service/mvnw.cmd --version` |
-| Banco | PostgreSQL | a definir | — |
+| Banco de teste | PostgreSQL | 17.11 | `PostgresRuntimeTest`; imagem fixada por digest, sem persistência da aplicação |
 | Mensageria | RabbitMQ | a definir | — |
-| Testes | JUnit 5, Mockito, Testcontainers | a definir | — |
+| Infraestrutura de teste | Testcontainers | 1.21.4 | gerenciamento Spring Boot e teste PostgreSQL executado |
 
 Substituir “alvo” por versão exata e comando de verificação quando o build existir.
 
@@ -648,7 +648,7 @@ Depois do round-trip, ciclos separados deverão provar ID ausente, colisão sem 
 
 **Entrega documental:** [PR #21](https://github.com/Joaomagh/credpay/pull/21).
 
-Decisão documental em 2026-09-13. As dependências abaixo ainda não foram adicionadas; a compatibilidade em execução deverá ser comprovada pelo primeiro teste PostgreSQL, não apenas pelo gerenciamento de versões.
+Baseline definida em 2026-09-13. Driver JDBC e módulos Testcontainers já foram adicionados no escopo `test` para validar o executor. JPA e Flyway permanecem futuros; o escopo `runtime` do driver abaixo será usado quando a aplicação precisar de persistência.
 
 | Dependência futura | Escopo Maven | Versão gerenciada | Motivo |
 |---|---|---|---|
@@ -668,7 +668,7 @@ O teste usará `@DynamicPropertySource` para configurar a conexão, conforme o g
 - Escolha: `postgres:17.11-bookworm`, linha estável suportada com patch atual consultado, baseada em Debian. Não usar a tag ilustrativa `16-alpine` do guia nem `latest`.
 - Digest do índice publicado: `sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0`.
 - Digest da imagem Linux amd64: `sha256:7bade6d532592ca8ce7ee32def7399dad2607c4ea5583839fc4352a095a11ea6`.
-- Referência futura no teste: `postgres:17.11-bookworm@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0`.
+- Referência executada no teste: `postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0`, correspondente à tag `17.11-bookworm`. A forma combinada `tag@digest` foi rejeitada pela verificação de nome do Testcontainers 1.21.4; usar somente o digest preserva a fixação sem contornar a verificação de compatibilidade.
 - Evidência: metadados consultados na [API pública do Docker Hub](https://hub.docker.com/v2/repositories/library/postgres/tags/17.11-bookworm), tag confirmada no [catálogo de imagens oficiais](https://github.com/docker-library/official-images/blob/master/library/postgres) e versão conferida na [política de versões PostgreSQL](https://www.postgresql.org/support/versioning/). Nenhuma imagem foi baixada ou executada neste incremento. Fixar digest não elimina vulnerabilidades: atualizações exigem revisão e repetição dos testes.
 
 #### Executor e pendência real de ambiente
@@ -680,6 +680,18 @@ Em 2026-09-13, `docker version` identificou CLI 28.4.0, mas não conseguiu acess
 Antes do código de persistência, disponibilizar o engine Linux e confirmar versão/API do servidor; depois validar obtenção da imagem fixada e compatibilidade real com Testcontainers 1.21.4, incluindo descarte. O CI também deverá executar o teste, não ignorá-lo por ausência de Docker. Não atualizar dependências ou forçar versão da API Docker para esconder incompatibilidade sem diagnóstico.
 
 **Validação deste incremento:** revisão documental, consulta offline ao POM efetivo, consulta dos metadados da imagem e diagnóstico Docker. Sem testes de aplicação novos ou reexecutados; os 39 testes verdes e CI do PR #20 são evidências anteriores. Persistência continua não implementada.
+
+### 8.3 Executor PostgreSQL comprovado
+
+- **Recuperação local:** `docker desktop start --timeout 45` expirou. O executável instalado do Docker Desktop foi iniciado em segundo plano; após a inicialização, engine Linux 28.4.0/API 1.51 ficou acessível em Docker Desktop 4.46.0, WSL 2, amd64. Nenhuma configuração do daemon foi alterada.
+- **Implementação:** `PostgresRuntimeTest` usa PostgreSQL real via Testcontainers 1.21.4 e driver 42.7.11, com imagem fixada pelo digest da seção 8.2, porta dinâmica e credenciais fictícias. Consulta `server_version_num = 170011` e envia/recebe `BigDecimal` via JDBC; fixtures `10.00` e `123.456` preservam magnitude e escala.
+- **Escopo:** teste operacional de compatibilidade, não teste de persistência de transação. Não cria tabela, entidade, migration ou repository e não usa contexto Spring. Como configuração/verificação operacional, não se declara um ciclo red/green de negócio.
+- **Falha observada:** a primeira execução falhou na inicialização da fixture por incompatibilidade do nome `tag@digest`; a correção para `postgres@digest` passou mantendo o mesmo artefato. Não houve falha de regra de domínio nem downgrade de dependências.
+- **Verificação:** `mvnw.cmd --batch-mode --no-transfer-progress -Dtest=PostgresRuntimeTest test`: 2 casos verdes; `mvnw.cmd --batch-mode --no-transfer-progress verify`: 41 testes, zero falhas/erros/skips e JAR gerado. As 39 regressões anteriores permanecem verdes.
+- **Descarte:** consultas `docker ps -a --filter id=...` pelos IDs específicos do PostgreSQL e Ryuk do teste focado retornaram vazio após o encerramento da JVM. Nenhuma limpeza global foi executada. Imagens permanecem em cache; Docker Desktop continua iniciado.
+- **Limite de confiança:** Testcontainers usou o daemon local e o auxiliar `testcontainers/ryuk:0.12.0` para limpeza. Esse auxiliar é selecionado pela biblioteca e não foi fixado por digest neste incremento. Isso não constitui execução dentro do AI-Jail nem comprova seus controles.
+- **Dependências:** somente driver e dois módulos Testcontainers no escopo `test`; o JAR da aplicação não passa a depender de PostgreSQL. JPA e Flyway ainda não entraram. Não há skip automático quando Docker falta; `test`, `package` e `verify` completos agora exigem engine acessível e imagens disponíveis.
+- **Revisão periódica:** README corrigido quanto ao UUID de domínio e aos pré-requisitos dos testes. Warning conhecido Mockito/Byte Buddy permanece. Próximo incremento: primeiro round-trip do repository, com migration de produção e commits/contextos separados conforme seção 8.1.
 
 ## 9. Mensageria e tratamento de falhas
 
