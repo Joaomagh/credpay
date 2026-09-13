@@ -724,6 +724,7 @@ Antes do código de persistência, disponibilizar o engine Linux e confirmar ver
 
 ### 8.6 Colisão de UUID sem sobrescrita
 
+- **Entrega:** [PR #25](https://github.com/Joaomagh/credpay/pull/25).
 - **Teste de caracterização:** a primeira inserção usa `10.00/BRL`; a segunda usa o mesmo UUID com `20.00/USD`. A segunda transação falha com `DataIntegrityViolationException`, SQLState `23505` e referência a `transacoes_pkey`.
 - **Integridade preservada:** depois da transação que falhou, uma nova leitura recupera `10.00/BRL`, escala 2 e `PENDENTE`. Não existe upsert nem sobrescrita silenciosa.
 - **TDD honesto:** o teste nasceu verde porque a PK da V1 e o uso de `EntityManager.persist` já forneciam o comportamento. Nenhum red foi fabricado e nenhum código de produção foi alterado; o valor do incremento é tornar a garantia executável contra regressões.
