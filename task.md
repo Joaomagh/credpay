@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Provar em TDD que inserir uma segunda transação com o mesmo UUID falha sem sobrescrever o registro original, ainda sem conectar o endpoint ao banco.
+- [ ] Provar que buscar uma transação por UUID inexistente retorna vazio, sem converter falhas de infraestrutura em ausência, ainda sem conectar o endpoint ao banco.

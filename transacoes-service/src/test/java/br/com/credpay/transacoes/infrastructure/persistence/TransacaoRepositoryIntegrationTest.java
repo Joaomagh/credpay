@@ -11,6 +11,7 @@ import java.util.UUID;
 import br.com.credpay.transacoes.application.TransacaoRepository;
 import br.com.credpay.transacoes.domain.StatusTransacao;
 import br.com.credpay.transacoes.domain.Transacao;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -103,5 +104,27 @@ class TransacaoRepositoryIntegrationTest {
                 """, id, valor))
                 .isInstanceOf(DataIntegrityViolationException.class)
                 .hasStackTraceContaining("ck_transacoes_valor_positivo_finito");
+    }
+
+    @Test
+    void inserir_deveFalharSemSobrescreverOriginal_quandoIdJaExistir() {
+        var id = UUID.fromString("385572ba-10e7-4fbc-b447-26463d284a17");
+        var original = Transacao.criar(id, new BigDecimal("10.00"), Currency.getInstance("BRL"));
+        var duplicada = Transacao.criar(id, new BigDecimal("20.00"), Currency.getInstance("USD"));
+        var transacoes = new TransactionTemplate(transactionManager);
+
+        transacoes.executeWithoutResult(status -> repository.inserir(original));
+
+        assertThatThrownBy(() -> transacoes.executeWithoutResult(status -> repository.inserir(duplicada)))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasStackTraceContaining("transacoes_pkey");
+
+        Optional<Transacao> encontrada = transacoes.execute(status -> repository.buscarPorId(id));
+        assertThat(encontrada).isPresent();
+        var persistida = encontrada.orElseThrow();
+        assertThat(persistida.valor()).isEqualByComparingTo("10.00");
+        assertThat(persistida.valor().scale()).isEqualTo(2);
+        assertThat(persistida.moeda()).isEqualTo(Currency.getInstance("BRL"));
+        assertThat(persistida.status()).isEqualTo(StatusTransacao.PENDENTE);
     }
 }

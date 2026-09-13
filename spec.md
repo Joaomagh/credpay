@@ -713,6 +713,7 @@ Antes do código de persistência, disponibilizar o engine Linux e confirmar ver
 ### 8.5 Constraint monetária no PostgreSQL
 
 - **Entrega:** [PR #24](https://github.com/Joaomagh/credpay/pull/24).
+- **CI e merge:** [CI Linux #42](https://github.com/Joaomagh/credpay/actions/runs/34790415311) verde para `fcd64c5`; merge em `203cc3e`.
 - **Red:** após adicionar somente o teste parametrizado, PostgreSQL 17.11 com V1 aceitou por SQL direto `0`, `-0.01`, `NaN`, `Infinity` e `-Infinity`. O teste focado executou 7 casos: os 2 round-trips válidos passaram e os 5 casos novos falharam com `Expecting code to raise a throwable`.
 - **Green:** a migration V2 adiciona `ck_transacoes_valor_positivo_finito`, exigindo `valor > 0` e excluindo explicitamente os três valores especiais do tipo `numeric`. Nenhuma validação Java, dependência ou contrato HTTP mudou.
 - **Evidência do controle:** o teste usa `JdbcTemplate` e `INSERT` direto, sem fábrica de domínio ou adapter JPA, e exige `DataIntegrityViolationException` com o nome da constraint na stack trace. Assim, a falha é atribuída ao controle do banco, não a outra validação da aplicação.
@@ -720,6 +721,16 @@ Antes do código de persistência, disponibilizar o engine Linux e confirmar ver
 - **Ambiente:** o Docker Desktop voltou a responder sem limpeza ou reset; Testcontainers conectou ao engine 28.4.0/API 1.51 e criou containers descartáveis. O warning conhecido de autoanexação Mockito/Byte Buddy permanece.
 - **Limites:** a constraint não define precisão/escala máximas, formato da moeda ou status permitido. Colisão de UUID, busca ausente, rollback e conexão do endpoint continuam sem cobertura própria.
 - **Próximo:** provar que uma segunda inserção com o mesmo UUID falha sem sobrescrever o registro original.
+
+### 8.6 Colisão de UUID sem sobrescrita
+
+- **Entrega:** [PR #25](https://github.com/Joaomagh/credpay/pull/25).
+- **Teste de caracterização:** a primeira inserção usa `10.00/BRL`; a segunda usa o mesmo UUID com `20.00/USD`. A segunda transação falha com `DataIntegrityViolationException`, SQLState `23505` e referência a `transacoes_pkey`.
+- **Integridade preservada:** depois da transação que falhou, uma nova leitura recupera `10.00/BRL`, escala 2 e `PENDENTE`. Não existe upsert nem sobrescrita silenciosa.
+- **TDD honesto:** o teste nasceu verde porque a PK da V1 e o uso de `EntityManager.persist` já forneciam o comportamento. Nenhum red foi fabricado e nenhum código de produção foi alterado; o valor do incremento é tornar a garantia executável contra regressões.
+- **Verificação:** teste focado com 8 casos verdes; `mvnw.cmd --batch-mode --no-transfer-progress verify` com 49 testes, zero falhas/erros/skips e JAR gerado. PostgreSQL 17.11/Flyway V1-V2/Testcontainers foram usados de verdade.
+- **Limites:** a exceção ainda não é traduzida para um erro de aplicação porque o endpoint não usa o repository. Busca ausente e rollback ainda exigem cobertura própria.
+- **Próximo:** provar que buscar um UUID inexistente retorna vazio sem mascarar erros de infraestrutura.
 
 ## 9. Mensageria e tratamento de falhas
 
@@ -856,6 +867,7 @@ Cobertura, scanners e outras ferramentas serão sinais auxiliares, não metas is
 | 2026-09-10 | uma transação sem moeda deve ser rejeitada | adicionar teste com valor válido e moeda nula; confirmar que nenhuma exceção era lançada; adicionar guarda mínima | red com 1 falha; green focado com 5 testes e `verify` com 6 testes | definir o contrato HTTP mínimo de criação antes de implementar o endpoint |
 | 2026-09-11 | o happy path HTTP deve criar uma representação `PENDENTE` sem persistência | testar o adaptador MVC com caso de uso simulado; depois testar e implementar o caso de uso mínimo para manter a aplicação inicializável | dois reds de compilação pelo motivo esperado; testes focados verdes; `verify` com 8 testes e JAR gerado | implementar uma resposta `422 Problem Details` para valor zero |
 | 2026-09-13 | o banco deve rejeitar valores não positivos ou não finitos mesmo sem passar pelo domínio | fazer INSERT SQL direto de `0`, negativo, `NaN` e infinitos antes/depois da V2 | red com 5 falhas esperadas; green focado com 7 casos e `verify` com 48 testes | provar colisão de UUID sem sobrescrita |
+| 2026-09-13 | uma colisão de UUID deve falhar sem sobrescrever a transação original | inserir duas transações distintas com o mesmo ID em commits separados e reler a primeira | teste nasceu verde pela PK/persist; SQLState `23505`; teste focado com 8 casos e `verify` com 49 testes | provar busca ausente sem mascarar falha |
 
 ## 16. Checklist por incremento
 
