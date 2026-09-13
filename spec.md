@@ -735,6 +735,7 @@ Antes do código de persistência, disponibilizar o engine Linux e confirmar ver
 
 ### 8.7 Busca por UUID inexistente
 
+- **Entrega:** [PR #26](https://github.com/Joaomagh/credpay/pull/26).
 - **Teste de caracterização:** uma busca por UUID fixo que não foi inserido executa SELECT real em outra transação e retorna `Optional.empty()`.
 - **Falhas não mascaradas:** `TransacaoJpaRepository` converte somente o `null` legítimo retornado por `EntityManager.find`. O adapter não captura exceções; indisponibilidade, timeout ou falha SQL continuam propagando e não são apresentados como ausência.
 - **TDD honesto:** o teste nasceu verde porque `Optional.ofNullable(entityManager.find(...))` já implementava o contrato. Nenhuma falha artificial foi criada e nenhum código de produção mudou.
