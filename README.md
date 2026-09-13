@@ -23,10 +23,11 @@ O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD
 | Implementado | `422 Problem Details` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida, com contexto real |
 | Implementado | `400 Problem Details` seguro para corpo ausente/nulo, JSON malformado ou estrutura incompatível |
 | Implementado | valor textual e moeda numérica/booleana no JSON são rejeitados com `400`, sem conversão silenciosa |
-| Implementado | 36 testes automatizados verdes, incluindo sucesso HTTP sem mocks |
+| Implementado | identidade UUID imutável no domínio, reutilizada na resposta; ID nulo rejeitado |
+| Implementado | 41 testes automatizados verdes, incluindo sucesso HTTP sem mocks e teste operacional JDBC com PostgreSQL/Testcontainers |
 | Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
-| Ainda não implementado | persistência, consulta, RabbitMQ, `processamento-service`, containers, Kubernetes e CD |
+| Ainda não implementado | persistência da aplicação, consulta, RabbitMQ, `processamento-service`, imagem da aplicação, Kubernetes e CD |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 
@@ -70,7 +71,8 @@ transacoes-service/
 │   ├── api/TransacaoControllerTest.java
 │   ├── api/TransacaoHttpTest.java
 │   ├── application/CriarTransacaoServiceTest.java
-│   └── domain/TransacaoTest.java
+│   ├── domain/TransacaoTest.java
+│   └── infrastructure/PostgresRuntimeTest.java
 ├── mvnw
 ├── mvnw.cmd
 └── pom.xml
@@ -83,13 +85,14 @@ Regras comprovadas até aqui:
 3. valor negativo é rejeitado;
 4. valor nulo é rejeitado com erro de domínio explícito;
 5. moeda nula é rejeitada com erro de domínio explícito;
-6. valor e moeda validados são conservados pela transação e usados no resultado da criação, sem arredondamento.
+6. valor e moeda validados são conservados pela transação e usados no resultado da criação, sem arredondamento;
+7. o UUID recebido pelo domínio é obrigatório e imutável, sendo reutilizado no resultado da criação.
 
-O endpoint de criação já possui adaptador MVC e um caso de uso mínimo. O UUID existe apenas na resposta: ainda não há repository, JPA, banco, consulta, evento ou timestamp, e nada sobrevive ao processo da aplicação.
+O endpoint de criação já possui adaptador MVC e um caso de uso mínimo. O UUID pertence ao domínio, mas ainda não há repository, JPA, consulta, evento ou timestamp, e as transações não sobrevivem ao processo da aplicação. PostgreSQL existe apenas como container descartável em um teste operacional JDBC; isso ainda não é persistência de transações.
 
 ## Executando o estado atual
 
-Pré-requisito: JDK 21. Na primeira execução, o Maven Wrapper precisa acessar a internet para obter o Maven e as dependências declaradas.
+Pré-requisito da aplicação: JDK 21. Para executar a suíte completa (`test`, `package` ou `verify`), também é necessário Docker com engine Linux acessível. Na primeira execução, Maven e Testcontainers precisam de acesso aos repositórios para baixar dependências e imagens. No Windows, inicie o Docker Desktop e aguarde o engine ficar pronto.
 
 No PowerShell:
 
@@ -158,7 +161,7 @@ Os ciclos já executados e suas falhas esperadas estão registrados em [`spec.md
 
 O workflow atual executa Maven `verify` em pull requests relevantes e em mudanças do serviço na `main`. Ele valida compilação, testes e geração do JAR num runner Linux com Java 21. Também usa cache Maven, timeout, cancelamento de execuções obsoletas, permissões somente de leitura e actions externas fixadas por SHA.
 
-O CI crescerá quando surgirem riscos concretos: Testcontainers com PostgreSQL e RabbitMQ, migrations, contratos, qualidade estática e imagem de container. CD ainda não existe; será definido apenas quando houver uma imagem, um ambiente de destino e uma estratégia de rollback.
+O `verify` inclui o teste operacional PostgreSQL/Testcontainers. O CI crescerá quando surgirem riscos concretos: persistência com migrations, RabbitMQ, contratos, qualidade estática e imagem de container. CD ainda não existe; será definido apenas quando houver uma imagem, um ambiente de destino e uma estratégia de rollback.
 
 ### Documentação como evidência
 
