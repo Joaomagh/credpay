@@ -562,6 +562,8 @@ Nenhuma migration criada. Registrar ownership, tabelas, constraints, índices e 
 
 ### 8.1 Contrato mínimo da persistência futura
 
+**Entrega documental:** [PR #19](https://github.com/Joaomagh/credpay/pull/19). Revisão de consistência, UTF-8 válido e `git diff --check`; testes não executados neste incremento exclusivamente documental.
+
 **Estado:** decisão documental para orientar os próximos incrementos; repository, identidade no domínio, entidade JPA, migration e teste PostgreSQL ainda não existem. Nenhuma dependência foi adicionada nesta etapa.
 
 #### Identidade e propriedade dos dados
