@@ -24,10 +24,11 @@ O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD
 | Implementado | `400 Problem Details` seguro para corpo ausente/nulo, JSON malformado ou estrutura incompatível |
 | Implementado | valor textual e moeda numérica/booleana no JSON são rejeitados com `400`, sem conversão silenciosa |
 | Implementado | identidade UUID imutável no domínio, reutilizada na resposta; ID nulo rejeitado |
-| Implementado | 41 testes automatizados verdes, incluindo sucesso HTTP sem mocks e teste operacional JDBC com PostgreSQL/Testcontainers |
+| Implementado | repository JPA com migration Flyway e escrita/leitura PostgreSQL após commit, ainda desacoplado do endpoint |
+| Implementado | 43 testes automatizados verdes, incluindo HTTP sem mocks e integração PostgreSQL/Testcontainers |
 | Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
-| Ainda não implementado | persistência da aplicação, consulta, RabbitMQ, `processamento-service`, imagem da aplicação, Kubernetes e CD |
+| Ainda não implementado | persistência pelo endpoint, constraints de negócio do banco, consulta HTTP, RabbitMQ, `processamento-service`, imagem da aplicação, Kubernetes e CD |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 
@@ -62,7 +63,11 @@ transacoes-service/
 │   ├── api/JacksonConfiguration.java
 │   ├── application/
 │   │   ├── CriarTransacao.java
-│   │   └── CriarTransacaoService.java
+│   │   ├── CriarTransacaoService.java
+│   │   └── TransacaoRepository.java
+│   ├── infrastructure/persistence/
+│   │   ├── TransacaoEntity.java
+│   │   └── TransacaoJpaRepository.java
 │   └── domain/
 │       ├── StatusTransacao.java
 │       └── Transacao.java
@@ -72,7 +77,10 @@ transacoes-service/
 │   ├── api/TransacaoHttpTest.java
 │   ├── application/CriarTransacaoServiceTest.java
 │   ├── domain/TransacaoTest.java
-│   └── infrastructure/PostgresRuntimeTest.java
+│   └── infrastructure/
+│       ├── PostgresRuntimeTest.java
+│       └── persistence/TransacaoRepositoryIntegrationTest.java
+├── src/main/resources/db/migration/V1__create_transacoes.sql
 ├── mvnw
 ├── mvnw.cmd
 └── pom.xml
@@ -88,7 +96,9 @@ Regras comprovadas até aqui:
 6. valor e moeda validados são conservados pela transação e usados no resultado da criação, sem arredondamento;
 7. o UUID recebido pelo domínio é obrigatório e imutável, sendo reutilizado no resultado da criação.
 
-O endpoint de criação já possui adaptador MVC e um caso de uso mínimo. O UUID pertence ao domínio, mas ainda não há repository, JPA, consulta, evento ou timestamp, e as transações não sobrevivem ao processo da aplicação. PostgreSQL existe apenas como container descartável em um teste operacional JDBC; isso ainda não é persistência de transações.
+O endpoint de criação possui adaptador MVC e um caso de uso mínimo. O UUID pertence ao domínio. Já existe um repository JPA com migration Flyway, testado contra PostgreSQL real, mas ele ainda não foi conectado ao caso de uso HTTP. Portanto, as transações criadas pelo endpoint continuam não persistidas. Consulta HTTP, eventos e timestamp permanecem futuros.
+
+O teste de repository comprova duas operações separadas: gravação com commit e leitura em outro contexto, preservando UUID, valor, escala, moeda e `PENDENTE`. As constraints de negócio do banco e os cenários de falha ainda estão em desenvolvimento.
 
 ## Executando o estado atual
 
@@ -115,6 +125,8 @@ Invoke-RestMethod `
 ```
 
 Em Linux ou macOS, use `./mvnw` no lugar de `.\mvnw.cmd`. O `POST /transacoes` retorna `201 Created`, `Location` e uma representação `PENDENTE`, mas ainda não persiste o recurso.
+
+O perfil padrão mantém a aplicação sem DataSource. O perfil opcional `persistencia`, usado pelo teste de repository, habilita JPA/Flyway e exige uma conexão PostgreSQL configurada; ativá-lo não conecta automaticamente o endpoint ao repository. Nos testes, o container e as propriedades de conexão são gerenciados automaticamente.
 
 ## Arquitetura planejada
 
@@ -161,7 +173,7 @@ Os ciclos já executados e suas falhas esperadas estão registrados em [`spec.md
 
 O workflow atual executa Maven `verify` em pull requests relevantes e em mudanças do serviço na `main`. Ele valida compilação, testes e geração do JAR num runner Linux com Java 21. Também usa cache Maven, timeout, cancelamento de execuções obsoletas, permissões somente de leitura e actions externas fixadas por SHA.
 
-O `verify` inclui o teste operacional PostgreSQL/Testcontainers. O CI crescerá quando surgirem riscos concretos: persistência com migrations, RabbitMQ, contratos, qualidade estática e imagem de container. CD ainda não existe; será definido apenas quando houver uma imagem, um ambiente de destino e uma estratégia de rollback.
+O `verify` inclui PostgreSQL/Testcontainers, aplicação da migration Flyway e teste de round-trip do repository. O CI crescerá quando surgirem riscos concretos: constraints e falhas de persistência, RabbitMQ, contratos, qualidade estática e imagem de container. CD ainda não existe; será definido apenas quando houver uma imagem, um ambiente de destino e uma estratégia de rollback.
 
 ### Documentação como evidência
 
