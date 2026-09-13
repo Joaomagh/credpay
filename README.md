@@ -25,10 +25,11 @@ O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD
 | Implementado | valor textual e moeda numérica/booleana no JSON são rejeitados com `400`, sem conversão silenciosa |
 | Implementado | identidade UUID imutável no domínio, reutilizada na resposta; ID nulo rejeitado |
 | Implementado | repository JPA com migration Flyway e escrita/leitura PostgreSQL após commit, ainda desacoplado do endpoint |
-| Implementado | 43 testes automatizados verdes, incluindo HTTP sem mocks e integração PostgreSQL/Testcontainers |
+| Implementado | constraint PostgreSQL rejeita valores não positivos, `NaN` e infinitos mesmo por SQL direto |
+| Implementado | 48 testes automatizados verdes, incluindo HTTP sem mocks e integração PostgreSQL/Testcontainers |
 | Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
-| Ainda não implementado | persistência pelo endpoint, constraints de negócio do banco, consulta HTTP, RabbitMQ, `processamento-service`, imagem da aplicação, Kubernetes e CD |
+| Ainda não implementado | persistência pelo endpoint, constraints de moeda/status no banco, consulta HTTP, RabbitMQ, `processamento-service`, imagem da aplicação, Kubernetes e CD |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 
@@ -80,7 +81,9 @@ transacoes-service/
 │   └── infrastructure/
 │       ├── PostgresRuntimeTest.java
 │       └── persistence/TransacaoRepositoryIntegrationTest.java
-├── src/main/resources/db/migration/V1__create_transacoes.sql
+├── src/main/resources/db/migration/
+│   ├── V1__create_transacoes.sql
+│   └── V2__protect_transaction_amount.sql
 ├── mvnw
 ├── mvnw.cmd
 └── pom.xml
@@ -94,11 +97,12 @@ Regras comprovadas até aqui:
 4. valor nulo é rejeitado com erro de domínio explícito;
 5. moeda nula é rejeitada com erro de domínio explícito;
 6. valor e moeda validados são conservados pela transação e usados no resultado da criação, sem arredondamento;
-7. o UUID recebido pelo domínio é obrigatório e imutável, sendo reutilizado no resultado da criação.
+7. o UUID recebido pelo domínio é obrigatório e imutável, sendo reutilizado no resultado da criação;
+8. o PostgreSQL rejeita valor zero, negativo, `NaN` e infinitos, inclusive quando a gravação contorna o domínio.
 
 O endpoint de criação possui adaptador MVC e um caso de uso mínimo. O UUID pertence ao domínio. Já existe um repository JPA com migration Flyway, testado contra PostgreSQL real, mas ele ainda não foi conectado ao caso de uso HTTP. Portanto, as transações criadas pelo endpoint continuam não persistidas. Consulta HTTP, eventos e timestamp permanecem futuros.
 
-O teste de repository comprova duas operações separadas: gravação com commit e leitura em outro contexto, preservando UUID, valor, escala, moeda e `PENDENTE`. As constraints de negócio do banco e os cenários de falha ainda estão em desenvolvimento.
+O teste de repository comprova duas operações separadas: gravação com commit e leitura em outro contexto, preservando UUID, valor, escala, moeda e `PENDENTE`. A constraint monetária também é exercitada por SQL direto; constraints de moeda/status e outros cenários de falha continuam em desenvolvimento.
 
 ## Executando o estado atual
 
@@ -173,7 +177,7 @@ Os ciclos já executados e suas falhas esperadas estão registrados em [`spec.md
 
 O workflow atual executa Maven `verify` em pull requests relevantes e em mudanças do serviço na `main`. Ele valida compilação, testes e geração do JAR num runner Linux com Java 21. Também usa cache Maven, timeout, cancelamento de execuções obsoletas, permissões somente de leitura e actions externas fixadas por SHA.
 
-O `verify` inclui PostgreSQL/Testcontainers, aplicação da migration Flyway e teste de round-trip do repository. O CI crescerá quando surgirem riscos concretos: constraints e falhas de persistência, RabbitMQ, contratos, qualidade estática e imagem de container. CD ainda não existe; será definido apenas quando houver uma imagem, um ambiente de destino e uma estratégia de rollback.
+O `verify` inclui PostgreSQL/Testcontainers, aplicação das migrations Flyway, round-trip do repository e testes da constraint monetária. O CI crescerá quando surgirem riscos concretos: novas falhas de persistência, RabbitMQ, contratos, qualidade estática e imagem de container. CD ainda não existe; será definido apenas quando houver uma imagem, um ambiente de destino e uma estratégia de rollback.
 
 ### Documentação como evidência
 
