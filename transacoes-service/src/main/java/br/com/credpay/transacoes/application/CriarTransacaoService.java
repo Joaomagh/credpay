@@ -16,8 +16,8 @@ final class CriarTransacaoService implements CriarTransacao {
 
         return new Resultado(
                 UUID.randomUUID(),
-                valor,
-                moeda,
+                transacao.valor(),
+                transacao.moeda(),
                 transacao.status());
     }
 }

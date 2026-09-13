@@ -18,11 +18,12 @@ O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD
 | Implementado | health check do Spring Boot Actuator |
 | Implementado | transação válida nasce `PENDENTE` |
 | Implementado | valor ausente ou não positivo e moeda ausente são rejeitados pelo domínio |
+| Implementado | transação preserva valor, escala decimal e moeda validados, sem arredondamento |
 | Implementado | `POST /transacoes` cria uma representação não persistida com UUID e estado `PENDENTE` |
 | Implementado | `422 Problem Details` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida, com contexto real |
 | Implementado | `400 Problem Details` seguro para corpo ausente/nulo, JSON malformado ou estrutura incompatível |
 | Implementado | valor textual e moeda numérica/booleana no JSON são rejeitados com `400`, sem conversão silenciosa |
-| Implementado | 33 testes automatizados verdes, incluindo sucesso HTTP sem mocks |
+| Implementado | 36 testes automatizados verdes, incluindo sucesso HTTP sem mocks |
 | Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
 | Ainda não implementado | persistência, consulta, RabbitMQ, `processamento-service`, containers, Kubernetes e CD |
@@ -81,7 +82,8 @@ Regras comprovadas até aqui:
 2. valor igual a zero é rejeitado;
 3. valor negativo é rejeitado;
 4. valor nulo é rejeitado com erro de domínio explícito;
-5. moeda nula é rejeitada com erro de domínio explícito.
+5. moeda nula é rejeitada com erro de domínio explícito;
+6. valor e moeda validados são conservados pela transação e usados no resultado da criação, sem arredondamento.
 
 O endpoint de criação já possui adaptador MVC e um caso de uso mínimo. O UUID existe apenas na resposta: ainda não há repository, JPA, banco, consulta, evento ou timestamp, e nada sobrevive ao processo da aplicação.
 
