@@ -399,6 +399,8 @@ A criação já é persistente. Idempotência, autenticação, OpenAPI e publica
 
 #### Consulta de transação por UUID
 
+**Entrega documental:** [PR #30](https://github.com/Joaomagh/credpay/pull/30).
+
 Request: `GET /transacoes/{id}`, sem corpo, onde `{id}` é um UUID sintaticamente válido gerado pelo serviço.
 
 Para uma transação existente:
