@@ -902,6 +902,7 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 
 ### 8.13 Baseline de idempotência da criação
 
+- **Entrega:** [PR #34](https://github.com/Joaomagh/credpay/pull/34).
 - **Chave:** header obrigatório `Idempotency-Key` em formato UUID, distinto do UUID da transação.
 - **Repetição:** mesmo payload repete a resposta original; payload diferente produz `409` e não altera a primeira transação.
 - **Equivalência:** valor é comparado numericamente e moeda por código; diferenças de JSON ou escala textual não criam outra operação.
