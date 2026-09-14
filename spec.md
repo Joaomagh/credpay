@@ -759,6 +759,8 @@ Antes do código de persistência, disponibilizar o engine Linux e confirmar ver
 
 **Status:** aprovada para o próximo incremento de implementação.
 
+**Entrega:** [PR #28](https://github.com/Joaomagh/credpay/pull/28).
+
 #### Execução real
 
 - PostgreSQL será obrigatório para iniciar e executar o `transacoes-service`; não haverá repository volátil, fallback em memória ou criação não persistida quando a aplicação real estiver ativa.
