@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Definir o contrato HTTP mínimo para UUID malformado em `GET /transacoes/{id}`, sem implementar ainda e sem ampliar para listagem, RabbitMQ ou dependência nova.
+- [ ] Implementar em TDD o `400 Problem Details` para UUID malformado em `GET /transacoes/{id}`, provando que o caso de uso não é chamado e sem ampliar para listagem, RabbitMQ ou dependência nova.

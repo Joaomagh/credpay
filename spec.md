@@ -347,7 +347,7 @@ O contrato de criação foi aprovado em 2026-09-10 e passou a persistir em 2026-
 | Método e rota | Request/response | Erros | Teste de contrato |
 |---|---|---|---|
 | `POST /transacoes` | JSON com `valor` e `moeda`; `201 Created`, `Location` e representação `PENDENTE` | `400` para corpo ilegível; `422` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida | `TransacaoControllerTest` e `TransacaoHttpTest` |
-| `GET /transacoes/{id}` | `200 OK` e representação persistida | `404` para UUID válido ausente | `BuscarTransacaoServiceTest`, `TransacaoControllerTest` e `TransacaoHttpTest` |
+| `GET /transacoes/{id}` | `200 OK` e representação persistida | `400` para UUID malformado; `404` para UUID válido ausente | encontrado e ausente cobertos por `BuscarTransacaoServiceTest`, `TransacaoControllerTest` e `TransacaoHttpTest`; malformado planejado |
 
 #### Criação de transação
 
@@ -429,7 +429,20 @@ Para UUID válido inexistente:
 
 O controller depende da porta `BuscarTransacao`; o serviço consulta `TransacaoRepository` dentro de `@Transactional(readOnly = true)` e mapeia domínio para um resultado de aplicação. Ausência é traduzida por erro explícito para o Problem Details; exceção de infraestrutura continua propagando e não vira `404`.
 
-UUID existente e UUID válido ausente são cobertos em teste unitário, slice MVC e HTTP/PostgreSQL. UUID malformado, listagem, paginação, filtros, cache, lock, autenticação e atualização de estado ficam fora.
+UUID existente e UUID válido ausente são cobertos em teste unitário, slice MVC e HTTP/PostgreSQL. Listagem, paginação, filtros, cache, lock, autenticação e atualização de estado ficam fora.
+
+##### UUID malformado
+
+**Contrato aprovado, ainda não implementado:** quando `{id}` não puder ser convertido para UUID, a API retornará:
+
+- status `400 Bad Request`;
+- `Content-Type: application/problem+json`;
+- `type: about:blank`;
+- `title: Requisição inválida`;
+- `detail: id deve ser um UUID válido`;
+- `instance` igual à rota recebida.
+
+Esse erro representa sintaxe inválida e ocorre antes do caso de uso. O teste MVC deverá verificar que `BuscarTransacao` não é chamado; o teste HTTP completo deverá comprovar o mesmo contrato externo sem exigir estado prévio no banco. Mensagens internas do conversor, nome de classe Java e stack trace não serão expostos. UUID vazio, parâmetros extras, normalização textual e outros identificadores não entram neste incremento.
 
 ### Eventos
 
@@ -845,6 +858,7 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 ### 8.11 Consulta HTTP por UUID válido
 
 - **Entrega:** [PR #31](https://github.com/Joaomagh/credpay/pull/31).
+- **CI e merge:** [CI Linux #57](https://github.com/Joaomagh/credpay/actions/runs/34801824795) verde para `530f29d`; merge em `e4a81fb`.
 - **Red de aplicação:** após adicionar somente `BuscarTransacaoServiceTest`, a compilação falhou pela ausência de `BuscarTransacaoService` e `TransacaoNaoEncontradaException`.
 - **Green de aplicação:** a porta `BuscarTransacao` e o serviço mínimo passaram 2 testes, consultando o repository em `@Transactional(readOnly = true)`, preservando os dados encontrados e lançando erro explícito quando ausentes.
 - **Red MVC:** os dois cenários GET falharam com o handler de recurso estático: o existente recebeu `404` em vez de `200` e o ausente não recebeu `application/problem+json`.
@@ -853,6 +867,14 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 - **Verificação:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 56 testes, zero falhas/erros/skips e gerou o JAR. PostgreSQL 17.11, Flyway V1-V2 e Testcontainers foram executados.
 - **Limites:** sem tratamento contratual de UUID malformado, listagem, paginação, filtros, cache, lock, autenticação, eventos ou dependência nova.
 - **Próximo:** definir o contrato HTTP mínimo para UUID malformado antes de implementá-lo.
+
+### 8.12 Baseline de erro para UUID malformado
+
+- **Decisão:** distinguir sintaxe inválida (`400`) de ausência de recurso (`404`) e manter uma mensagem pública estável, sem detalhes do conversor Java.
+- **Fronteira:** a conversão do path ocorre antes da porta `BuscarTransacao`; o teste MVC deverá provar ausência de interação com o caso de uso.
+- **Evidência esperada:** slice MVC e HTTP completo validam status, media type e todos os campos Problem Details. O `404` de UUID válido permanece como regressão.
+- **Limites:** sem código neste incremento documental; não cobre rota sem ID, UUID válido ausente, listagem ou outro tipo de parâmetro.
+- **Próximo:** implementar o contrato em TDD sem dependência nova.
 
 ## 9. Mensageria e tratamento de falhas
 
