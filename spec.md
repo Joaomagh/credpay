@@ -347,7 +347,7 @@ O contrato de criação foi aprovado em 2026-09-10 e passou a persistir em 2026-
 | Método e rota | Request/response | Erros | Teste de contrato |
 |---|---|---|---|
 | `POST /transacoes` | JSON com `valor` e `moeda`; `201 Created`, `Location` e representação `PENDENTE` | `400` para corpo ilegível; `422` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida | `TransacaoControllerTest` e `TransacaoHttpTest` |
-| `GET /transacoes/{id}` | `200 OK` e representação persistida | `404` para UUID válido ausente | planejado para o próximo incremento |
+| `GET /transacoes/{id}` | `200 OK` e representação persistida | `404` para UUID válido ausente | `BuscarTransacaoServiceTest`, `TransacaoControllerTest` e `TransacaoHttpTest` |
 
 #### Criação de transação
 
@@ -395,7 +395,7 @@ O contrato de erros usa `Content-Type: application/problem+json` e os campos pad
 | `moeda` ausente ou nula | `422 Unprocessable Entity` | `Transação inválida` | `moeda deve ser informada` |
 | código de `moeda` inválido | `422 Unprocessable Entity` | `Transação inválida` | `moeda deve ser um código ISO 4217 válido em letras maiúsculas` |
 
-A criação já é persistente. Idempotência, autenticação, OpenAPI e publicação de evento permanecem fora deste estágio. O contrato de consulta abaixo foi aprovado, mas ainda não está implementado.
+A criação e a consulta por UUID válido já são persistentes. Idempotência, autenticação, OpenAPI e publicação de evento permanecem fora deste estágio.
 
 #### Consulta de transação por UUID
 
@@ -427,9 +427,9 @@ Para UUID válido inexistente:
 - `detail: transação não encontrada`;
 - `instance: /transacoes/{id}`.
 
-O controller dependerá de uma porta `BuscarTransacao`; o serviço consultará `TransacaoRepository` dentro de `@Transactional(readOnly = true)` e mapeará domínio para um resultado de aplicação. Ausência será traduzida por erro explícito para o Problem Details; exceção de infraestrutura continuará propagando e não virará `404`.
+O controller depende da porta `BuscarTransacao`; o serviço consulta `TransacaoRepository` dentro de `@Transactional(readOnly = true)` e mapeia domínio para um resultado de aplicação. Ausência é traduzida por erro explícito para o Problem Details; exceção de infraestrutura continua propagando e não vira `404`.
 
-O próximo incremento cobrirá UUID existente e UUID válido ausente em teste unitário, slice MVC e HTTP/PostgreSQL. UUID malformado, listagem, paginação, filtros, cache, lock, autenticação e atualização de estado ficam fora.
+UUID existente e UUID válido ausente são cobertos em teste unitário, slice MVC e HTTP/PostgreSQL. UUID malformado, listagem, paginação, filtros, cache, lock, autenticação e atualização de estado ficam fora.
 
 ### Eventos
 
@@ -842,6 +842,18 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 - **Limites:** sem consulta HTTP, Docker Compose, idempotência, tratamento específico de indisponibilidade, RabbitMQ, outbox, evento ou dependência nova.
 - **Próximo:** definir o contrato mínimo de `GET /transacoes/{id}` antes da implementação.
 
+### 8.11 Consulta HTTP por UUID válido
+
+- **Entrega:** [PR #31](https://github.com/Joaomagh/credpay/pull/31).
+- **Red de aplicação:** após adicionar somente `BuscarTransacaoServiceTest`, a compilação falhou pela ausência de `BuscarTransacaoService` e `TransacaoNaoEncontradaException`.
+- **Green de aplicação:** a porta `BuscarTransacao` e o serviço mínimo passaram 2 testes, consultando o repository em `@Transactional(readOnly = true)`, preservando os dados encontrados e lançando erro explícito quando ausentes.
+- **Red MVC:** os dois cenários GET falharam com o handler de recurso estático: o existente recebeu `404` em vez de `200` e o ausente não recebeu `application/problem+json`.
+- **Green MVC:** o controller passou a delegar a consulta e o advice traduz `TransacaoNaoEncontradaException` para `404` com título e detalhe estáveis. Os 3 testes MVC, incluindo a criação preexistente, ficaram verdes.
+- **Integração:** `TransacaoHttpTest` cria uma transação pelo POST e a consulta pelo UUID contra PostgreSQL real; outro cenário comprova `404 Problem Details` para UUID válido não persistido. Os 27 casos HTTP ficaram verdes.
+- **Verificação:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 56 testes, zero falhas/erros/skips e gerou o JAR. PostgreSQL 17.11, Flyway V1-V2 e Testcontainers foram executados.
+- **Limites:** sem tratamento contratual de UUID malformado, listagem, paginação, filtros, cache, lock, autenticação, eventos ou dependência nova.
+- **Próximo:** definir o contrato HTTP mínimo para UUID malformado antes de implementá-lo.
+
 ## 9. Mensageria e tratamento de falhas
 
 Ainda não configurado. Decisões futuras devem cobrir exchange, queue, routing key, durabilidade, ack, prefetch, retry/backoff, DLQ, idempotência e publicação confiável — somente quando testadas.
@@ -964,6 +976,7 @@ Cobertura, scanners e outras ferramentas serão sinais auxiliares, não metas is
 | Pattern | Local | Problema resolvido | Trade-off | Evidência |
 |---|---|---|---|---|
 | Porta de caso de uso | `application/CriarTransacao.java` | desacoplar o adaptador HTTP da execução da criação | uma abstração adicional para um único caso de uso | `TransacaoControllerTest` substitui a porta por mock; contexto completo usa `CriarTransacaoService` |
+| Porta de consulta | `application/BuscarTransacao.java` | separar HTTP da leitura transacional e da persistência | outra abstração e mapeamento para um caso de uso simples | testes unitário, MVC e HTTP/PostgreSQL cobrem encontrado e ausente |
 
 ## 15. Registro de experimentos
 
@@ -981,6 +994,7 @@ Cobertura, scanners e outras ferramentas serão sinais auxiliares, não metas is
 | 2026-09-13 | UUID inexistente deve retornar ausência sem engolir falhas | buscar ID fixo não inserido em PostgreSQL real e inspecionar a ausência de captura no adapter | teste nasceu verde; SELECT real; teste focado com 9 casos e `verify` com 50 testes | provar rollback da inserção |
 | 2026-09-13 | rollback após INSERT deve deixar o banco sem o registro | persistir, forçar `flush`, marcar rollback e buscar em nova transação | teste nasceu verde; INSERT/SELECT reais; teste focado com 10 casos e `verify` com 51 testes | definir ativação obrigatória da persistência |
 | 2026-09-13 | `POST /transacoes` deve persistir antes do `201` | red unitário da porta; red de contexto sem repository; ativar JPA/Flyway por padrão; executar POST e reler UUID em nova transação | 2 testes unitários, 25 HTTP e `verify` com 50 testes verdes | definir contrato HTTP de consulta por UUID |
+| 2026-09-14 | `GET /transacoes/{id}` deve retornar o registro ou `404` para UUID válido ausente | red unitário dos tipos de aplicação; red MVC sem rota; consulta ponta a ponta após POST em PostgreSQL real | 2 testes de aplicação, 3 MVC, 27 HTTP e `verify` com 56 testes verdes | definir contrato de UUID malformado |
 
 ## 16. Checklist por incremento
 

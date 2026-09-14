@@ -29,10 +29,11 @@ O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD
 | Implementado | chave primária impede UUID duplicado sem sobrescrever a transação original |
 | Implementado | busca por UUID inexistente retorna ausência explícita no repository |
 | Implementado | rollback após `flush` impede que uma inserção revertida permaneça no banco |
-| Implementado | 50 testes automatizados verdes, incluindo HTTP ponta a ponta e integração PostgreSQL/Testcontainers |
+| Implementado | `GET /transacoes/{id}` retorna a representação persistida ou `404 Problem Details` para UUID válido ausente |
+| Implementado | 56 testes automatizados verdes, incluindo HTTP ponta a ponta e integração PostgreSQL/Testcontainers |
 | Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
-| Ainda não implementado | constraints de moeda/status no banco, consulta HTTP, RabbitMQ, `processamento-service`, imagem da aplicação, Kubernetes e CD |
+| Ainda não implementado | UUID malformado, constraints de moeda/status no banco, RabbitMQ, `processamento-service`, imagem da aplicação, Kubernetes e CD |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 
@@ -66,8 +67,11 @@ transacoes-service/
 │   ├── api/TransacaoExceptionHandler.java
 │   ├── api/JacksonConfiguration.java
 │   ├── application/
+│   │   ├── BuscarTransacao.java
+│   │   ├── BuscarTransacaoService.java
 │   │   ├── CriarTransacao.java
 │   │   ├── CriarTransacaoService.java
+│   │   ├── TransacaoNaoEncontradaException.java
 │   │   └── TransacaoRepository.java
 │   ├── infrastructure/persistence/
 │   │   ├── TransacaoEntity.java
@@ -78,6 +82,7 @@ transacoes-service/
 ├── src/test/java/br/com/credpay/transacoes/
 │   ├── api/TransacaoControllerTest.java
 │   ├── api/TransacaoHttpTest.java
+│   ├── application/BuscarTransacaoServiceTest.java
 │   ├── application/CriarTransacaoServiceTest.java
 │   ├── domain/TransacaoTest.java
 │   └── infrastructure/
@@ -105,8 +110,9 @@ Regras comprovadas até aqui:
 10. uma busca por UUID inexistente retorna `Optional.empty()` no repository;
 11. uma inserção enviada ao PostgreSQL e posteriormente revertida não fica persistida;
 12. o `POST /transacoes` confirma `201` somente depois de persistir a transação em PostgreSQL.
+13. o `GET /transacoes/{id}` devolve os dados persistidos e diferencia UUID válido ausente com `404 Problem Details`.
 
-O endpoint de criação, o caso de uso transacional e o adapter JPA formam agora um fluxo persistente. O UUID pertence ao domínio e é o mesmo na resposta, no `Location` e no PostgreSQL. O teste HTTP relê a transação depois do `201`, em outra transação. Consulta HTTP, eventos e timestamp permanecem futuros.
+Os endpoints de criação e consulta, os casos de uso transacionais e o adapter JPA formam agora um fluxo persistente. O UUID pertence ao domínio e é o mesmo na resposta, no `Location`, no PostgreSQL e na consulta posterior. Eventos e timestamp permanecem futuros.
 
 O teste de repository comprova duas operações separadas: gravação com commit e leitura em outro contexto, preservando UUID, valor, escala, moeda e `PENDENTE`. A constraint monetária também é exercitada por SQL direto; constraints de moeda/status e outros cenários de falha continuam em desenvolvimento.
 
@@ -140,9 +146,11 @@ Invoke-RestMethod `
   -Uri http://localhost:8080/transacoes `
   -ContentType 'application/json' `
   -Body '{"valor":10.00,"moeda":"BRL"}'
+
+Invoke-RestMethod http://localhost:8080/transacoes/<uuid-retornado>
 ```
 
-Em Linux ou macOS, use `./mvnw` no lugar de `.\mvnw.cmd`. O `POST /transacoes` retorna `201 Created`, `Location` e uma representação `PENDENTE` já persistida.
+Em Linux ou macOS, use `./mvnw` no lugar de `.\mvnw.cmd`. O `POST /transacoes` retorna `201 Created`, `Location` e uma representação `PENDENTE` já persistida; o `GET` pelo UUID retorna essa representação.
 
 A aplicação não possui fallback volátil: sem DataSource válido ela falha ao iniciar. Flyway aplica as migrations e Hibernate valida o schema; nos testes de integração, o container e as propriedades de conexão são gerenciados automaticamente.
 
