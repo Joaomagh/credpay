@@ -746,6 +746,7 @@ Antes do código de persistência, disponibilizar o engine Linux e confirmar ver
 
 ### 8.8 Rollback da inserção
 
+- **Entrega:** [PR #27](https://github.com/Joaomagh/credpay/pull/27).
 - **Teste de caracterização:** o repository recebe uma transação válida dentro de `TransactionTemplate`; `EntityManager.flush()` força o INSERT real antes de `setRollbackOnly()`.
 - **Integridade preservada:** depois do rollback, uma nova transação executa SELECT pelo mesmo UUID e retorna vazio. O adapter participa da unidade de trabalho coordenada e não confirma a escrita independentemente.
 - **TDD honesto:** o teste nasceu verde porque `EntityManager.persist` já participa da transação JPA. Nenhum red foi fabricado e nenhum código de produção foi alterado.
