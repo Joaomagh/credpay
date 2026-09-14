@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Definir e aprovar o contrato mínimo de idempotência para `POST /transacoes`, incluindo chave obrigatória, repetição do mesmo payload e conflito de payload diferente, sem implementar ainda.
+- [ ] Implementar em TDD a persistência mínima da chave idempotente: migration com UUID obrigatório e único, além de inserção e busca no repository, sem alterar ainda o endpoint ou o caso de uso.
