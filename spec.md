@@ -795,6 +795,7 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 
 ### 8.10 Criação HTTP persistente e transacional
 
+- **Entrega:** [PR #29](https://github.com/Joaomagh/credpay/pull/29).
 - **Red unitário:** após alterar somente `CriarTransacaoServiceTest`, a compilação falhou porque o serviço ainda aceitava apenas o construtor sem argumentos. O teste novo exigia a porta `TransacaoRepository` e a entrega da transação criada para `inserir`.
 - **Green unitário:** o serviço passou a receber o repository por construtor, chamar `inserir` antes de compor o resultado e executar `executar` com `@Transactional`. Os 2 casos unitários passaram e verificaram UUID, valor/escala, moeda e `PENDENTE` na entidade entregue à porta.
 - **Red HTTP:** com somente o teste HTTP preparado para PostgreSQL real, o container iniciou, mas o contexto padrão produziu 25 erros por uma causa única: não havia bean `TransacaoRepository`, pois o adapter dependia do perfil `persistencia` e o DataSource estava excluído por padrão.
