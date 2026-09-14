@@ -6,7 +6,7 @@
 
 **Fase atual:** 2 — Fundação reproduzível
 
-**Estado:** domínio e API testados; repository PostgreSQL/JPA com round-trip após commit e constraint monetária comprovados; endpoint ainda não conectado à persistência
+**Estado:** criação HTTP persistente e transacional; repository PostgreSQL/JPA com round-trip, rollback, colisão, ausência e constraint monetária comprovados
 
 ## 1. Contexto e limites atuais
 
@@ -15,9 +15,9 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 - `transacoes-service`: recebe pedidos, valida regras de entrada, mantém o estado consultável e publica eventos;
 - `processamento-service`: consome pedidos de processamento, decide o resultado e publica o evento correspondente.
 
-**Implementado:** scaffolding mínimo do `transacoes-service`, CI com Maven `verify`, validações de domínio, preservação de UUID/valor/moeda na transação e `POST /transacoes`, que retorna uma representação não persistida com o mesmo UUID do domínio e estado `PENDENTE`.
+**Implementado:** scaffolding mínimo do `transacoes-service`, CI com Maven `verify`, validações de domínio, preservação de UUID/valor/moeda e `POST /transacoes`, que persiste e retorna a mesma transação `PENDENTE` depois do commit local.
 
-**Ainda não implementado:** persistência pelo endpoint e consulta HTTP de transações, constraints de moeda/status no banco, `processamento-service`, filas e contratos de eventos. Existe adapter PostgreSQL validado isoladamente por teste de integração, e a constraint monetária do banco já foi testada por SQL direto. A API já retorna `422 Problem Details` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida, além de `400 Problem Details` para falhas de leitura, valor textual e moeda numérica/booleana.
+**Ainda não implementado:** consulta HTTP de transações, constraints de moeda/status no banco, `processamento-service`, filas e contratos de eventos. O adapter PostgreSQL é validado isoladamente e pelo fluxo HTTP completo; a constraint monetária foi testada por SQL direto. A API já retorna `422 Problem Details` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida, além de `400 Problem Details` para falhas de leitura, valor textual e moeda numérica/booleana.
 
 ## 2. Arquitetura vigente
 
@@ -137,11 +137,13 @@ O teste e o package emitiram warning de autoanexação do Mockito/Byte Buddy no 
 
 ## 4. Configuração e segredos
 
-Nenhuma variável própria do CredPay foi criada. O perfil opcional `persistencia` usa propriedades padrão do Spring para conexão; os testes fornecem URL, usuário e senha fictícia dinamicamente. Sem esse perfil, a aplicação não configura DataSource. Não há credencial padrão de banco para execução da aplicação.
+O serviço usa as propriedades padrão do Spring para uma conexão PostgreSQL obrigatória. Os testes fornecem URL, usuário e senha fictícia dinamicamente; a execução real deve recebê-las do ambiente. Não existe perfil sem persistência nem credencial padrão versionada.
 
 | Serviço | Variável | Obrigatória | Valor padrão | Propósito | Sensível |
 |---|---|---|---|---|---|
-| — | — | — | — | — | — |
+| transacoes-service | `SPRING_DATASOURCE_URL` | sim | nenhum | URL JDBC do PostgreSQL do serviço | não |
+| transacoes-service | `SPRING_DATASOURCE_USERNAME` | sim | nenhum | usuário do banco | sim |
+| transacoes-service | `SPRING_DATASOURCE_PASSWORD` | sim | nenhum | senha do banco | sim |
 
 Valores reais nunca entram neste documento. `.env.example` usa placeholders; arquivos locais de segredo devem ser ignorados pelo Git.
 
@@ -791,6 +793,19 @@ Antes do código de persistência, disponibilizar o engine Linux e confirmar ver
 
 Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indisponibilidade/constraint, RabbitMQ, outbox, evento ou dependência nova. A configuração de execução local com PostgreSQL será preparada em incremento próprio depois que a conexão do caso de uso estiver comprovada por Testcontainers.
 
+### 8.10 Criação HTTP persistente e transacional
+
+- **Entrega:** [PR #29](https://github.com/Joaomagh/credpay/pull/29).
+- **Red unitário:** após alterar somente `CriarTransacaoServiceTest`, a compilação falhou porque o serviço ainda aceitava apenas o construtor sem argumentos. O teste novo exigia a porta `TransacaoRepository` e a entrega da transação criada para `inserir`.
+- **Green unitário:** o serviço passou a receber o repository por construtor, chamar `inserir` antes de compor o resultado e executar `executar` com `@Transactional`. Os 2 casos unitários passaram e verificaram UUID, valor/escala, moeda e `PENDENTE` na entidade entregue à porta.
+- **Red HTTP:** com somente o teste HTTP preparado para PostgreSQL real, o container iniciou, mas o contexto padrão produziu 25 erros por uma causa única: não havia bean `TransacaoRepository`, pois o adapter dependia do perfil `persistencia` e o DataSource estava excluído por padrão.
+- **Green HTTP:** o perfil/fallback sem banco foi removido, o adapter JPA passou a ser bean normal e a configuração sempre usa Flyway, Hibernate `validate` e `open-in-view=false`. `TransacaoHttpTest` inicia PostgreSQL 17.11, executa o fluxo completo e relê cada transação válida em nova transação após o `201`.
+- **Proxy transacional:** `CriarTransacaoService` deixou de ser `final` porque a configuração padrão do Spring usa proxy de classe para `@Transactional`; a classe continua package-private e sem extensão de domínio.
+- **Verificação:** `CriarTransacaoServiceTest` com 2 casos verdes; `TransacaoHttpTest` com 25 casos verdes; `mvnw.cmd --batch-mode --no-transfer-progress verify` com 50 testes, zero falhas/erros/skips e JAR gerado. O total anterior de 51 caiu pela remoção deliberada de `TransacoesServiceApplicationTest`; a inicialização do contexto real agora é coberta pelo teste HTTP com PostgreSQL.
+- **Configuração:** execução real exige `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` e `SPRING_DATASOURCE_PASSWORD`. Sem banco válido, o serviço falha ao iniciar em vez de aceitar transações voláteis. Nenhum segredo foi adicionado.
+- **Limites:** sem consulta HTTP, Docker Compose, idempotência, tratamento específico de indisponibilidade, RabbitMQ, outbox, evento ou dependência nova.
+- **Próximo:** definir o contrato mínimo de `GET /transacoes/{id}` antes da implementação.
+
 ## 9. Mensageria e tratamento de falhas
 
 Ainda não configurado. Decisões futuras devem cobrir exchange, queue, routing key, durabilidade, ack, prefetch, retry/backoff, DLQ, idempotência e publicação confiável — somente quando testadas.
@@ -929,6 +944,7 @@ Cobertura, scanners e outras ferramentas serão sinais auxiliares, não metas is
 | 2026-09-13 | uma colisão de UUID deve falhar sem sobrescrever a transação original | inserir duas transações distintas com o mesmo ID em commits separados e reler a primeira | teste nasceu verde pela PK/persist; SQLState `23505`; teste focado com 8 casos e `verify` com 49 testes | provar busca ausente sem mascarar falha |
 | 2026-09-13 | UUID inexistente deve retornar ausência sem engolir falhas | buscar ID fixo não inserido em PostgreSQL real e inspecionar a ausência de captura no adapter | teste nasceu verde; SELECT real; teste focado com 9 casos e `verify` com 50 testes | provar rollback da inserção |
 | 2026-09-13 | rollback após INSERT deve deixar o banco sem o registro | persistir, forçar `flush`, marcar rollback e buscar em nova transação | teste nasceu verde; INSERT/SELECT reais; teste focado com 10 casos e `verify` com 51 testes | definir ativação obrigatória da persistência |
+| 2026-09-13 | `POST /transacoes` deve persistir antes do `201` | red unitário da porta; red de contexto sem repository; ativar JPA/Flyway por padrão; executar POST e reler UUID em nova transação | 2 testes unitários, 25 HTTP e `verify` com 50 testes verdes | definir contrato HTTP de consulta por UUID |
 
 ## 16. Checklist por incremento
 

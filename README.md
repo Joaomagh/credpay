@@ -19,20 +19,20 @@ O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD
 | Implementado | transação válida nasce `PENDENTE` |
 | Implementado | valor ausente ou não positivo e moeda ausente são rejeitados pelo domínio |
 | Implementado | transação preserva valor, escala decimal e moeda validados, sem arredondamento |
-| Implementado | `POST /transacoes` cria uma representação não persistida com UUID e estado `PENDENTE` |
+| Implementado | `POST /transacoes` persiste a transação com UUID e estado `PENDENTE` antes de retornar `201` |
 | Implementado | `422 Problem Details` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida, com contexto real |
 | Implementado | `400 Problem Details` seguro para corpo ausente/nulo, JSON malformado ou estrutura incompatível |
 | Implementado | valor textual e moeda numérica/booleana no JSON são rejeitados com `400`, sem conversão silenciosa |
 | Implementado | identidade UUID imutável no domínio, reutilizada na resposta; ID nulo rejeitado |
-| Implementado | repository JPA com migration Flyway e escrita/leitura PostgreSQL após commit, ainda desacoplado do endpoint |
+| Implementado | repository JPA com migrations Flyway conectado ao caso de uso em transação local |
 | Implementado | constraint PostgreSQL rejeita valores não positivos, `NaN` e infinitos mesmo por SQL direto |
 | Implementado | chave primária impede UUID duplicado sem sobrescrever a transação original |
 | Implementado | busca por UUID inexistente retorna ausência explícita no repository |
 | Implementado | rollback após `flush` impede que uma inserção revertida permaneça no banco |
-| Implementado | 51 testes automatizados verdes, incluindo HTTP sem mocks e integração PostgreSQL/Testcontainers |
+| Implementado | 50 testes automatizados verdes, incluindo HTTP ponta a ponta e integração PostgreSQL/Testcontainers |
 | Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
-| Ainda não implementado | persistência pelo endpoint, constraints de moeda/status no banco, consulta HTTP, RabbitMQ, `processamento-service`, imagem da aplicação, Kubernetes e CD |
+| Ainda não implementado | constraints de moeda/status no banco, consulta HTTP, RabbitMQ, `processamento-service`, imagem da aplicação, Kubernetes e CD |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 
@@ -76,7 +76,6 @@ transacoes-service/
 │       ├── StatusTransacao.java
 │       └── Transacao.java
 ├── src/test/java/br/com/credpay/transacoes/
-│   ├── TransacoesServiceApplicationTest.java
 │   ├── api/TransacaoControllerTest.java
 │   ├── api/TransacaoHttpTest.java
 │   ├── application/CriarTransacaoServiceTest.java
@@ -104,9 +103,10 @@ Regras comprovadas até aqui:
 8. o PostgreSQL rejeita valor zero, negativo, `NaN` e infinitos, inclusive quando a gravação contorna o domínio;
 9. uma segunda inserção com o mesmo UUID falha e conserva os dados da primeira transação;
 10. uma busca por UUID inexistente retorna `Optional.empty()` no repository;
-11. uma inserção enviada ao PostgreSQL e posteriormente revertida não fica persistida.
+11. uma inserção enviada ao PostgreSQL e posteriormente revertida não fica persistida;
+12. o `POST /transacoes` confirma `201` somente depois de persistir a transação em PostgreSQL.
 
-O endpoint de criação possui adaptador MVC e um caso de uso mínimo. O UUID pertence ao domínio. Já existe um repository JPA com migration Flyway, testado contra PostgreSQL real, mas ele ainda não foi conectado ao caso de uso HTTP. Portanto, as transações criadas pelo endpoint continuam não persistidas. Consulta HTTP, eventos e timestamp permanecem futuros.
+O endpoint de criação, o caso de uso transacional e o adapter JPA formam agora um fluxo persistente. O UUID pertence ao domínio e é o mesmo na resposta, no `Location` e no PostgreSQL. O teste HTTP relê a transação depois do `201`, em outra transação. Consulta HTTP, eventos e timestamp permanecem futuros.
 
 O teste de repository comprova duas operações separadas: gravação com commit e leitura em outro contexto, preservando UUID, valor, escala, moeda e `PENDENTE`. A constraint monetária também é exercitada por SQL direto; constraints de moeda/status e outros cenários de falha continuam em desenvolvimento.
 
@@ -119,6 +119,14 @@ No PowerShell:
 ```powershell
 cd transacoes-service
 .\mvnw.cmd --batch-mode --no-transfer-progress verify
+```
+
+Os testes iniciam PostgreSQL descartável automaticamente. Para executar a aplicação, disponibilize um PostgreSQL separadamente e configure a conexão sem versionar credenciais:
+
+```powershell
+$env:SPRING_DATASOURCE_URL = "jdbc:postgresql://localhost:5432/credpay"
+$env:SPRING_DATASOURCE_USERNAME = "<usuario>"
+$env:SPRING_DATASOURCE_PASSWORD = "<senha>"
 .\mvnw.cmd spring-boot:run
 ```
 
@@ -134,9 +142,9 @@ Invoke-RestMethod `
   -Body '{"valor":10.00,"moeda":"BRL"}'
 ```
 
-Em Linux ou macOS, use `./mvnw` no lugar de `.\mvnw.cmd`. O `POST /transacoes` retorna `201 Created`, `Location` e uma representação `PENDENTE`, mas ainda não persiste o recurso.
+Em Linux ou macOS, use `./mvnw` no lugar de `.\mvnw.cmd`. O `POST /transacoes` retorna `201 Created`, `Location` e uma representação `PENDENTE` já persistida.
 
-O perfil padrão mantém a aplicação sem DataSource. O perfil opcional `persistencia`, usado pelo teste de repository, habilita JPA/Flyway e exige uma conexão PostgreSQL configurada; ativá-lo não conecta automaticamente o endpoint ao repository. Nos testes, o container e as propriedades de conexão são gerenciados automaticamente.
+A aplicação não possui fallback volátil: sem DataSource válido ela falha ao iniciar. Flyway aplica as migrations e Hibernate valida o schema; nos testes de integração, o container e as propriedades de conexão são gerenciados automaticamente.
 
 ## Arquitetura planejada
 
