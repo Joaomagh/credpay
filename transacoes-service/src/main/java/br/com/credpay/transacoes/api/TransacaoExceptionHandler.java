@@ -6,9 +6,18 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice(assignableTypes = TransacaoController.class)
 class TransacaoExceptionHandler {
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    ProblemDetail tratarTipoDeArgumentoInvalido() {
+        var problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST, "id deve ser um UUID válido");
+        problem.setTitle("Requisição inválida");
+        return problem;
+    }
 
     @ExceptionHandler(TransacaoNaoEncontradaException.class)
     ProblemDetail tratarTransacaoNaoEncontrada(TransacaoNaoEncontradaException exception) {

@@ -2,6 +2,7 @@ package br.com.credpay.transacoes.api;
 
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -100,5 +101,21 @@ class TransacaoControllerTest {
                 .andExpect(jsonPath("$.instance").value("/transacoes/" + TRANSACAO_ID));
 
         verify(buscarTransacao).executar(TRANSACAO_ID);
+    }
+
+    @Test
+    void deveRetornarRequisicaoInvalidaSemConsultar_quandoIdForMalformado() throws Exception {
+        var idMalformado = "nao-e-uuid";
+
+        mockMvc.perform(get("/transacoes/{id}", idMalformado))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Requisição inválida"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.detail").value("id deve ser um UUID válido"))
+                .andExpect(jsonPath("$.instance").value("/transacoes/" + idMalformado));
+
+        verifyNoInteractions(buscarTransacao);
     }
 }

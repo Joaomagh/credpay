@@ -102,6 +102,21 @@ class TransacaoHttpTest {
                 .andExpect(header().doesNotExist("Location"));
     }
 
+    @Test
+    void buscar_deveRetornar400_quandoIdForMalformado() throws Exception {
+        var idMalformado = "nao-e-uuid";
+
+        mockMvc.perform(get("/transacoes/{id}", idMalformado))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Requisição inválida"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.detail").value("id deve ser um UUID válido"))
+                .andExpect(jsonPath("$.instance").value("/transacoes/" + idMalformado))
+                .andExpect(header().doesNotExist("Location"));
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"10.00", "10"})
     void criar_deveRetornar201ComStatusPendente_quandoTransacaoForValida(String valor) throws Exception {

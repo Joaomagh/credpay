@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Implementar em TDD o `400 Problem Details` para UUID malformado em `GET /transacoes/{id}`, provando que o caso de uso não é chamado e sem ampliar para listagem, RabbitMQ ou dependência nova.
+- [ ] Definir e aprovar o contrato mínimo de idempotência para `POST /transacoes`, incluindo chave obrigatória, repetição do mesmo payload e conflito de payload diferente, sem implementar ainda.
