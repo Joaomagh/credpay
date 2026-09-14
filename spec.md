@@ -46,7 +46,7 @@ A mensageria é assíncrona, com consistência eventual e expectativa de entrega
 | Linguagem | Java | 21 | `java -version`: 21.0.6 |
 | Framework | Spring Boot | 3.5.16 | parent fixado no `transacoes-service/pom.xml`; teste verde |
 | Build | Maven Wrapper | 3.9.16 | `transacoes-service/mvnw.cmd --version` |
-| Banco | PostgreSQL | 17.11 | testes de runtime e repository com imagem fixada por digest; endpoint ainda não integrado |
+| Banco | PostgreSQL | 17.11 | testes de runtime, repository e fluxo HTTP persistente com imagem fixada por digest |
 | Mensageria | RabbitMQ | a definir | — |
 | Infraestrutura de teste | Testcontainers | 1.21.4 | gerenciamento Spring Boot e teste PostgreSQL executado |
 
@@ -342,11 +342,12 @@ credpay/
 
 ### API HTTP
 
-O contrato abaixo foi aprovado em 2026-09-10. Até 2026-09-12, há testes HTTP do happy path, falhas de leitura, validações de valor/moeda e rejeição das coerções escalares explicitadas abaixo. Isso não implica cobertura exaustiva de todas as entradas JSON. A criação síncrona confirma que uma representação nasceu `PENDENTE`, mas ela ainda não é persistida; o processamento assíncrono permanece planejado.
+O contrato de criação foi aprovado em 2026-09-10 e passou a persistir em 2026-09-13. Há testes HTTP do happy path, persistência, falhas de leitura, validações de valor/moeda e rejeição das coerções escalares explicitadas abaixo. Isso não implica cobertura exaustiva de todas as entradas JSON. A criação síncrona confirma o recurso `PENDENTE`; o processamento assíncrono permanece planejado.
 
 | Método e rota | Request/response | Erros | Teste de contrato |
 |---|---|---|---|
 | `POST /transacoes` | JSON com `valor` e `moeda`; `201 Created`, `Location` e representação `PENDENTE` | `400` para corpo ilegível; `422` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida | `TransacaoControllerTest` e `TransacaoHttpTest` |
+| `GET /transacoes/{id}` | `200 OK` e representação persistida | `404` para UUID válido ausente | planejado para o próximo incremento |
 
 #### Criação de transação
 
@@ -394,7 +395,39 @@ O contrato de erros usa `Content-Type: application/problem+json` e os campos pad
 | `moeda` ausente ou nula | `422 Unprocessable Entity` | `Transação inválida` | `moeda deve ser informada` |
 | código de `moeda` inválido | `422 Unprocessable Entity` | `Transação inválida` | `moeda deve ser um código ISO 4217 válido em letras maiúsculas` |
 
-O contrato não inclui persistência, consulta, idempotência, autenticação, OpenAPI ou publicação de evento neste estágio. O UUID retornado não identifica um registro durável e não pode ser consultado. Cada capacidade terá teste e decisão próprios.
+A criação já é persistente. Idempotência, autenticação, OpenAPI e publicação de evento permanecem fora deste estágio. O contrato de consulta abaixo foi aprovado, mas ainda não está implementado.
+
+#### Consulta de transação por UUID
+
+Request: `GET /transacoes/{id}`, sem corpo, onde `{id}` é um UUID sintaticamente válido gerado pelo serviço.
+
+Para uma transação existente:
+
+- status `200 OK`;
+- `Content-Type: application/json`;
+- os campos `id`, `valor`, `moeda` e `status` refletem o registro persistido, sem gerar nova identidade ou reiniciar estado.
+
+```json
+{
+  "id": "7b8b61c2-9f63-4d74-9f8d-89cb52de0ed9",
+  "valor": 10.00,
+  "moeda": "BRL",
+  "status": "PENDENTE"
+}
+```
+
+Para UUID válido inexistente:
+
+- status `404 Not Found`;
+- `Content-Type: application/problem+json`;
+- `type: about:blank`;
+- `title: Transação não encontrada`;
+- `detail: transação não encontrada`;
+- `instance: /transacoes/{id}`.
+
+O controller dependerá de uma porta `BuscarTransacao`; o serviço consultará `TransacaoRepository` dentro de `@Transactional(readOnly = true)` e mapeará domínio para um resultado de aplicação. Ausência será traduzida por erro explícito para o Problem Details; exceção de infraestrutura continuará propagando e não virará `404`.
+
+O próximo incremento cobrirá UUID existente e UUID válido ausente em teste unitário, slice MVC e HTTP/PostgreSQL. UUID malformado, listagem, paginação, filtros, cache, lock, autenticação e atualização de estado ficam fora.
 
 ### Eventos
 
@@ -796,6 +829,7 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 ### 8.10 Criação HTTP persistente e transacional
 
 - **Entrega:** [PR #29](https://github.com/Joaomagh/credpay/pull/29).
+- **CI e merge:** [CI Linux #54](https://github.com/Joaomagh/credpay/actions/runs/34793659500) verde para `299f3ca`; merge em `6994aef`.
 - **Red unitário:** após alterar somente `CriarTransacaoServiceTest`, a compilação falhou porque o serviço ainda aceitava apenas o construtor sem argumentos. O teste novo exigia a porta `TransacaoRepository` e a entrega da transação criada para `inserir`.
 - **Green unitário:** o serviço passou a receber o repository por construtor, chamar `inserir` antes de compor o resultado e executar `executar` com `@Transactional`. Os 2 casos unitários passaram e verificaram UUID, valor/escala, moeda e `PENDENTE` na entidade entregue à porta.
 - **Red HTTP:** com somente o teste HTTP preparado para PostgreSQL real, o container iniciou, mas o contexto padrão produziu 25 erros por uma causa única: não havia bean `TransacaoRepository`, pois o adapter dependia do perfil `persistencia` e o DataSource estava excluído por padrão.
