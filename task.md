@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Definir e aprovar a baseline para tornar PostgreSQL obrigatório na execução real, delimitar testes isolados sem banco e estabelecer a transação local da criação, sem conectar o endpoint ainda.
+- [ ] Conectar `CriarTransacaoService` ao `TransacaoRepository` em transação local por TDD e comprovar no `TransacaoHttpTest` que `POST /transacoes` persiste antes de retornar `201`, sem RabbitMQ ou consulta HTTP.
