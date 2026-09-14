@@ -11,6 +11,8 @@ import java.util.UUID;
 import br.com.credpay.transacoes.application.TransacaoRepository;
 import br.com.credpay.transacoes.domain.StatusTransacao;
 import br.com.credpay.transacoes.domain.Transacao;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -66,6 +68,9 @@ class TransacaoRepositoryIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @ParameterizedTest
     @CsvSource({
@@ -136,6 +141,22 @@ class TransacaoRepositoryIntegrationTest {
         Optional<Transacao> encontrada = transacoes.execute(
                 status -> repository.buscarPorId(idInexistente));
 
+        assertThat(encontrada).isEmpty();
+    }
+
+    @Test
+    void inserir_deveDescartarRegistro_quandoTransacaoForRevertida() {
+        var id = UUID.fromString("bc414eee-93e9-44bd-b228-e1985e127d2d");
+        var transacao = Transacao.criar(id, new BigDecimal("10.00"), Currency.getInstance("BRL"));
+        var transacoes = new TransactionTemplate(transactionManager);
+
+        transacoes.executeWithoutResult(status -> {
+            repository.inserir(transacao);
+            entityManager.flush();
+            status.setRollbackOnly();
+        });
+
+        Optional<Transacao> encontrada = transacoes.execute(status -> repository.buscarPorId(id));
         assertThat(encontrada).isEmpty();
     }
 }

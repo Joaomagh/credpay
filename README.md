@@ -28,7 +28,8 @@ O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD
 | Implementado | constraint PostgreSQL rejeita valores não positivos, `NaN` e infinitos mesmo por SQL direto |
 | Implementado | chave primária impede UUID duplicado sem sobrescrever a transação original |
 | Implementado | busca por UUID inexistente retorna ausência explícita no repository |
-| Implementado | 50 testes automatizados verdes, incluindo HTTP sem mocks e integração PostgreSQL/Testcontainers |
+| Implementado | rollback após `flush` impede que uma inserção revertida permaneça no banco |
+| Implementado | 51 testes automatizados verdes, incluindo HTTP sem mocks e integração PostgreSQL/Testcontainers |
 | Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
 | Ainda não implementado | persistência pelo endpoint, constraints de moeda/status no banco, consulta HTTP, RabbitMQ, `processamento-service`, imagem da aplicação, Kubernetes e CD |
@@ -102,7 +103,8 @@ Regras comprovadas até aqui:
 7. o UUID recebido pelo domínio é obrigatório e imutável, sendo reutilizado no resultado da criação;
 8. o PostgreSQL rejeita valor zero, negativo, `NaN` e infinitos, inclusive quando a gravação contorna o domínio;
 9. uma segunda inserção com o mesmo UUID falha e conserva os dados da primeira transação;
-10. uma busca por UUID inexistente retorna `Optional.empty()` no repository.
+10. uma busca por UUID inexistente retorna `Optional.empty()` no repository;
+11. uma inserção enviada ao PostgreSQL e posteriormente revertida não fica persistida.
 
 O endpoint de criação possui adaptador MVC e um caso de uso mínimo. O UUID pertence ao domínio. Já existe um repository JPA com migration Flyway, testado contra PostgreSQL real, mas ele ainda não foi conectado ao caso de uso HTTP. Portanto, as transações criadas pelo endpoint continuam não persistidas. Consulta HTTP, eventos e timestamp permanecem futuros.
 

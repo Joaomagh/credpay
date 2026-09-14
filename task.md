@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Provar que uma inserção em transação revertida não fica visível em leitura posterior, ainda sem conectar o endpoint ao banco.
+- [ ] Definir e aprovar a baseline para tornar PostgreSQL obrigatório na execução real, delimitar testes isolados sem banco e estabelecer a transação local da criação, sem conectar o endpoint ainda.
