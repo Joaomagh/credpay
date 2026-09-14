@@ -1,5 +1,6 @@
 package br.com.credpay.transacoes.api;
 
+import br.com.credpay.transacoes.application.TransacaoNaoEncontradaException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -8,6 +9,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice(assignableTypes = TransacaoController.class)
 class TransacaoExceptionHandler {
+
+    @ExceptionHandler(TransacaoNaoEncontradaException.class)
+    ProblemDetail tratarTransacaoNaoEncontrada(TransacaoNaoEncontradaException exception) {
+        var problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.NOT_FOUND, exception.getMessage());
+        problem.setTitle("Transação não encontrada");
+        return problem;
+    }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     ProblemDetail tratarCorpoIlegivel() {

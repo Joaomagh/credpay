@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Implementar `GET /transacoes/{id}` em TDD para retornar a transação persistida e `404 Problem Details` para UUID válido ausente, sem listagem, UUID malformado, RabbitMQ ou dependência nova.
+- [ ] Definir o contrato HTTP mínimo para UUID malformado em `GET /transacoes/{id}`, sem implementar ainda e sem ampliar para listagem, RabbitMQ ou dependência nova.

@@ -2,6 +2,7 @@ package br.com.credpay.transacoes.api;
 
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -12,8 +13,10 @@ import java.math.BigDecimal;
 import java.util.Currency;
 import java.util.UUID;
 
+import br.com.credpay.transacoes.application.BuscarTransacao;
 import br.com.credpay.transacoes.application.CriarTransacao;
 import br.com.credpay.transacoes.application.CriarTransacao.Resultado;
+import br.com.credpay.transacoes.application.TransacaoNaoEncontradaException;
 import br.com.credpay.transacoes.domain.StatusTransacao;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +35,9 @@ class TransacaoControllerTest {
 
     @MockitoBean
     private CriarTransacao criarTransacao;
+
+    @MockitoBean
+    private BuscarTransacao buscarTransacao;
 
     @Test
     void deveCriarTransacaoPendente() throws Exception {
@@ -58,5 +64,41 @@ class TransacaoControllerTest {
                 .andExpect(jsonPath("$.status").value("PENDENTE"));
 
         verify(criarTransacao).executar(valor, moeda);
+    }
+
+    @Test
+    void deveBuscarTransacaoPorId() throws Exception {
+        var valor = new BigDecimal("10.00");
+        var moeda = Currency.getInstance("BRL");
+        when(buscarTransacao.executar(TRANSACAO_ID))
+                .thenReturn(new BuscarTransacao.Resultado(
+                        TRANSACAO_ID, valor, moeda, StatusTransacao.PENDENTE));
+
+        mockMvc.perform(get("/transacoes/{id}", TRANSACAO_ID))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(TRANSACAO_ID.toString()))
+                .andExpect(jsonPath("$.valor").value(10.00))
+                .andExpect(jsonPath("$.moeda").value("BRL"))
+                .andExpect(jsonPath("$.status").value("PENDENTE"));
+
+        verify(buscarTransacao).executar(TRANSACAO_ID);
+    }
+
+    @Test
+    void deveRetornarNaoEncontradaParaIdAusente() throws Exception {
+        when(buscarTransacao.executar(TRANSACAO_ID))
+                .thenThrow(new TransacaoNaoEncontradaException());
+
+        mockMvc.perform(get("/transacoes/{id}", TRANSACAO_ID))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Transação não encontrada"))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.detail").value("transação não encontrada"))
+                .andExpect(jsonPath("$.instance").value("/transacoes/" + TRANSACAO_ID));
+
+        verify(buscarTransacao).executar(TRANSACAO_ID);
     }
 }

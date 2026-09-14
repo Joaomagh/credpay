@@ -1,6 +1,7 @@
 package br.com.credpay.transacoes.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -16,6 +17,7 @@ import br.com.credpay.transacoes.application.TransacaoRepository;
 import br.com.credpay.transacoes.domain.StatusTransacao;
 import br.com.credpay.transacoes.domain.Transacao;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,6 +63,44 @@ class TransacaoHttpTest {
 
     @Autowired
     private PlatformTransactionManager transactionManager;
+
+    @Test
+    void buscar_deveRetornarTransacaoPersistida_quandoIdExistir() throws Exception {
+        var criacao = mockMvc.perform(post("/transacoes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "valor": 10.00,
+                                  "moeda": "BRL"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse();
+        var id = objectMapper.readTree(criacao.getContentAsByteArray()).get("id").asText();
+
+        mockMvc.perform(get("/transacoes/{id}", id))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.id").value(id))
+                .andExpect(jsonPath("$.valor").value(10.00))
+                .andExpect(jsonPath("$.moeda").value("BRL"))
+                .andExpect(jsonPath("$.status").value("PENDENTE"));
+    }
+
+    @Test
+    void buscar_deveRetornar404_quandoIdNaoExistir() throws Exception {
+        var id = UUID.fromString("7b8b61c2-9f63-4d74-9f8d-89cb52de0ed9");
+
+        mockMvc.perform(get("/transacoes/{id}", id))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Transação não encontrada"))
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.detail").value("transação não encontrada"))
+                .andExpect(jsonPath("$.instance").value("/transacoes/" + id))
+                .andExpect(header().doesNotExist("Location"));
+    }
 
     @ParameterizedTest
     @ValueSource(strings = {"10.00", "10"})

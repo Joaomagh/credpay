@@ -5,8 +5,11 @@ import java.net.URI;
 import java.util.Currency;
 import java.util.UUID;
 
+import br.com.credpay.transacoes.application.BuscarTransacao;
 import br.com.credpay.transacoes.application.CriarTransacao;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,9 +20,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class TransacaoController {
 
     private final CriarTransacao criarTransacao;
+    private final BuscarTransacao buscarTransacao;
 
-    TransacaoController(CriarTransacao criarTransacao) {
+    TransacaoController(CriarTransacao criarTransacao, BuscarTransacao buscarTransacao) {
         this.criarTransacao = criarTransacao;
+        this.buscarTransacao = buscarTransacao;
     }
 
     @PostMapping
@@ -34,6 +39,18 @@ public class TransacaoController {
                 resultado.status().name());
 
         return ResponseEntity.created(location).body(response);
+    }
+
+    @GetMapping("/{id}")
+    ResponseEntity<TransacaoResponse> buscar(@PathVariable UUID id) {
+        var resultado = buscarTransacao.executar(id);
+        var response = new TransacaoResponse(
+                resultado.id(),
+                resultado.valor(),
+                resultado.moeda().getCurrencyCode(),
+                resultado.status().name());
+
+        return ResponseEntity.ok(response);
     }
 
     private Currency converterMoeda(String codigo) {
