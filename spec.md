@@ -747,12 +747,49 @@ Antes do código de persistência, disponibilizar o engine Linux e confirmar ver
 ### 8.8 Rollback da inserção
 
 - **Entrega:** [PR #27](https://github.com/Joaomagh/credpay/pull/27).
+- **CI e merge:** [CI Linux #51](https://github.com/Joaomagh/credpay/actions/runs/34793061473) verde para `0e61edf`; merge em `1d396a5`.
 - **Teste de caracterização:** o repository recebe uma transação válida dentro de `TransactionTemplate`; `EntityManager.flush()` força o INSERT real antes de `setRollbackOnly()`.
 - **Integridade preservada:** depois do rollback, uma nova transação executa SELECT pelo mesmo UUID e retorna vazio. O adapter participa da unidade de trabalho coordenada e não confirma a escrita independentemente.
 - **TDD honesto:** o teste nasceu verde porque `EntityManager.persist` já participa da transação JPA. Nenhum red foi fabricado e nenhum código de produção foi alterado.
 - **Verificação:** teste focado com 10 casos verdes e log de INSERT/SELECT; `mvnw.cmd --batch-mode --no-transfer-progress verify` com 51 testes, zero falhas/erros/skips e JAR gerado.
 - **Limites:** o teste não cobre falha no momento do commit nem a resposta HTTP correspondente. A aplicação ainda possui um modo padrão transitório sem DataSource e o endpoint não persiste.
 - **Próximo:** definir a baseline de ativação do PostgreSQL e da fronteira transacional antes de conectar o caso de uso ao repository.
+
+### 8.9 Baseline de ativação da persistência na criação
+
+**Status:** aprovada para o próximo incremento de implementação.
+
+**Entrega:** [PR #28](https://github.com/Joaomagh/credpay/pull/28).
+
+#### Execução real
+
+- PostgreSQL será obrigatório para iniciar e executar o `transacoes-service`; não haverá repository volátil, fallback em memória ou criação não persistida quando a aplicação real estiver ativa.
+- O adapter JPA deixará de depender do perfil `persistencia`. A exclusão condicional de `DataSourceAutoConfiguration` será removida.
+- `spring.jpa.hibernate.ddl-auto=validate` e `spring.jpa.open-in-view=false` valerão na configuração normal. Flyway continuará sendo o único responsável por criar/evoluir o schema.
+- A conexão será fornecida pelas propriedades padrão do Spring, normalmente `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` e `SPRING_DATASOURCE_PASSWORD`. Nenhuma credencial ou URL operacional terá valor padrão versionado.
+- Ausência ou indisponibilidade do banco fará a aplicação falhar de modo observável; não será convertida em execução degradada que aceite dados voláteis.
+
+#### Fronteira transacional
+
+- `CriarTransacaoService` receberá `TransacaoRepository` por injeção de construtor, criará a entidade de domínio e chamará `inserir` antes de produzir o resultado.
+- O caso de uso será a fronteira da transação local com `@Transactional`; o adapter continuará sem iniciar ou confirmar transações próprias.
+- Exceções de persistência continuarão propagando. O controller só poderá construir/enviar `201 Created` depois que a chamada transacional retornar, portanto depois do commit bem-sucedido.
+- Este incremento não adicionará outbox ou evento: a atomicidade entre PostgreSQL e RabbitMQ será tratada quando a publicação confiável entrar.
+
+#### Estratégia de testes
+
+| Teste | Papel após a mudança | Infraestrutura |
+|---|---|---|
+| `CriarTransacaoServiceTest` | provar que o domínio criado é entregue ao repository e que o resultado preserva os mesmos dados | mock somente da porta `TransacaoRepository` |
+| `TransacaoControllerTest` | manter o contrato MVC isolado do caso de uso | mock da porta `CriarTransacao` |
+| `TransacaoHttpTest` | provar HTTP → controller → caso de uso transacional → adapter → PostgreSQL e leitura após o `201` | contexto Spring completo e PostgreSQL/Testcontainers |
+| `TransacaoRepositoryIntegrationTest` | manter migrations, constraints e semântica isolada do adapter | slice JPA e PostgreSQL/Testcontainers |
+
+`TransacoesServiceApplicationTest`, que hoje apenas sobe o contexto sem banco, será removido quando `TransacaoHttpTest` comprovar a inicialização do contexto real com PostgreSQL; manter ambos não acrescentaria um controle diferente. Casos unitários e MVC podem continuar sem banco porque substituem explicitamente a fronteira externa, nunca porque a aplicação de produção tenha fallback oculto.
+
+#### Limites do próximo incremento
+
+Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indisponibilidade/constraint, RabbitMQ, outbox, evento ou dependência nova. A configuração de execução local com PostgreSQL será preparada em incremento próprio depois que a conexão do caso de uso estiver comprovada por Testcontainers.
 
 ## 9. Mensageria e tratamento de falhas
 
