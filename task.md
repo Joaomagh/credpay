@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Conectar `CriarTransacaoService` ao `TransacaoRepository` em transação local por TDD e comprovar no `TransacaoHttpTest` que `POST /transacoes` persiste antes de retornar `201`, sem RabbitMQ ou consulta HTTP.
+- [ ] Definir e aprovar o contrato mínimo de `GET /transacoes/{id}` para retornar uma transação existente e `404 Problem Details` quando ausente, sem implementar ainda.

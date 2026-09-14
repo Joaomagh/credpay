@@ -7,11 +7,9 @@ import br.com.credpay.transacoes.application.TransacaoRepository;
 import br.com.credpay.transacoes.domain.Transacao;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 @Repository
-@Profile("persistencia")
 class TransacaoJpaRepository implements TransacaoRepository {
 
     @PersistenceContext

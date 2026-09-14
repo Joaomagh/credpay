@@ -1,20 +1,6 @@
 spring:
   application:
     name: transacoes-service
-
----
-spring:
-  config:
-    activate:
-      on-profile: "!persistencia"
-  autoconfigure:
-    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-
----
-spring:
-  config:
-    activate:
-      on-profile: persistencia
   jpa:
     open-in-view: false
     hibernate:
