@@ -871,6 +871,7 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 ### 8.12 Baseline de erro para UUID malformado
 
 - **Entrega:** [PR #32](https://github.com/Joaomagh/credpay/pull/32).
+- **Implementação:** [PR #33](https://github.com/Joaomagh/credpay/pull/33).
 - **Decisão:** distinguir sintaxe inválida (`400`) de ausência de recurso (`404`) e manter uma mensagem pública estável, sem detalhes do conversor Java.
 - **Fronteira:** a conversão do path ocorre antes da porta `BuscarTransacao`; o teste MVC deverá provar ausência de interação com o caso de uso.
 - **Red MVC:** o Spring converteu o path antes do controller, mas `MethodArgumentTypeMismatchException` foi capturada pelo handler genérico de `IllegalArgumentException`; o teste recebeu `422` e a mensagem interna `Invalid UUID string: nao-e-uuid` em vez do contrato seguro.
