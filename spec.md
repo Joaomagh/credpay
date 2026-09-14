@@ -397,6 +397,24 @@ O contrato de erros usa `Content-Type: application/problem+json` e os campos pad
 
 A criação e a consulta por UUID válido já são persistentes. Idempotência, autenticação, OpenAPI e publicação de evento permanecem fora deste estágio.
 
+#### Idempotência da criação
+
+**Contrato aprovado, ainda não implementado:** `POST /transacoes` exigirá o header `Idempotency-Key`, com UUID gerado pelo cliente e independente do ID da transação.
+
+| Situação | Resultado esperado |
+|---|---|
+| header ausente ou vazio | `400 Problem Details`, título `Requisição inválida`, detalhe `Idempotency-Key deve ser informado` |
+| header presente, mas não é UUID | `400 Problem Details`, título `Requisição inválida`, detalhe `Idempotency-Key deve ser um UUID válido` |
+| primeira chave com payload válido | cria uma única transação e retorna `201`, `Location` e representação `PENDENTE` |
+| mesma chave e mesmo valor/moeda | não cria outra transação; repete status, `Location` e representação originais |
+| mesma chave e valor ou moeda diferente | `409 Problem Details`, título `Conflito de idempotência`, detalhe `chave de idempotência já utilizada com outro payload` |
+
+Payload equivalente será comparado depois da leitura e validação: valores numericamente iguais por `BigDecimal.compareTo`, como `10` e `10.00`, e a mesma moeda são o mesmo pedido. Formatação JSON, ordem de campos e escala textual não criam conflito. O replay devolve a representação persistida pela primeira criação, inclusive sua escala original.
+
+A chave e a transação deverão ser persistidas atomicamente. O PostgreSQL será a autoridade de unicidade, inclusive para requisições concorrentes; uma implementação baseada apenas em consulta seguida de inserção não satisfaz o contrato. Duas requisições concorrentes com a mesma chave e payload deverão convergir para uma transação; com payloads diferentes, somente o vencedor cria e a outra recebe conflito.
+
+Na v1, a chave não expira nem pode ser reutilizada. Isso simplifica a garantia, mas permite crescimento contínuo do armazenamento; retenção e limpeza ficam como risco futuro. Chaves não serão incluídas em mensagens de erro, logs de payload ou resposta. Autenticação, escopo da chave por cliente, retry de infraestrutura e evento permanecem fora até existirem os respectivos componentes.
+
 #### Consulta de transação por UUID
 
 **Entrega documental:** [PR #30](https://github.com/Joaomagh/credpay/pull/30).
@@ -872,6 +890,7 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 
 - **Entrega:** [PR #32](https://github.com/Joaomagh/credpay/pull/32).
 - **Implementação:** [PR #33](https://github.com/Joaomagh/credpay/pull/33).
+- **CI e merge:** [CI Linux #60](https://github.com/Joaomagh/credpay/actions/runs/34803286898) verde para `1f1498d`; merge em `0ea9620`.
 - **Decisão:** distinguir sintaxe inválida (`400`) de ausência de recurso (`404`) e manter uma mensagem pública estável, sem detalhes do conversor Java.
 - **Fronteira:** a conversão do path ocorre antes da porta `BuscarTransacao`; o teste MVC deverá provar ausência de interação com o caso de uso.
 - **Red MVC:** o Spring converteu o path antes do controller, mas `MethodArgumentTypeMismatchException` foi capturada pelo handler genérico de `IllegalArgumentException`; o teste recebeu `422` e a mensagem interna `Invalid UUID string: nao-e-uuid` em vez do contrato seguro.
@@ -880,6 +899,18 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 - **Verificação:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 58 testes, zero falhas/erros/skips e gerou o JAR.
 - **Limites:** não cobre rota sem ID, parâmetros extras, normalização textual, listagem ou outro tipo de path variable.
 - **Próximo:** definir o contrato mínimo de idempotência da criação antes da implementação.
+
+### 8.13 Baseline de idempotência da criação
+
+- **Entrega:** [PR #34](https://github.com/Joaomagh/credpay/pull/34).
+- **Chave:** header obrigatório `Idempotency-Key` em formato UUID, distinto do UUID da transação.
+- **Repetição:** mesmo payload repete a resposta original; payload diferente produz `409` e não altera a primeira transação.
+- **Equivalência:** valor é comparado numericamente e moeda por código; diferenças de JSON ou escala textual não criam outra operação.
+- **Concorrência:** unicidade e atomicidade pertencem ao PostgreSQL; check-then-insert sem controle no banco é insuficiente.
+- **Retenção:** sem expiração na v1; crescimento e política de limpeza são riscos residuais documentados.
+- **Implementação incremental:** primeiro migration/adapter e testes de unicidade/busca; depois semântica do caso de uso; por fim header e contratos HTTP.
+- **Limites:** nenhuma migration, API ou regra foi alterada neste incremento documental.
+- **Próximo:** implementar a persistência mínima da chave idempotente sem mudar o endpoint ainda.
 
 ## 9. Mensageria e tratamento de falhas
 
