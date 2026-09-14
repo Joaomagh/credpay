@@ -870,6 +870,7 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 
 ### 8.12 Baseline de erro para UUID malformado
 
+- **Entrega:** [PR #32](https://github.com/Joaomagh/credpay/pull/32).
 - **Decisão:** distinguir sintaxe inválida (`400`) de ausência de recurso (`404`) e manter uma mensagem pública estável, sem detalhes do conversor Java.
 - **Fronteira:** a conversão do path ocorre antes da porta `BuscarTransacao`; o teste MVC deverá provar ausência de interação com o caso de uso.
 - **Evidência esperada:** slice MVC e HTTP completo validam status, media type e todos os campos Problem Details. O `404` de UUID válido permanece como regressão.
