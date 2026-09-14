@@ -30,10 +30,11 @@ O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD
 | Implementado | busca por UUID inexistente retorna ausência explícita no repository |
 | Implementado | rollback após `flush` impede que uma inserção revertida permaneça no banco |
 | Implementado | `GET /transacoes/{id}` retorna a representação persistida ou `404 Problem Details` para UUID válido ausente |
-| Implementado | 56 testes automatizados verdes, incluindo HTTP ponta a ponta e integração PostgreSQL/Testcontainers |
+| Implementado | UUID malformado retorna `400 Problem Details` sem consultar o caso de uso nem expor detalhes internos |
+| Implementado | 58 testes automatizados verdes, incluindo HTTP ponta a ponta e integração PostgreSQL/Testcontainers |
 | Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
-| Ainda não implementado | UUID malformado, constraints de moeda/status no banco, RabbitMQ, `processamento-service`, imagem da aplicação, Kubernetes e CD |
+| Ainda não implementado | idempotência, constraints de moeda/status no banco, RabbitMQ, `processamento-service`, imagem da aplicação, Kubernetes e CD |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 
@@ -111,6 +112,7 @@ Regras comprovadas até aqui:
 11. uma inserção enviada ao PostgreSQL e posteriormente revertida não fica persistida;
 12. o `POST /transacoes` confirma `201` somente depois de persistir a transação em PostgreSQL.
 13. o `GET /transacoes/{id}` devolve os dados persistidos e diferencia UUID válido ausente com `404 Problem Details`.
+14. UUID malformado recebe `400 Problem Details` antes de alcançar o caso de uso, sem vazar a mensagem interna do conversor.
 
 Os endpoints de criação e consulta, os casos de uso transacionais e o adapter JPA formam agora um fluxo persistente. O UUID pertence ao domínio e é o mesmo na resposta, no `Location`, no PostgreSQL e na consulta posterior. Eventos e timestamp permanecem futuros.
 
