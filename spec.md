@@ -736,12 +736,22 @@ Antes do código de persistência, disponibilizar o engine Linux e confirmar ver
 ### 8.7 Busca por UUID inexistente
 
 - **Entrega:** [PR #26](https://github.com/Joaomagh/credpay/pull/26).
+- **CI e merge:** [CI Linux #48](https://github.com/Joaomagh/credpay/actions/runs/34791060231) verde para `fe19784`; merge em `28c4498`.
 - **Teste de caracterização:** uma busca por UUID fixo que não foi inserido executa SELECT real em outra transação e retorna `Optional.empty()`.
 - **Falhas não mascaradas:** `TransacaoJpaRepository` converte somente o `null` legítimo retornado por `EntityManager.find`. O adapter não captura exceções; indisponibilidade, timeout ou falha SQL continuam propagando e não são apresentados como ausência.
 - **TDD honesto:** o teste nasceu verde porque `Optional.ofNullable(entityManager.find(...))` já implementava o contrato. Nenhuma falha artificial foi criada e nenhum código de produção mudou.
 - **Verificação:** teste focado com 9 casos verdes; `mvnw.cmd --batch-mode --no-transfer-progress verify` com 50 testes, zero falhas/erros/skips e JAR gerado. PostgreSQL 17.11, Flyway V1-V2 e Testcontainers foram executados.
 - **Limites:** não há consulta HTTP nem teste deliberado de indisponibilidade do banco. O próximo cenário isolará rollback antes da conexão do endpoint.
 - **Próximo:** provar que uma inserção em transação revertida não fica visível em leitura posterior.
+
+### 8.8 Rollback da inserção
+
+- **Teste de caracterização:** o repository recebe uma transação válida dentro de `TransactionTemplate`; `EntityManager.flush()` força o INSERT real antes de `setRollbackOnly()`.
+- **Integridade preservada:** depois do rollback, uma nova transação executa SELECT pelo mesmo UUID e retorna vazio. O adapter participa da unidade de trabalho coordenada e não confirma a escrita independentemente.
+- **TDD honesto:** o teste nasceu verde porque `EntityManager.persist` já participa da transação JPA. Nenhum red foi fabricado e nenhum código de produção foi alterado.
+- **Verificação:** teste focado com 10 casos verdes e log de INSERT/SELECT; `mvnw.cmd --batch-mode --no-transfer-progress verify` com 51 testes, zero falhas/erros/skips e JAR gerado.
+- **Limites:** o teste não cobre falha no momento do commit nem a resposta HTTP correspondente. A aplicação ainda possui um modo padrão transitório sem DataSource e o endpoint não persiste.
+- **Próximo:** definir a baseline de ativação do PostgreSQL e da fronteira transacional antes de conectar o caso de uso ao repository.
 
 ## 9. Mensageria e tratamento de falhas
 
@@ -880,6 +890,7 @@ Cobertura, scanners e outras ferramentas serão sinais auxiliares, não metas is
 | 2026-09-13 | o banco deve rejeitar valores não positivos ou não finitos mesmo sem passar pelo domínio | fazer INSERT SQL direto de `0`, negativo, `NaN` e infinitos antes/depois da V2 | red com 5 falhas esperadas; green focado com 7 casos e `verify` com 48 testes | provar colisão de UUID sem sobrescrita |
 | 2026-09-13 | uma colisão de UUID deve falhar sem sobrescrever a transação original | inserir duas transações distintas com o mesmo ID em commits separados e reler a primeira | teste nasceu verde pela PK/persist; SQLState `23505`; teste focado com 8 casos e `verify` com 49 testes | provar busca ausente sem mascarar falha |
 | 2026-09-13 | UUID inexistente deve retornar ausência sem engolir falhas | buscar ID fixo não inserido em PostgreSQL real e inspecionar a ausência de captura no adapter | teste nasceu verde; SELECT real; teste focado com 9 casos e `verify` com 50 testes | provar rollback da inserção |
+| 2026-09-13 | rollback após INSERT deve deixar o banco sem o registro | persistir, forçar `flush`, marcar rollback e buscar em nova transação | teste nasceu verde; INSERT/SELECT reais; teste focado com 10 casos e `verify` com 51 testes | definir ativação obrigatória da persistência |
 
 ## 16. Checklist por incremento
 
