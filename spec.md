@@ -673,6 +673,8 @@ A migration de produção abaixo é aplicada pelo Flyway no perfil `persistencia
 |---|---|---|---|
 | transacoes-service | `V1__create_transacoes.sql` | tabela `transacoes`, UUID como PK, valor `numeric`, moeda `varchar(3)` e status `varchar(16)`, todos obrigatórios | primeiro round-trip com identidade e dados monetários preservados |
 | transacoes-service | `V2__protect_transaction_amount.sql` | constraint `ck_transacoes_valor_positivo_finito` exige valor maior que zero e exclui `NaN`, `Infinity` e `-Infinity` | proteger a invariante monetária mesmo em gravações que contornem o domínio |
+| transacoes-service | `V3__create_transaction_idempotency.sql` | associação única entre chave idempotente e transação | replay e conflito com autoridade de unicidade no PostgreSQL |
+| transacoes-service | `V4__create_transaction_outbox.sql` | tabela `outbox_eventos` com envelope JSONB e publicação inicialmente nula | persistir a intenção de publicação antes de introduzir RabbitMQ |
 
 ### 8.1 Contrato mínimo da persistência futura
 
@@ -993,7 +995,7 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 
 ### 8.18 Baseline da outbox transacional
 
-**Estado:** decisão aceita; schema, modelo e adapter ainda não implementados.
+**Estado:** migration V4, modelo, porta e adapter de escrita implementados; conexão ao caso de uso ainda pendente.
 
 A primeira criação persistirá a transação, a associação idempotente e um único registro de outbox na mesma transação PostgreSQL. Replay equivalente apenas devolve o recurso existente; conflito não grava transação nem evento. Qualquer falha na gravação da outbox reverte toda a criação.
 
@@ -1011,7 +1013,13 @@ O caso de uso criará o evento somente no caminho de primeira criação e o entr
 
 O publicador futuro lerá registros com `published_at` nulo, publicará e depois marcará o instante. Uma queda depois da publicação e antes da marcação causa reentrega: a garantia será pelo menos uma vez, não exatamente uma vez. Estratégia de claim/lease entre réplicas, batch, backoff, número de tentativas, retenção e limpeza serão decididos com os testes do publicador, sem inflar a primeira migration.
 
-**Critérios do próximo incremento:** aplicar uma migration V4 em PostgreSQL vazio, inserir e recuperar um evento pendente preservando UUIDs, versão, JSON e instante, rejeitar campos obrigatórios nulos e manter a suíte existente verde. Ainda sem conectar o caso de uso e sem RabbitMQ.
+**TDD e evidências:** o tipo/porta e o teste foram publicados antes do adapter. O [CI Linux #76](https://github.com/Joaomagh/credpay/actions/runs/35054744312) executou 72 testes e apresentou um único erro esperado: ausência de bean `OutboxRepository`. No green, V4 e `OutboxJpaRepository` foram adicionados; o [CI Linux #77](https://github.com/Joaomagh/credpay/actions/runs/35054907592) executou 73 testes sem falhas, erros ou skips e gerou o JAR.
+
+**Aceite comprovado:** depois de commit real, a leitura SQL preserva `eventId`, `aggregateId`, tipo, versão, JSON e instante; `published_at` permanece nulo. A inspeção do schema comprova que somente `published_at` aceita nulo.
+
+**Limites:** o adapter apenas adiciona eventos. O caso de uso ainda não o chama; portanto criar uma transação HTTP ainda não gera outbox. Não há consulta de pendentes, marcação de publicação, RabbitMQ, retry ou retenção.
+
+**Próximo:** conectar a primeira criação à outbox na mesma transação e provar que replay ou conflito não geram outro evento.
 
 ## 9. Mensageria e tratamento de falhas
 
