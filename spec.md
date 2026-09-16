@@ -946,6 +946,8 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 - **Ordem:** `CriarTransacaoService` valida a candidata, adquire o lock e só então consulta/insere. Requisições da mesma chave são serializadas; chaves diferentes não compartilham deliberadamente o mesmo lock, salvo colisão de hash conservadora.
 - **Teste real:** duas threads iniciam juntas, cada uma em sua transação Spring, e devem retornar o mesmo UUID; o banco deve conter uma única associação para a chave.
 - **Validação local:** 8 testes unitários verdes e toda a suíte compilada. Docker local permanece indisponível, portanto o cenário concorrente PostgreSQL é barreira obrigatória do CI antes do merge.
+- **Aprendizado do CI:** a primeira execução ([CI Linux #69](https://github.com/Joaomagh/credpay/actions/runs/35053308216)) revelou que o retorno `void` de `pg_advisory_xact_lock` não pode ser extraído como `Long` pelo Hibernate. A consulta foi ajustada para adquirir o lock no `FROM` e retornar o literal `1`.
+- **Evidência:** [PR #37](https://github.com/Joaomagh/credpay/pull/37); [CI Linux #70](https://github.com/Joaomagh/credpay/actions/runs/35053556037) verde para `e53803c`, incluindo o cenário concorrente com PostgreSQL real.
 - **Limites:** lock específico de PostgreSQL; não há timeout próprio, métrica de espera nem contrato HTTP neste incremento.
 - **Próximo:** conectar `Idempotency-Key` ao endpoint e traduzir ausência, formato inválido e conflito.
 
