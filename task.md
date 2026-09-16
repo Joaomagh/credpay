@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Implementar em TDD a convergência de duas primeiras criações concorrentes com a mesma chave, sem alterar ainda o endpoint HTTP.
+- [ ] Integrar `Idempotency-Key` ao `POST /transacoes` em TDD, cobrindo header ausente/malformado, replay e conflito `409`, sem RabbitMQ ou dependência nova.
