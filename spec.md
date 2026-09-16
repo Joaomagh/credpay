@@ -922,7 +922,7 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 - **Green focado:** após V3, entidade e adapter, o teste real aplicou três migrations e executou 11 casos verdes, incluindo INSERT da transação, INSERT da associação e SELECT posterior em outra transação.
 - **Controles adicionais:** testes de caracterização exigem que chave duplicada falhe pela PK sem substituir a associação original e que chave nula seja rejeitada. Eles foram adicionados depois do primeiro green.
 - **Incidente de ambiente:** na verificação final local, Docker Desktop estava sem o pipe do engine Linux. O `verify` executou 18 testes sem Docker com sucesso, mas três classes Testcontainers abortaram antes dos cenários. Uma tentativa segura de iniciar o Desktop não restaurou o engine; nenhum reset, prune ou remoção foi feito.
-- **Barreira de merge:** os controles PostgreSQL adicionais e a suíte completa deverão passar no CI Linux antes do merge; resultado pendente neste ponto.
+- **CI:** [CI Linux #63](https://github.com/Joaomagh/credpay/actions/runs/35047832084) verde para `adc567b`; a suíte executou 61 testes, incluindo os três cenários novos de idempotência, sem falhas/erros/skips, e gerou o JAR.
 - **Limites:** endpoint e caso de uso ainda ignoram idempotência; não há replay, conflito HTTP ou teste concorrente neste incremento.
 - **Próximo:** implementar a semântica idempotente no caso de uso, ainda sem alterar o contrato HTTP.
 
