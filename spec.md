@@ -914,6 +914,7 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 
 ### 8.14 Persistência da chave idempotente
 
+- **Entrega:** [PR #35](https://github.com/Joaomagh/credpay/pull/35).
 - **Desenho:** V3 cria `idempotencias_transacao`, com chave UUID como PK, `transacao_id` obrigatório, único e referenciado por FK. A tabela de associação permite introduzir a infraestrutura sem fingir que o POST atual já é idempotente.
 - **Porta:** `TransacaoRepository` recebe operações adicionais de inserção associada e busca por chave; as operações antigas permanecem enquanto o caso de uso ainda não foi migrado.
 - **Adapter:** `IdempotenciaTransacaoEntity` associa chave e entidade de transação; `CascadeType.PERSIST` grava ambas na mesma transação local.
