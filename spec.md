@@ -2,11 +2,11 @@
 
 > Fonte de verdade do sistema que existe hoje. Preencher somente com decisão tomada, contrato aceito ou comportamento comprovado. Planos futuros ficam em `CREDPAY_PLAN.md`; próximas ações ficam em `task.md`.
 
-**Última atualização:** 2026-09-13
+**Última atualização:** 2026-09-16
 
-**Fase atual:** 2 — Fundação reproduzível
+**Fase atual:** 4 — Fluxo assíncrono confiável
 
-**Estado:** criação HTTP persistente e transacional; repository PostgreSQL/JPA com round-trip, rollback, colisão, ausência e constraint monetária comprovados
+**Estado:** criação e consulta HTTP persistentes; idempotência comprovada da entrada HTTP ao PostgreSQL
 
 ## 1. Contexto e limites atuais
 
@@ -15,9 +15,9 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 - `transacoes-service`: recebe pedidos, valida regras de entrada, mantém o estado consultável e publica eventos;
 - `processamento-service`: consome pedidos de processamento, decide o resultado e publica o evento correspondente.
 
-**Implementado:** scaffolding mínimo do `transacoes-service`, CI com Maven `verify`, validações de domínio, preservação de UUID/valor/moeda e `POST /transacoes`, que persiste e retorna a mesma transação `PENDENTE` depois do commit local.
+**Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente e distingue primeira criação, replay equivalente e conflito.
 
-**Ainda não implementado:** consulta HTTP de transações, constraints de moeda/status no banco, `processamento-service`, filas e contratos de eventos. O adapter PostgreSQL é validado isoladamente e pelo fluxo HTTP completo; a constraint monetária foi testada por SQL direto. A API já retorna `422 Problem Details` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida, além de `400 Problem Details` para falhas de leitura, valor textual e moeda numérica/booleana.
+**Ainda não implementado:** constraints de moeda/status no banco, outbox, contratos de eventos, RabbitMQ e `processamento-service`. O adapter PostgreSQL é validado isoladamente e pelo fluxo HTTP completo; a constraint monetária foi testada por SQL direto.
 
 ## 2. Arquitetura vigente
 
@@ -346,7 +346,7 @@ O contrato de criação foi aprovado em 2026-09-10 e passou a persistir em 2026-
 
 | Método e rota | Request/response | Erros | Teste de contrato |
 |---|---|---|---|
-| `POST /transacoes` | JSON com `valor` e `moeda`; `201 Created`, `Location` e representação `PENDENTE` | `400` para corpo ilegível; `422` para valor ausente/nulo/não positivo e moeda ausente/nula/inválida | `TransacaoControllerTest` e `TransacaoHttpTest` |
+| `POST /transacoes` | header `Idempotency-Key` UUID e JSON com `valor` e `moeda`; `201 Created`, `Location` e representação `PENDENTE` | `400` para header ausente/malformado ou corpo ilegível; `409` para chave reutilizada com payload diferente; `422` para domínio inválido | `TransacaoControllerTest` e `TransacaoHttpTest` |
 | `GET /transacoes/{id}` | `200 OK` e representação persistida | `400` para UUID malformado; `404` para UUID válido ausente | `BuscarTransacaoServiceTest`, `TransacaoControllerTest` e `TransacaoHttpTest` |
 
 #### Criação de transação
@@ -362,7 +362,8 @@ Request com `Content-Type: application/json`:
 
 - `valor`: número JSON obrigatório e maior que zero, lido como `BigDecimal`; `10` e `10.00` são aceitos, mas textos como `"10.00"`, `"0"`, vazio ou espaços retornam `400` sem conversão automática;
 - `moeda`: texto com código alfabético ISO 4217 obrigatório, em letras maiúsculas; números e booleanos JSON retornam `400` sem conversão automática para texto;
-- o cliente não informa ID nem status.
+- o cliente não informa ID nem status;
+- o cliente informa `Idempotency-Key` como UUID canônico, independente do ID da transação.
 
 Resposta de sucesso:
 
@@ -395,11 +396,11 @@ O contrato de erros usa `Content-Type: application/problem+json` e os campos pad
 | `moeda` ausente ou nula | `422 Unprocessable Entity` | `Transação inválida` | `moeda deve ser informada` |
 | código de `moeda` inválido | `422 Unprocessable Entity` | `Transação inválida` | `moeda deve ser um código ISO 4217 válido em letras maiúsculas` |
 
-A criação e a consulta por UUID válido já são persistentes. Idempotência, autenticação, OpenAPI e publicação de evento permanecem fora deste estágio.
+A criação e a consulta por UUID válido são persistentes. Autenticação, OpenAPI e publicação de evento permanecem fora deste estágio.
 
 #### Idempotência da criação
 
-**Contrato aprovado, ainda não implementado:** `POST /transacoes` exigirá o header `Idempotency-Key`, com UUID gerado pelo cliente e independente do ID da transação.
+`POST /transacoes` exige o header `Idempotency-Key`, com UUID gerado pelo cliente e independente do ID da transação. Ausência, formato inválido, replay e conflito estão comprovados da camada MVC ao PostgreSQL real.
 
 | Situação | Resultado esperado |
 |---|---|
@@ -485,6 +486,8 @@ Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, c
 | Uma transação preserva sua identidade | recebe UUID explícito na fábrica e o conserva em campo privado final, sem setter; duas fixtures de ID | `TransacaoTest.criar_devePreservarId_quandoTransacaoForValida` |
 | Uma transação não pode ser criada sem identidade | ID nulo lança `IllegalArgumentException` com mensagem `id deve ser informado` | `TransacaoTest.criar_deveRejeitar_quandoIdForNulo` |
 | O happy path HTTP cria uma representação pendente | request `10.00`/`BRL`; retorna `201`, `Location`, UUID, valor, moeda e `PENDENTE` | `TransacaoControllerTest.deveCriarTransacaoPendente` |
+| A criação HTTP exige chave idempotente válida | ausência e formato inválido retornam `400` sem chamar o caso de uso | `TransacaoControllerTest` |
+| A criação HTTP preserva replay e rejeita conflito | mesma chave/payload repete resposta; payload diferente retorna `409` | `TransacaoHttpTest` |
 
 ### Evidência TDD — estado inicial `PENDENTE`
 
@@ -950,6 +953,17 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 - **Evidência:** [PR #37](https://github.com/Joaomagh/credpay/pull/37); [CI Linux #70](https://github.com/Joaomagh/credpay/actions/runs/35053556037) verde para `e53803c`, incluindo o cenário concorrente com PostgreSQL real.
 - **Limites:** lock específico de PostgreSQL; não há timeout próprio, métrica de espera nem contrato HTTP neste incremento.
 - **Próximo:** conectar `Idempotency-Key` ao endpoint e traduzir ausência, formato inválido e conflito.
+
+### 8.17 Idempotência no contrato HTTP
+
+- **Red:** `TransacaoControllerTest` passou a exigir o header e seus erros; 7 testes foram executados e 4 falharam porque o controller ignorava a chave e chamava o caminho não idempotente, produzindo resultado nulo.
+- **Green MVC:** o controller valida presença e formato UUID canônico, chama exclusivamente o caso de uso idempotente e o advice traduz chave inválida em `400` e conflito em `409`; os 7 testes MVC passaram.
+- **Refactor:** o método de criação sem chave foi removido da porta e do serviço, evitando um caminho interno que contornasse a idempotência obrigatória.
+- **Teste real:** `TransacaoHttpTest` envia chave em toda criação e cobre replay com corpo e `Location` originais, além do conflito com payload diferente.
+- **Validação local:** 13 testes focados de controller e aplicação verdes; `test-compile` verde.
+- **Evidência:** [PR #38](https://github.com/Joaomagh/credpay/pull/38); [CI Linux #73](https://github.com/Joaomagh/credpay/actions/runs/35054238285) verde para `5ecda07`, com 71 testes sem falhas, erros ou skips e JAR gerado.
+- **Limites:** não há expiração, escopo por cliente, autenticação, evento, outbox ou RabbitMQ.
+- **Próximo:** definir o contrato versionado mínimo de `TransacaoCriada` e a estratégia de outbox antes de implementar mensageria.
 
 ## 9. Mensageria e tratamento de falhas
 

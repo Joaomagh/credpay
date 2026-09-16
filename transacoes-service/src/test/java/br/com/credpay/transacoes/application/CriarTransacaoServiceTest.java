@@ -27,31 +27,6 @@ class CriarTransacaoServiceTest {
 
     @ParameterizedTest
     @CsvSource({"10.00, BRL", "123.456, USD"})
-    void executar_devePersistirEPreservarDados_quandoTransacaoForValida(String quantia, String codigoMoeda) {
-        var repository = mock(TransacaoRepository.class);
-        var service = new CriarTransacaoService(repository);
-        var valor = new BigDecimal(quantia);
-        var moeda = Currency.getInstance(codigoMoeda);
-
-        var resultado = service.executar(valor, moeda);
-
-        assertThat(resultado.id()).isNotNull();
-        assertThat(resultado.valor()).isEqualByComparingTo(valor);
-        assertThat(resultado.valor().scale()).isEqualTo(valor.scale());
-        assertThat(resultado.moeda()).isEqualTo(moeda);
-        assertThat(resultado.status()).isEqualTo(StatusTransacao.PENDENTE);
-
-        var transacaoPersistida = ArgumentCaptor.forClass(Transacao.class);
-        verify(repository).inserir(transacaoPersistida.capture());
-        assertThat(transacaoPersistida.getValue().id()).isEqualTo(resultado.id());
-        assertThat(transacaoPersistida.getValue().valor()).isEqualByComparingTo(valor);
-        assertThat(transacaoPersistida.getValue().valor().scale()).isEqualTo(valor.scale());
-        assertThat(transacaoPersistida.getValue().moeda()).isEqualTo(moeda);
-        assertThat(transacaoPersistida.getValue().status()).isEqualTo(StatusTransacao.PENDENTE);
-    }
-
-    @ParameterizedTest
-    @CsvSource({"10.00, BRL", "123.456, USD"})
     void executar_devePersistirComChave_quandoForPrimeiraCriacao(String quantia, String codigoMoeda) {
         var repository = mock(TransacaoRepository.class);
         var service = new CriarTransacaoService(repository);

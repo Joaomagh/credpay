@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -28,9 +29,12 @@ public class TransacaoController {
     }
 
     @PostMapping
-    ResponseEntity<TransacaoResponse> criar(@RequestBody TransacaoRequest request) {
+    ResponseEntity<TransacaoResponse> criar(
+            @RequestHeader(name = "Idempotency-Key", required = false) String chaveIdempotencia,
+            @RequestBody TransacaoRequest request) {
+        var chave = converterChaveIdempotencia(chaveIdempotencia);
         var moeda = converterMoeda(request.moeda());
-        var resultado = criarTransacao.executar(request.valor(), moeda);
+        var resultado = criarTransacao.executar(chave, request.valor(), moeda);
         var location = URI.create("/transacoes/" + resultado.id());
         var response = new TransacaoResponse(
                 resultado.id(),
@@ -39,6 +43,22 @@ public class TransacaoController {
                 resultado.status().name());
 
         return ResponseEntity.created(location).body(response);
+    }
+
+    private UUID converterChaveIdempotencia(String valor) {
+        if (valor == null || valor.isBlank()) {
+            throw new IdempotencyKeyInvalidaException("Idempotency-Key deve ser informado");
+        }
+        try {
+            var chave = UUID.fromString(valor);
+            if (!chave.toString().equalsIgnoreCase(valor)) {
+                throw new IllegalArgumentException();
+            }
+            return chave;
+        } catch (IllegalArgumentException exception) {
+            throw new IdempotencyKeyInvalidaException(
+                    "Idempotency-Key deve ser um UUID válido", exception);
+        }
     }
 
     @GetMapping("/{id}")

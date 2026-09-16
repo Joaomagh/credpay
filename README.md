@@ -31,13 +31,12 @@ O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD
 | Implementado | rollback após `flush` impede que uma inserção revertida permaneça no banco |
 | Implementado | `GET /transacoes/{id}` retorna a representação persistida ou `404 Problem Details` para UUID válido ausente |
 | Implementado | UUID malformado retorna `400 Problem Details` sem consultar o caso de uso nem expor detalhes internos |
-| Implementado | 68 testes automatizados verdes, incluindo HTTP ponta a ponta, integração PostgreSQL/Testcontainers e concorrência real |
-| Em integração | migration V3 e adapter persistem uma chave idempotente UUID associada à transação; o `POST` ainda não usa essa chave |
-| Em integração | caso de uso distingue primeira criação, replay equivalente e conflito; o endpoint ainda não recebe `Idempotency-Key` |
+| Implementado | 71 testes automatizados verdes, incluindo HTTP ponta a ponta, integração PostgreSQL/Testcontainers e concorrência real |
+| Implementado | `POST /transacoes` exige `Idempotency-Key`, repete a resposta original para payload equivalente e retorna `409` em conflito |
 | Implementado | lock transacional por chave serializa primeiras criações concorrentes; o CI comprovou convergência para uma única transação |
 | Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
-| Ainda não implementado | contrato HTTP de idempotência, constraints de moeda/status no banco, RabbitMQ, `processamento-service`, imagem da aplicação, Kubernetes e CD |
+| Ainda não implementado | outbox/eventos, constraints de moeda/status no banco, RabbitMQ, `processamento-service`, imagem da aplicação, Kubernetes e CD |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 
@@ -224,8 +223,8 @@ O sandbox ainda não foi implementado. Docker Desktop, daemon, VM, kernel/hyperv
 |---|---|---|
 | 1 | governança, threat model e contrato do sandbox | documentação concluída; sandbox pendente |
 | 2 | fundação reproduzível e CI mínimo | `transacoes-service` e CI implementados; restante pendente |
-| 3 | regras de domínio em TDD e primeira integração PostgreSQL | em andamento |
-| 4 | API, fluxo assíncrono, idempotência, outbox, retry e DLQ | planejada |
+| 3 | regras de domínio em TDD e primeira integração PostgreSQL | concluída |
+| 4 | API, fluxo assíncrono, idempotência, outbox, retry e DLQ | em andamento |
 | 5 | experimentos de falha e resiliência | planejada |
 | 6 | Kubernetes local e observabilidade | planejada |
 | 7 | evolução do CI, CD e roteiro de demonstração | planejada |
