@@ -929,6 +929,7 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 ### 8.15 Semântica idempotente no caso de uso
 
 - **Entrega:** [PR #36](https://github.com/Joaomagh/credpay/pull/36).
+- **CI e merge:** [CI Linux #67](https://github.com/Joaomagh/credpay/actions/runs/35049898921) verde para `45f81e3`; merge em `477c0e5`, com 67 testes na suíte.
 - **Red:** seis novos casos não compilaram porque `CriarTransacaoService` ainda não aceitava chave e `ConflitoIdempotenciaException` não existia.
 - **Primeira criação:** uma chave ausente no repository gera transação validada pelo domínio e usa `inserir(chave, transacao)`.
 - **Replay:** valor numericamente equivalente por `BigDecimal.compareTo` e mesma moeda devolvem a transação original, preservando UUID e escala, sem nova inserção.
@@ -937,6 +938,18 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 - **Green:** `CriarTransacaoServiceTest` executou 8 casos verdes; a suíte unitária/MVC afetada executou 24 testes sem falhas.
 - **Limite conhecido:** duas primeiras requisições concorrentes ainda podem observar ausência antes de uma vencer a PK; convergência após essa disputa será tratada antes de conectar HTTP.
 - **Próximo:** provar e implementar a convergência concorrente para a mesma chave.
+
+### 8.16 Convergência concorrente da idempotência
+
+- **Red:** o teste unitário exigiu que o repository bloqueasse a chave antes da consulta e falhou na compilação porque o controle ainda não existia.
+- **Controle:** `TransacaoJpaRepository` usa `pg_advisory_xact_lock` derivado da chave; como o lock é transacional, PostgreSQL o libera automaticamente no commit ou rollback.
+- **Ordem:** `CriarTransacaoService` valida a candidata, adquire o lock e só então consulta/insere. Requisições da mesma chave são serializadas; chaves diferentes não compartilham deliberadamente o mesmo lock, salvo colisão de hash conservadora.
+- **Teste real:** duas threads iniciam juntas, cada uma em sua transação Spring, e devem retornar o mesmo UUID; o banco deve conter uma única associação para a chave.
+- **Validação local:** 8 testes unitários verdes e toda a suíte compilada. Docker local permanece indisponível, portanto o cenário concorrente PostgreSQL é barreira obrigatória do CI antes do merge.
+- **Aprendizado do CI:** a primeira execução ([CI Linux #69](https://github.com/Joaomagh/credpay/actions/runs/35053308216)) revelou que o retorno `void` de `pg_advisory_xact_lock` não pode ser extraído como `Long` pelo Hibernate. A consulta foi ajustada para adquirir o lock no `FROM` e retornar o literal `1`.
+- **Evidência:** [PR #37](https://github.com/Joaomagh/credpay/pull/37); [CI Linux #70](https://github.com/Joaomagh/credpay/actions/runs/35053556037) verde para `e53803c`, incluindo o cenário concorrente com PostgreSQL real.
+- **Limites:** lock específico de PostgreSQL; não há timeout próprio, métrica de espera nem contrato HTTP neste incremento.
+- **Próximo:** conectar `Idempotency-Key` ao endpoint e traduzir ausência, formato inválido e conflito.
 
 ## 9. Mensageria e tratamento de falhas
 

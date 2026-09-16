@@ -30,6 +30,7 @@ class CriarTransacaoService implements CriarTransacao {
     @Transactional
     public Resultado executar(UUID chaveIdempotencia, BigDecimal valor, Currency moeda) {
         var candidata = Transacao.criar(UUID.randomUUID(), valor, moeda);
+        repository.bloquearChaveIdempotencia(chaveIdempotencia);
         var existente = repository.buscarPorChaveIdempotencia(chaveIdempotencia);
 
         if (existente.isPresent()) {

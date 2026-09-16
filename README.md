@@ -31,12 +31,13 @@ O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD
 | Implementado | rollback após `flush` impede que uma inserção revertida permaneça no banco |
 | Implementado | `GET /transacoes/{id}` retorna a representação persistida ou `404 Problem Details` para UUID válido ausente |
 | Implementado | UUID malformado retorna `400 Problem Details` sem consultar o caso de uso nem expor detalhes internos |
-| Implementado | 61 testes automatizados verdes, incluindo HTTP ponta a ponta e integração PostgreSQL/Testcontainers |
+| Implementado | 68 testes automatizados verdes, incluindo HTTP ponta a ponta, integração PostgreSQL/Testcontainers e concorrência real |
 | Em integração | migration V3 e adapter persistem uma chave idempotente UUID associada à transação; o `POST` ainda não usa essa chave |
 | Em integração | caso de uso distingue primeira criação, replay equivalente e conflito; o endpoint ainda não recebe `Idempotency-Key` |
+| Implementado | lock transacional por chave serializa primeiras criações concorrentes; o CI comprovou convergência para uma única transação |
 | Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
-| Ainda não implementado | idempotência, constraints de moeda/status no banco, RabbitMQ, `processamento-service`, imagem da aplicação, Kubernetes e CD |
+| Ainda não implementado | contrato HTTP de idempotência, constraints de moeda/status no banco, RabbitMQ, `processamento-service`, imagem da aplicação, Kubernetes e CD |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 

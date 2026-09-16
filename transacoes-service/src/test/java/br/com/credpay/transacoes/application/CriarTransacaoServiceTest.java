@@ -61,6 +61,7 @@ class CriarTransacaoServiceTest {
 
         var resultado = service.executar(CHAVE_IDEMPOTENCIA, valor, moeda);
 
+        verify(repository).bloquearChaveIdempotencia(CHAVE_IDEMPOTENCIA);
         var transacaoPersistida = ArgumentCaptor.forClass(Transacao.class);
         verify(repository).inserir(eq(CHAVE_IDEMPOTENCIA), transacaoPersistida.capture());
         assertThat(resultado.id()).isEqualTo(transacaoPersistida.getValue().id());
