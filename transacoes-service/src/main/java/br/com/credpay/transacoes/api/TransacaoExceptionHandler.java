@@ -1,5 +1,6 @@
 package br.com.credpay.transacoes.api;
 
+import br.com.credpay.transacoes.application.ConflitoIdempotenciaException;
 import br.com.credpay.transacoes.application.TransacaoNaoEncontradaException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -10,6 +11,22 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestControllerAdvice(assignableTypes = TransacaoController.class)
 class TransacaoExceptionHandler {
+
+    @ExceptionHandler(IdempotencyKeyInvalidaException.class)
+    ProblemDetail tratarChaveIdempotenciaInvalida(IdempotencyKeyInvalidaException exception) {
+        var problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST, exception.getMessage());
+        problem.setTitle("Requisição inválida");
+        return problem;
+    }
+
+    @ExceptionHandler(ConflitoIdempotenciaException.class)
+    ProblemDetail tratarConflitoIdempotencia(ConflitoIdempotenciaException exception) {
+        var problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.CONFLICT, exception.getMessage());
+        problem.setTitle("Conflito de idempotência");
+        return problem;
+    }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     ProblemDetail tratarTipoDeArgumentoInvalido() {

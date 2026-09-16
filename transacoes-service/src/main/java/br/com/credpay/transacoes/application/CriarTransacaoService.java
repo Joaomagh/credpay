@@ -19,15 +19,6 @@ class CriarTransacaoService implements CriarTransacao {
 
     @Override
     @Transactional
-    public Resultado executar(BigDecimal valor, Currency moeda) {
-        var transacao = Transacao.criar(UUID.randomUUID(), valor, moeda);
-        repository.inserir(transacao);
-
-        return paraResultado(transacao);
-    }
-
-    @Override
-    @Transactional
     public Resultado executar(UUID chaveIdempotencia, BigDecimal valor, Currency moeda) {
         var candidata = Transacao.criar(UUID.randomUUID(), valor, moeda);
         repository.bloquearChaveIdempotencia(chaveIdempotencia);

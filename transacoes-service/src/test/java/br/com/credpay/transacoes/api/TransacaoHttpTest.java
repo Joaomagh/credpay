@@ -27,6 +27,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -66,7 +67,7 @@ class TransacaoHttpTest {
 
     @Test
     void buscar_deveRetornarTransacaoPersistida_quandoIdExistir() throws Exception {
-        var criacao = mockMvc.perform(post("/transacoes")
+        var criacao = mockMvc.perform(postTransacoes()
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -120,7 +121,7 @@ class TransacaoHttpTest {
     @ParameterizedTest
     @ValueSource(strings = {"10.00", "10"})
     void criar_deveRetornar201ComStatusPendente_quandoTransacaoForValida(String valor) throws Exception {
-        var response = mockMvc.perform(post("/transacoes")
+        var response = mockMvc.perform(postTransacoes()
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"valor\":%s,\"moeda\":\"BRL\"}".formatted(valor)))
                 .andExpect(status().isCreated())
@@ -147,10 +148,58 @@ class TransacaoHttpTest {
         assertThat(persistida.status()).isEqualTo(StatusTransacao.PENDENTE);
     }
 
+    @Test
+    void criar_deveRepetirRespostaOriginal_quandoChaveEPayloadForemRepetidos() throws Exception {
+        var chave = UUID.randomUUID();
+        var primeiraResposta = mockMvc.perform(postTransacoes(chave)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"valor":10.00,"moeda":"BRL"}
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse();
+
+        var replay = mockMvc.perform(postTransacoes(chave)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"moeda":"BRL","valor":10}
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse();
+
+        assertThat(replay.getHeader("Location")).isEqualTo(primeiraResposta.getHeader("Location"));
+        assertThat(replay.getContentAsString()).isEqualTo(primeiraResposta.getContentAsString());
+    }
+
+    @Test
+    void criar_deveRetornar409_quandoChaveForReutilizadaComOutroPayload() throws Exception {
+        var chave = UUID.randomUUID();
+        mockMvc.perform(postTransacoes(chave)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"valor":10.00,"moeda":"BRL"}
+                                """))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(postTransacoes(chave)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"valor":20.00,"moeda":"BRL"}
+                                """))
+                .andExpect(status().isConflict())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.title").value("Conflito de idempotência"))
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.detail")
+                        .value("chave de idempotência já utilizada com outro payload"))
+                .andExpect(jsonPath("$.instance").value("/transacoes"))
+                .andExpect(header().doesNotExist("Location"));
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"10.00", "0", "", "   "})
     void criar_deveRetornar400_quandoValorForTexto(String valor) throws Exception {
-        mockMvc.perform(post("/transacoes")
+        mockMvc.perform(postTransacoes()
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"valor\":\"%s\",\"moeda\":\"BRL\"}".formatted(valor)))
                 .andExpect(status().isBadRequest())
@@ -167,7 +216,7 @@ class TransacaoHttpTest {
     @ParameterizedTest
     @ValueSource(strings = {"{\"moeda\":\"BRL\"}", "{\"valor\":null,\"moeda\":\"BRL\"}"})
     void criar_deveRetornar422_quandoValorForAusenteOuNulo(String request) throws Exception {
-        mockMvc.perform(post("/transacoes")
+        mockMvc.perform(postTransacoes()
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(request))
                 .andExpect(status().isUnprocessableEntity())
@@ -189,7 +238,7 @@ class TransacaoHttpTest {
             "{\"valor\":10.00,\"moeda\":{}}"
     })
     void criar_deveRetornar400_quandoCorpoNaoPuderSerLido(String request) throws Exception {
-        mockMvc.perform(post("/transacoes")
+        mockMvc.perform(postTransacoes()
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(request))
                 .andExpect(status().isBadRequest())
@@ -206,7 +255,7 @@ class TransacaoHttpTest {
     @ParameterizedTest
     @ValueSource(strings = {"0", "-0.01"})
     void criar_deveRetornar422_quandoValorForZeroOuNegativo(String valor) throws Exception {
-        mockMvc.perform(post("/transacoes")
+        mockMvc.perform(postTransacoes()
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"valor\":%s,\"moeda\":\"BRL\"}".formatted(valor)))
                 .andExpect(status().isUnprocessableEntity())
@@ -222,7 +271,7 @@ class TransacaoHttpTest {
     @ParameterizedTest
     @ValueSource(strings = {"123", "1.5", "true", "false"})
     void criar_deveRetornar400_quandoMoedaNaoForTexto(String moeda) throws Exception {
-        mockMvc.perform(post("/transacoes")
+        mockMvc.perform(postTransacoes()
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"valor\":10.00,\"moeda\":%s}".formatted(moeda)))
                 .andExpect(status().isBadRequest())
@@ -239,7 +288,7 @@ class TransacaoHttpTest {
     @ParameterizedTest
     @ValueSource(strings = {"ZZZ", "", "brl", " BRL "})
     void criar_deveRetornar422_quandoCodigoDaMoedaForInvalido(String moeda) throws Exception {
-        mockMvc.perform(post("/transacoes")
+        mockMvc.perform(postTransacoes()
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"valor\":10.00,\"moeda\":\"%s\"}".formatted(moeda)))
                 .andExpect(status().isUnprocessableEntity())
@@ -259,7 +308,7 @@ class TransacaoHttpTest {
             "{\"valor\":10.00,\"moeda\":null}"
     })
     void criar_deveRetornar422_quandoMoedaForAusenteOuNula(String request) throws Exception {
-        mockMvc.perform(post("/transacoes")
+        mockMvc.perform(postTransacoes()
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(request))
                 .andExpect(status().isUnprocessableEntity())
@@ -270,5 +319,13 @@ class TransacaoHttpTest {
                 .andExpect(jsonPath("$.detail").value("moeda deve ser informada"))
                 .andExpect(jsonPath("$.instance").value("/transacoes"))
                 .andExpect(header().doesNotExist("Location"));
+    }
+
+    private MockHttpServletRequestBuilder postTransacoes() {
+        return postTransacoes(UUID.randomUUID());
+    }
+
+    private MockHttpServletRequestBuilder postTransacoes(UUID chaveIdempotencia) {
+        return post("/transacoes").header("Idempotency-Key", chaveIdempotencia);
     }
 }

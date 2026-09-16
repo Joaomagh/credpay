@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Integrar `Idempotency-Key` ao `POST /transacoes` em TDD, cobrindo header ausente/malformado, replay e conflito `409`, sem RabbitMQ ou dependência nova.
+- [ ] Definir o contrato versionado mínimo de `TransacaoCriada` e a estratégia de outbox, sem implementar RabbitMQ ainda.
