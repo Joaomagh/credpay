@@ -9,5 +9,9 @@ public interface TransacaoRepository {
 
     void inserir(Transacao transacao);
 
+    void inserir(UUID chaveIdempotencia, Transacao transacao);
+
     Optional<Transacao> buscarPorId(UUID id);
+
+    Optional<Transacao> buscarPorChaveIdempotencia(UUID chaveIdempotencia);
 }

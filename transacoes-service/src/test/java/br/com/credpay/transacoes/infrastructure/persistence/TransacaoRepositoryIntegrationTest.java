@@ -157,4 +157,73 @@ class TransacaoRepositoryIntegrationTest {
         Optional<Transacao> encontrada = transacoes.execute(status -> repository.buscarPorId(id));
         assertThat(encontrada).isEmpty();
     }
+
+    @Test
+    void inserirComChave_devePermitirBuscaPorChaveEmOutraTransacao() {
+        var chaveIdempotencia = UUID.fromString("03714dde-d152-47f0-97f0-82171ffbe150");
+        var id = UUID.fromString("44fe8ae7-47a6-45f2-bf6c-46a83ee782ee");
+        var transacao = Transacao.criar(
+                id, new BigDecimal("10.00"), Currency.getInstance("BRL"));
+        var transacoes = new TransactionTemplate(transactionManager);
+
+        transacoes.executeWithoutResult(
+                status -> repository.inserir(chaveIdempotencia, transacao));
+        Optional<Transacao> encontrada = transacoes.execute(
+                status -> repository.buscarPorChaveIdempotencia(chaveIdempotencia));
+
+        assertThat(encontrada).isPresent();
+        var persistida = encontrada.orElseThrow();
+        assertThat(persistida.id()).isEqualTo(id);
+        assertThat(persistida.valor()).isEqualByComparingTo("10.00");
+        assertThat(persistida.valor().scale()).isEqualTo(2);
+        assertThat(persistida.moeda()).isEqualTo(Currency.getInstance("BRL"));
+        assertThat(persistida.status()).isEqualTo(StatusTransacao.PENDENTE);
+    }
+
+    @Test
+    void inserirComChave_deveFalharSemSobrescreverOriginal_quandoChaveJaExistir() {
+        var chaveIdempotencia = UUID.fromString("82e27f0c-3d82-45b9-970b-2ac252040e8a");
+        var original = Transacao.criar(
+                UUID.fromString("90c8ed8a-6b22-4f1d-b836-d103ddf94adc"),
+                new BigDecimal("10.00"),
+                Currency.getInstance("BRL"));
+        var duplicada = Transacao.criar(
+                UUID.fromString("1d7c582f-e11c-4f24-8582-6f16145fa748"),
+                new BigDecimal("20.00"),
+                Currency.getInstance("USD"));
+        var transacoes = new TransactionTemplate(transactionManager);
+
+        transacoes.executeWithoutResult(
+                status -> repository.inserir(chaveIdempotencia, original));
+
+        assertThatThrownBy(() -> transacoes.executeWithoutResult(
+                status -> repository.inserir(chaveIdempotencia, duplicada)))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasStackTraceContaining("idempotencias_transacao_pkey");
+
+        Optional<Transacao> encontrada = transacoes.execute(
+                status -> repository.buscarPorChaveIdempotencia(chaveIdempotencia));
+        assertThat(encontrada).isPresent();
+        assertThat(encontrada.orElseThrow().id()).isEqualTo(original.id());
+        Optional<Transacao> transacaoDuplicada = transacoes.execute(
+                status -> repository.buscarPorId(duplicada.id()));
+        assertThat(transacaoDuplicada).isEmpty();
+    }
+
+    @Test
+    void banco_deveRejeitarChaveIdempotenteNula() {
+        var transacao = Transacao.criar(
+                UUID.fromString("0b60a7ab-4d4d-43cf-b422-c752c7526495"),
+                new BigDecimal("10.00"),
+                Currency.getInstance("BRL"));
+        var transacoes = new TransactionTemplate(transactionManager);
+        transacoes.executeWithoutResult(status -> repository.inserir(transacao));
+
+        assertThatThrownBy(() -> jdbcTemplate.update("""
+                INSERT INTO idempotencias_transacao (chave, transacao_id)
+                VALUES (NULL, ?)
+                """, transacao.id()))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasStackTraceContaining("chave");
+    }
 }

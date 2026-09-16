@@ -912,6 +912,20 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 - **Limites:** nenhuma migration, API ou regra foi alterada neste incremento documental.
 - **Próximo:** implementar a persistência mínima da chave idempotente sem mudar o endpoint ainda.
 
+### 8.14 Persistência da chave idempotente
+
+- **Entrega:** [PR #35](https://github.com/Joaomagh/credpay/pull/35).
+- **Desenho:** V3 cria `idempotencias_transacao`, com chave UUID como PK, `transacao_id` obrigatório, único e referenciado por FK. A tabela de associação permite introduzir a infraestrutura sem fingir que o POST atual já é idempotente.
+- **Porta:** `TransacaoRepository` recebe operações adicionais de inserção associada e busca por chave; as operações antigas permanecem enquanto o caso de uso ainda não foi migrado.
+- **Adapter:** `IdempotenciaTransacaoEntity` associa chave e entidade de transação; `CascadeType.PERSIST` grava ambas na mesma transação local.
+- **Red:** o primeiro teste falhou na compilação somente porque a porta ainda não aceitava `inserir(chave, transacao)` nem `buscarPorChaveIdempotencia(chave)`.
+- **Green focado:** após V3, entidade e adapter, o teste real aplicou três migrations e executou 11 casos verdes, incluindo INSERT da transação, INSERT da associação e SELECT posterior em outra transação.
+- **Controles adicionais:** testes de caracterização exigem que chave duplicada falhe pela PK sem substituir a associação original e que chave nula seja rejeitada. Eles foram adicionados depois do primeiro green.
+- **Incidente de ambiente:** na verificação final local, Docker Desktop estava sem o pipe do engine Linux. O `verify` executou 18 testes sem Docker com sucesso, mas três classes Testcontainers abortaram antes dos cenários. Uma tentativa segura de iniciar o Desktop não restaurou o engine; nenhum reset, prune ou remoção foi feito.
+- **CI:** [CI Linux #63](https://github.com/Joaomagh/credpay/actions/runs/35047832084) verde para `adc567b`; a suíte executou 61 testes, incluindo os três cenários novos de idempotência, sem falhas/erros/skips, e gerou o JAR.
+- **Limites:** endpoint e caso de uso ainda ignoram idempotência; não há replay, conflito HTTP ou teste concorrente neste incremento.
+- **Próximo:** implementar a semântica idempotente no caso de uso, ainda sem alterar o contrato HTTP.
+
 ## 9. Mensageria e tratamento de falhas
 
 Ainda não configurado. Decisões futuras devem cobrir exchange, queue, routing key, durabilidade, ack, prefetch, retry/backoff, DLQ, idempotência e publicação confiável — somente quando testadas.
