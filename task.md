@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Implementar em TDD a migration V4 e o adapter mínimo da outbox, comprovando round-trip PostgreSQL de um evento pendente, sem conectar o caso de uso ou RabbitMQ.
+- [ ] Conectar em TDD a primeira criação à outbox na mesma transação, gerando um único `TransacaoCriada` v1 e nenhum evento em replay ou conflito, sem RabbitMQ.
