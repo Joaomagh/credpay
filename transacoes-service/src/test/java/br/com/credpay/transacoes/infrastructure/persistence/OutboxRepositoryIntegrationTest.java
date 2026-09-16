@@ -93,6 +93,20 @@ class OutboxRepositoryIntegrationTest {
         assertThat(persistido.publishedAt()).isNull();
     }
 
+    @Test
+    void migration_devePermitirNuloSomenteNoInstanteDePublicacao() {
+        var colunasNulas = jdbcTemplate.queryForList("""
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                  AND table_name = 'outbox_eventos'
+                  AND is_nullable = 'YES'
+                ORDER BY ordinal_position
+                """, String.class);
+
+        assertThat(colunasNulas).containsExactly("published_at");
+    }
+
     private record EventoPersistido(
             UUID aggregateId,
             String eventType,
