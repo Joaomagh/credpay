@@ -6,7 +6,7 @@
 
 **Fase atual:** 4 — Fluxo assíncrono confiável
 
-**Estado:** criação e consulta HTTP persistentes; idempotência conectada ao endpoint e aguardando a evidência integral do CI
+**Estado:** criação e consulta HTTP persistentes; idempotência comprovada da entrada HTTP ao PostgreSQL
 
 ## 1. Contexto e limites atuais
 
@@ -400,7 +400,7 @@ A criação e a consulta por UUID válido são persistentes. Autenticação, Ope
 
 #### Idempotência da criação
 
-`POST /transacoes` exige o header `Idempotency-Key`, com UUID gerado pelo cliente e independente do ID da transação. O contrato MVC está comprovado localmente; replay e conflito com PostgreSQL real permanecem como barreira do CI deste incremento.
+`POST /transacoes` exige o header `Idempotency-Key`, com UUID gerado pelo cliente e independente do ID da transação. Ausência, formato inválido, replay e conflito estão comprovados da camada MVC ao PostgreSQL real.
 
 | Situação | Resultado esperado |
 |---|---|
@@ -959,8 +959,9 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 - **Red:** `TransacaoControllerTest` passou a exigir o header e seus erros; 7 testes foram executados e 4 falharam porque o controller ignorava a chave e chamava o caminho não idempotente, produzindo resultado nulo.
 - **Green MVC:** o controller valida presença e formato UUID canônico, chama exclusivamente o caso de uso idempotente e o advice traduz chave inválida em `400` e conflito em `409`; os 7 testes MVC passaram.
 - **Refactor:** o método de criação sem chave foi removido da porta e do serviço, evitando um caminho interno que contornasse a idempotência obrigatória.
-- **Teste real preparado:** `TransacaoHttpTest` envia chave em toda criação e cobre replay com corpo e `Location` originais, além do conflito com payload diferente. A suíte integral compila; a execução PostgreSQL depende do CI porque o Docker local permanece indisponível.
+- **Teste real:** `TransacaoHttpTest` envia chave em toda criação e cobre replay com corpo e `Location` originais, além do conflito com payload diferente.
 - **Validação local:** 13 testes focados de controller e aplicação verdes; `test-compile` verde.
+- **Evidência:** [PR #38](https://github.com/Joaomagh/credpay/pull/38); [CI Linux #73](https://github.com/Joaomagh/credpay/actions/runs/35054238285) verde para `5ecda07`, com 71 testes sem falhas, erros ou skips e JAR gerado.
 - **Limites:** não há expiração, escopo por cliente, autenticação, evento, outbox ou RabbitMQ.
 - **Próximo:** definir o contrato versionado mínimo de `TransacaoCriada` e a estratégia de outbox antes de implementar mensageria.
 
