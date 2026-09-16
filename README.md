@@ -33,6 +33,7 @@ O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD
 | Implementado | UUID malformado retorna `400 Problem Details` sem consultar o caso de uso nem expor detalhes internos |
 | Implementado | 61 testes automatizados verdes, incluindo HTTP ponta a ponta e integração PostgreSQL/Testcontainers |
 | Em integração | migration V3 e adapter persistem uma chave idempotente UUID associada à transação; o `POST` ainda não usa essa chave |
+| Em integração | caso de uso distingue primeira criação, replay equivalente e conflito; o endpoint ainda não recebe `Idempotency-Key` |
 | Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
 | Ainda não implementado | idempotência, constraints de moeda/status no banco, RabbitMQ, `processamento-service`, imagem da aplicação, Kubernetes e CD |

@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Implementar em TDD a semântica idempotente no caso de uso: primeira criação, replay do mesmo valor/moeda e conflito para payload diferente, sem alterar ainda o endpoint HTTP.
+- [ ] Implementar em TDD a convergência de duas primeiras criações concorrentes com a mesma chave, sem alterar ainda o endpoint HTTP.
