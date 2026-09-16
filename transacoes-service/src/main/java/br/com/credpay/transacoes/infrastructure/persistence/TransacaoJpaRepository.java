@@ -21,8 +21,20 @@ class TransacaoJpaRepository implements TransacaoRepository {
     }
 
     @Override
+    public void inserir(UUID chaveIdempotencia, Transacao transacao) {
+        entityManager.persist(new IdempotenciaTransacaoEntity(chaveIdempotencia, transacao));
+    }
+
+    @Override
     public Optional<Transacao> buscarPorId(UUID id) {
         return Optional.ofNullable(entityManager.find(TransacaoEntity.class, id))
                 .map(TransacaoEntity::paraDominio);
+    }
+
+    @Override
+    public Optional<Transacao> buscarPorChaveIdempotencia(UUID chaveIdempotencia) {
+        return Optional.ofNullable(entityManager.find(
+                        IdempotenciaTransacaoEntity.class, chaveIdempotencia))
+                .map(IdempotenciaTransacaoEntity::paraDominio);
     }
 }

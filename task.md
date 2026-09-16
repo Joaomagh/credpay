@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Implementar em TDD a persistência mínima da chave idempotente: migration com UUID obrigatório e único, além de inserção e busca no repository, sem alterar ainda o endpoint ou o caso de uso.
+- [ ] Implementar em TDD a semântica idempotente no caso de uso: primeira criação, replay do mesmo valor/moeda e conflito para payload diferente, sem alterar ainda o endpoint HTTP.
