@@ -928,6 +928,7 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 
 ### 8.15 Semântica idempotente no caso de uso
 
+- **Entrega:** [PR #36](https://github.com/Joaomagh/credpay/pull/36).
 - **Red:** seis novos casos não compilaram porque `CriarTransacaoService` ainda não aceitava chave e `ConflitoIdempotenciaException` não existia.
 - **Primeira criação:** uma chave ausente no repository gera transação validada pelo domínio e usa `inserir(chave, transacao)`.
 - **Replay:** valor numericamente equivalente por `BigDecimal.compareTo` e mesma moeda devolvem a transação original, preservando UUID e escala, sem nova inserção.
