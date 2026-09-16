@@ -926,6 +926,17 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 - **Limites:** endpoint e caso de uso ainda ignoram idempotência; não há replay, conflito HTTP ou teste concorrente neste incremento.
 - **Próximo:** implementar a semântica idempotente no caso de uso, ainda sem alterar o contrato HTTP.
 
+### 8.15 Semântica idempotente no caso de uso
+
+- **Red:** seis novos casos não compilaram porque `CriarTransacaoService` ainda não aceitava chave e `ConflitoIdempotenciaException` não existia.
+- **Primeira criação:** uma chave ausente no repository gera transação validada pelo domínio e usa `inserir(chave, transacao)`.
+- **Replay:** valor numericamente equivalente por `BigDecimal.compareTo` e mesma moeda devolvem a transação original, preservando UUID e escala, sem nova inserção.
+- **Conflito:** valor ou moeda diferentes lançam `ConflitoIdempotenciaException` com a mensagem pública aprovada e não gravam outra transação.
+- **Validação:** a candidata é criada antes da consulta, portanto replay não contorna as validações de domínio existentes.
+- **Green:** `CriarTransacaoServiceTest` executou 8 casos verdes; a suíte unitária/MVC afetada executou 24 testes sem falhas.
+- **Limite conhecido:** duas primeiras requisições concorrentes ainda podem observar ausência antes de uma vencer a PK; convergência após essa disputa será tratada antes de conectar HTTP.
+- **Próximo:** provar e implementar a convergência concorrente para a mesma chave.
+
 ## 9. Mensageria e tratamento de falhas
 
 Ainda não configurado. Decisões futuras devem cobrir exchange, queue, routing key, durabilidade, ack, prefetch, retry/backoff, DLQ, idempotência e publicação confiável — somente quando testadas.
