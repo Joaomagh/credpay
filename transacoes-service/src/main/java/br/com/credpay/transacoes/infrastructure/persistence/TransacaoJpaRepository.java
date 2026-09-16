@@ -28,7 +28,8 @@ class TransacaoJpaRepository implements TransacaoRepository {
     @Override
     public void bloquearChaveIdempotencia(UUID chaveIdempotencia) {
         entityManager.createNativeQuery("""
-                        SELECT pg_advisory_xact_lock(
+                        SELECT 1
+                        FROM pg_advisory_xact_lock(
                             hashtextextended(CAST(:chave AS text), 0))
                         """, Long.class)
                 .setParameter("chave", chaveIdempotencia.toString())
