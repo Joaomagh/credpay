@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Definir o contrato versionado mínimo de `TransacaoCriada` e a estratégia de outbox, sem implementar RabbitMQ ainda.
+- [ ] Implementar em TDD a migration V4 e o adapter mínimo da outbox, comprovando round-trip PostgreSQL de um evento pendente, sem conectar o caso de uso ou RabbitMQ.

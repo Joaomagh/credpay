@@ -465,13 +465,39 @@ Esse erro representa sintaxe inválida e ocorre antes do caso de uso. O teste MV
 
 ### Eventos
 
-Nenhum evento implementado.
+Nenhum evento está implementado ou publicado. O primeiro contrato foi aprovado para orientar a outbox e os testes seguintes.
 
 | Evento/versão | Produtor | Consumidor | Campos | Garantias |
 |---|---|---|---|---|
-| — | — | — | — | — |
+| `TransacaoCriada` v1 | `transacoes-service` | `processamento-service` planejado | envelope versionado e dados da transação `PENDENTE` | intenção persistida atomicamente via outbox; publicação futura pelo menos uma vez |
 
-Ao criar um evento, registrar versão, ID do evento, correlation ID, instante, chave de negócio e política de compatibilidade.
+Envelope JSON aprovado:
+
+```json
+{
+  "eventId": "6dc8d48d-5b20-4ee9-ac7e-832e421121aa",
+  "eventType": "TransacaoCriada",
+  "eventVersion": 1,
+  "occurredAt": "2026-09-16T12:00:00Z",
+  "correlationId": "7b8b61c2-9f63-4d74-9f8d-89cb52de0ed9",
+  "data": {
+    "transactionId": "7b8b61c2-9f63-4d74-9f8d-89cb52de0ed9",
+    "amount": "10.00",
+    "currency": "BRL",
+    "status": "PENDENTE"
+  }
+}
+```
+
+- `eventId` é um UUID novo e identifica a mensagem para deduplicação; replay HTTP não cria outro evento.
+- `eventType` e `eventVersion` são literais `TransacaoCriada` e `1`.
+- `occurredAt` é um instante UTC ISO 8601 gerado pela aplicação na primeira criação.
+- `correlationId` é igual ao ID da transação na v1. Não reutiliza nem expõe `Idempotency-Key`.
+- `amount` é texto decimal para preservar valor e escala sem conversão binária; `currency` usa o código ISO 4217 e `status` é `PENDENTE`.
+- Campos desconhecidos devem ser ignorados pelos consumidores. Remover, renomear, mudar tipo ou semântica exige nova versão; adição opcional compatível pode permanecer na v1 quando consumidores existentes continuarem válidos.
+- O contrato não contém credenciais, dados pessoais, stack trace nem detalhes de persistência.
+
+O evento representa um fato confirmado no banco, não um comando e não uma promessa de aprovação. A ordem global não é garantida. O consumidor futuro deve tolerar reentrega e deduplicar por `eventId`.
 
 ## 7. Modelo e regras implementadas
 
@@ -965,6 +991,28 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 - **Limites:** não há expiração, escopo por cliente, autenticação, evento, outbox ou RabbitMQ.
 - **Próximo:** definir o contrato versionado mínimo de `TransacaoCriada` e a estratégia de outbox antes de implementar mensageria.
 
+### 8.18 Baseline da outbox transacional
+
+**Estado:** decisão aceita; schema, modelo e adapter ainda não implementados.
+
+A primeira criação persistirá a transação, a associação idempotente e um único registro de outbox na mesma transação PostgreSQL. Replay equivalente apenas devolve o recurso existente; conflito não grava transação nem evento. Qualquer falha na gravação da outbox reverte toda a criação.
+
+| Coluna planejada | Tipo PostgreSQL | Responsabilidade |
+|---|---|---|
+| `event_id` | `uuid` | chave primária e identidade usada na deduplicação |
+| `aggregate_id` | `uuid` | ID da transação e chave de negócio do evento |
+| `event_type` | `varchar(100)` | literal `TransacaoCriada` |
+| `event_version` | `integer` | versão positiva do contrato, inicialmente `1` |
+| `payload` | `jsonb` | envelope completo já serializado |
+| `occurred_at` | `timestamptz` | instante UTC do fato |
+| `published_at` | `timestamptz` nulo | ausente enquanto pendente; preenchido somente após publicação confirmada |
+
+O caso de uso criará o evento somente no caminho de primeira criação e o entregará a uma porta de outbox separada. O serviço continuará com uma única transação local Spring; não haverá transação distribuída entre PostgreSQL e RabbitMQ.
+
+O publicador futuro lerá registros com `published_at` nulo, publicará e depois marcará o instante. Uma queda depois da publicação e antes da marcação causa reentrega: a garantia será pelo menos uma vez, não exatamente uma vez. Estratégia de claim/lease entre réplicas, batch, backoff, número de tentativas, retenção e limpeza serão decididos com os testes do publicador, sem inflar a primeira migration.
+
+**Critérios do próximo incremento:** aplicar uma migration V4 em PostgreSQL vazio, inserir e recuperar um evento pendente preservando UUIDs, versão, JSON e instante, rejeitar campos obrigatórios nulos e manter a suíte existente verde. Ainda sem conectar o caso de uso e sem RabbitMQ.
+
 ## 9. Mensageria e tratamento de falhas
 
 Ainda não configurado. Decisões futuras devem cobrir exchange, queue, routing key, durabilidade, ack, prefetch, retry/backoff, DLQ, idempotência e publicação confiável — somente quando testadas.
@@ -1068,6 +1116,13 @@ Cobertura, scanners e outras ferramentas serão sinais auxiliares, não metas is
 - **Operação:** cada execução será efêmera. Persistência será limitada ao workspace explicitamente montado; processos e dados temporários deverão desaparecer quando o container for removido.
 - **Evidência exigida:** estas decisões são requisitos de desenho, não garantias atuais. Cada controle somente será considerado verificado após teste negativo reproduzível registrar plataforma/versão, comando, resultado esperado, resultado observado e mecanismo que causou o bloqueio.
 - **Consequências:** o desenho reduz o alcance de erro ou abuso, mas escrita autorizada ainda pode danificar o workspace. Filesystem somente leitura pode revelar a necessidade de novos `tmpfs`. Rede negada impede downloads e operações remotas. Ferramentas adicionais aumentam a superfície de ataque. Docker Desktop, daemon, VM, kernel/hypervisor e host permanecem na base confiável.
+
+### ADR-004 — Outbox transacional antes da mensageria
+
+- **Status:** aceita; implementação pendente
+- **Contexto:** gravar a transação e publicar diretamente no RabbitMQ são duas operações independentes. Uma falha entre elas pode deixar um recurso confirmado sem evento ou publicar um evento de uma transação revertida.
+- **Decisão:** persistir `TransacaoCriada` em uma outbox no mesmo PostgreSQL e na mesma transação local da criação. Um publicador separado enviará registros pendentes e os marcará depois da confirmação do broker.
+- **Consequências:** elimina a janela entre commit do recurso e registro da intenção de publicação, mas não fornece entrega exatamente uma vez. Duplicatas após falha são esperadas; consumidores deverão deduplicar por `eventId`. A tabela cresce e exigirá política futura de retenção. Não há transação distribuída.
 
 ## 13. Hurdles e aprendizados reais
 
