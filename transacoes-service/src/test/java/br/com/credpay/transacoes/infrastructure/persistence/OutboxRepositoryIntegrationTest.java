@@ -4,11 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import br.com.credpay.transacoes.application.EventoOutbox;
 import br.com.credpay.transacoes.application.OutboxRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -50,6 +52,11 @@ class OutboxRepositoryIntegrationTest {
 
     @Autowired
     private PlatformTransactionManager transactionManager;
+
+    @BeforeEach
+    void limparOutbox() {
+        jdbcTemplate.update("DELETE FROM outbox_eventos");
+    }
 
     @Test
     void adicionar_devePersistirEventoPendente_preservandoContrato() throws Exception {
@@ -105,6 +112,72 @@ class OutboxRepositoryIntegrationTest {
                 """, String.class);
 
         assertThat(colunasNulas).containsExactly("published_at");
+    }
+
+    @Test
+    void buscarPendentes_deveRetornarSomenteNaoPublicadosEmOrdemComLimite() throws Exception {
+        var instanteInicial = Instant.parse("2026-09-17T12:00:00Z");
+        var primeiro = evento(
+                "00000000-0000-0000-0000-000000000001", instanteInicial);
+        var segundo = evento(
+                "00000000-0000-0000-0000-000000000002", instanteInicial);
+        var terceiro = evento(
+                "00000000-0000-0000-0000-000000000003", instanteInicial.plusSeconds(1));
+        var jaPublicado = evento(
+                "00000000-0000-0000-0000-000000000004", instanteInicial.minusSeconds(1));
+        var transacoes = new TransactionTemplate(transactionManager);
+        transacoes.executeWithoutResult(status -> List.of(
+                        terceiro, segundo, jaPublicado, primeiro)
+                .forEach(outboxRepository::adicionar));
+        jdbcTemplate.update(
+                "UPDATE outbox_eventos SET published_at = ? WHERE event_id = ?",
+                Timestamp.from(instanteInicial.plusSeconds(10)),
+                jaPublicado.eventId());
+
+        var pendentes = outboxRepository.buscarPendentes(2);
+
+        assertThat(pendentes)
+                .extracting(EventoOutbox::eventId)
+                .containsExactly(primeiro.eventId(), segundo.eventId());
+        assertThat(pendentes)
+                .allSatisfy(pendente -> {
+                    assertThat(pendente.aggregateId()).isEqualTo(primeiro.aggregateId());
+                    assertThat(pendente.eventType()).isEqualTo("TransacaoCriada");
+                    assertThat(pendente.eventVersion()).isEqualTo(1);
+                    assertThat(pendente.occurredAt()).isEqualTo(instanteInicial);
+                });
+        assertThat(objectMapper.readTree(pendentes.getFirst().payload()))
+                .isEqualTo(objectMapper.readTree(primeiro.payload()));
+    }
+
+    @Test
+    void marcarPublicado_deveRegistrarInstanteNoEventoPendente() {
+        var evento = evento(
+                "00000000-0000-0000-0000-000000000005",
+                Instant.parse("2026-09-17T12:00:00Z"));
+        var publicadoEm = Instant.parse("2026-09-17T12:01:00Z");
+        new TransactionTemplate(transactionManager)
+                .executeWithoutResult(status -> outboxRepository.adicionar(evento));
+
+        new TransactionTemplate(transactionManager)
+                .executeWithoutResult(status ->
+                        outboxRepository.marcarPublicado(evento.eventId(), publicadoEm));
+
+        var persistido = jdbcTemplate.queryForObject(
+                "SELECT published_at FROM outbox_eventos WHERE event_id = ?",
+                (resultado, linha) -> resultado.getTimestamp("published_at").toInstant(),
+                evento.eventId());
+        assertThat(persistido).isEqualTo(publicadoEm);
+    }
+
+    private EventoOutbox evento(String eventId, Instant occurredAt) {
+        return new EventoOutbox(
+                UUID.fromString(eventId),
+                UUID.fromString("7b8b61c2-9f63-4d74-9f8d-89cb52de0ed9"),
+                "TransacaoCriada",
+                1,
+                "{\"eventType\":\"TransacaoCriada\"}",
+                occurredAt);
     }
 
     private record EventoPersistido(

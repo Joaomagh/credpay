@@ -995,7 +995,7 @@ Sem Docker Compose, consulta HTTP, idempotência, tradução específica de indi
 
 ### 8.18 Baseline da outbox transacional
 
-**Estado:** migration V4, modelo, porta e adapter de escrita implementados; conexão ao caso de uso ainda pendente.
+**Estado:** migration V4, modelo, porta e adapter JDBC implementados; escrita atômica, leitura ordenada de pendentes e marcação de publicação comprovadas.
 
 A primeira criação persistirá a transação, a associação idempotente e um único registro de outbox na mesma transação PostgreSQL. Replay equivalente apenas devolve o recurso existente; conflito não grava transação nem evento. Qualquer falha na gravação da outbox reverte toda a criação.
 
@@ -1013,13 +1013,13 @@ O caso de uso criará o evento somente no caminho de primeira criação e o entr
 
 O publicador futuro lerá registros com `published_at` nulo, publicará e depois marcará o instante. Uma queda depois da publicação e antes da marcação causa reentrega: a garantia será pelo menos uma vez, não exatamente uma vez. Estratégia de claim/lease entre réplicas, batch, backoff, número de tentativas, retenção e limpeza serão decididos com os testes do publicador, sem inflar a primeira migration.
 
-**TDD e evidências:** o tipo/porta e o teste foram publicados antes do adapter. O [CI Linux #76](https://github.com/Joaomagh/credpay/actions/runs/35054744312) executou 72 testes e apresentou um único erro esperado: ausência de bean `OutboxRepository`. No green, V4 e `OutboxJpaRepository` foram adicionados; o [CI Linux #77](https://github.com/Joaomagh/credpay/actions/runs/35054907592) executou 73 testes sem falhas, erros ou skips e gerou o JAR.
+**TDD e evidências:** o tipo/porta e o teste foram publicados antes do adapter. O [CI Linux #76](https://github.com/Joaomagh/credpay/actions/runs/35054744312) executou 72 testes e apresentou um único erro esperado: ausência de bean `OutboxRepository`. No green, V4 e o primeiro adapter foram adicionados; o [CI Linux #77](https://github.com/Joaomagh/credpay/actions/runs/35054907592) executou 73 testes sem falhas, erros ou skips e gerou o JAR. O adapter passou a se chamar `OutboxJdbcRepository` quando suas operações SQL explícitas foram ampliadas.
 
 **Aceite comprovado:** depois de commit real, a leitura SQL preserva `eventId`, `aggregateId`, tipo, versão, JSON e instante; `published_at` permanece nulo. A inspeção do schema comprova que somente `published_at` aceita nulo.
 
-**Limites:** o adapter apenas adiciona eventos. O caso de uso ainda não o chama; portanto criar uma transação HTTP ainda não gera outbox. Não há consulta de pendentes, marcação de publicação, RabbitMQ, retry ou retenção.
+**Limites atuais:** não há publicador, scheduler, claim/lease entre réplicas, contador de tentativas, retry com backoff ou retenção. Ler e marcar são operações disponíveis, mas nenhuma rotina as coordena automaticamente.
 
-**Próximo:** conectar a primeira criação à outbox na mesma transação e provar que replay ou conflito não geram outro evento.
+**Próximo:** publicar um evento pendente com confirmação do RabbitMQ e marcar `published_at` somente após `ack` sem retorno.
 
 ### 8.19 Geração atômica de `TransacaoCriada`
 
@@ -1032,9 +1032,18 @@ O publicador futuro lerá registros com `published_at` nulo, publicará e depois
 - **Limites:** o evento só é persistido; nenhum processo lê ou publica a outbox. Não há RabbitMQ, marcação de publicação, retry ou DLQ.
 - **Próximo:** definir a baseline mínima da mensageria e do publicador antes de adicionar Spring AMQP.
 
+### 8.20 Leitura e marcação da outbox
+
+- **Contrato:** `OutboxRepository.buscarPendentes(limite)` retorna somente eventos com `published_at` nulo, limitado e ordenado por `occurred_at`, depois `event_id`; `marcarPublicado(eventId, publicadoEm)` preenche o instante somente se o registro ainda estiver pendente.
+- **Red:** o teste de integração foi escrito primeiro e a compilação falhou apenas pela ausência das duas operações na porta. Uma tentativa anterior de execução nem chegou ao build por bloqueio de rede e não foi considerada evidência red.
+- **Green local parcial:** todas as fontes e os 11 arquivos de teste compilaram. A execução Testcontainers local permaneceu bloqueada pela indisponibilidade conhecida do Docker Desktop.
+- **Feedback do primeiro CI:** o [CI Linux #90](https://github.com/Joaomagh/credpay/actions/runs/35180801615) comprovou seleção, limite e ordem, mas revelou que `JSONB` normaliza espaços. O teste foi corrigido para comparar a árvore JSON, pois whitespace não pertence ao contrato.
+- **Evidência final:** [PR #44](https://github.com/Joaomagh/credpay/pull/44); [CI Linux #91](https://github.com/Joaomagh/credpay/actions/runs/35180962736) verde com 77 testes, zero falhas, erros ou skips e JAR gerado.
+- **Limites:** sem publicação, scheduler, concorrência entre pollers, claim/lease, retry, backoff ou retenção. A marcação ainda não está ligada a confirmação do broker.
+
 ## 9. Mensageria e tratamento de falhas
 
-**Estado:** dependências e topologia do produtor implementadas; leitura da outbox e publicador ainda não implementados.
+**Estado:** dependências, topologia do produtor e operações de leitura/marcação da outbox implementadas; publicador ainda não implementado.
 
 ### 9.1 Topologia mínima
 
