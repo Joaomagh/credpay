@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -64,6 +65,9 @@ class TransacaoHttpTest {
 
     @Autowired
     private PlatformTransactionManager transactionManager;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Test
     void buscar_deveRetornarTransacaoPersistida_quandoIdExistir() throws Exception {
@@ -169,17 +173,21 @@ class TransacaoHttpTest {
 
         assertThat(replay.getHeader("Location")).isEqualTo(primeiraResposta.getHeader("Location"));
         assertThat(replay.getContentAsString()).isEqualTo(primeiraResposta.getContentAsString());
+        var transacaoId = UUID.fromString(
+                objectMapper.readTree(primeiraResposta.getContentAsByteArray()).get("id").asText());
+        assertThat(contarEventos(transacaoId)).isEqualTo(1);
     }
 
     @Test
     void criar_deveRetornar409_quandoChaveForReutilizadaComOutroPayload() throws Exception {
         var chave = UUID.randomUUID();
-        mockMvc.perform(postTransacoes(chave)
+        var primeiraResposta = mockMvc.perform(postTransacoes(chave)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"valor":10.00,"moeda":"BRL"}
                                 """))
-                .andExpect(status().isCreated());
+                .andExpect(status().isCreated())
+                .andReturn().getResponse();
 
         mockMvc.perform(postTransacoes(chave)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -194,6 +202,10 @@ class TransacaoHttpTest {
                         .value("chave de idempotência já utilizada com outro payload"))
                 .andExpect(jsonPath("$.instance").value("/transacoes"))
                 .andExpect(header().doesNotExist("Location"));
+
+        var transacaoId = UUID.fromString(
+                objectMapper.readTree(primeiraResposta.getContentAsByteArray()).get("id").asText());
+        assertThat(contarEventos(transacaoId)).isEqualTo(1);
     }
 
     @ParameterizedTest
@@ -327,5 +339,12 @@ class TransacaoHttpTest {
 
     private MockHttpServletRequestBuilder postTransacoes(UUID chaveIdempotencia) {
         return post("/transacoes").header("Idempotency-Key", chaveIdempotencia);
+    }
+
+    private int contarEventos(UUID transacaoId) {
+        return jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM outbox_eventos WHERE aggregate_id = ?",
+                Integer.class,
+                transacaoId);
     }
 }
