@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class PublicarOutboxService {
 
+    private static final int TAMANHO_MAXIMO_LOTE = 20;
+
     private final OutboxRepository outboxRepository;
     private final PublicadorEvento publicadorEvento;
     private final Clock clock;
@@ -26,7 +28,21 @@ public class PublicarOutboxService {
             return false;
         }
 
-        var evento = pendentes.getFirst();
+        return publicarEMarcar(pendentes.getFirst());
+    }
+
+    public int publicarLote() {
+        var publicados = 0;
+        for (var evento : outboxRepository.buscarPendentes(TAMANHO_MAXIMO_LOTE)) {
+            if (!publicarEMarcar(evento)) {
+                break;
+            }
+            publicados++;
+        }
+        return publicados;
+    }
+
+    private boolean publicarEMarcar(EventoOutbox evento) {
         if (!publicadorEvento.publicar(evento)) {
             return false;
         }

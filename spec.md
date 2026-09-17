@@ -1119,6 +1119,14 @@ Cada item entra em um ciclo TDD próprio. O item 2 foi implementado; os demais p
 - **Evidência:** [PR #45](https://github.com/Joaomagh/credpay/pull/45); [CI Linux #94](https://github.com/Joaomagh/credpay/actions/runs/35181807986) verde com 85 testes, zero falhas, erros ou skips e JAR gerado.
 - **Limites:** não há scheduler, lote, retry/backoff persistido, claim/lease, coordenação entre réplicas, consumidor ou DLQ. O método precisa ser acionado explicitamente e processa somente um evento.
 
+### 9.8 Lote manual limitado
+
+- `PublicarOutboxService.publicarLote()` solicita no máximo 20 pendências, preservando a ordem fornecida pelo repository.
+- Cada evento é marcado individualmente somente depois da confirmação. A primeira publicação que retorna `false` interrompe o lote; o evento falho e todos os seguintes permanecem pendentes.
+- **Red:** os dois cenários novos não compilaram porque `publicarLote()` ainda não existia.
+- **Green:** o teste focado executou 5 casos sem falhas; o [CI Linux #97](https://github.com/Joaomagh/credpay/actions/runs/35182480647) validou 87 testes, zero falhas, erros ou skips e gerou o JAR.
+- **Limites:** o lote continua manual. Não há scheduler, paralelismo, claim/lease, backoff ou coordenação entre réplicas; executar mais de uma instância publicadora pode causar publicação concorrente do mesmo evento.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.

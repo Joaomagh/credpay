@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Implementar em TDD um lote manual de até 20 eventos da outbox, interrompendo na primeira publicação não confirmada e ainda sem scheduler ou concorrência entre réplicas.
+- [ ] Implementar em TDD um scheduler da outbox desabilitado por padrão, com intervalo configurável e suporte explícito apenas a uma réplica publicadora, sem claim/lease.
