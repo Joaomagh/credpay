@@ -31,10 +31,11 @@ O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD
 | Implementado | rollback após `flush` impede que uma inserção revertida permaneça no banco |
 | Implementado | `GET /transacoes/{id}` retorna a representação persistida ou `404 Problem Details` para UUID válido ausente |
 | Implementado | UUID malformado retorna `400 Problem Details` sem consultar o caso de uso nem expor detalhes internos |
-| Implementado | 73 testes automatizados verdes, incluindo HTTP ponta a ponta, integração PostgreSQL/Testcontainers e concorrência real |
+| Implementado | 74 testes automatizados verdes, incluindo HTTP ponta a ponta, integração PostgreSQL/Testcontainers e concorrência real |
 | Implementado | `POST /transacoes` exige `Idempotency-Key`, repete a resposta original para payload equivalente e retorna `409` em conflito |
 | Implementado | lock transacional por chave serializa primeiras criações concorrentes; o CI comprovou convergência para uma única transação |
-| Implementado | migration V4 e adapter persistem eventos pendentes na outbox; conexão com a criação ainda é o próximo incremento |
+| Implementado | migration V4 e adapter persistem eventos pendentes na outbox |
+| Implementado | primeira criação gera um `TransacaoCriada` v1; replay e conflito não duplicam evento e falha da outbox causa rollback |
 | Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
 | Documentado | contrato `TransacaoCriada` v1 e estratégia de outbox transacional; implementação ainda pendente |

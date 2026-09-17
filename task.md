@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Conectar em TDD a primeira criação à outbox na mesma transação, gerando um único `TransacaoCriada` v1 e nenhum evento em replay ou conflito, sem RabbitMQ.
+- [ ] Definir a baseline mínima da mensageria: exchange, queue, routing key, confirmação de publicação, retry/DLQ, dependências e testes, sem implementar RabbitMQ ainda.

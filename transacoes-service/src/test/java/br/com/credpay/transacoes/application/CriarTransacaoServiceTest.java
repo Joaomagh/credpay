@@ -7,15 +7,20 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Currency;
 import java.util.Optional;
 import java.util.UUID;
 
 import br.com.credpay.transacoes.domain.StatusTransacao;
 import br.com.credpay.transacoes.domain.Transacao;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.ArgumentCaptor;
@@ -27,9 +32,17 @@ class CriarTransacaoServiceTest {
 
     @ParameterizedTest
     @CsvSource({"10.00, BRL", "123.456, USD"})
-    void executar_devePersistirComChave_quandoForPrimeiraCriacao(String quantia, String codigoMoeda) {
+    void executar_devePersistirComChaveEEvento_quandoForPrimeiraCriacao(
+            String quantia, String codigoMoeda) throws Exception {
         var repository = mock(TransacaoRepository.class);
-        var service = new CriarTransacaoService(repository);
+        var outboxRepository = mock(OutboxRepository.class);
+        var instante = Instant.parse("2026-09-16T12:00:00Z");
+        var objectMapper = new ObjectMapper();
+        var service = new CriarTransacaoService(
+                repository,
+                outboxRepository,
+                Clock.fixed(instante, ZoneOffset.UTC),
+                objectMapper);
         var valor = new BigDecimal(quantia);
         var moeda = Currency.getInstance(codigoMoeda);
         when(repository.buscarPorChaveIdempotencia(CHAVE_IDEMPOTENCIA)).thenReturn(Optional.empty());
@@ -44,13 +57,36 @@ class CriarTransacaoServiceTest {
         assertThat(resultado.valor().scale()).isEqualTo(valor.scale());
         assertThat(resultado.moeda()).isEqualTo(moeda);
         assertThat(resultado.status()).isEqualTo(StatusTransacao.PENDENTE);
+
+        var eventoPersistido = ArgumentCaptor.forClass(EventoOutbox.class);
+        verify(outboxRepository).adicionar(eventoPersistido.capture());
+        var evento = eventoPersistido.getValue();
+        assertThat(evento.eventId()).isNotNull();
+        assertThat(evento.aggregateId()).isEqualTo(resultado.id());
+        assertThat(evento.eventType()).isEqualTo("TransacaoCriada");
+        assertThat(evento.eventVersion()).isEqualTo(1);
+        assertThat(evento.occurredAt()).isEqualTo(instante);
+
+        var payload = objectMapper.readTree(evento.payload());
+        assertThat(payload.path("eventId").asText()).isEqualTo(evento.eventId().toString());
+        assertThat(payload.path("eventType").asText()).isEqualTo("TransacaoCriada");
+        assertThat(payload.path("eventVersion").asInt()).isEqualTo(1);
+        assertThat(payload.path("occurredAt").asText()).isEqualTo(instante.toString());
+        assertThat(payload.path("correlationId").asText()).isEqualTo(resultado.id().toString());
+        assertThat(payload.path("data").path("transactionId").asText())
+                .isEqualTo(resultado.id().toString());
+        assertThat(payload.path("data").path("amount").asText()).isEqualTo(quantia);
+        assertThat(payload.path("data").path("currency").asText()).isEqualTo(codigoMoeda);
+        assertThat(payload.path("data").path("status").asText()).isEqualTo("PENDENTE");
     }
 
     @ParameterizedTest
     @CsvSource({"10, BRL", "10.000, BRL"})
-    void executar_deveReutilizarOriginal_quandoChaveEPayloadForemEquivalentes(String quantia, String codigoMoeda) {
+    void executar_deveReutilizarOriginal_quandoChaveEPayloadForemEquivalentes(
+            String quantia, String codigoMoeda) {
         var repository = mock(TransacaoRepository.class);
-        var service = new CriarTransacaoService(repository);
+        var outboxRepository = mock(OutboxRepository.class);
+        var service = novoService(repository, outboxRepository);
         var original = Transacao.criar(
                 UUID.fromString("44fe8ae7-47a6-45f2-bf6c-46a83ee782ee"),
                 new BigDecimal("10.00"),
@@ -69,6 +105,7 @@ class CriarTransacaoServiceTest {
         assertThat(resultado.moeda()).isEqualTo(original.moeda());
         assertThat(resultado.status()).isEqualTo(original.status());
         verify(repository, never()).inserir(eq(CHAVE_IDEMPOTENCIA), any(Transacao.class));
+        verifyNoInteractions(outboxRepository);
     }
 
     @ParameterizedTest
@@ -76,7 +113,8 @@ class CriarTransacaoServiceTest {
     void executar_deveFalhar_quandoChaveForReutilizadaComPayloadDiferente(
             String quantia, String codigoMoeda) {
         var repository = mock(TransacaoRepository.class);
-        var service = new CriarTransacaoService(repository);
+        var outboxRepository = mock(OutboxRepository.class);
+        var service = novoService(repository, outboxRepository);
         var original = Transacao.criar(
                 UUID.fromString("44fe8ae7-47a6-45f2-bf6c-46a83ee782ee"),
                 new BigDecimal("10.00"),
@@ -91,5 +129,15 @@ class CriarTransacaoServiceTest {
                 .isInstanceOf(ConflitoIdempotenciaException.class)
                 .hasMessage("chave de idempotência já utilizada com outro payload");
         verify(repository, never()).inserir(eq(CHAVE_IDEMPOTENCIA), any(Transacao.class));
+        verifyNoInteractions(outboxRepository);
+    }
+
+    private CriarTransacaoService novoService(
+            TransacaoRepository repository, OutboxRepository outboxRepository) {
+        return new CriarTransacaoService(
+                repository,
+                outboxRepository,
+                Clock.systemUTC(),
+                new ObjectMapper());
     }
 }
