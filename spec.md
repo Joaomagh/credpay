@@ -6,7 +6,7 @@
 
 **Fase atual:** 4 — Fluxo assíncrono confiável
 
-**Estado:** criação e consulta HTTP persistentes; idempotência e outbox transacional comprovadas; publicação manual de uma pendência confirmada pelo RabbitMQ
+**Estado:** criação e consulta HTTP persistentes; idempotência e outbox transacional comprovadas; publicação RabbitMQ confirmada com lote e scheduler opt-in de réplica única
 
 ## 1. Contexto e limites atuais
 
@@ -17,7 +17,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno.
 
-**Ainda não implementado:** lote e acionamento automático da outbox, coordenação entre réplicas, consumidor, constraints de moeda/status no banco e `processamento-service`. O adapter PostgreSQL é validado isoladamente e pelo fluxo HTTP completo; a constraint monetária foi testada por SQL direto.
+**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor, constraints de moeda/status no banco e `processamento-service`. O adapter PostgreSQL é validado isoladamente e pelo fluxo HTTP completo; a constraint monetária foi testada por SQL direto.
 
 ## 2. Arquitetura vigente
 
@@ -1126,6 +1126,15 @@ Cada item entra em um ciclo TDD próprio. O item 2 foi implementado; os demais p
 - **Red:** os dois cenários novos não compilaram porque `publicarLote()` ainda não existia.
 - **Green:** o teste focado executou 5 casos sem falhas; o [CI Linux #97](https://github.com/Joaomagh/credpay/actions/runs/35182480647) validou 87 testes, zero falhas, erros ou skips e gerou o JAR.
 - **Limites:** o lote continua manual. Não há scheduler, paralelismo, claim/lease, backoff ou coordenação entre réplicas; executar mais de uma instância publicadora pode causar publicação concorrente do mesmo evento.
+
+### 9.9 Scheduler opt-in de réplica única
+
+- `OutboxSchedulingConfiguration` somente existe quando `credpay.outbox.publisher.enabled=true`; o padrão versionado é `false`.
+- `OutboxPublisherScheduler` chama o lote com `fixedDelay`, usando `credpay.outbox.publisher.interval` (`PT1S` por padrão). O mesmo intervalo é usado como atraso inicial, evitando publicação durante o bootstrap imediato.
+- Variáveis de ambiente: `CREDPAY_OUTBOX_PUBLISHER_ENABLED` e `CREDPAY_OUTBOX_PUBLISHER_INTERVAL`.
+- **Red:** quatro testes não compilaram pela ausência da configuração e do scheduler.
+- **Green:** os testes focados comprovaram ausência por padrão, criação por opt-in, delegação ao lote e placeholder do intervalo. O job `Maven verify` do [CI Linux #100](https://github.com/Joaomagh/credpay/actions/runs/35182848801) executou 91 testes sem falhas, erros ou skips e gerou o JAR.
+- **Limite operacional:** `fixedDelay` evita sobreposição apenas dentro da mesma JVM. Sem claim/lease ou lock distribuído, habilitar o scheduler em mais de uma réplica pode publicar o mesmo evento concorrentemente e não é suportado.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
