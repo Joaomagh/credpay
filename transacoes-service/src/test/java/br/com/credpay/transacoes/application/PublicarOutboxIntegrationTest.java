@@ -11,10 +11,10 @@ import br.com.credpay.transacoes.TransacoesServiceApplication;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.AmqpAdmin;
-import org.springframework.amqp.core.AnonymousQueue;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.MessageDeliveryMode;
+import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -80,7 +80,7 @@ class PublicarOutboxIntegrationTest {
 
     @Test
     void publicarLote_deveEntregarEventoEMarcarOutbox_quandoCriacaoEstiverConfirmada() throws Exception {
-        var fila = new AnonymousQueue();
+        var fila = new Queue("credpay.test." + UUID.randomUUID(), false, true, false);
         amqpAdmin.declareQueue(fila);
         amqpAdmin.declareBinding(BindingBuilder.bind(fila)
                 .to(transacaoEventosExchange)
