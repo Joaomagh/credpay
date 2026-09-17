@@ -2,11 +2,11 @@
 
 > Fonte de verdade do sistema que existe hoje. Preencher somente com decisão tomada, contrato aceito ou comportamento comprovado. Planos futuros ficam em `CREDPAY_PLAN.md`; próximas ações ficam em `task.md`.
 
-**Última atualização:** 2026-09-16
+**Última atualização:** 2026-09-17
 
 **Fase atual:** 4 — Fluxo assíncrono confiável
 
-**Estado:** criação e consulta HTTP persistentes; idempotência comprovada da entrada HTTP ao PostgreSQL
+**Estado:** criação e consulta HTTP persistentes; idempotência e outbox transacional comprovadas; topologia mínima do produtor RabbitMQ implementada
 
 ## 1. Contexto e limites atuais
 
@@ -15,9 +15,9 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 - `transacoes-service`: recebe pedidos, valida regras de entrada, mantém o estado consultável e publica eventos;
 - `processamento-service`: consome pedidos de processamento, decide o resultado e publica o evento correspondente.
 
-**Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente e distingue primeira criação, replay equivalente e conflito.
+**Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável validada com broker real em Testcontainers.
 
-**Ainda não implementado:** constraints de moeda/status no banco, outbox, contratos de eventos, RabbitMQ e `processamento-service`. O adapter PostgreSQL é validado isoladamente e pelo fluxo HTTP completo; a constraint monetária foi testada por SQL direto.
+**Ainda não implementado:** leitura e marcação da outbox, publicador com confirms/returns, consumidor, constraints de moeda/status no banco e `processamento-service`. O adapter PostgreSQL é validado isoladamente e pelo fluxo HTTP completo; a constraint monetária foi testada por SQL direto.
 
 ## 2. Arquitetura vigente
 
@@ -47,7 +47,7 @@ A mensageria é assíncrona, com consistência eventual e expectativa de entrega
 | Framework | Spring Boot | 3.5.16 | parent fixado no `transacoes-service/pom.xml`; teste verde |
 | Build | Maven Wrapper | 3.9.16 | `transacoes-service/mvnw.cmd --version` |
 | Banco | PostgreSQL | 17.11 | testes de runtime, repository e fluxo HTTP persistente com imagem fixada por digest |
-| Mensageria | RabbitMQ | a definir | — |
+| Mensageria | RabbitMQ | 4.3.5 | exchange do produtor validada em Testcontainers com imagem fixada por digest |
 | Infraestrutura de teste | Testcontainers | 1.21.4 | gerenciamento Spring Boot e teste PostgreSQL executado |
 
 Substituir “alvo” por versão exata e comando de verificação quando o build existir.
@@ -1034,7 +1034,7 @@ O publicador futuro lerá registros com `published_at` nulo, publicará e depois
 
 ## 9. Mensageria e tratamento de falhas
 
-**Estado:** baseline aceita; dependências, RabbitMQ e publicador ainda não implementados.
+**Estado:** dependências e topologia do produtor implementadas; leitura da outbox e publicador ainda não implementados.
 
 ### 9.1 Topologia mínima
 
@@ -1087,7 +1087,18 @@ Não será adicionado `spring-boot-testcontainers`, Awaitility separado, cliente
 5. retomada publica um pendente e tolera a janela de duplicação;
 6. consumidor futuro deduplica reentrega e encaminha falha final à DLQ.
 
-Cada item entra em um ciclo TDD próprio. O próximo implementará somente dependências, container e topologia do produtor.
+Cada item entra em um ciclo TDD próprio. O item 2 foi implementado; os demais permanecem incrementos separados.
+
+### 9.6 Implementação da topologia do produtor
+
+- **Dependências:** `spring-boot-starter-amqp` em produção e `org.testcontainers:rabbitmq` em teste, ambas nas versões gerenciadas pela baseline aprovada.
+- **Broker de teste:** RabbitMQ `4.3.5-management-alpine` fixado por digest e declarado como imagem compatível com o módulo Testcontainers.
+- **Topologia:** `RabbitMqConfiguration` expõe a exchange direct `credpay.transacoes.v1`, durável e não auto-delete, além da routing key versionada `transacao.criada.v1`. Nenhuma fila do futuro consumidor foi criada no produtor.
+- **Teste de integração:** uma fila exclusiva e efêmera é ligada à exchange; uma mensagem persistente percorre o broker real e é recebida pela routing key aprovada.
+- **Preparação do red:** os CI #83 e #84 revelaram, respectivamente, a necessidade de declarar a imagem versionada como substituta compatível e de isolar o slice de mensageria das auto-configurações de banco. Essas falhas de infraestrutura de teste não foram registradas como red funcional.
+- **Red válido:** o [CI Linux #85](https://github.com/Joaomagh/credpay/actions/runs/35179836927) iniciou o container e o contexto isolado, então falhou exclusivamente pela ausência do bean `DirectExchange` esperado.
+- **Green:** o [CI Linux #87](https://github.com/Joaomagh/credpay/actions/runs/35180304621) executou 75 testes sem falhas, erros ou skips e gerou o JAR. A asserção usa `receivedDeliveryMode`, propriedade de entrada do Spring AMQP, para comprovar a persistência da mensagem recebida.
+- **Limites:** a aplicação ainda não lê pendências da outbox, não publica eventos reais, não configura `mandatory`, returns ou confirms e não marca `published_at`. A fila efêmera prova roteamento, não alta disponibilidade nem consumo de negócio.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
