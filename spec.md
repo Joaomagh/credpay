@@ -1026,8 +1026,9 @@ O publicador futuro lerá registros com `published_at` nulo, publicará e depois
 - **Refactor preparatório:** `CriarTransacaoService` passou a receber porta da outbox, `Clock` e `ObjectMapper` sem mudar comportamento; os 6 testes unitários permaneceram verdes e toda a suíte compilou.
 - **Red:** os 6 casos unitários executaram; somente as 2 primeiras criações falharam porque `OutboxRepository.adicionar` não foi chamado. Replay e conflito já confirmaram zero eventos.
 - **Green unitário:** depois de persistir a primeira transação, o caso de uso cria um UUID de evento, usa instante UTC do relógio injetado, serializa o envelope v1 e o adiciona à outbox. Os 6 casos passaram, preservando inclusive a escala textual de `amount`.
-- **Atomicidade preparada:** teste PostgreSQL simula falha da porta depois da inserção e exige rollback de `transacoes` e `idempotencias_transacao`. Os testes HTTP contam eventos para exigir exatamente um após primeira criação seguida de replay ou conflito.
-- **Validação local:** teste unitário focado verde e `test-compile` verde. A execução dos cenários PostgreSQL permanece como gate do CI devido ao Docker local indisponível.
+- **Atomicidade comprovada:** teste PostgreSQL simula falha da porta depois da inserção e confirma rollback de `transacoes` e `idempotencias_transacao`. Os testes HTTP confirmam exatamente um evento após primeira criação seguida de replay ou conflito.
+- **Validação local:** teste unitário focado verde e `test-compile` verde.
+- **Evidência:** [PR #41](https://github.com/Joaomagh/credpay/pull/41); [CI Linux #80](https://github.com/Joaomagh/credpay/actions/runs/35172677557) verde para `59e0fc9`, com 74 testes sem falhas, erros ou skips e JAR gerado.
 - **Limites:** o evento só é persistido; nenhum processo lê ou publica a outbox. Não há RabbitMQ, marcação de publicação, retry ou DLQ.
 - **Próximo:** definir a baseline mínima da mensageria e do publicador antes de adicionar Spring AMQP.
 
