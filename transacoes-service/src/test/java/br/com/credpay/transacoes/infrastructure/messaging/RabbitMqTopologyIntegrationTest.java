@@ -12,7 +12,13 @@ import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.RabbitMQContainer;
@@ -20,9 +26,19 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-@SpringBootTest
+@SpringBootTest(classes = RabbitMqTopologyIntegrationTest.TestApplication.class)
 @Testcontainers
 class RabbitMqTopologyIntegrationTest {
+
+    @SpringBootConfiguration
+    @EnableAutoConfiguration(exclude = {
+            DataSourceAutoConfiguration.class,
+            HibernateJpaAutoConfiguration.class,
+            FlywayAutoConfiguration.class
+    })
+    @ComponentScan(basePackages = "br.com.credpay.transacoes.infrastructure.messaging")
+    static class TestApplication {
+    }
 
     @Container
     static final RabbitMQContainer RABBITMQ = new RabbitMQContainer(
