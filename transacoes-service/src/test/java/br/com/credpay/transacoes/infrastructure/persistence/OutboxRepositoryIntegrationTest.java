@@ -115,7 +115,7 @@ class OutboxRepositoryIntegrationTest {
     }
 
     @Test
-    void buscarPendentes_deveRetornarSomenteNaoPublicadosEmOrdemComLimite() {
+    void buscarPendentes_deveRetornarSomenteNaoPublicadosEmOrdemComLimite() throws Exception {
         var instanteInicial = Instant.parse("2026-09-17T12:00:00Z");
         var primeiro = evento(
                 "00000000-0000-0000-0000-000000000001", instanteInicial);
@@ -136,7 +136,18 @@ class OutboxRepositoryIntegrationTest {
 
         var pendentes = outboxRepository.buscarPendentes(2);
 
-        assertThat(pendentes).containsExactly(primeiro, segundo);
+        assertThat(pendentes)
+                .extracting(EventoOutbox::eventId)
+                .containsExactly(primeiro.eventId(), segundo.eventId());
+        assertThat(pendentes)
+                .allSatisfy(pendente -> {
+                    assertThat(pendente.aggregateId()).isEqualTo(primeiro.aggregateId());
+                    assertThat(pendente.eventType()).isEqualTo("TransacaoCriada");
+                    assertThat(pendente.eventVersion()).isEqualTo(1);
+                    assertThat(pendente.occurredAt()).isEqualTo(instanteInicial);
+                });
+        assertThat(objectMapper.readTree(pendentes.getFirst().payload()))
+                .isEqualTo(objectMapper.readTree(primeiro.payload()));
     }
 
     @Test
