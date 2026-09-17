@@ -6,7 +6,7 @@
 
 **Fase atual:** 4 — Fluxo assíncrono confiável
 
-**Estado:** criação e consulta HTTP persistentes; idempotência e outbox transacional comprovadas; topologia mínima do produtor RabbitMQ implementada
+**Estado:** criação e consulta HTTP persistentes; idempotência e outbox transacional comprovadas; publicação manual de uma pendência confirmada pelo RabbitMQ
 
 ## 1. Contexto e limites atuais
 
@@ -15,9 +15,9 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 - `transacoes-service`: recebe pedidos, valida regras de entrada, mantém o estado consultável e publica eventos;
 - `processamento-service`: consome pedidos de processamento, decide o resultado e publica o evento correspondente.
 
-**Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável validada com broker real em Testcontainers.
+**Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno.
 
-**Ainda não implementado:** leitura e marcação da outbox, publicador com confirms/returns, consumidor, constraints de moeda/status no banco e `processamento-service`. O adapter PostgreSQL é validado isoladamente e pelo fluxo HTTP completo; a constraint monetária foi testada por SQL direto.
+**Ainda não implementado:** lote e acionamento automático da outbox, coordenação entre réplicas, consumidor, constraints de moeda/status no banco e `processamento-service`. O adapter PostgreSQL é validado isoladamente e pelo fluxo HTTP completo; a constraint monetária foi testada por SQL direto.
 
 ## 2. Arquitetura vigente
 
@@ -1043,7 +1043,7 @@ O publicador futuro lerá registros com `published_at` nulo, publicará e depois
 
 ## 9. Mensageria e tratamento de falhas
 
-**Estado:** dependências, topologia do produtor e operações de leitura/marcação da outbox implementadas; publicador ainda não implementado.
+**Estado:** dependências, topologia do produtor, operações da outbox e publicação confirmada de uma pendência implementadas; acionamento automático ainda não implementado.
 
 ### 9.1 Topologia mínima
 
@@ -1107,7 +1107,17 @@ Cada item entra em um ciclo TDD próprio. O item 2 foi implementado; os demais p
 - **Preparação do red:** os CI #83 e #84 revelaram, respectivamente, a necessidade de declarar a imagem versionada como substituta compatível e de isolar o slice de mensageria das auto-configurações de banco. Essas falhas de infraestrutura de teste não foram registradas como red funcional.
 - **Red válido:** o [CI Linux #85](https://github.com/Joaomagh/credpay/actions/runs/35179836927) iniciou o container e o contexto isolado, então falhou exclusivamente pela ausência do bean `DirectExchange` esperado.
 - **Green:** o [CI Linux #87](https://github.com/Joaomagh/credpay/actions/runs/35180304621) executou 75 testes sem falhas, erros ou skips e gerou o JAR. A asserção usa `receivedDeliveryMode`, propriedade de entrada do Spring AMQP, para comprovar a persistência da mensagem recebida.
-- **Limites:** a aplicação ainda não lê pendências da outbox, não publica eventos reais, não configura `mandatory`, returns ou confirms e não marca `published_at`. A fila efêmera prova roteamento, não alta disponibilidade nem consumo de negócio.
+- **Limites daquele incremento:** a aplicação ainda não lia pendências nem configurava `mandatory`, returns ou confirms; essas capacidades entraram no incremento seguinte. A fila efêmera prova roteamento, não alta disponibilidade nem consumo de negócio.
+
+### 9.7 Publicação confirmada de uma pendência
+
+- **Orquestração:** `PublicarOutboxService.publicarProximo()` busca no máximo uma pendência, delega a publicação e marca `published_at` usando relógio UTC somente quando a porta retorna sucesso. Ausência, `nack` ou retorno preservam o registro pendente.
+- **Mensagem:** `RabbitMqPublicadorEvento` envia o payload UTF-8 como `application/json`, persistente, com `messageId=eventId`, `type=eventType`, `correlationId=aggregateId` e `CorrelationData.id=eventId`.
+- **Confiabilidade:** a configuração habilita confirm correlacionado, publisher returns e `mandatory`. O adapter aguarda até 5 segundos; sucesso exige `ack` e ausência de `ReturnedMessage`. Interrupção restaura o status da thread; timeout/erro de confirmação é propagado com contexto e não marca a outbox.
+- **Red/green:** o caso de uso e o adapter nasceram de dois reds focados pela ausência dos respectivos tipos. Depois da implementação mínima, cada conjunto executou 3 testes unitários verdes; toda a suíte compilou localmente.
+- **Integração:** uma fila efêmera comprova contrato e roteamento no broker real; sem binding, a mensagem obrigatória é retornada e a publicação falha.
+- **Evidência:** [PR #45](https://github.com/Joaomagh/credpay/pull/45); [CI Linux #94](https://github.com/Joaomagh/credpay/actions/runs/35181807986) verde com 85 testes, zero falhas, erros ou skips e JAR gerado.
+- **Limites:** não há scheduler, lote, retry/backoff persistido, claim/lease, coordenação entre réplicas, consumidor ou DLQ. O método precisa ser acionado explicitamente e processa somente um evento.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
