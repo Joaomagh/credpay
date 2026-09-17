@@ -18,6 +18,7 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 @SpringBootTest
 @Testcontainers
@@ -25,7 +26,9 @@ class RabbitMqTopologyIntegrationTest {
 
     @Container
     static final RabbitMQContainer RABBITMQ = new RabbitMQContainer(
-            "rabbitmq:4.3.5-management-alpine@sha256:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1");
+            DockerImageName.parse(
+                            "rabbitmq:4.3.5-management-alpine@sha256:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1")
+                    .asCompatibleSubstituteFor("rabbitmq"));
 
     @DynamicPropertySource
     static void configurarRabbitMq(DynamicPropertyRegistry registry) {
