@@ -38,7 +38,8 @@ O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD
 | Implementado | primeira criação gera um `TransacaoCriada` v1; replay e conflito não duplicam evento e falha da outbox causa rollback |
 | Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
-| Documentado | contrato `TransacaoCriada` v1 e estratégia de outbox transacional; implementação ainda pendente |
+| Documentado | contrato `TransacaoCriada` v1 e garantia de entrega pelo menos uma vez via outbox |
+| Documentado | baseline RabbitMQ com propriedade da topologia, confirms/returns, retry e DLQ; broker ainda não implementado |
 | Ainda não implementado | outbox/eventos, constraints de moeda/status no banco, RabbitMQ, `processamento-service`, imagem da aplicação, Kubernetes e CD |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).

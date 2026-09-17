@@ -1034,7 +1034,60 @@ O publicador futuro lerá registros com `published_at` nulo, publicará e depois
 
 ## 9. Mensageria e tratamento de falhas
 
-Ainda não configurado. Decisões futuras devem cobrir exchange, queue, routing key, durabilidade, ack, prefetch, retry/backoff, DLQ, idempotência e publicação confiável — somente quando testadas.
+**Estado:** baseline aceita; dependências, RabbitMQ e publicador ainda não implementados.
+
+### 9.1 Topologia mínima
+
+| Recurso | Nome | Tipo/propriedades | Responsável |
+|---|---|---|---|
+| exchange de eventos | `credpay.transacoes.v1` | direct, durável, não auto-delete | `transacoes-service` |
+| routing key | `transacao.criada.v1` | literal versionado | contrato compartilhado |
+| fila de processamento | `credpay.processamento.transacao-criada.v1` | quorum, durável, não exclusiva, não auto-delete | futuro `processamento-service` |
+| dead-letter exchange | `credpay.processamento.dlx.v1` | direct, durável, não auto-delete | futuro `processamento-service` |
+| dead-letter routing key | `transacao.criada.dlq.v1` | literal versionado | futuro `processamento-service` |
+| dead-letter queue | `credpay.processamento.transacao-criada.dlq.v1` | quorum, durável, não exclusiva, não auto-delete | futuro `processamento-service` |
+
+O produtor declara somente sua exchange. A fila, binding, DLX e DLQ pertencem ao consumidor; o teste do produtor usará uma fila efêmera exclusiva ligada à exchange, sem fazê-lo depender da topologia interna do serviço futuro. Filas quorum em um container de nó único comprovam configuração e comportamento, não alta disponibilidade.
+
+### 9.2 Publicação confiável da outbox
+
+- mensagens serão persistentes, com `contentType=application/json`, `messageId=eventId`, `type=TransacaoCriada` e `correlationId` igual ao ID da transação;
+- `RabbitTemplate` usará `mandatory=true`, publisher returns e confirms correlacionados; o `CorrelationData` usará `eventId`;
+- a outbox só receberá `published_at` depois de `ack` do broker e ausência de retorno por falta de rota;
+- `nack`, return, exceção de conexão ou timeout de 5 segundos mantêm o registro pendente para nova tentativa; nenhum desses casos apaga o evento;
+- a publicação será pelo menos uma vez. Uma queda depois do `ack` e antes do update pode publicar novamente; consumidores deduplicarão por `eventId`;
+- a primeira versão processará no máximo 20 eventos por lote, em ordem de `occurred_at` e `event_id`. Execução concorrente por múltiplas réplicas fica bloqueada até existir claim/lease testado;
+- retry do produtor ocorre pela permanência na outbox. Contador, backoff persistido e alerta entram quando o poller for implementado e medido, sem inventar exatamente uma vez.
+
+Publisher confirms cobrem produtor → broker e são independentes do ack do consumidor. Mensagens obrigatórias sem rota precisam ser tratadas por publisher returns; um `ack` isolado não prova roteamento. Essas decisões seguem as referências oficiais de [confirms/acks](https://www.rabbitmq.com/docs/confirms) e [Spring AMQP confirms/returns](https://docs.spring.io/spring-amqp/reference/amqp/template.html).
+
+### 9.3 Consumo, retry e DLQ planejados
+
+O futuro consumidor usará ack automático após sucesso do listener, prefetch inicial `10` e três tentativas totais para falhas transitórias, com esperas de 1 e 2 segundos. Depois disso, rejeitará sem requeue para a DLX. Payload inválido ou versão incompatível não será repetido indefinidamente: seguirá diretamente para DLQ com erro observável. A deduplicação persistente por `eventId` deverá existir antes de considerar o consumo confiável.
+
+DLQ não é garantia absoluta de entrega: o dead-lettering também pode falhar. A v1 aceita essa limitação no ambiente local; quorum queues foram escolhidas porque suportam dead-lettering pelo menos uma vez quando configurado, mas cluster e falhas de quorum exigirão experimento próprio. Referência: [Dead Letter Exchanges](https://www.rabbitmq.com/docs/4.3/dlx).
+
+### 9.4 Dependências e ambiente aprovados
+
+| Item | Baseline |
+|---|---|
+| cliente Spring | `spring-boot-starter-amqp`, versão gerenciada pelo Spring Boot 3.5.16; Spring AMQP 3.2.12 |
+| teste RabbitMQ | `org.testcontainers:rabbitmq`, escopo test, versão gerenciada 1.21.4 |
+| broker de teste | RabbitMQ `4.3.5-management-alpine`, com digest multi-arquitetura verificado e fixado no incremento de implementação |
+| credenciais | somente valores fictícios do container; nenhuma credencial versionada |
+
+Não será adicionado `spring-boot-testcontainers`, Awaitility separado, cliente RabbitMQ direto ou framework de schema. A versão da imagem acompanha a série 4.3 atualmente suportada, conforme [ciclo oficial](https://www.rabbitmq.com/release-information); tag flutuante e `latest` são proibidas.
+
+### 9.5 Critérios de testes incrementais
+
+1. container real inicia e a aplicação conecta com host/porta dinâmicos;
+2. exchange durável existe e uma fila exclusiva de teste recebe `TransacaoCriada` pela routing key aprovada;
+3. publicador envia payload e propriedades corretos, recebe confirm e marca outbox;
+4. mensagem sem rota, `nack`, timeout ou broker indisponível não marca outbox;
+5. retomada publica um pendente e tolera a janela de duplicação;
+6. consumidor futuro deduplica reentrega e encaminha falha final à DLQ.
+
+Cada item entra em um ciclo TDD próprio. O próximo implementará somente dependências, container e topologia do produtor.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
@@ -1142,6 +1195,13 @@ Cobertura, scanners e outras ferramentas serão sinais auxiliares, não metas is
 - **Contexto:** gravar a transação e publicar diretamente no RabbitMQ são duas operações independentes. Uma falha entre elas pode deixar um recurso confirmado sem evento ou publicar um evento de uma transação revertida.
 - **Decisão:** persistir `TransacaoCriada` em uma outbox no mesmo PostgreSQL e na mesma transação local da criação. Um publicador separado enviará registros pendentes e os marcará depois da confirmação do broker.
 - **Consequências:** elimina a janela entre commit do recurso e registro da intenção de publicação, mas não fornece entrega exatamente uma vez. Duplicatas após falha são esperadas; consumidores deverão deduplicar por `eventId`. A tabela cresce e exigirá política futura de retenção. Não há transação distribuída.
+
+### ADR-005 — RabbitMQ com confirmação e propriedade de topologia
+
+- **Status:** aceita; implementação pendente
+- **Contexto:** a outbox remove a janela de gravação local, mas não prova que o broker recebeu ou roteou a mensagem. Declarar filas do consumidor no produtor também acoplaria implantações independentes.
+- **Decisão:** usar exchange direct durável pertencente ao produtor, filas quorum pertencentes ao consumidor, mensagens persistentes, mandatory returns e publisher confirms correlacionados. Marcar a outbox somente após confirmação sem retorno.
+- **Consequências:** falhas permanecem recuperáveis na outbox e recursos têm dono claro. A entrega continua pelo menos uma vez, exige deduplicação e adiciona latência/complexidade de confirmação. Alta disponibilidade não é comprovada pelo container de nó único.
 
 ## 13. Hurdles e aprendizados reais
 
