@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Provar em teste de integração vertical que uma criação gera outbox, o lote publica no RabbitMQ e `published_at` é marcado, acionando o caso de uso explicitamente e mantendo o scheduler desabilitado.
+- [ ] Provar em integração vertical que uma publicação sem rota mantém a outbox pendente e que uma nova tentativa, após criar o binding, entrega o mesmo evento e marca `published_at`.

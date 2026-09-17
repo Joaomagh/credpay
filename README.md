@@ -10,7 +10,7 @@ Cada capacidade entra em um incremento pequeno, testado e documentado. Assim, o 
 
 ## Status atual
 
-O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD do domínio e da API.
+O projeto está na fase de fluxo assíncrono confiável: o primeiro serviço já persiste transações e publica eventos por outbox. O consumidor e o processamento de negócio são os próximos componentes do fluxo.
 
 | Estado | Entrega |
 |---|---|
@@ -31,7 +31,7 @@ O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD
 | Implementado | rollback após `flush` impede que uma inserção revertida permaneça no banco |
 | Implementado | `GET /transacoes/{id}` retorna a representação persistida ou `404 Problem Details` para UUID válido ausente |
 | Implementado | UUID malformado retorna `400 Problem Details` sem consultar o caso de uso nem expor detalhes internos |
-| Implementado | 91 testes automatizados verdes, incluindo HTTP ponta a ponta, PostgreSQL e RabbitMQ com Testcontainers e concorrência real |
+| Implementado | 92 testes automatizados verdes, incluindo HTTP ponta a ponta, PostgreSQL e RabbitMQ com Testcontainers e concorrência real |
 | Implementado | `POST /transacoes` exige `Idempotency-Key`, repete a resposta original para payload equivalente e retorna `409` em conflito |
 | Implementado | lock transacional por chave serializa primeiras criações concorrentes; o CI comprovou convergência para uma única transação |
 | Implementado | migration V4 e adapter persistem eventos pendentes na outbox |
@@ -41,6 +41,7 @@ O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD
 | Implementado | publicação manual de uma pendência com confirms correlacionados, returns e marcação somente após `ack` sem retorno |
 | Implementado | lote manual limitado a 20 eventos, interrompido na primeira publicação não confirmada |
 | Implementado | scheduler da outbox opt-in, com intervalo configurável e suporte explícito a uma única réplica publicadora |
+| Comprovado | criação, outbox, entrega RabbitMQ e marcação de publicação em um único teste de integração vertical |
 | Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
 | Documentado | contrato `TransacaoCriada` v1 e garantia de entrega pelo menos uma vez via outbox |
@@ -127,7 +128,7 @@ Regras comprovadas até aqui:
 13. o `GET /transacoes/{id}` devolve os dados persistidos e diferencia UUID válido ausente com `404 Problem Details`.
 14. UUID malformado recebe `400 Problem Details` antes de alcançar o caso de uso, sem vazar a mensagem interna do conversor.
 
-Os endpoints de criação e consulta, os casos de uso transacionais e o adapter JPA formam agora um fluxo persistente. O UUID pertence ao domínio e é o mesmo na resposta, no `Location`, no PostgreSQL e na consulta posterior. Eventos e timestamp permanecem futuros.
+Os endpoints de criação e consulta, os casos de uso transacionais e o adapter JPA formam um fluxo persistente. O UUID pertence ao domínio e é o mesmo na resposta, no `Location`, no PostgreSQL e na consulta posterior. A primeira criação também grava `TransacaoCriada` na outbox, com instante do evento e marcação posterior de publicação; auditoria das mudanças de estado continua planejada.
 
 O teste de repository comprova duas operações separadas: gravação com commit e leitura em outro contexto, preservando UUID, valor, escala, moeda e `PENDENTE`. A constraint monetária também é exercitada por SQL direto; constraints de moeda/status e outros cenários de falha continuam em desenvolvimento.
 
@@ -142,12 +143,16 @@ cd transacoes-service
 .\mvnw.cmd --batch-mode --no-transfer-progress verify
 ```
 
-Os testes iniciam PostgreSQL descartável automaticamente. Para executar a aplicação, disponibilize um PostgreSQL separadamente e configure a conexão sem versionar credenciais:
+Os testes iniciam PostgreSQL e RabbitMQ descartáveis automaticamente. Para executar a aplicação com o health completo, disponibilize PostgreSQL e RabbitMQ separadamente e configure as conexões sem versionar credenciais:
 
 ```powershell
 $env:SPRING_DATASOURCE_URL = "jdbc:postgresql://localhost:5432/credpay"
 $env:SPRING_DATASOURCE_USERNAME = "<usuario>"
 $env:SPRING_DATASOURCE_PASSWORD = "<senha>"
+$env:SPRING_RABBITMQ_HOST = "localhost"
+$env:SPRING_RABBITMQ_PORT = "5672"
+$env:SPRING_RABBITMQ_USERNAME = "<usuario-rabbitmq>"
+$env:SPRING_RABBITMQ_PASSWORD = "<senha-rabbitmq>"
 .\mvnw.cmd spring-boot:run
 ```
 
@@ -159,6 +164,7 @@ Invoke-RestMethod http://localhost:8080/actuator/health
 Invoke-RestMethod `
   -Method Post `
   -Uri http://localhost:8080/transacoes `
+  -Headers @{ 'Idempotency-Key' = '03714dde-d152-47f0-97f0-82171ffbe150' } `
   -ContentType 'application/json' `
   -Body '{"valor":10.00,"moeda":"BRL"}'
 
@@ -168,6 +174,8 @@ Invoke-RestMethod http://localhost:8080/transacoes/<uuid-retornado>
 Em Linux ou macOS, use `./mvnw` no lugar de `.\mvnw.cmd`. O `POST /transacoes` retorna `201 Created`, `Location` e uma representação `PENDENTE` já persistida; o `GET` pelo UUID retorna essa representação.
 
 A aplicação não possui fallback volátil: sem DataSource válido ela falha ao iniciar. Flyway aplica as migrations e Hibernate valida o schema; nos testes de integração, o container e as propriedades de conexão são gerenciados automaticamente.
+
+O scheduler da outbox vem desligado. Para ativá-lo em uma única réplica, configure `CREDPAY_OUTBOX_PUBLISHER_ENABLED=true`; `CREDPAY_OUTBOX_PUBLISHER_INTERVAL` aceita uma duração como `PT1S`. O produtor declara a exchange, mas a fila e o binding de negócio pertencerão ao futuro consumidor. Enquanto não houver rota, os eventos permanecem pendentes. A presença do RabbitMQ também participa do health do Actuator.
 
 ## Arquitetura planejada
 

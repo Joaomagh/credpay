@@ -29,13 +29,13 @@ Cliente → transacoes-service ⇄ PostgreSQL
           processamento-service ⇄ PostgreSQL
 ```
 
-A mensageria é assíncrona, com consistência eventual e expectativa de entrega pelo menos uma vez. O mecanismo exato de publicação confiável, idempotência e retorno de resultado será decidido/testado no incremento correspondente.
+A mensageria é assíncrona, com consistência eventual e entrega pelo menos uma vez. O produtor usa idempotência na entrada HTTP, outbox transacional e confirms/returns no RabbitMQ. Consumo idempotente e retorno do resultado ainda serão implementados.
 
 ### Responsabilidades e propriedade dos dados
 
 | Componente | Responsabilidade | Dados próprios |
 |---|---|---|
-| transacoes-service | entrada e visão consultável da transação | a definir |
+| transacoes-service | entrada, visão consultável e publicação confiável | transações, chaves idempotentes e outbox |
 | processamento-service | decisão de processamento | a definir |
 | RabbitMQ | transporte, retry/DLQ conforme configuração futura | mensagens, não fonte de verdade |
 
@@ -144,6 +144,10 @@ O serviço usa as propriedades padrão do Spring para uma conexão PostgreSQL ob
 | transacoes-service | `SPRING_DATASOURCE_URL` | sim | nenhum | URL JDBC do PostgreSQL do serviço | não |
 | transacoes-service | `SPRING_DATASOURCE_USERNAME` | sim | nenhum | usuário do banco | sim |
 | transacoes-service | `SPRING_DATASOURCE_PASSWORD` | sim | nenhum | senha do banco | sim |
+| transacoes-service | `SPRING_RABBITMQ_HOST` / `SPRING_RABBITMQ_PORT` | para mensageria e health completo | padrões Spring Boot | endereço AMQP do broker | não |
+| transacoes-service | `SPRING_RABBITMQ_USERNAME` / `SPRING_RABBITMQ_PASSWORD` | configurar conforme o broker | padrões Spring Boot; definir no ambiente | autenticação no RabbitMQ | sim |
+| transacoes-service | `CREDPAY_OUTBOX_PUBLISHER_ENABLED` | não | `false` | ativa scheduler em uma única réplica | não |
+| transacoes-service | `CREDPAY_OUTBOX_PUBLISHER_INTERVAL` | não | `PT1S` | intervalo após terminar um lote e atraso inicial | não |
 
 Valores reais nunca entram neste documento. `.env.example` usa placeholders; arquivos locais de segredo devem ser ignorados pelo Git.
 
@@ -465,11 +469,11 @@ Esse erro representa sintaxe inválida e ocorre antes do caso de uso. O teste MV
 
 ### Eventos
 
-Nenhum evento está implementado ou publicado. O primeiro contrato foi aprovado para orientar a outbox e os testes seguintes.
+`TransacaoCriada` v1 é persistido na outbox junto da criação e pode ser publicado com confirmação pelo RabbitMQ. O processamento pelo consumidor permanece planejado.
 
 | Evento/versão | Produtor | Consumidor | Campos | Garantias |
 |---|---|---|---|---|
-| `TransacaoCriada` v1 | `transacoes-service` | `processamento-service` planejado | envelope versionado e dados da transação `PENDENTE` | intenção persistida atomicamente via outbox; publicação futura pelo menos uma vez |
+| `TransacaoCriada` v1 | `transacoes-service` | `processamento-service` planejado | envelope versionado e dados da transação `PENDENTE` | intenção persistida atomicamente via outbox; publicação pelo menos uma vez com confirms/returns |
 
 Envelope JSON aprovado:
 
@@ -1043,7 +1047,7 @@ O publicador futuro lerá registros com `published_at` nulo, publicará e depois
 
 ## 9. Mensageria e tratamento de falhas
 
-**Estado:** dependências, topologia do produtor, operações da outbox e publicação confirmada de uma pendência implementadas; acionamento automático ainda não implementado.
+**Estado:** dependências, topologia do produtor, operações da outbox, publicação confirmada em lote e scheduler opt-in implementados. A primeira versão admite uma única réplica publicadora.
 
 ### 9.1 Topologia mínima
 
@@ -1135,6 +1139,15 @@ Cada item entra em um ciclo TDD próprio. O item 2 foi implementado; os demais p
 - **Red:** quatro testes não compilaram pela ausência da configuração e do scheduler.
 - **Green:** os testes focados comprovaram ausência por padrão, criação por opt-in, delegação ao lote e placeholder do intervalo. O job `Maven verify` do [CI Linux #100](https://github.com/Joaomagh/credpay/actions/runs/35182848801) executou 91 testes sem falhas, erros ou skips e gerou o JAR.
 - **Limite operacional:** `fixedDelay` evita sobreposição apenas dentro da mesma JVM. Sem claim/lease ou lock distribuído, habilitar o scheduler em mais de uma réplica pode publicar o mesmo evento concorrentemente e não é suportado.
+
+### 9.10 Fluxo vertical de publicação comprovado
+
+- **Cenário:** `PublicarOutboxIntegrationTest` inicia PostgreSQL e RabbitMQ com as imagens fixadas, mantém o scheduler desabilitado e usa os casos de uso reais, sem mocks ou transação externa de teste.
+- **Aceite:** após criar `123.450 BRL`, o teste consulta a transação e o evento já confirmados no banco, observa `published_at` nulo, publica o lote e recebe o envelope completo e suas propriedades AMQP. O instante de publicação fica persistido; um segundo lote retorna zero, preserva o instante e não entrega outra mensagem.
+- **Preparação corrigida:** o [CI #103](https://github.com/Joaomagh/credpay/actions/runs/35285010132) chegou à segunda leitura da fila, mas a fixture `auto-delete` já tinha sido removida após encerrar o primeiro consumidor. A fila de teste passou a ser exclusiva, com nome único e remoção no `finally`, permitindo as duas leituras. Isso corrigiu a fixture, não um defeito do publicador; [referência RabbitMQ](https://www.rabbitmq.com/docs/queues#temporary-queues).
+- **Evidência:** [PR #48](https://github.com/Joaomagh/credpay/pull/48); [CI #104](https://github.com/Joaomagh/credpay/actions/runs/35285219623) com 92 testes, zero falhas, erros ou skips e JAR gerado. Compilação local verde; Docker local indisponível. Teste de regressão de comportamento existente, sem novo red/green de produção.
+- **Revisão documental:** README corrigido para incluir `Idempotency-Key`, configuração RabbitMQ e scheduler; o estado atual de eventos substituiu afirmações antigas de implementação pendente.
+- **Limites:** o teste comprova o caminho de sucesso do produtor e a ausência de republicação após a marcação. Não comprova recuperação de falhas, processamento do consumidor ou entrega exatamente uma vez.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
