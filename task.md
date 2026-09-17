@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Implementar em TDD a leitura ordenada de eventos pendentes e a marcação de `published_at` na outbox, sem publicar no RabbitMQ ainda.
+- [ ] Implementar em TDD a publicação de um evento pendente no RabbitMQ com propriedades do contrato e confirmação correlacionada, marcando `published_at` somente após `ack` sem retorno e sem scheduler.
