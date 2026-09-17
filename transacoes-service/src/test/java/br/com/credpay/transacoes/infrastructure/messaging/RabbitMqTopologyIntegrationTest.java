@@ -87,7 +87,7 @@ class RabbitMqTopologyIntegrationTest {
 
         var recebida = rabbitTemplate.receive(filaTeste.getName(), 5_000);
         assertThat(recebida).isNotNull();
-        assertThat(recebida.getMessageProperties().getDeliveryMode())
+        assertThat(recebida.getMessageProperties().getReceivedDeliveryMode())
                 .isEqualTo(MessageDeliveryMode.PERSISTENT);
         assertThat(new String(recebida.getBody(), StandardCharsets.UTF_8))
                 .isEqualTo("{\"eventType\":\"TransacaoCriada\"}");
