@@ -65,7 +65,8 @@ class RabbitMqTopologyIntegrationTest {
 
     @Test
     void topologia_deveRotearEventoPersistentePelaExchangeDuravel() {
-        assertThat(transacaoEventosExchange.getName()).isEqualTo("credpay.transacoes.v1");
+        assertThat(transacaoEventosExchange.getName())
+                .isEqualTo(RabbitMqConfiguration.TRANSACAO_EVENTOS_EXCHANGE);
         assertThat(transacaoEventosExchange.isDurable()).isTrue();
         assertThat(transacaoEventosExchange.isAutoDelete()).isFalse();
 
@@ -73,11 +74,11 @@ class RabbitMqTopologyIntegrationTest {
         amqpAdmin.declareQueue(filaTeste);
         amqpAdmin.declareBinding(BindingBuilder.bind(filaTeste)
                 .to(transacaoEventosExchange)
-                .with("transacao.criada.v1"));
+                .with(RabbitMqConfiguration.TRANSACAO_CRIADA_ROUTING_KEY));
 
         rabbitTemplate.convertAndSend(
                 transacaoEventosExchange.getName(),
-                "transacao.criada.v1",
+                RabbitMqConfiguration.TRANSACAO_CRIADA_ROUTING_KEY,
                 "{\"eventType\":\"TransacaoCriada\"}",
                 mensagem -> {
                     mensagem.getMessageProperties().setDeliveryMode(MessageDeliveryMode.PERSISTENT);
