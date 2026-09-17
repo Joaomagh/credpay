@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Adicionar as dependências AMQP aprovadas e implementar em TDD a exchange durável do produtor com RabbitMQ Testcontainers e fila efêmera de teste, sem conectar a outbox ainda.
+- [ ] Implementar em TDD a leitura ordenada de eventos pendentes e a marcação de `published_at` na outbox, sem publicar no RabbitMQ ainda.
