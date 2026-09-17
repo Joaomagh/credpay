@@ -3,7 +3,11 @@ package br.com.credpay.transacoes.infrastructure.messaging;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.UUID;
 
+import br.com.credpay.transacoes.application.EventoOutbox;
+import br.com.credpay.transacoes.application.PublicadorEvento;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.AnonymousQueue;
@@ -63,6 +67,9 @@ class RabbitMqTopologyIntegrationTest {
     @Autowired
     private RabbitTemplate rabbitTemplate;
 
+    @Autowired
+    private PublicadorEvento publicadorEvento;
+
     @Test
     void topologia_deveRotearEventoPersistentePelaExchangeDuravel() {
         assertThat(transacaoEventosExchange.getName())
@@ -91,5 +98,53 @@ class RabbitMqTopologyIntegrationTest {
                 .isEqualTo(MessageDeliveryMode.PERSISTENT);
         assertThat(new String(recebida.getBody(), StandardCharsets.UTF_8))
                 .isEqualTo("{\"eventType\":\"TransacaoCriada\"}");
+        amqpAdmin.deleteQueue(filaTeste.getName());
+    }
+
+    @Test
+    void publicador_deveConfirmarERotearContratoCompleto() {
+        var filaTeste = new AnonymousQueue();
+        amqpAdmin.declareQueue(filaTeste);
+        amqpAdmin.declareBinding(BindingBuilder.bind(filaTeste)
+                .to(transacaoEventosExchange)
+                .with(RabbitMqConfiguration.TRANSACAO_CRIADA_ROUTING_KEY));
+        var evento = evento();
+
+        try {
+            var confirmado = publicadorEvento.publicar(evento);
+
+            assertThat(confirmado).isTrue();
+            var recebida = rabbitTemplate.receive(filaTeste.getName(), 5_000);
+            assertThat(recebida).isNotNull();
+            assertThat(new String(recebida.getBody(), StandardCharsets.UTF_8))
+                    .isEqualTo(evento.payload());
+            assertThat(recebida.getMessageProperties().getContentType())
+                    .isEqualTo("application/json");
+            assertThat(recebida.getMessageProperties().getMessageId())
+                    .isEqualTo(evento.eventId().toString());
+            assertThat(recebida.getMessageProperties().getType())
+                    .isEqualTo(evento.eventType());
+            assertThat(recebida.getMessageProperties().getCorrelationId())
+                    .isEqualTo(evento.aggregateId().toString());
+            assertThat(recebida.getMessageProperties().getReceivedDeliveryMode())
+                    .isEqualTo(MessageDeliveryMode.PERSISTENT);
+        } finally {
+            amqpAdmin.deleteQueue(filaTeste.getName());
+        }
+    }
+
+    @Test
+    void publicador_deveFalhar_quandoExchangeNaoTiverRota() {
+        assertThat(publicadorEvento.publicar(evento())).isFalse();
+    }
+
+    private EventoOutbox evento() {
+        return new EventoOutbox(
+                UUID.fromString("6dc8d48d-5b20-4ee9-ac7e-832e421121aa"),
+                UUID.fromString("7b8b61c2-9f63-4d74-9f8d-89cb52de0ed9"),
+                "TransacaoCriada",
+                1,
+                "{\"eventType\":\"TransacaoCriada\"}",
+                Instant.parse("2026-09-17T12:00:00Z"));
     }
 }
