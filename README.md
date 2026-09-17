@@ -31,7 +31,7 @@ O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD
 | Implementado | rollback após `flush` impede que uma inserção revertida permaneça no banco |
 | Implementado | `GET /transacoes/{id}` retorna a representação persistida ou `404 Problem Details` para UUID válido ausente |
 | Implementado | UUID malformado retorna `400 Problem Details` sem consultar o caso de uso nem expor detalhes internos |
-| Implementado | 87 testes automatizados verdes, incluindo HTTP ponta a ponta, PostgreSQL e RabbitMQ com Testcontainers e concorrência real |
+| Implementado | 91 testes automatizados verdes, incluindo HTTP ponta a ponta, PostgreSQL e RabbitMQ com Testcontainers e concorrência real |
 | Implementado | `POST /transacoes` exige `Idempotency-Key`, repete a resposta original para payload equivalente e retorna `409` em conflito |
 | Implementado | lock transacional por chave serializa primeiras criações concorrentes; o CI comprovou convergência para uma única transação |
 | Implementado | migration V4 e adapter persistem eventos pendentes na outbox |
@@ -40,11 +40,12 @@ O projeto está na fundação do primeiro serviço e nos primeiros ciclos de TDD
 | Implementado | exchange RabbitMQ direct e durável do produtor, validada com mensagem persistente em broker real descartável |
 | Implementado | publicação manual de uma pendência com confirms correlacionados, returns e marcação somente após `ack` sem retorno |
 | Implementado | lote manual limitado a 20 eventos, interrompido na primeira publicação não confirmada |
+| Implementado | scheduler da outbox opt-in, com intervalo configurável e suporte explícito a uma única réplica publicadora |
 | Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
 | Documentado | contrato `TransacaoCriada` v1 e garantia de entrega pelo menos uma vez via outbox |
 | Documentado | baseline RabbitMQ com propriedade da topologia, confirms/returns, retry e DLQ |
-| Ainda não implementado | scheduler da outbox, coordenação entre réplicas, consumidor, constraints de moeda/status no banco, `processamento-service`, imagem da aplicação, Kubernetes e CD |
+| Ainda não implementado | coordenação entre réplicas publicadoras, consumidor, constraints de moeda/status no banco, `processamento-service`, imagem da aplicação, Kubernetes e CD |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 

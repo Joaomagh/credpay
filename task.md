@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Implementar em TDD um scheduler da outbox desabilitado por padrão, com intervalo configurável e suporte explícito apenas a uma réplica publicadora, sem claim/lease.
+- [ ] Provar em teste de integração vertical que uma criação gera outbox, o lote publica no RabbitMQ e `published_at` é marcado, acionando o caso de uso explicitamente e mantendo o scheduler desabilitado.
