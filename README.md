@@ -31,7 +31,7 @@ O projeto está na fase de fluxo assíncrono confiável: o primeiro serviço já
 | Implementado | rollback após `flush` impede que uma inserção revertida permaneça no banco |
 | Implementado | `GET /transacoes/{id}` retorna a representação persistida ou `404 Problem Details` para UUID válido ausente |
 | Implementado | UUID malformado retorna `400 Problem Details` sem consultar o caso de uso nem expor detalhes internos |
-| Implementado | 92 testes automatizados verdes, incluindo HTTP ponta a ponta, PostgreSQL e RabbitMQ com Testcontainers e concorrência real |
+| Implementado | 93 testes automatizados verdes, incluindo HTTP ponta a ponta, PostgreSQL e RabbitMQ com Testcontainers e concorrência real |
 | Implementado | `POST /transacoes` exige `Idempotency-Key`, repete a resposta original para payload equivalente e retorna `409` em conflito |
 | Implementado | lock transacional por chave serializa primeiras criações concorrentes; o CI comprovou convergência para uma única transação |
 | Implementado | migration V4 e adapter persistem eventos pendentes na outbox |
@@ -42,6 +42,7 @@ O projeto está na fase de fluxo assíncrono confiável: o primeiro serviço já
 | Implementado | lote manual limitado a 20 eventos, interrompido na primeira publicação não confirmada |
 | Implementado | scheduler da outbox opt-in, com intervalo configurável e suporte explícito a uma única réplica publicadora |
 | Comprovado | criação, outbox, entrega RabbitMQ e marcação de publicação em um único teste de integração vertical |
+| Comprovado | publicação sem rota mantém a outbox pendente; criar o binding permite entregar o mesmo evento em nova tentativa |
 | Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
 | Documentado | contrato `TransacaoCriada` v1 e garantia de entrega pelo menos uma vez via outbox |

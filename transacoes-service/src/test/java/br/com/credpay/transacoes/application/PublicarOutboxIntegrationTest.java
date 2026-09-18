@@ -9,6 +9,7 @@ import java.util.UUID;
 
 import br.com.credpay.transacoes.TransacoesServiceApplication;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.BindingBuilder;
@@ -78,6 +79,13 @@ class PublicarOutboxIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @BeforeEach
+    void limparDados() {
+        jdbcTemplate.update("DELETE FROM outbox_eventos");
+        jdbcTemplate.update("DELETE FROM idempotencias_transacao");
+        jdbcTemplate.update("DELETE FROM transacoes");
+    }
+
     @Test
     void publicarLote_deveEntregarEventoEMarcarOutbox_quandoCriacaoEstiverConfirmada() throws Exception {
         var fila = new Queue("credpay.test." + UUID.randomUUID(), false, true, false);
@@ -126,6 +134,51 @@ class PublicarOutboxIntegrationTest {
 
             assertThat(publicarOutbox.publicarLote()).isZero();
             assertThat(publicadoEm(eventId)).isEqualTo(instantePublicado);
+            assertThat(rabbitTemplate.receive(fila.getName(), 200)).isNull();
+        } finally {
+            amqpAdmin.deleteQueue(fila.getName());
+        }
+    }
+
+    @Test
+    void publicarLote_deveRecuperarMesmoEvento_quandoRotaForCriadaAposFalha() throws Exception {
+        var fila = new Queue("credpay.test." + UUID.randomUUID(), false, true, false);
+        amqpAdmin.declareQueue(fila);
+
+        try {
+            var transacao = criarTransacao.executar(
+                    UUID.randomUUID(), new BigDecimal("10.00"), Currency.getInstance("BRL"));
+            var eventId = jdbcTemplate.queryForObject(
+                    "SELECT event_id FROM outbox_eventos WHERE aggregate_id = ?",
+                    UUID.class, transacao.id());
+            var payloadOriginal = jdbcTemplate.queryForObject(
+                    "SELECT payload::text FROM outbox_eventos WHERE event_id = ?",
+                    String.class, eventId);
+
+            assertThat(publicarOutbox.publicarLote()).isZero();
+
+            assertThat(publicadoEm(eventId)).isNull();
+            assertThat(rabbitTemplate.receive(fila.getName(), 200)).isNull();
+            assertThat(jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM outbox_eventos WHERE aggregate_id = ?",
+                    Integer.class, transacao.id())).isEqualTo(1);
+            assertThat(jdbcTemplate.queryForObject(
+                    "SELECT payload::text FROM outbox_eventos WHERE event_id = ?",
+                    String.class, eventId)).isEqualTo(payloadOriginal);
+
+            amqpAdmin.declareBinding(BindingBuilder.bind(fila)
+                    .to(transacaoEventosExchange)
+                    .with("transacao.criada.v1"));
+
+            assertThat(publicarOutbox.publicarLote()).isEqualTo(1);
+
+            var mensagem = rabbitTemplate.receive(fila.getName(), 5_000);
+            assertThat(mensagem).isNotNull();
+            assertThat(mensagem.getMessageProperties().getMessageId()).isEqualTo(eventId.toString());
+            assertThat(objectMapper.readTree(mensagem.getBody()))
+                    .isEqualTo(objectMapper.readTree(payloadOriginal));
+            assertThat(publicadoEm(eventId)).isNotNull();
+            assertThat(publicarOutbox.publicarLote()).isZero();
             assertThat(rabbitTemplate.receive(fila.getName(), 200)).isNull();
         } finally {
             amqpAdmin.deleteQueue(fila.getName());

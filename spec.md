@@ -2,7 +2,7 @@
 
 > Fonte de verdade do sistema que existe hoje. Preencher somente com decisão tomada, contrato aceito ou comportamento comprovado. Planos futuros ficam em `CREDPAY_PLAN.md`; próximas ações ficam em `task.md`.
 
-**Última atualização:** 2026-09-17
+**Última atualização:** 2026-09-18
 
 **Fase atual:** 4 — Fluxo assíncrono confiável
 
@@ -1148,6 +1148,15 @@ Cada item entra em um ciclo TDD próprio. O item 2 foi implementado; os demais p
 - **Evidência:** [PR #48](https://github.com/Joaomagh/credpay/pull/48); [CI #104](https://github.com/Joaomagh/credpay/actions/runs/35285219623) com 92 testes, zero falhas, erros ou skips e JAR gerado. Compilação local verde; Docker local indisponível. Teste de regressão de comportamento existente, sem novo red/green de produção.
 - **Revisão documental:** README corrigido para incluir `Idempotency-Key`, configuração RabbitMQ e scheduler; o estado atual de eventos substituiu afirmações antigas de implementação pendente.
 - **Limites:** o teste comprova o caminho de sucesso do produtor e a ausência de republicação após a marcação. Não comprova recuperação de falhas, processamento do consumidor ou entrega exatamente uma vez.
+
+### 9.11 Recuperação após ausência de rota
+
+- **Cenário:** o segundo caso de `PublicarOutboxIntegrationTest` cria uma transação e mantém sua mensagem sem binding na primeira tentativa de publicação. O broker confirma o recebimento, mas devolve a mensagem obrigatória por ausência de rota.
+- **Falha segura:** a primeira execução do lote retorna zero, mantém `published_at` nulo e preserva o mesmo `event_id` e payload na única linha da outbox.
+- **Recuperação:** depois que o teste cria o binding aprovado, a nova execução publica exatamente o registro pendente. A fila recebe o mesmo `event_id` e JSON semanticamente equivalente, e somente então `published_at` é preenchido. Uma terceira execução não republica o evento já marcado.
+- **Isolamento:** a base é limpa antes de cada cenário e cada fila exclusiva possui nome único e remoção explícita, evitando dependência da ordem de execução.
+- **Evidência:** [PR #49](https://github.com/Joaomagh/credpay/pull/49); [CI Linux #107](https://github.com/Joaomagh/credpay/actions/runs/35286184441) verde. O teste nasceu como regressão de um comportamento de produção já implementado; por isso não houve red de produção artificial.
+- **Limites:** o cenário comprova retorno por ausência de rota e recuperação posterior. Indisponibilidade do broker e timeout continuam sem prova vertical; consumidor, deduplicação e DLQ ainda não existem.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
