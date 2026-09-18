@@ -135,6 +135,65 @@ O teste e o package emitiram warning de autoanexação do Mockito/Byte Buddy no 
 - parent POM ou agregador Maven na raiz;
 - Checkstyle, análise de dependências, pipeline CI e imagens OCI.
 
+### 3.2 Baseline aprovada do `processamento-service`
+
+Esta baseline define o segundo serviço como um aplicativo Spring Boot independente, sem API de negócio, consumo RabbitMQ, persistência ou regra de processamento no scaffolding. Reutilizar as versões já comprovadas reduz variáveis sem criar um parent POM compartilhado.
+
+| Item | Decisão |
+|---|---|
+| Java | 21 LTS |
+| Spring Boot | 3.5.16 |
+| Build | Maven Wrapper com Maven 3.9.16 |
+| `groupId` | `br.com.credpay` |
+| `artifactId` | `processamento-service` |
+| Versão do artefato | `0.0.1-SNAPSHOT` |
+| Packaging | `jar` |
+| Package base | `br.com.credpay.processamento` |
+
+#### Dependências iniciais aprovadas
+
+| Dependência | Escopo | Motivo para entrar no scaffolding |
+|---|---|---|
+| `spring-boot-starter-web` | principal | disponibiliza o servidor HTTP necessário ao health check operacional; não autoriza endpoint de negócio |
+| `spring-boot-starter-actuator` | principal | expõe `/actuator/health` para verificar que o processo está pronto |
+| `spring-boot-starter-test` | teste | fornece Spring Test, JUnit Jupiter e AssertJ para o smoke test de contexto e os próximos ciclos TDD |
+
+O serviço terá `pom.xml` e Maven Wrapper próprios. Não haverá código compartilhado entre os serviços nesta etapa; contratos comuns só serão extraídos quando repetição e compatibilidade justificarem.
+
+#### Estrutura mínima futura
+
+```text
+processamento-service/
+├── .gitignore
+├── .mvn/
+│   └── wrapper/
+│       └── maven-wrapper.properties
+├── src/
+│   ├── main/
+│   │   ├── java/br/com/credpay/processamento/
+│   │   │   └── ProcessamentoServiceApplication.java
+│   │   └── resources/
+│   │       └── application.yml
+│   └── test/
+│       └── java/br/com/credpay/processamento/
+│           └── ProcessamentoServiceApplicationTest.java
+├── mvnw
+├── mvnw.cmd
+└── pom.xml
+```
+
+O smoke test verificará somente a subida do contexto. Como scaffolding sem comportamento, não exige red prévio. Verificações esperadas: `java -version`, `.\mvnw.cmd --version`, `.\mvnw.cmd -Dtest=ProcessamentoServiceApplicationTest test`, `.\mvnw.cmd verify`, subida do JAR e `GET /actuator/health` com estado `UP`.
+
+#### Fora da baseline inicial
+
+- Spring AMQP, RabbitMQ, filas, bindings, listener, retry e DLQ;
+- PostgreSQL, JPA, Flyway e Testcontainers;
+- regra de aprovação/rejeição, domínio, DTO, evento de saída e deduplicação;
+- endpoints HTTP de negócio, OpenAPI, autenticação e autorização;
+- Dockerfile, Docker Compose, Kubernetes, métricas Prometheus e tracing;
+- parent POM/agregador, biblioteca compartilhada e dependências novas na raiz;
+- workflow de CI próprio, que será um incremento posterior ao build local reproduzível.
+
 ## 4. Configuração e segredos
 
 O serviço usa as propriedades padrão do Spring para uma conexão PostgreSQL obrigatória. Os testes fornecem URL, usuário e senha fictícia dinamicamente; a execução real deve recebê-las do ambiente. Não existe perfil sem persistência nem credencial padrão versionada.
