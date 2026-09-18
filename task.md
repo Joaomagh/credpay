@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Garantir em TDD que uma exceção do publicador interrompe o lote e mantém o evento pendente, sem capturar a falha silenciosamente.
+- [ ] Criar o scaffolding mínimo do `processamento-service` conforme a baseline aprovada, com build, smoke test de contexto e health check verdes, sem consumo RabbitMQ nem regra de negócio.
