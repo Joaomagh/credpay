@@ -15,9 +15,9 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 - `transacoes-service`: recebe pedidos, valida regras de entrada, mantém o estado consultável e publica eventos;
 - `processamento-service`: consome pedidos de processamento, decide o resultado e publica o evento correspondente.
 
-**Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno.
+**Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno. O `processamento-service` possui scaffolding independente, build reproduzível e health check HTTP, ainda sem comportamento de negócio.
 
-**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor, constraints de moeda/status no banco e `processamento-service`. O adapter PostgreSQL é validado isoladamente e pelo fluxo HTTP completo; a constraint monetária foi testada por SQL direto.
+**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor e regra de processamento, persistência do segundo serviço e constraints de moeda/status no banco. O adapter PostgreSQL é validado isoladamente e pelo fluxo HTTP completo; a constraint monetária foi testada por SQL direto.
 
 ## 2. Arquitetura vigente
 
@@ -137,7 +137,7 @@ O teste e o package emitiram warning de autoanexação do Mockito/Byte Buddy no 
 
 ### 3.2 Baseline aprovada do `processamento-service`
 
-Esta baseline define o segundo serviço como um aplicativo Spring Boot independente, sem API de negócio, consumo RabbitMQ, persistência ou regra de processamento no scaffolding. Reutilizar as versões já comprovadas reduz variáveis sem criar um parent POM compartilhado.
+Esta baseline define o segundo serviço como um aplicativo Spring Boot independente, sem API de negócio, consumo RabbitMQ, persistência ou regra de processamento no scaffolding. Foi materializada e verificada em 2026-09-18. Reutilizar as versões já comprovadas reduz variáveis sem criar um parent POM compartilhado.
 
 | Item | Decisão |
 |---|---|
@@ -160,7 +160,7 @@ Esta baseline define o segundo serviço como um aplicativo Spring Boot independe
 
 O serviço terá `pom.xml` e Maven Wrapper próprios. Não haverá código compartilhado entre os serviços nesta etapa; contratos comuns só serão extraídos quando repetição e compatibilidade justificarem.
 
-#### Estrutura mínima futura
+#### Estrutura mínima implementada
 
 ```text
 processamento-service/
@@ -182,7 +182,7 @@ processamento-service/
 └── pom.xml
 ```
 
-O smoke test verificará somente a subida do contexto. Como scaffolding sem comportamento, não exige red prévio. Verificações esperadas: `java -version`, `.\mvnw.cmd --version`, `.\mvnw.cmd -Dtest=ProcessamentoServiceApplicationTest test`, `.\mvnw.cmd verify`, subida do JAR e `GET /actuator/health` com estado `UP`.
+O smoke test inicia o servidor em porta aleatória e verifica `GET /actuator/health` com `200 OK` e estado `UP`. Como scaffolding sem comportamento, não exigiu red prévio.
 
 #### Fora da baseline inicial
 
@@ -193,6 +193,15 @@ O smoke test verificará somente a subida do contexto. Como scaffolding sem comp
 - Dockerfile, Docker Compose, Kubernetes, métricas Prometheus e tracing;
 - parent POM/agregador, biblioteca compartilhada e dependências novas na raiz;
 - workflow de CI próprio, que será um incremento posterior ao build local reproduzível.
+
+#### Evidência do scaffolding
+
+- Maven Wrapper 3.9.16 e Java 21.0.6 confirmados no Windows;
+- teste focado e `verify` verdes, ambos com 1 teste, zero falhas, erros ou skips;
+- JAR executável `processamento-service-0.0.1-SNAPSHOT.jar` gerado pelo Spring Boot Maven Plugin;
+- o primeiro build sem acesso externo falhou ao resolver o parent ainda ausente no cache; a repetição autorizada baixou apenas as dependências aprovadas;
+- o script Windows do Maven Wrapper 3.3.4 indexava `Target[0]` quando `~/.m2` era uma pasta comum. Uma guarda mínima para ausência de target corrigiu o bootstrap sem alterar a distribuição Maven nem reduzir validações;
+- permanece o warning conhecido de autoanexação Mockito/Byte Buddy no Java 21, mesmo sem mocks escritos neste módulo.
 
 ## 4. Configuração e segredos
 
@@ -1159,7 +1168,7 @@ Não será adicionado `spring-boot-testcontainers`, Awaitility separado, cliente
 5. retomada publica um pendente e tolera a janela de duplicação;
 6. consumidor futuro deduplica reentrega e encaminha falha final à DLQ.
 
-Cada item entra em um ciclo TDD próprio. O item 2 foi implementado; os demais permanecem incrementos separados.
+Cada item entra em um ciclo próprio. Os itens 1 a 3 e 5 estão comprovados; o item 4 cobre ausência de rota e `nack`, mas timeout e broker indisponível ainda carecem de prova vertical. O item 6 pertence ao futuro consumidor.
 
 ### 9.6 Implementação da topologia do produtor
 
@@ -1319,14 +1328,14 @@ Cobertura, scanners e outras ferramentas serão sinais auxiliares, não metas is
 
 ### ADR-004 — Outbox transacional antes da mensageria
 
-- **Status:** aceita; implementação pendente
+- **Status:** aceita e implementada no `transacoes-service`
 - **Contexto:** gravar a transação e publicar diretamente no RabbitMQ são duas operações independentes. Uma falha entre elas pode deixar um recurso confirmado sem evento ou publicar um evento de uma transação revertida.
 - **Decisão:** persistir `TransacaoCriada` em uma outbox no mesmo PostgreSQL e na mesma transação local da criação. Um publicador separado enviará registros pendentes e os marcará depois da confirmação do broker.
 - **Consequências:** elimina a janela entre commit do recurso e registro da intenção de publicação, mas não fornece entrega exatamente uma vez. Duplicatas após falha são esperadas; consumidores deverão deduplicar por `eventId`. A tabela cresce e exigirá política futura de retenção. Não há transação distribuída.
 
 ### ADR-005 — RabbitMQ com confirmação e propriedade de topologia
 
-- **Status:** aceita; implementação pendente
+- **Status:** aceita; lado produtor implementado, topologia e consumo do segundo serviço pendentes
 - **Contexto:** a outbox remove a janela de gravação local, mas não prova que o broker recebeu ou roteou a mensagem. Declarar filas do consumidor no produtor também acoplaria implantações independentes.
 - **Decisão:** usar exchange direct durável pertencente ao produtor, filas quorum pertencentes ao consumidor, mensagens persistentes, mandatory returns e publisher confirms correlacionados. Marcar a outbox somente após confirmação sem retorno.
 - **Consequências:** falhas permanecem recuperáveis na outbox e recursos têm dono claro. A entrega continua pelo menos uma vez, exige deduplicação e adiciona latência/complexidade de confirmação. Alta disponibilidade não é comprovada pelo container de nó único.
