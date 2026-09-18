@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: processamento-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

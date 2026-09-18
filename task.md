@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Criar o scaffolding mínimo do `processamento-service` conforme a baseline aprovada, com build, smoke test de contexto e health check verdes, sem consumo RabbitMQ nem regra de negócio.
+- [ ] Criar CI independente do `processamento-service` para executar Maven `verify` em Java 21/Linux quando o módulo ou seu workflow mudar.
