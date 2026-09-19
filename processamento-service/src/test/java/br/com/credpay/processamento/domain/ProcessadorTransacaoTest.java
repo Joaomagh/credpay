@@ -1,6 +1,7 @@
 package br.com.credpay.processamento.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 import java.math.BigDecimal;
 
@@ -27,5 +28,14 @@ class ProcessadorTransacaoTest {
                 new BigDecimal("100.00"));
 
         assertThat(resultado).isEqualTo(StatusProcessamento.REJEITADA);
+    }
+
+    @Test
+    void processar_deveFalhar_quandoValorForNulo() {
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ProcessadorTransacao.processar(
+                        null,
+                        new BigDecimal("100.00")))
+                .withMessage("valor deve ser informado");
     }
 }
