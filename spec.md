@@ -631,6 +631,7 @@ O evento representa um fato confirmado no banco, não um comando e não uma prom
 - **Regra:** `0` e `0.00` falham com `IllegalArgumentException` e mensagem `valor deve ser maior que zero`; a escala não muda a validação.
 - **Red:** 7 casos focados, com 2 falhas esperadas (`Expecting code to raise a throwable`); os zeros eram aprovados.
 - **Green:** guarda `valor.signum() == 0`; 7 casos focados verdes e `verify` com 8 testes, zero falhas, erros ou skips e JAR gerado.
+- **CI:** [PR #57](https://github.com/Joaomagh/credpay/pull/57), [Processing Service CI #16](https://github.com/Joaomagh/credpay/actions/runs/35458957242) com `Maven verify` verde no Linux.
 - **Limites deste incremento:** valores negativos e limite não positivo ainda precisam de validação. Nenhuma dependência, integração ou configuração nova.
 
 ### Evidência TDD — estado inicial `PENDENTE`
