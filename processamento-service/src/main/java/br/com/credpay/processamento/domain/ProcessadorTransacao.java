@@ -8,6 +8,9 @@ public final class ProcessadorTransacao {
     }
 
     public static StatusProcessamento processar(BigDecimal valor, BigDecimal limite) {
+        if (valor.compareTo(limite) > 0) {
+            return StatusProcessamento.REJEITADA;
+        }
         return StatusProcessamento.APROVADA;
     }
 }

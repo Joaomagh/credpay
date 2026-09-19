@@ -15,9 +15,9 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 - `transacoes-service`: recebe pedidos, valida regras de entrada, mantém o estado consultável e publica eventos;
 - `processamento-service`: consome pedidos de processamento, decide o resultado e publica o evento correspondente.
 
-**Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno. O `processamento-service` possui scaffolding independente, build reproduzível, health check HTTP e aprova valores positivos menores ou iguais ao limite nos casos cobertos pelo primeiro ciclo TDD.
+**Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno. O `processamento-service` possui scaffolding independente, build reproduzível, health check HTTP e decide `APROVADA` para valor menor ou igual ao limite e `REJEITADA` para valor acima dele.
 
-**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor, rejeição acima do limite, persistência do segundo serviço e constraints de moeda/status no banco. O adapter PostgreSQL é validado isoladamente e pelo fluxo HTTP completo; a constraint monetária foi testada por SQL direto.
+**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor, validação defensiva e configuração externa do limite, persistência do segundo serviço e constraints de moeda/status no banco. O adapter PostgreSQL é validado isoladamente e pelo fluxo HTTP completo; a constraint monetária foi testada por SQL direto.
 
 ## 2. Arquitetura vigente
 
@@ -587,6 +587,7 @@ O evento representa um fato confirmado no banco, não um comando e não uma prom
 | A criação HTTP exige chave idempotente válida | ausência e formato inválido retornam `400` sem chamar o caso de uso | `TransacaoControllerTest` |
 | A criação HTTP preserva replay e rejeita conflito | mesma chave/payload repete resposta; payload diferente retorna `409` | `TransacaoHttpTest` |
 | O processamento aprova valor positivo dentro do limite | exemplos `99.99` e `100.00` para limite `100.00` resultam em `APROVADA` | `ProcessadorTransacaoTest.processar_deveAprovar_quandoValorForMenorOuIgualAoLimite` |
+| O processamento rejeita valor acima do limite | `100.01` para limite `100.00` resulta em `REJEITADA`; comparação ignora diferença de escala decimal | `ProcessadorTransacaoTest.processar_deveRejeitar_quandoValorForMaiorQueLimite` |
 
 ### Evidência TDD — aprovação dentro do limite
 
@@ -595,8 +596,16 @@ O evento representa um fato confirmado no banco, não um comando e não uma prom
 - **Green focado:** depois de criar os dois tipos mínimos, o teste parametrizado executou os casos abaixo e exatamente no limite, totalizando 2 testes verdes.
 - **Suíte:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 3 testes no módulo, sem falhas, erros ou skips, e gerou o JAR.
 - **Evidência remota:** [PR #53](https://github.com/Joaomagh/credpay/pull/53); [Processing Service CI #4](https://github.com/Joaomagh/credpay/actions/runs/35415488950) verde em Java 21/Linux, com os mesmos 3 testes e JAR gerado.
-- **Implementação mínima:** `StatusProcessamento` contém apenas `APROVADA`; o processador ainda retorna esse resultado sem comparar os parâmetros. A comparação nasce no próximo red, quando um valor acima do limite exigir `REJEITADA`.
+- **Implementação mínima daquele ciclo:** `StatusProcessamento` continha apenas `APROVADA` e o processador retornava esse resultado sem comparar os parâmetros. A comparação foi adicionada no ciclo seguinte, quando um valor acima do limite exigiu `REJEITADA`.
 - **Limites:** não há validação de nulo, valor não positivo ou limite inválido; não há moeda, configuração externa, evento, RabbitMQ ou persistência.
+
+### Evidência TDD — rejeição acima do limite
+
+- **Red:** depois de adicionar somente o cenário `100.01` contra limite `100.00`, a compilação falhou apenas porque `StatusProcessamento.REJEITADA` ainda não existia.
+- **Green:** o enum recebeu `REJEITADA` e `ProcessadorTransacao` passou a retornar esse estado quando `valor.compareTo(limite) > 0`; o teste focado executou 3 casos sem falhas.
+- **Regressão:** os valores `99.99` e `100.00` continuam `APROVADA`, tornando explícita a inclusão da fronteira no limite.
+- **Suíte:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 4 testes no módulo, sem falhas, erros ou skips, e gerou o JAR.
+- **Limites:** valor e limite nulos ainda não possuem erro de domínio explícito; valor não positivo, moeda, configuração externa, eventos, RabbitMQ e persistência permanecem fora.
 
 ### Evidência TDD — estado inicial `PENDENTE`
 
