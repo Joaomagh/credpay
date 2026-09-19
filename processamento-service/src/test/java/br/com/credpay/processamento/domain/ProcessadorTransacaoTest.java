@@ -12,6 +12,15 @@ import org.junit.jupiter.params.provider.ValueSource;
 class ProcessadorTransacaoTest {
 
     @ParameterizedTest
+    @ValueSource(strings = {"0", "0.00", "-0.01"})
+    void processar_deveFalhar_quandoLimiteNaoForPositivo(String limite) {
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ProcessadorTransacao.processar(
+                        new BigDecimal("10.00"), new BigDecimal(limite)))
+                .withMessage("limite deve ser maior que zero");
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {"0", "0.00"})
     void processar_deveFalhar_quandoValorForZero(String valor) {
         assertThatIllegalArgumentException()
