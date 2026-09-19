@@ -605,6 +605,7 @@ O evento representa um fato confirmado no banco, não um comando e não uma prom
 - **Green:** o enum recebeu `REJEITADA` e `ProcessadorTransacao` passou a retornar esse estado quando `valor.compareTo(limite) > 0`; o teste focado executou 3 casos sem falhas.
 - **Regressão:** os valores `99.99` e `100.00` continuam `APROVADA`, tornando explícita a inclusão da fronteira no limite.
 - **Suíte:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 4 testes no módulo, sem falhas, erros ou skips, e gerou o JAR.
+- **Evidência remota:** [PR #54](https://github.com/Joaomagh/credpay/pull/54); [Processing Service CI #7](https://github.com/Joaomagh/credpay/actions/runs/35418388563) verde em Java 21/Linux, com os mesmos 4 testes e JAR gerado.
 - **Limites:** valor e limite nulos ainda não possuem erro de domínio explícito; valor não positivo, moeda, configuração externa, eventos, RabbitMQ e persistência permanecem fora.
 
 ### Evidência TDD — estado inicial `PENDENTE`
