@@ -15,9 +15,9 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 - `transacoes-service`: recebe pedidos, valida regras de entrada, mantém o estado consultável e publica eventos;
 - `processamento-service`: consome pedidos de processamento, decide o resultado e publica o evento correspondente.
 
-**Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno. O `processamento-service` possui scaffolding independente, build reproduzível e health check HTTP, ainda sem comportamento de negócio.
+**Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno. O `processamento-service` possui scaffolding independente, build reproduzível, health check HTTP e aprova valores positivos menores ou iguais ao limite nos casos cobertos pelo primeiro ciclo TDD.
 
-**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor e regra de processamento, persistência do segundo serviço e constraints de moeda/status no banco. O adapter PostgreSQL é validado isoladamente e pelo fluxo HTTP completo; a constraint monetária foi testada por SQL direto.
+**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor, rejeição acima do limite, persistência do segundo serviço e constraints de moeda/status no banco. O adapter PostgreSQL é validado isoladamente e pelo fluxo HTTP completo; a constraint monetária foi testada por SQL direto.
 
 ## 2. Arquitetura vigente
 
@@ -586,6 +586,16 @@ O evento representa um fato confirmado no banco, não um comando e não uma prom
 | O happy path HTTP cria uma representação pendente | request `10.00`/`BRL`; retorna `201`, `Location`, UUID, valor, moeda e `PENDENTE` | `TransacaoControllerTest.deveCriarTransacaoPendente` |
 | A criação HTTP exige chave idempotente válida | ausência e formato inválido retornam `400` sem chamar o caso de uso | `TransacaoControllerTest` |
 | A criação HTTP preserva replay e rejeita conflito | mesma chave/payload repete resposta; payload diferente retorna `409` | `TransacaoHttpTest` |
+| O processamento aprova valor positivo dentro do limite | exemplos `99.99` e `100.00` para limite `100.00` resultam em `APROVADA` | `ProcessadorTransacaoTest.processar_deveAprovar_quandoValorForMenorOuIgualAoLimite` |
+
+### Evidência TDD — aprovação dentro do limite
+
+- **Red inválido descartado:** a primeira tentativa parou na resolução do parent Maven por bloqueio de rede do sandbox e não chegou a compilar o teste.
+- **Red válido:** com acesso às dependências já aprovadas, a compilação falhou somente pela ausência de `ProcessadorTransacao` e `StatusProcessamento`.
+- **Green focado:** depois de criar os dois tipos mínimos, o teste parametrizado executou os casos abaixo e exatamente no limite, totalizando 2 testes verdes.
+- **Suíte:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 3 testes no módulo, sem falhas, erros ou skips, e gerou o JAR.
+- **Implementação mínima:** `StatusProcessamento` contém apenas `APROVADA`; o processador ainda retorna esse resultado sem comparar os parâmetros. A comparação nasce no próximo red, quando um valor acima do limite exigir `REJEITADA`.
+- **Limites:** não há validação de nulo, valor não positivo ou limite inválido; não há moeda, configuração externa, evento, RabbitMQ ou persistência.
 
 ### Evidência TDD — estado inicial `PENDENTE`
 
