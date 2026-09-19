@@ -1,6 +1,7 @@
 # CredPay
 
 [![Transaction Service CI](https://github.com/Joaomagh/credpay/actions/workflows/transacoes-service-ci.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/transacoes-service-ci.yml)
+[![Processing Service CI](https://github.com/Joaomagh/credpay/actions/workflows/processamento-service-ci.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/processamento-service-ci.yml)
 
 > Laboratório de engenharia backend para construir e explicar, com evidências, um fluxo assíncrono de transações.
 
@@ -44,7 +45,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Implementado | scheduler da outbox opt-in, com intervalo configurável e suporte explícito a uma única réplica publicadora |
 | Comprovado | criação, outbox, entrega RabbitMQ e marcação de publicação em um único teste de integração vertical |
 | Comprovado | publicação sem rota mantém a outbox pendente; criar o binding permite entregar o mesmo evento em nova tentativa |
-| Implementado | CI no GitHub Actions com Maven `verify` em Java 21/Linux |
+| Implementado | CI independente para cada serviço, com Maven `verify` em Java 21/Linux e filtros de caminho |
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
 | Documentado | contrato `TransacaoCriada` v1 e garantia de entrega pelo menos uma vez via outbox |
 | Documentado | baseline RabbitMQ com propriedade da topologia, confirms/returns, retry e DLQ |
@@ -250,7 +251,7 @@ O sandbox ainda não foi implementado. Docker Desktop, daemon, VM, kernel/hyperv
 | Fase | Objetivo | Estado |
 |---|---|---|
 | 1 | governança, threat model e contrato do sandbox | documentação concluída; sandbox pendente |
-| 2 | fundação reproduzível e CI mínimo | `transacoes-service` e CI implementados; restante pendente |
+| 2 | fundação reproduzível e CI mínimo | dois serviços com build e CI independentes; regras do processador ainda pendentes |
 | 3 | regras de domínio em TDD e primeira integração PostgreSQL | concluída |
 | 4 | API, fluxo assíncrono, idempotência, outbox, retry e DLQ | em andamento |
 | 5 | experimentos de falha e resiliência | planejada |

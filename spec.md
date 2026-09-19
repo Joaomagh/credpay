@@ -1258,7 +1258,7 @@ Invoke-RestMethod http://localhost:8080/actuator/health
 
 ### Integração contínua
 
-O `transacoes-service` possui um workflow mínimo em `.github/workflows/transacoes-service-ci.yml` para executar a mesma verificação Maven em ambiente Linux.
+Cada serviço possui um workflow mínimo e independente: `.github/workflows/transacoes-service-ci.yml` e `.github/workflows/processamento-service-ci.yml`. Ambos executam a verificação Maven do respectivo módulo em ambiente Linux; filtros de caminho evitam rodar o outro build quando ele não foi afetado.
 
 | Item | Decisão |
 |---|---|
@@ -1266,12 +1266,12 @@ O `transacoes-service` possui um workflow mínimo em `.github/workflows/transaco
 | Runner | `ubuntu-latest`, com timeout de 10 minutos |
 | Java | Temurin 21 por `actions/setup-java` |
 | Maven | Wrapper do repositório com `--batch-mode --no-transfer-progress verify` |
-| Cache | dependências Maven, com chave derivada de `transacoes-service/pom.xml` |
+| Cache | dependências Maven, com chave derivada do `pom.xml` do respectivo serviço |
 | Permissões | somente `contents: read` |
 | Concorrência | execução anterior da mesma referência é cancelada quando fica obsoleta |
 | Actions externas | referências fixadas por SHA, com a versão legível em comentário |
 
-A validação local equivalente é `mvnw.cmd --batch-mode --no-transfer-progress verify` no Windows. A [primeira execução no GitHub Actions](https://github.com/Joaomagh/credpay/actions/runs/34542670040) concluiu o job `Maven verify` com sucesso em 32 segundos no runner Linux. Não há publicação, segredo, imagem ou deploy; CD permanece fora até existirem artefato e ambiente aprovados.
+A validação local equivalente é `mvnw.cmd --batch-mode --no-transfer-progress verify` no Windows. A [primeira execução do `transacoes-service`](https://github.com/Joaomagh/credpay/actions/runs/34542670040) concluiu o job `Maven verify` com sucesso em 32 segundos no runner Linux. O workflow do `processamento-service` replica deliberadamente as mesmas versões fixadas de Actions, permissões mínimas, cancelamento concorrente, timeout e comando, alterando apenas caminhos, diretório de trabalho, cache e nome. Sua [primeira execução remota](https://github.com/Joaomagh/credpay/actions/runs/35410768584) também ficou verde, com 1 teste e JAR gerado. Não há publicação, segredo, imagem ou deploy; CD permanece fora até existirem artefato e ambiente aprovados.
 
 #### Evolução planejada do CI/CD
 

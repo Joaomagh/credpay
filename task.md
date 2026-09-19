@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Criar CI independente do `processamento-service` para executar Maven `verify` em Java 21/Linux quando o módulo ou seu workflow mudar.
+- [ ] Implementar em TDD o primeiro comportamento do `processamento-service`: valor positivo menor ou igual ao limite resulta em `APROVADA`, sem RabbitMQ nem persistência.
