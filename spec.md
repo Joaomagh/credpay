@@ -634,6 +634,13 @@ O evento representa um fato confirmado no banco, não um comando e não uma prom
 - **CI:** [PR #57](https://github.com/Joaomagh/credpay/pull/57), [Processing Service CI #16](https://github.com/Joaomagh/credpay/actions/runs/35458957242) com `Maven verify` verde no Linux.
 - **Limites deste incremento:** valores negativos e limite não positivo ainda precisam de validação. Nenhuma dependência, integração ou configuração nova.
 
+### Evidência TDD — valor negativo no processamento
+
+- **Regra:** um valor negativo é entrada inválida e lança `IllegalArgumentException` com `valor deve ser maior que zero`; não se confunde com a decisão de negócio `REJEITADA` para um valor válido acima do limite.
+- **Red:** `-0.01` produzia `APROVADA`; 1 falha esperada entre 8 casos focados pela ausência de exceção.
+- **Green:** guarda ampliada de `signum() == 0` para `signum() <= 0`; 8 casos focados e `verify` com 9 testes verdes, sem falhas, erros ou skips e JAR gerado.
+- **Próximo:** exigir limite estritamente positivo antes de aplicar a decisão; não houve mudança de dependências ou integração.
+
 ### Evidência TDD — estado inicial `PENDENTE`
 
 - **Red:** `mvnw.cmd -Dtest=TransacaoTest test` falhou na compilação do teste porque `Transacao` e `StatusTransacao` ainda não existiam.

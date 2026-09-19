@@ -20,7 +20,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Implementado | primeiro comportamento do processador: valor positivo menor ou igual ao limite resulta em `APROVADA` |
 | Implementado | valor acima do limite resulta em `REJEITADA`, com comparação decimal por `BigDecimal` |
 | Implementado | valor ou limite nulo no processador falham com erros de domínio explícitos, sem vazar `NullPointerException` |
-| Implementado | valor zero no processador é inválido, independentemente da escala decimal |
+| Implementado | valor zero ou negativo no processador é inválido, independentemente da escala decimal |
 | Implementado | health check do Spring Boot Actuator |
 | Implementado | transação válida nasce `PENDENTE` |
 | Implementado | valor ausente ou não positivo e moeda ausente são rejeitados pelo domínio |
@@ -37,7 +37,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Implementado | rollback após `flush` impede que uma inserção revertida permaneça no banco |
 | Implementado | `GET /transacoes/{id}` retorna a representação persistida ou `404 Problem Details` para UUID válido ausente |
 | Implementado | UUID malformado retorna `400 Problem Details` sem consultar o caso de uso nem expor detalhes internos |
-| Implementado | 101 testes automatizados nos dois módulos; suíte do produtor validada no CI e suíte do processador com `verify` local |
+| Implementado | 102 testes automatizados nos dois módulos; suíte do produtor validada no CI e suíte do processador com `verify` local |
 | Implementado | `POST /transacoes` exige `Idempotency-Key`, repete a resposta original para payload equivalente e retorna `409` em conflito |
 | Implementado | lock transacional por chave serializa primeiras criações concorrentes; o CI comprovou convergência para uma única transação |
 | Implementado | migration V4 e adapter persistem eventos pendentes na outbox |
