@@ -614,6 +614,7 @@ O evento representa um fato confirmado no banco, não um comando e não uma prom
 - **Red:** o novo teste executou 4 casos; somente valor nulo falhou porque `BigDecimal.compareTo` lançava `NullPointerException` em vez do erro de domínio contratado.
 - **Green:** uma guarda anterior à comparação lança `IllegalArgumentException` com mensagem `valor deve ser informado`; o teste focado executou 4 casos sem falhas.
 - **Suíte:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 5 testes no módulo, sem falhas, erros ou skips, e gerou o JAR.
+- **Evidência remota:** [PR #55](https://github.com/Joaomagh/credpay/pull/55); [Processing Service CI #10](https://github.com/Joaomagh/credpay/actions/runs/35418613909) verde em Java 21/Linux, com os mesmos 5 testes e JAR gerado.
 - **Limites:** limite nulo e números não positivos ainda não possuem validação explícita; moeda, configuração externa, eventos, RabbitMQ e persistência permanecem fora.
 
 ### Evidência TDD — estado inicial `PENDENTE`
