@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Implementar em TDD que valor acima do limite resulta em `REJEITADA`, mantendo aprovação para valor menor ou igual e ainda sem RabbitMQ nem persistência.
+- [ ] Implementar em TDD a rejeição explícita de valor nulo no `processamento-service`, com `IllegalArgumentException` e mensagem `valor deve ser informado`.
