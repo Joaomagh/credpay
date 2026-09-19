@@ -20,6 +20,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Implementado | primeiro comportamento do processador: valor positivo menor ou igual ao limite resulta em `APROVADA` |
 | Implementado | valor acima do limite resulta em `REJEITADA`, com comparação decimal por `BigDecimal` |
 | Implementado | valor ou limite nulo no processador falham com erros de domínio explícitos, sem vazar `NullPointerException` |
+| Implementado | valor zero no processador é inválido, independentemente da escala decimal |
 | Implementado | health check do Spring Boot Actuator |
 | Implementado | transação válida nasce `PENDENTE` |
 | Implementado | valor ausente ou não positivo e moeda ausente são rejeitados pelo domínio |
@@ -36,7 +37,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Implementado | rollback após `flush` impede que uma inserção revertida permaneça no banco |
 | Implementado | `GET /transacoes/{id}` retorna a representação persistida ou `404 Problem Details` para UUID válido ausente |
 | Implementado | UUID malformado retorna `400 Problem Details` sem consultar o caso de uso nem expor detalhes internos |
-| Implementado | 99 testes automatizados verdes nos dois módulos, incluindo HTTP ponta a ponta, PostgreSQL e RabbitMQ com Testcontainers e concorrência real |
+| Implementado | 101 testes automatizados nos dois módulos; suíte do produtor validada no CI e suíte do processador com `verify` local |
 | Implementado | `POST /transacoes` exige `Idempotency-Key`, repete a resposta original para payload equivalente e retorna `409` em conflito |
 | Implementado | lock transacional por chave serializa primeiras criações concorrentes; o CI comprovou convergência para uma única transação |
 | Implementado | migration V4 e adapter persistem eventos pendentes na outbox |
@@ -149,7 +150,7 @@ cd transacoes-service
 .\mvnw.cmd --batch-mode --no-transfer-progress verify
 ```
 
-O segundo módulo não depende de Docker enquanto ainda é apenas scaffolding:
+Em outro terminal, a partir da raiz do repositório, verifique o processador. Sua suíte atual contém domínio e health check e dispensa Docker:
 
 ```powershell
 cd processamento-service
@@ -158,7 +159,7 @@ cd processamento-service
 
 Seu smoke test inicia a aplicação em porta aleatória e comprova `GET /actuator/health` com estado `UP`. Ainda não há listener RabbitMQ, persistência ou endpoint de negócio nesse serviço.
 
-Os testes iniciam PostgreSQL e RabbitMQ descartáveis automaticamente. Para executar a aplicação com o health completo, disponibilize PostgreSQL e RabbitMQ separadamente e configure as conexões sem versionar credenciais:
+Os testes do `transacoes-service` iniciam PostgreSQL e RabbitMQ descartáveis automaticamente. Para executar esse serviço com o health completo, no terminal posicionado em `transacoes-service`, disponibilize PostgreSQL e RabbitMQ separadamente e configure as conexões sem versionar credenciais:
 
 ```powershell
 $env:SPRING_DATASOURCE_URL = "jdbc:postgresql://localhost:5432/credpay"

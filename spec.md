@@ -2,7 +2,7 @@
 
 > Fonte de verdade do sistema que existe hoje. Preencher somente com decisão tomada, contrato aceito ou comportamento comprovado. Planos futuros ficam em `CREDPAY_PLAN.md`; próximas ações ficam em `task.md`.
 
-**Última atualização:** 2026-09-18
+**Última atualização:** 2026-09-19
 
 **Fase atual:** 4 — Fluxo assíncrono confiável
 
@@ -625,6 +625,14 @@ O evento representa um fato confirmado no banco, não um comando e não uma prom
 - **Suíte:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 6 testes no módulo, sem falhas, erros ou skips, e gerou o JAR.
 - **Evidência remota:** [PR #56](https://github.com/Joaomagh/credpay/pull/56); [Processing Service CI #13](https://github.com/Joaomagh/credpay/actions/runs/35418809104) verde em Java 21/Linux, com os mesmos 6 testes e JAR gerado.
 - **Limites:** valor zero e negativo, limite não positivo, moeda, configuração externa, eventos, RabbitMQ e persistência permanecem fora.
+
+### Evidência TDD — valor zero no processamento
+
+- **Regra:** `0` e `0.00` falham com `IllegalArgumentException` e mensagem `valor deve ser maior que zero`; a escala não muda a validação.
+- **Red:** 7 casos focados, com 2 falhas esperadas (`Expecting code to raise a throwable`); os zeros eram aprovados.
+- **Green:** guarda `valor.signum() == 0`; 7 casos focados verdes e `verify` com 8 testes, zero falhas, erros ou skips e JAR gerado.
+- **CI:** [PR #57](https://github.com/Joaomagh/credpay/pull/57), [Processing Service CI #16](https://github.com/Joaomagh/credpay/actions/runs/35458957242) com `Maven verify` verde no Linux.
+- **Limites deste incremento:** valores negativos e limite não positivo ainda precisam de validação. Nenhuma dependência, integração ou configuração nova.
 
 ### Evidência TDD — estado inicial `PENDENTE`
 
