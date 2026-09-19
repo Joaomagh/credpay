@@ -17,7 +17,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno. O `processamento-service` possui scaffolding independente, build reproduzível, health check HTTP e decide `APROVADA` para valor menor ou igual ao limite e `REJEITADA` para valor acima dele.
 
-**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor, configuração externa do limite e seu vínculo com a moeda, persistência do segundo serviço e constraints de moeda/status no banco. O processador já exige valor e limite não nulos e estritamente positivos. O adapter PostgreSQL é validado isoladamente e pelo fluxo HTTP completo; a constraint monetária foi testada por SQL direto.
+**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor, ligação entre seleção do limite por moeda e decisão do domínio, persistência do segundo serviço e constraints de moeda/status no banco. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega e valida limites externos por moeda, sem política padrão. O adapter PostgreSQL é validado isoladamente e pelo fluxo HTTP completo; a constraint monetária foi testada por SQL direto.
 
 ## 2. Arquitetura vigente
 
@@ -205,7 +205,7 @@ O smoke test inicia o servidor em porta aleatória e verifica `GET /actuator/hea
 
 ## 4. Configuração e segredos
 
-O serviço usa as propriedades padrão do Spring para uma conexão PostgreSQL obrigatória. Os testes fornecem URL, usuário e senha fictícia dinamicamente; a execução real deve recebê-las do ambiente. Não existe perfil sem persistência nem credencial padrão versionada.
+O `transacoes-service` usa as propriedades padrão do Spring para uma conexão PostgreSQL obrigatória. Os testes fornecem URL, usuário e senha fictícia dinamicamente; a execução real deve recebê-las do ambiente. Nesse serviço não existe perfil sem persistência nem credencial padrão versionada. O `processamento-service` ainda não usa banco e exige apenas os limites por moeda descritos abaixo.
 
 | Serviço | Variável | Obrigatória | Valor padrão | Propósito | Sensível |
 |---|---|---|---|---|---|
@@ -216,8 +216,35 @@ O serviço usa as propriedades padrão do Spring para uma conexão PostgreSQL ob
 | transacoes-service | `SPRING_RABBITMQ_USERNAME` / `SPRING_RABBITMQ_PASSWORD` | configurar conforme o broker | padrões Spring Boot; definir no ambiente | autenticação no RabbitMQ | sim |
 | transacoes-service | `CREDPAY_OUTBOX_PUBLISHER_ENABLED` | não | `false` | ativa scheduler em uma única réplica | não |
 | transacoes-service | `CREDPAY_OUTBOX_PUBLISHER_INTERVAL` | não | `PT1S` | intervalo após terminar um lote e atraso inicial | não |
+| processamento-service | `CREDPAY_PROCESSAMENTO_LIMITES_<MOEDA>` | ao menos uma moeda | nenhum | limite decimal positivo da moeda ISO 4217; exemplo fictício `CREDPAY_PROCESSAMENTO_LIMITES_BRL=100.00` | não |
 
 Valores reais nunca entram neste documento. `.env.example` usa placeholders; arquivos locais de segredo devem ser ignorados pelo Git.
+
+### Contrato de limites por moeda do processador
+
+Decisão de 2026-09-19, registrada antes do código e implementada em TDD no mesmo incremento: cada moeda configurada tem seu próprio limite em `credpay.processamento.limites.<codigo>`. Não há câmbio nem um limite global aplicado a moedas distintas.
+
+| Item | Contrato |
+|---|---|
+| Tipo | mapa de código ISO 4217 para `BigDecimal`, sem arredondamento |
+| Obrigatoriedade | ao menos uma moeda; ausência ou mapa inválido impede inicialização |
+| Limite | número estritamente positivo; nenhum valor padrão |
+| Código | validado com `Currency`, normalizado para maiúsculas; chaves recebidas pelo objeto que colidam após normalização são erro; precedência entre fontes continua sendo a do Spring |
+| Consulta | retorna somente o limite da moeda solicitada; moeda nula ou não configurada lança `IllegalArgumentException` |
+| Fronteira | configuração fica fora do domínio puro; a seleção por moeda será conectada ao fluxo em outro incremento |
+| Exemplo didático | `BRL=100.00` e `USD=20.00`, sem representar política financeira real |
+| Fora deste incremento | consumidor, retry/DLQ, persistência, mudança de status, conversão de moeda e atualização dinâmica de configuração |
+
+O futuro consumidor não poderá tratar ausência de política como aprovação ou rejeição financeira. Seu tratamento operacional e confirmação de mensagem serão definidos e testados antes de habilitar o consumo. O contrato HTTP do produtor permanece aceitando moedas válidas; suporte à entrada não significa que já exista política de processamento para todas elas.
+
+#### Evidências do binding e validação de configuração
+
+- **Red inicial:** teste de duas moedas não compilou pela ausência de `LimitesProcessamentoProperties`; após binding mínimo, ficou verde, preservando `100.00/BRL` e `20.123/USD` sem arredondamento.
+- **Red das validações:** oito falhas esperadas em doze casos por entradas indevidas, ausência de erro explícito ou consulta sem política.
+- **Revisão dos testes:** removida configuração auxiliar que podia mascarar registro por component scan. Com a aplicação real e build limpo, seis assertions falharam e um caso não encontrou o bean; só então foi adicionado `@EnableConfigurationProperties` na aplicação. Três testes de consulta/colisão já estavam verdes.
+- **Green final:** 12 testes de configuração e `verify` com 24 testes no módulo, sem falhas, erros ou skips; JAR gerado. O teste HTTP injeta limite fictício explicitamente.
+- **Verificações adicionais:** valor vazio e binding de `CREDPAY_PROCESSAMENTO_LIMITES_BRL` cobertos. Uma primeira fixture de ambiente usou nome de fonte inadequado; foi corrigida para `test-systemEnvironment` conforme a [documentação Spring Boot](https://docs.spring.io/spring-boot/reference/features/external-config.html). Essa falha de fixture não é contabilizada como red de negócio.
+- **Limites:** sem dependência nova, câmbio, consumidor ou persistência. Avisos de falha de contexto são esperados nos testes negativos; o warning conhecido do agente Mockito permanece.
 
 ## 4.1 Modelo de ameaça do AI-Jail
 

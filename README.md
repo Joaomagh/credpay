@@ -21,7 +21,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Implementado | valor acima do limite resulta em `REJEITADA`, com comparação decimal por `BigDecimal` |
 | Implementado | valor ou limite nulo no processador falham com erros de domínio explícitos, sem vazar `NullPointerException` |
 | Implementado | valor zero ou negativo no processador é inválido, independentemente da escala decimal |
-| Implementado | limite do processador deve ser estritamente positivo; configuração externa e associação à moeda ainda pendentes |
+| Implementado | limites externos por moeda, obrigatórios e positivos; configuração inválida impede inicialização e moeda sem política gera erro explícito |
 | Implementado | health check do Spring Boot Actuator |
 | Implementado | transação válida nasce `PENDENTE` |
 | Implementado | valor ausente ou não positivo e moeda ausente são rejeitados pelo domínio |
@@ -38,7 +38,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Implementado | rollback após `flush` impede que uma inserção revertida permaneça no banco |
 | Implementado | `GET /transacoes/{id}` retorna a representação persistida ou `404 Problem Details` para UUID válido ausente |
 | Implementado | UUID malformado retorna `400 Problem Details` sem consultar o caso de uso nem expor detalhes internos |
-| Implementado | 105 testes automatizados nos dois módulos; suíte do produtor validada no CI e suíte do processador com `verify` local |
+| Implementado | 117 testes automatizados nos dois módulos; suíte do produtor validada no CI e suíte do processador com `verify` local |
 | Implementado | `POST /transacoes` exige `Idempotency-Key`, repete a resposta original para payload equivalente e retorna `409` em conflito |
 | Implementado | lock transacional por chave serializa primeiras criações concorrentes; o CI comprovou convergência para uma única transação |
 | Implementado | migration V4 e adapter persistem eventos pendentes na outbox |
@@ -54,7 +54,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
 | Documentado | contrato `TransacaoCriada` v1 e garantia de entrega pelo menos uma vez via outbox |
 | Documentado | baseline RabbitMQ com propriedade da topologia, confirms/returns, retry e DLQ |
-| Ainda não implementado | coordenação entre réplicas publicadoras, consumidor e persistência do `processamento-service`, configuração externa do limite e seu vínculo com a moeda, constraints de moeda/status no banco, imagem da aplicação, Kubernetes e CD |
+| Ainda não implementado | coordenação entre réplicas publicadoras, consumidor e persistência do `processamento-service`, ligação entre seleção do limite por moeda e decisão do domínio, constraints de moeda/status no banco, imagem da aplicação, Kubernetes e CD |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 
@@ -159,6 +159,17 @@ cd processamento-service
 ```
 
 Seu smoke test inicia a aplicação em porta aleatória e comprova `GET /actuator/health` com estado `UP`. Ainda não há listener RabbitMQ, persistência ou endpoint de negócio nesse serviço.
+
+Para executar o processador fora dos testes, configure ao menos uma moeda. No terminal de `processamento-service`, o exemplo abaixo fornece limites fictícios e usa outra porta para não conflitar com o produtor:
+
+```powershell
+$env:CREDPAY_PROCESSAMENTO_LIMITES_BRL = "100.00"
+$env:CREDPAY_PROCESSAMENTO_LIMITES_USD = "20.00"
+$env:SERVER_PORT = "8081"
+.\mvnw.cmd spring-boot:run
+```
+
+Não existe limite padrão nem conversão cambial. Configuração ausente, moeda inválida ou limite não positivo impedem a inicialização. Os limites já são carregados e consultáveis por moeda; conectá-los à decisão do domínio e ao consumo de eventos ainda é trabalho futuro. `/actuator/health` em `localhost:8081` comprova apenas a saúde da aplicação atual, não um fluxo assíncrono pronto.
 
 Os testes do `transacoes-service` iniciam PostgreSQL e RabbitMQ descartáveis automaticamente. Para executar esse serviço com o health completo, no terminal posicionado em `transacoes-service`, disponibilize PostgreSQL e RabbitMQ separadamente e configure as conexões sem versionar credenciais:
 
