@@ -17,7 +17,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno. O `processamento-service` possui scaffolding independente, build reproduzível, health check HTTP e decide `APROVADA` para valor menor ou igual ao limite e `REJEITADA` para valor acima dele.
 
-**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor, validação defensiva e configuração externa do limite, persistência do segundo serviço e constraints de moeda/status no banco. O adapter PostgreSQL é validado isoladamente e pelo fluxo HTTP completo; a constraint monetária foi testada por SQL direto.
+**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor, configuração externa do limite e seu vínculo com a moeda, persistência do segundo serviço e constraints de moeda/status no banco. O processador já exige valor e limite não nulos e estritamente positivos. O adapter PostgreSQL é validado isoladamente e pelo fluxo HTTP completo; a constraint monetária foi testada por SQL direto.
 
 ## 2. Arquitetura vigente
 
@@ -590,6 +590,8 @@ O evento representa um fato confirmado no banco, não um comando e não uma prom
 | O processamento rejeita valor acima do limite | `100.01` para limite `100.00` resulta em `REJEITADA`; comparação ignora diferença de escala decimal | `ProcessadorTransacaoTest.processar_deveRejeitar_quandoValorForMaiorQueLimite` |
 | O processamento exige valor | valor nulo lança `IllegalArgumentException` com mensagem `valor deve ser informado` antes da comparação | `ProcessadorTransacaoTest.processar_deveFalhar_quandoValorForNulo` |
 | O processamento exige limite | limite nulo lança `IllegalArgumentException` com mensagem `limite deve ser informado` antes da comparação | `ProcessadorTransacaoTest.processar_deveFalhar_quandoLimiteForNulo` |
+| O processamento exige valor positivo | zero, inclusive `0.00`, e negativo lançam `IllegalArgumentException` com mensagem `valor deve ser maior que zero` | `ProcessadorTransacaoTest` |
+| O processamento exige limite positivo | `0`, `0.00` e `-0.01` lançam `IllegalArgumentException` com mensagem `limite deve ser maior que zero` | `ProcessadorTransacaoTest.processar_deveFalhar_quandoLimiteNaoForPositivo` |
 
 ### Evidência TDD — aprovação dentro do limite
 
@@ -641,6 +643,15 @@ O evento representa um fato confirmado no banco, não um comando e não uma prom
 - **Green:** guarda ampliada de `signum() == 0` para `signum() <= 0`; 8 casos focados e `verify` com 9 testes verdes, sem falhas, erros ou skips e JAR gerado.
 - **CI:** [PR #58](https://github.com/Joaomagh/credpay/pull/58), [Processing Service CI #19](https://github.com/Joaomagh/credpay/actions/runs/35459378244) verde no Linux.
 - **Próximo:** exigir limite estritamente positivo antes de aplicar a decisão; não houve mudança de dependências ou integração.
+
+### Evidência TDD — limite positivo no processamento
+
+- **Red:** 11 casos focados, com 3 falhas esperadas por ausência de exceção para limites `0`, `0.00` e `-0.01`.
+- **Green:** guarda `limite.signum() <= 0`, posterior às validações existentes, lança `IllegalArgumentException` com mensagem `limite deve ser maior que zero`; 11 casos focados verdes.
+- **Suíte:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 12 testes, sem falhas, erros ou skips, e gerou o JAR.
+- **CI:** [PR #59](https://github.com/Joaomagh/credpay/pull/59), [Processing Service CI #22](https://github.com/Joaomagh/credpay/actions/runs/35459692425) verde no Linux.
+- **Revisão:** preservadas as fronteiras abaixo, igual e acima do limite. Warnings existentes de carregamento dinâmico do agente Mockito permanecem; não houve alteração de dependências.
+- **Próximo:** definir como fornecer limite e moeda por configuração, sem comparar valores de moedas diferentes nem presumir conversão cambial. Consumo RabbitMQ e persistência continuam fora deste incremento.
 
 ### Evidência TDD — estado inicial `PENDENTE`
 

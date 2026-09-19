@@ -21,6 +21,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Implementado | valor acima do limite resulta em `REJEITADA`, com comparação decimal por `BigDecimal` |
 | Implementado | valor ou limite nulo no processador falham com erros de domínio explícitos, sem vazar `NullPointerException` |
 | Implementado | valor zero ou negativo no processador é inválido, independentemente da escala decimal |
+| Implementado | limite do processador deve ser estritamente positivo; configuração externa e associação à moeda ainda pendentes |
 | Implementado | health check do Spring Boot Actuator |
 | Implementado | transação válida nasce `PENDENTE` |
 | Implementado | valor ausente ou não positivo e moeda ausente são rejeitados pelo domínio |
@@ -37,7 +38,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Implementado | rollback após `flush` impede que uma inserção revertida permaneça no banco |
 | Implementado | `GET /transacoes/{id}` retorna a representação persistida ou `404 Problem Details` para UUID válido ausente |
 | Implementado | UUID malformado retorna `400 Problem Details` sem consultar o caso de uso nem expor detalhes internos |
-| Implementado | 102 testes automatizados nos dois módulos; suíte do produtor validada no CI e suíte do processador com `verify` local |
+| Implementado | 105 testes automatizados nos dois módulos; suíte do produtor validada no CI e suíte do processador com `verify` local |
 | Implementado | `POST /transacoes` exige `Idempotency-Key`, repete a resposta original para payload equivalente e retorna `409` em conflito |
 | Implementado | lock transacional por chave serializa primeiras criações concorrentes; o CI comprovou convergência para uma única transação |
 | Implementado | migration V4 e adapter persistem eventos pendentes na outbox |
@@ -53,7 +54,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
 | Documentado | contrato `TransacaoCriada` v1 e garantia de entrega pelo menos uma vez via outbox |
 | Documentado | baseline RabbitMQ com propriedade da topologia, confirms/returns, retry e DLQ |
-| Ainda não implementado | coordenação entre réplicas publicadoras, consumidor e persistência do `processamento-service`, validação defensiva do processador, constraints de moeda/status no banco, imagem da aplicação, Kubernetes e CD |
+| Ainda não implementado | coordenação entre réplicas publicadoras, consumidor e persistência do `processamento-service`, configuração externa do limite e seu vínculo com a moeda, constraints de moeda/status no banco, imagem da aplicação, Kubernetes e CD |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 
@@ -255,7 +256,7 @@ O sandbox ainda não foi implementado. Docker Desktop, daemon, VM, kernel/hyperv
 | Fase | Objetivo | Estado |
 |---|---|---|
 | 1 | governança, threat model e contrato do sandbox | documentação concluída; sandbox pendente |
-| 2 | fundação reproduzível e CI mínimo | dois serviços com build e CI independentes; regras do processador ainda pendentes |
+| 2 | fundação reproduzível e CI mínimo | dois serviços com build e CI independentes; processador já tem decisão por limite e validação de entradas em domínio puro |
 | 3 | regras de domínio em TDD e primeira integração PostgreSQL | concluída |
 | 4 | API, fluxo assíncrono, idempotência, outbox, retry e DLQ | em andamento |
 | 5 | experimentos de falha e resiliência | planejada |

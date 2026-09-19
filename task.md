@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Implementar em TDD a rejeição de limite zero ou negativo no `processamento-service`, com `IllegalArgumentException` e mensagem `limite deve ser maior que zero`.
+- [ ] Definir o contrato da configuração externa do limite de processamento e seu vínculo com a moeda, antes de implementar o consumidor RabbitMQ.
