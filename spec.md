@@ -649,6 +649,7 @@ O evento representa um fato confirmado no banco, não um comando e não uma prom
 - **Red:** 11 casos focados, com 3 falhas esperadas por ausência de exceção para limites `0`, `0.00` e `-0.01`.
 - **Green:** guarda `limite.signum() <= 0`, posterior às validações existentes, lança `IllegalArgumentException` com mensagem `limite deve ser maior que zero`; 11 casos focados verdes.
 - **Suíte:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 12 testes, sem falhas, erros ou skips, e gerou o JAR.
+- **CI:** [PR #59](https://github.com/Joaomagh/credpay/pull/59), [Processing Service CI #22](https://github.com/Joaomagh/credpay/actions/runs/35459692425) verde no Linux.
 - **Revisão:** preservadas as fronteiras abaixo, igual e acima do limite. Warnings existentes de carregamento dinâmico do agente Mockito permanecem; não houve alteração de dependências.
 - **Próximo:** definir como fornecer limite e moeda por configuração, sem comparar valores de moedas diferentes nem presumir conversão cambial. Consumo RabbitMQ e persistência continuam fora deste incremento.
 
