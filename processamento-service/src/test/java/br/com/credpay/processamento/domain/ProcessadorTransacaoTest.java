@@ -38,4 +38,13 @@ class ProcessadorTransacaoTest {
                         new BigDecimal("100.00")))
                 .withMessage("valor deve ser informado");
     }
+
+    @Test
+    void processar_deveFalhar_quandoLimiteForNulo() {
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ProcessadorTransacao.processar(
+                        new BigDecimal("100.00"),
+                        null))
+                .withMessage("limite deve ser informado");
+    }
 }

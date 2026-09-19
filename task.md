@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Implementar em TDD a rejeição explícita de limite nulo no `processamento-service`, com `IllegalArgumentException` e mensagem `limite deve ser informado`.
+- [ ] Implementar em TDD a rejeição de valor zero no `processamento-service`, com `IllegalArgumentException` e mensagem `valor deve ser maior que zero`.
