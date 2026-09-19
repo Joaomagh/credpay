@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Implementar em TDD a rejeição de valor negativo no `processamento-service`, preservando a mensagem `valor deve ser maior que zero` e os casos válidos.
+- [ ] Implementar em TDD a rejeição de limite zero ou negativo no `processamento-service`, com `IllegalArgumentException` e mensagem `limite deve ser maior que zero`.

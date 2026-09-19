@@ -31,6 +31,14 @@ class ProcessadorTransacaoTest {
     }
 
     @Test
+    void processar_deveFalhar_quandoValorForNegativo() {
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ProcessadorTransacao.processar(
+                        new BigDecimal("-0.01"), new BigDecimal("100.00")))
+                .withMessage("valor deve ser maior que zero");
+    }
+
+    @Test
     void processar_deveRejeitar_quandoValorForMaiorQueLimite() {
         var resultado = ProcessadorTransacao.processar(
                 new BigDecimal("100.01"),
