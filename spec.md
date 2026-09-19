@@ -594,6 +594,7 @@ O evento representa um fato confirmado no banco, não um comando e não uma prom
 - **Red válido:** com acesso às dependências já aprovadas, a compilação falhou somente pela ausência de `ProcessadorTransacao` e `StatusProcessamento`.
 - **Green focado:** depois de criar os dois tipos mínimos, o teste parametrizado executou os casos abaixo e exatamente no limite, totalizando 2 testes verdes.
 - **Suíte:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 3 testes no módulo, sem falhas, erros ou skips, e gerou o JAR.
+- **Evidência remota:** [PR #53](https://github.com/Joaomagh/credpay/pull/53); [Processing Service CI #4](https://github.com/Joaomagh/credpay/actions/runs/35415488950) verde em Java 21/Linux, com os mesmos 3 testes e JAR gerado.
 - **Implementação mínima:** `StatusProcessamento` contém apenas `APROVADA`; o processador ainda retorna esse resultado sem comparar os parâmetros. A comparação nasce no próximo red, quando um valor acima do limite exigir `REJEITADA`.
 - **Limites:** não há validação de nulo, valor não positivo ou limite inválido; não há moeda, configuração externa, evento, RabbitMQ ou persistência.
 
