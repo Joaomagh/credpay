@@ -589,6 +589,7 @@ O evento representa um fato confirmado no banco, não um comando e não uma prom
 | O processamento aprova valor positivo dentro do limite | exemplos `99.99` e `100.00` para limite `100.00` resultam em `APROVADA` | `ProcessadorTransacaoTest.processar_deveAprovar_quandoValorForMenorOuIgualAoLimite` |
 | O processamento rejeita valor acima do limite | `100.01` para limite `100.00` resulta em `REJEITADA`; comparação ignora diferença de escala decimal | `ProcessadorTransacaoTest.processar_deveRejeitar_quandoValorForMaiorQueLimite` |
 | O processamento exige valor | valor nulo lança `IllegalArgumentException` com mensagem `valor deve ser informado` antes da comparação | `ProcessadorTransacaoTest.processar_deveFalhar_quandoValorForNulo` |
+| O processamento exige limite | limite nulo lança `IllegalArgumentException` com mensagem `limite deve ser informado` antes da comparação | `ProcessadorTransacaoTest.processar_deveFalhar_quandoLimiteForNulo` |
 
 ### Evidência TDD — aprovação dentro do limite
 
@@ -616,6 +617,14 @@ O evento representa um fato confirmado no banco, não um comando e não uma prom
 - **Suíte:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 5 testes no módulo, sem falhas, erros ou skips, e gerou o JAR.
 - **Evidência remota:** [PR #55](https://github.com/Joaomagh/credpay/pull/55); [Processing Service CI #10](https://github.com/Joaomagh/credpay/actions/runs/35418613909) verde em Java 21/Linux, com os mesmos 5 testes e JAR gerado.
 - **Limites:** limite nulo e números não positivos ainda não possuem validação explícita; moeda, configuração externa, eventos, RabbitMQ e persistência permanecem fora.
+
+### Evidência TDD — limite nulo no processamento
+
+- **Red:** o teste focado executou 5 casos; somente limite nulo falhou porque `BigDecimal.compareTo` lançou `NullPointerException` em vez do erro contratado.
+- **Green:** uma guarda posterior à validação do valor lança `IllegalArgumentException` com mensagem `limite deve ser informado`; os 5 casos focados ficaram verdes.
+- **Suíte:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 6 testes no módulo, sem falhas, erros ou skips, e gerou o JAR.
+- **Evidência remota:** [PR #56](https://github.com/Joaomagh/credpay/pull/56); [Processing Service CI #13](https://github.com/Joaomagh/credpay/actions/runs/35418809104) verde em Java 21/Linux, com os mesmos 6 testes e JAR gerado.
+- **Limites:** valor zero e negativo, limite não positivo, moeda, configuração externa, eventos, RabbitMQ e persistência permanecem fora.
 
 ### Evidência TDD — estado inicial `PENDENTE`
 
