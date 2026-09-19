@@ -14,6 +14,9 @@ public final class ProcessadorTransacao {
         if (limite == null) {
             throw new IllegalArgumentException("limite deve ser informado");
         }
+        if (valor.signum() == 0) {
+            throw new IllegalArgumentException("valor deve ser maior que zero");
+        }
         if (valor.compareTo(limite) > 0) {
             return StatusProcessamento.REJEITADA;
         }
