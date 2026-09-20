@@ -255,6 +255,7 @@ O futuro consumidor não poderá tratar ausência de política como aprovação 
 - **Red:** compilação do teste falhou exclusivamente pela ausência de `ProcessarTransacaoService`.
 - **Green:** 9 casos de integração leve, com configuração real e sem mocks: fronteiras BRL, mesmo valor em USD com resultado diferente, moeda ausente/não configurada e valor nulo/zero/negativo.
 - **Suíte:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 33 testes, sem falhas, erros ou skips; JAR gerado. POM e versões não mudaram.
+- **CI:** [PR #61](https://github.com/Joaomagh/credpay/pull/61), [Processing Service CI #28](https://github.com/Joaomagh/credpay/actions/runs/35483647905) verde no Linux.
 - **Limites:** não há endpoint, listener, deduplicação, banco, gravação de resultado ou evento de saída no processador. Retornar uma decisão não significa completar a transação assíncrona.
 - **Próximo:** definir a baseline de processamento idempotente, resultado durável e confirmação da mensagem antes de implementar consumo RabbitMQ.
 
