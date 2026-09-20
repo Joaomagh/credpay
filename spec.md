@@ -17,7 +17,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno. O `processamento-service` possui scaffolding independente, build reproduzível, health check HTTP e decide `APROVADA` para valor menor ou igual ao limite e `REJEITADA` para valor acima dele.
 
-**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor, ligação entre seleção do limite por moeda e decisão do domínio, persistência do segundo serviço e constraints de moeda/status no banco. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega e valida limites externos por moeda, sem política padrão. O adapter PostgreSQL é validado isoladamente e pelo fluxo HTTP completo; a constraint monetária foi testada por SQL direto.
+**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor, persistência do segundo serviço e constraints de moeda/status no banco. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda e o caso de uso seleciona a política antes de decidir, sem política padrão. O resultado é apenas retornado ao chamador, ainda sem gravação ou publicação. O adapter PostgreSQL é validado isoladamente e pelo fluxo HTTP completo; a constraint monetária foi testada por SQL direto.
 
 ## 2. Arquitetura vigente
 
@@ -231,7 +231,7 @@ Decisão de 2026-09-19, registrada antes do código e implementada em TDD no mes
 | Limite | número estritamente positivo; nenhum valor padrão |
 | Código | validado com `Currency`, normalizado para maiúsculas; chaves recebidas pelo objeto que colidam após normalização são erro; precedência entre fontes continua sendo a do Spring |
 | Consulta | retorna somente o limite da moeda solicitada; moeda nula ou não configurada lança `IllegalArgumentException` |
-| Fronteira | configuração fica fora do domínio puro; a seleção por moeda será conectada ao fluxo em outro incremento |
+| Fronteira | configuração fica fora do domínio puro; `ProcessarTransacaoService` seleciona pela porta `LimitesProcessamento` e delega a decisão ao domínio |
 | Exemplo didático | `BRL=100.00` e `USD=20.00`, sem representar política financeira real |
 | Fora deste incremento | consumidor, retry/DLQ, persistência, mudança de status, conversão de moeda e atualização dinâmica de configuração |
 
@@ -246,6 +246,17 @@ O futuro consumidor não poderá tratar ausência de política como aprovação 
 - **CI:** [PR #60](https://github.com/Joaomagh/credpay/pull/60), [Processing Service CI #25](https://github.com/Joaomagh/credpay/actions/runs/35461368661) verde no Linux.
 - **Verificações adicionais:** valor vazio e binding de `CREDPAY_PROCESSAMENTO_LIMITES_BRL` cobertos. Uma primeira fixture de ambiente usou nome de fonte inadequado; foi corrigida para `test-systemEnvironment` conforme a [documentação Spring Boot](https://docs.spring.io/spring-boot/reference/features/external-config.html). Essa falha de fixture não é contabilizada como red de negócio.
 - **Limites:** sem dependência nova, câmbio, consumidor ou persistência. Avisos de falha de contexto são esperados nos testes negativos; o warning conhecido do agente Mockito permanece.
+
+#### Caso de uso de decisão por moeda
+
+`ProcessarTransacaoService.executar(valor, moeda)` consulta `LimitesProcessamento.limitePara(moeda)` e repassa valor e limite ao domínio `ProcessadorTransacao`. A implementação da porta é o objeto de configuração existente; a aplicação não importa a infraestrutura e o domínio continua sem Spring. A interface existe para essa fronteira concreta, sem factory, DTO ou repositório antecipado.
+
+- **Contrato:** abaixo ou exatamente no limite da moeda resulta em `APROVADA`; acima resulta em `REJEITADA`. Moeda sem política/nula e valor inválido preservam as exceções existentes, sem produzir resultado financeiro.
+- **Red:** compilação do teste falhou exclusivamente pela ausência de `ProcessarTransacaoService`.
+- **Green:** 9 casos de integração leve, com configuração real e sem mocks: fronteiras BRL, mesmo valor em USD com resultado diferente, moeda ausente/não configurada e valor nulo/zero/negativo.
+- **Suíte:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 33 testes, sem falhas, erros ou skips; JAR gerado. POM e versões não mudaram.
+- **Limites:** não há endpoint, listener, deduplicação, banco, gravação de resultado ou evento de saída no processador. Retornar uma decisão não significa completar a transação assíncrona.
+- **Próximo:** definir a baseline de processamento idempotente, resultado durável e confirmação da mensagem antes de implementar consumo RabbitMQ.
 
 ## 4.1 Modelo de ameaça do AI-Jail
 

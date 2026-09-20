@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Conectar em TDD a seleção do limite por moeda à decisão `APROVADA`/`REJEITADA`, mantendo o domínio independente de Spring e sem consumidor RabbitMQ ainda.
+- [ ] Definir a baseline de processamento idempotente: identidade do evento de entrada, resultado durável e confirmação da mensagem, antes de implementar o consumidor RabbitMQ.
