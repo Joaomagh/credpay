@@ -243,6 +243,7 @@ O futuro consumidor não poderá tratar ausência de política como aprovação 
 - **Red das validações:** oito falhas esperadas em doze casos por entradas indevidas, ausência de erro explícito ou consulta sem política.
 - **Revisão dos testes:** removida configuração auxiliar que podia mascarar registro por component scan. Com a aplicação real e build limpo, seis assertions falharam e um caso não encontrou o bean; só então foi adicionado `@EnableConfigurationProperties` na aplicação. Três testes de consulta/colisão já estavam verdes.
 - **Green final:** 12 testes de configuração e `verify` com 24 testes no módulo, sem falhas, erros ou skips; JAR gerado. O teste HTTP injeta limite fictício explicitamente.
+- **CI:** [PR #60](https://github.com/Joaomagh/credpay/pull/60), [Processing Service CI #25](https://github.com/Joaomagh/credpay/actions/runs/35461368661) verde no Linux.
 - **Verificações adicionais:** valor vazio e binding de `CREDPAY_PROCESSAMENTO_LIMITES_BRL` cobertos. Uma primeira fixture de ambiente usou nome de fonte inadequado; foi corrigida para `test-systemEnvironment` conforme a [documentação Spring Boot](https://docs.spring.io/spring-boot/reference/features/external-config.html). Essa falha de fixture não é contabilizada como red de negócio.
 - **Limites:** sem dependência nova, câmbio, consumidor ou persistência. Avisos de falha de contexto são esperados nos testes negativos; o warning conhecido do agente Mockito permanece.
 
