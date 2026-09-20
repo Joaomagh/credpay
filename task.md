@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] Definir o contrato da configuração externa do limite de processamento e seu vínculo com a moeda, antes de implementar o consumidor RabbitMQ.
+- [ ] Conectar em TDD a seleção do limite por moeda à decisão `APROVADA`/`REJEITADA`, mantendo o domínio independente de Spring e sem consumidor RabbitMQ ainda.
