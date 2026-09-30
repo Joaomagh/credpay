@@ -285,6 +285,8 @@ O plano detalhado e os critérios de saída estão em [`CREDPAY_PLAN.md`](CREDPA
 | [`CREDPAY_PLAN.md`](CREDPAY_PLAN.md) | visão, arquitetura-alvo, fases e controle de escopo |
 | [`spec.md`](spec.md) | fonte de verdade técnica, ADRs, contratos e evidências atuais |
 | [`task.md`](task.md) | próximo passo único |
+| [`docs/BACKLOG.md`](docs/BACKLOG.md) | resultados priorizados do MVP, dependências e critérios de aceite |
+| [`docs/roles/`](docs/roles/) | papéis de P.O., dev sênior e coordenação do ciclo de entrega |
 | [`skills/`](skills/) | guias repetíveis para TDD, endpoints e testes de integração |
 
 ## Escopo e uso

@@ -1,7 +1,7 @@
 # CredPay — Tarefas
 
-> Uma sessão = um resultado pequeno e verificável. Atualizar ao encerrar; executar apenas o próximo comportamento aprovado e registrar evidências antes de avançar.
+> Um incremento = um resultado pequeno e verificável. Coordenar pelos papéis em `docs/roles/`; manter prioridade/aceite em `docs/BACKLOG.md` e evidências em `spec.md`. Concluir revisão e verificações antes de avançar no ciclo.
 
 ## Próximo
 
-- [ ] Definir a baseline de processamento idempotente: identidade do evento de entrada, resultado durável e confirmação da mensagem, antes de implementar o consumidor RabbitMQ.
+- [ ] B02.1 — Retornar um snapshot imutável da decisão com valor, moeda, limite aplicado e status; provar em TDD que uma mudança posterior da política não altera o resultado anterior. Sem persistência, consumidor ou dependência nova.
