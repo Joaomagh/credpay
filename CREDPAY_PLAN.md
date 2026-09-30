@@ -97,14 +97,14 @@ Versões exatas são registradas no `spec.md` somente quando fixadas no build. F
 
 Para cada incremento vertical pequeno:
 
-1. João define/aceita a história e os critérios de aceitação.
-2. O agente explica o desenho mínimo e riscos; João aprova decisões estruturais.
+1. O P.O. refina a próxima história dentro da v1 aceita por João, com critérios verificáveis.
+2. O dev sênior explica o desenho mínimo e riscos; o Scrum Master coordena a execução e a revisão, conforme autonomia de `CLAUDE.md`.
 3. Escreve-se um teste pequeno e confirma-se a falha pelo motivo esperado (**red**).
 4. Implementa-se o mínimo para passar (**green**).
 5. Refatora-se com a suíte verde.
 6. Atualizam-se `spec.md` e `task.md` apenas com evidências reais.
 
-O Navigator decide direção e aprova decisões irreversíveis. O Driver pode investigar, oferecer opções e executar o incremento aprovado; não inventa funcionalidades nem ultrapassa a próxima porta de aprovação.
+O Navigator mantém a direção e aprova expansão de escopo e decisões irreversíveis. Dentro do plano, o ciclo pode seguir entre incrementos sem nova pergunta a cada tarefa. Uma entrega só termina com evidências e revisão; o backlog em `docs/BACKLOG.md` não substitui o próximo passo único de `task.md`. Não há promessa de agentes permanentes ou execução fora da sessão ativa.
 
 ## 6. Plano por fases
 

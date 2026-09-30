@@ -2,7 +2,7 @@
 
 > Fonte de verdade do sistema que existe hoje. Preencher somente com decisão tomada, contrato aceito ou comportamento comprovado. Planos futuros ficam em `CREDPAY_PLAN.md`; próximas ações ficam em `task.md`.
 
-**Última atualização:** 2026-09-19
+**Última atualização:** 2026-09-30
 
 **Fase atual:** 4 — Fluxo assíncrono confiável
 
@@ -1332,6 +1332,54 @@ Cada item entra em um ciclo próprio. Os itens 1 a 3 e 5 estão comprovados; o i
 - **Evidência:** [PR #49](https://github.com/Joaomagh/credpay/pull/49); [CI Linux #107](https://github.com/Joaomagh/credpay/actions/runs/35286184441) verde. O teste nasceu como regressão de um comportamento de produção já implementado; por isso não houve red de produção artificial.
 - **Limites:** o cenário comprova retorno por ausência de rota e recuperação posterior. Indisponibilidade do broker e timeout continuam sem prova vertical; consumidor, deduplicação e DLQ ainda não existem.
 
+### 9.12 Baseline de processamento idempotente
+
+**Estado:** contrato documental definido em 2026-09-30; persistência, deduplicação, consumidor e outbox do processador ainda não implementados. O caso de uso atual apenas retorna a decisão em memória.
+
+#### Identidade e equivalência
+
+| Situação | Contrato da v1 |
+|---|---|
+| Primeiro `eventId` e primeira `transactionId` válidos | decidir com a política vigente e registrar o resultado uma única vez |
+| Mesmo `eventId`, conteúdo conhecido equivalente | devolver o resultado persistido, sem nova decisão, novo instante ou novo evento de saída |
+| Mesmo `eventId`, conteúdo divergente | conflito permanente; preservar o resultado original, sem sobrescrever |
+| Outro `eventId` para `transactionId` já processada | conflito permanente, mesmo com valor equivalente; o produtor v1 gera um único evento lógico por transação |
+| Política alterada ou moeda removida depois do commit | replay usa decisão e limite persistidos, sem consultar a política atual; a aplicação ainda precisa de configuração válida para iniciar |
+| Primeira tentativa revertida | não existe decisão confirmada; nova tentativa usa política vigente |
+
+A equivalência considera `eventType`, `eventVersion`, `occurredAt` como instante, `correlationId`, `data.transactionId`, valor decimal, moeda e estado de entrada. Valor usa `BigDecimal.compareTo`; códigos de moeda seguem o contrato de entrada v1. Ordem/espaços do JSON, escala decimal equivalente e campos desconhecidos compatíveis não causam conflito. Não haverá fingerprint do JSON bruto. IDs, tipos e relação `correlationId = transactionId` serão validados antes do caso de uso; a comparação nunca legitima envelope inválido.
+
+A escolha de conflito para um novo evento da mesma transação evita inventar aliases ou reprocessamento financeiro na v1. Um futuro fluxo de reprocessamento exigirá contrato próprio, não reutilização silenciosa de identidade. A chave HTTP `Idempotency-Key` não cruza essa fronteira.
+
+#### Resultado e atomicidade planejados
+
+O banco próprio do `processamento-service` será a autoridade, com unicidade para `eventId` recebido e `transactionId`. Consulta seguida de inserção, sem controle no banco, não basta. A implementação deverá demonstrar concorrência e conflitos sem sobrescrita antes de ativar o listener.
+
+O registro durável conservará campos semânticos da entrada, valor/moeda, limite efetivamente aplicado, `APROVADA` ou `REJEITADA`, instante de processamento e identidade do evento de saída. Resultado, marca de processamento da entrada e outbox de `TransacaoProcessada` serão confirmados na mesma transação local. Falha em qualquer escrita reverte todas. O formato do evento de saída e o schema/dependências do banco serão refinados antes de suas implementações.
+
+Não haverá publicação AMQP direta dentro dessa transação nem acesso ao banco do outro serviço. O publicador da outbox enviará o mesmo evento nas novas tentativas. Consumir a entrada operacionalmente fica bloqueado até a intenção de saída durável existir; um resultado isolado em uma etapa preparatória não autoriza ack da mensagem real.
+
+#### Confirmação e falhas
+
+O listener futuro chamará um caso de uso transacional e só retornará com sucesso depois do commit confirmado. O `AcknowledgeMode.AUTO` do container Spring será usado após sucesso, não o `autoAck`/no-ack do protocolo RabbitMQ. Commit de banco e ack não são uma transação distribuída: falha nessa janela é resolvida por reentrega idempotente. Referências: [acks do RabbitMQ](https://www.rabbitmq.com/docs/confirms) e [transações Spring AMQP](https://docs.spring.io/spring-amqp/reference/amqp/transactions.html).
+
+| Cenário negativo | Resultado exigido | Evidência futura |
+|---|---|---|
+| Falha ao gravar resultado ou outbox | rollback integral; nenhum ack de sucesso | PostgreSQL real e falha injetada na segunda escrita |
+| Queda após commit, antes do ack | reentrega encontra resultado original e uma única intenção de saída | PostgreSQL + RabbitMQ, nova entrega e contagem no banco |
+| Duas entregas equivalentes concorrentes | uma decisão/saída durável; outra retorna o mesmo resultado após resolver disputa | teste concorrente com transações distintas e constraints reais |
+| Mesmo evento divergente ou nova identidade para transação concluída | conflito sem modificar resultado/outbox; erro permanente observável, encaminhado à DLQ sem retry transitório | teste de conflito, destino da mensagem e inspeção dos registros originais |
+| Política muda após resultado confirmado | replay preserva limite, status, instante e identidade de saída | alterar política entre duas entregas |
+| Moeda sem política na primeira tentativa | erro operacional, sem resultado financeiro; tentativas limitadas e DLQ/replay após correção | teste de falha, correção de configuração e replay controlado |
+| JSON inválido ou versão incompatível | não decidir; encaminhamento permanente conforme política de DLQ | broker real e payload inválido |
+| Publicação da saída repete após queda | evento mantém identidade; futuro consumidor do resultado também deduplica | teste de republicação e aplicação idempotente no produtor |
+
+Falhas operacionais, ausência de política e mensagens na DLQ não são automaticamente `REJEITADA` nem `FALHOU`. A política existente de tentativas limitadas/prefetch da seção 9.3 será comprovada na integração; limites de dead-lettering continuam válidos. Não apagar resultados/marcas de deduplicação na v1; retenção depende de um horizonte de replay futuro. Banco crescente, falhas de DLQ e garantia apenas pelo menos uma vez permanecem riscos explícitos.
+
+**Primeiro slice de implementação:** produzir um snapshot imutável de valor, moeda, limite e decisão, com teste de alteração posterior da política. Sem banco/identidade de evento nessa etapa; isso não prova idempotência ou durabilidade.
+
+**Revisão documental:** P.O. e dev sênior revisaram o contrato em 2026-09-30. A alternativa de aceitar novo `eventId` como alias da mesma transação foi descartada por não ser exigida pelo produtor v1; o encaminhamento dos conflitos permanentes à DLQ foi explicitado. Validação deste incremento: diff, UTF-8 e links locais; não há teste de runtime nem evidência de persistência adicionada.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
@@ -1445,6 +1493,13 @@ Cobertura, scanners e outras ferramentas serão sinais auxiliares, não metas is
 - **Contexto:** a outbox remove a janela de gravação local, mas não prova que o broker recebeu ou roteou a mensagem. Declarar filas do consumidor no produtor também acoplaria implantações independentes.
 - **Decisão:** usar exchange direct durável pertencente ao produtor, filas quorum pertencentes ao consumidor, mensagens persistentes, mandatory returns e publisher confirms correlacionados. Marcar a outbox somente após confirmação sem retorno.
 - **Consequências:** falhas permanecem recuperáveis na outbox e recursos têm dono claro. A entrega continua pelo menos uma vez, exige deduplicação e adiciona latência/complexidade de confirmação. Alta disponibilidade não é comprovada pelo container de nó único.
+
+### ADR-006 — Resultado idempotente e saída atômica antes do consumidor
+
+- **Status:** aceita como contrato; implementação pendente, conforme seção 9.12.
+- **Contexto:** confirmar entrada sem preservar decisão e intenção de saída pode perder o resultado; reentregas podem ocorrer mesmo depois de um processamento bem-sucedido.
+- **Decisão:** unicidade por evento recebido e transação, resultado/política congelados e outbox na mesma transação do banco próprio; listener só conclui após commit. Replay equivalente não recalcula; identidade divergente é conflito.
+- **Consequências:** não há exatamente uma vez nem transação distribuída; persistência, concorrência, saída versionada e testes de falha são pré-requisitos do consumo operacional. O snapshot em memória é apenas a primeira etapa.
 
 ## 13. Hurdles e aprendizados reais
 
