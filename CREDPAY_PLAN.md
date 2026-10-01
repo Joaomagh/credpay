@@ -59,7 +59,7 @@ credpay/
 │   ├── k8s/
 │   └── observability/
 ├── skills/
-├── CLAUDE.md
+├── AGENTS.md
 ├── CREDPAY_PLAN.md
 ├── spec.md
 └── task.md
@@ -98,7 +98,7 @@ Versões exatas são registradas no `spec.md` somente quando fixadas no build. F
 Para cada incremento vertical pequeno:
 
 1. O P.O. refina a próxima história dentro da v1 aceita por João, com critérios verificáveis.
-2. O dev sênior explica o desenho mínimo e riscos; o Scrum Master coordena a execução e a revisão, conforme autonomia de `CLAUDE.md`.
+2. O dev sênior explica o desenho mínimo e riscos; o Scrum Master coordena a execução e a revisão, conforme autonomia de `AGENTS.md`.
 3. Escreve-se um teste pequeno e confirma-se a falha pelo motivo esperado (**red**).
 4. Implementa-se o mínimo para passar (**green**).
 5. Refatora-se com a suíte verde.

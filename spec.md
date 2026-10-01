@@ -17,7 +17,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno. O `processamento-service` possui scaffolding independente, build reproduzível, health check HTTP e decide `APROVADA` para valor menor ou igual ao limite e `REJEITADA` para valor acima dele.
 
-**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor, persistência do segundo serviço e constraints de moeda/status no banco. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda e o caso de uso seleciona a política antes de decidir, sem política padrão. O resultado é apenas retornado ao chamador, ainda sem gravação ou publicação. O adapter PostgreSQL é validado isoladamente e pelo fluxo HTTP completo; a constraint monetária foi testada por SQL direto.
+**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor, persistência do segundo serviço e constraints de moeda/status no banco. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda e o caso de uso devolve um snapshot imutável com valor, moeda, limite aplicado e decisão, sem política padrão. O resultado existe apenas em memória, ainda sem gravação ou publicação. O adapter PostgreSQL do primeiro serviço é validado isoladamente e pelo fluxo HTTP completo; sua constraint monetária foi testada por SQL direto.
 
 ## 2. Arquitetura vigente
 
@@ -259,6 +259,18 @@ O futuro consumidor não poderá tratar ausência de política como aprovação 
 - **Limites:** não há endpoint, listener, deduplicação, banco, gravação de resultado ou evento de saída no processador. Retornar uma decisão não significa completar a transação assíncrona.
 - **Próximo:** definir a baseline de processamento idempotente, resultado durável e confirmação da mensagem antes de implementar consumo RabbitMQ.
 
+#### Snapshot imutável da decisão — B02.1
+
+`ResultadoProcessamento` conserva o valor e sua escala decimal, moeda, limite efetivamente consultado e status derivado. `ProcessarTransacaoService` consulta `LimitesProcessamento` exatamente uma vez por decisão e entrega esse mesmo limite à factory de domínio; uma fonte de configuração mutável não pode fazer o status usar um limite e o resultado registrar outro.
+
+- **Red:** os testes com as novas expectativas foram escritos primeiro; a compilação falhou em `testCompile` exclusivamente porque `ResultadoProcessamento` não existia e o caso de uso ainda retornava somente `StatusProcessamento`.
+- **Green focado:** 12 testes em `ProcessarTransacaoServiceTest` e `ResultadoProcessamentoTest`, sem falhas, erros ou skips. A factory pública também rejeita moeda nula com `moeda deve ser informada`.
+- **Regressão e build:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 36 testes, sem falhas, erros ou skips, e gerou o JAR.
+- **Comportamento comprovado:** depois de produzir `APROVADA` com limite `100.00`, alterar a fonte para `50.00` produz uma nova decisão `REJEITADA`, mas não modifica o snapshot anterior. Uma fonte alternante confirma uma única consulta e coerência entre limite/status.
+- **Revisão:** P.O. e dev sênior aceitaram o slice; o coordenador revisou diff e suíte. O warning conhecido de autoanexação Mockito/Byte Buddy permanece.
+- **Limites:** snapshot em memória não é replay, persistência, idempotência nem auditoria. Não há ID, instante, banco, listener ou evento de saída; POM e dependências não mudaram.
+- **Próximo:** definir baseline de persistência própria, schema/precisão e primeiro round-trip PostgreSQL antes de adicionar qualquer dependência.
+
 ## 4.1 Modelo de ameaça do AI-Jail
 
 ### Objetivo e ativos protegidos
@@ -442,7 +454,7 @@ credpay/
 │   ├── mvnw.cmd
 │   └── pom.xml
 ├── skills/
-├── CLAUDE.md
+├── AGENTS.md
 ├── CREDPAY_PLAN.md
 ├── spec.md
 └── task.md
@@ -632,6 +644,7 @@ O evento representa um fato confirmado no banco, não um comando e não uma prom
 | O processamento exige limite | limite nulo lança `IllegalArgumentException` com mensagem `limite deve ser informado` antes da comparação | `ProcessadorTransacaoTest.processar_deveFalhar_quandoLimiteForNulo` |
 | O processamento exige valor positivo | zero, inclusive `0.00`, e negativo lançam `IllegalArgumentException` com mensagem `valor deve ser maior que zero` | `ProcessadorTransacaoTest` |
 | O processamento exige limite positivo | `0`, `0.00` e `-0.01` lançam `IllegalArgumentException` com mensagem `limite deve ser maior que zero` | `ProcessadorTransacaoTest.processar_deveFalhar_quandoLimiteNaoForPositivo` |
+| A decisão captura a política utilizada | snapshot imutável conserva valor, moeda, limite e status; fonte alterada depois não modifica resultado anterior e cada decisão consulta o limite uma vez | `ProcessarTransacaoServiceTest` e `ResultadoProcessamentoTest` |
 
 ### Evidência TDD — aprovação dentro do limite
 

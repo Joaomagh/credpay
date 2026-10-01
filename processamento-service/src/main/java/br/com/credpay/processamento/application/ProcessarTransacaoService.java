@@ -1,7 +1,6 @@
 package br.com.credpay.processamento.application;
 
-import br.com.credpay.processamento.domain.ProcessadorTransacao;
-import br.com.credpay.processamento.domain.StatusProcessamento;
+import br.com.credpay.processamento.domain.ResultadoProcessamento;
 import java.math.BigDecimal;
 import java.util.Currency;
 
@@ -16,7 +15,8 @@ public final class ProcessarTransacaoService {
         this.limites = limites;
     }
 
-    public StatusProcessamento executar(BigDecimal valor, Currency moeda) {
-        return ProcessadorTransacao.processar(valor, limites.limitePara(moeda));
+    public ResultadoProcessamento executar(BigDecimal valor, Currency moeda) {
+        var limite = limites.limitePara(moeda);
+        return ResultadoProcessamento.decidir(valor, moeda, limite);
     }
 }
