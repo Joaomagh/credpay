@@ -22,6 +22,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Implementado | valor ou limite nulo no processador falham com erros de domínio explícitos, sem vazar `NullPointerException` |
 | Implementado | valor zero ou negativo no processador é inválido, independentemente da escala decimal |
 | Implementado | limites externos por moeda, obrigatórios e positivos; configuração inválida impede inicialização e moeda sem política gera erro explícito |
+| Em validação | primeiro repository PostgreSQL do `processamento-service`, com Flyway, identidades únicas e preservação de decimais e nanos; aceite condicionado ao CI |
 | Implementado | caso de uso retorna snapshot imutável com valor, moeda, limite aplicado e `APROVADA`/`REJEITADA`; ainda sem gravar ou publicar o resultado |
 | Implementado | health check do Spring Boot Actuator |
 | Implementado | transação válida nasce `PENDENTE` |
@@ -55,7 +56,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
 | Documentado | contrato `TransacaoCriada` v1 e garantia de entrega pelo menos uma vez via outbox |
 | Documentado | baseline RabbitMQ com propriedade da topologia, confirms/returns, retry e DLQ |
-| Ainda não implementado | coordenação entre réplicas publicadoras, consumidor e persistência do `processamento-service`, constraints de moeda/status no banco, imagem da aplicação, Kubernetes e CD |
+| Ainda não implementado | coordenação entre réplicas publicadoras, consumidor, replay idempotente e outbox do `processamento-service`, imagem da aplicação, Kubernetes e CD |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 
@@ -152,25 +153,28 @@ cd transacoes-service
 .\mvnw.cmd --batch-mode --no-transfer-progress verify
 ```
 
-Em outro terminal, a partir da raiz do repositório, verifique o processador. Sua suíte atual contém domínio e health check e dispensa Docker:
+Em outro terminal, a partir da raiz do repositório, verifique o processador. Sua suíte inclui health check e round-trip PostgreSQL com Testcontainers; portanto, também exige Docker com engine Linux acessível:
 
 ```powershell
 cd processamento-service
 .\mvnw.cmd --batch-mode --no-transfer-progress verify
 ```
 
-Seu smoke test inicia a aplicação em porta aleatória e comprova `GET /actuator/health` com estado `UP`. Ainda não há listener RabbitMQ, persistência ou endpoint de negócio nesse serviço.
+Seu smoke test inicia a aplicação em porta aleatória com PostgreSQL descartável e comprova `GET /actuator/health` com estado `UP`. Ainda não há listener RabbitMQ nem endpoint de negócio nesse serviço; a porta de persistência existe, mas ainda não está ligada ao caso de uso.
 
 Para executar o processador fora dos testes, configure ao menos uma moeda. No terminal de `processamento-service`, o exemplo abaixo fornece limites fictícios e usa outra porta para não conflitar com o produtor:
 
 ```powershell
 $env:CREDPAY_PROCESSAMENTO_LIMITES_BRL = "100.00"
 $env:CREDPAY_PROCESSAMENTO_LIMITES_USD = "20.00"
+$env:SPRING_DATASOURCE_URL = "jdbc:postgresql://localhost:5432/credpay_processamento"
+$env:SPRING_DATASOURCE_USERNAME = "<usuario>"
+$env:SPRING_DATASOURCE_PASSWORD = "<senha>"
 $env:SERVER_PORT = "8081"
 .\mvnw.cmd spring-boot:run
 ```
 
-Não existe limite padrão nem conversão cambial. Configuração ausente, moeda inválida ou limite não positivo impedem a inicialização. O caso de uso seleciona o limite uma vez e retorna um snapshot coerente da decisão, mas ainda não recebe eventos nem grava resultados. `/actuator/health` em `localhost:8081` comprova apenas a saúde da aplicação atual, não um fluxo assíncrono pronto.
+Não existe limite padrão nem conversão cambial. Configuração ausente, moeda inválida, limite não positivo ou banco indisponível impedem a inicialização. O caso de uso seleciona o limite uma vez e retorna um snapshot coerente da decisão; o repository já persiste esse formato, mas ainda não há orquestração entre decisão e gravação. `/actuator/health` em `localhost:8081` comprova apenas a saúde da aplicação e do banco atuais, não um fluxo assíncrono pronto.
 
 Os testes do `transacoes-service` iniciam PostgreSQL e RabbitMQ descartáveis automaticamente. Para executar esse serviço com o health completo, no terminal posicionado em `transacoes-service`, disponibilize PostgreSQL e RabbitMQ separadamente e configure as conexões sem versionar credenciais:
 
@@ -208,7 +212,7 @@ O scheduler da outbox vem desligado. Para ativá-lo em uma única réplica, conf
 
 ## Arquitetura planejada
 
-O monorepo possui dois aplicativos Spring Boot independentes, cada um responsável por seu build e configuração. Modelo e dados do `processamento-service` serão introduzidos somente com os respectivos comportamentos.
+O monorepo possui dois aplicativos Spring Boot independentes, cada um responsável por seu build, configuração e banco. O `processamento-service` já possui seu primeiro schema próprio; consumo, idempotência e saída ainda serão introduzidos somente com os respectivos comportamentos.
 
 ```text
 Cliente

@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] B02.3 — Implementar em TDD o primeiro round-trip PostgreSQL do resultado: dependências aprovadas, porta, adapter JPA, entidade e migration V1; commit e leitura em contexto separado, sem consumidor ou outbox ainda.
+- [ ] B02.4 — Comprovar a integridade do resultado persistido: colisões de `eventId`, `transactionId` e `outputEventId` não sobrescrevem o registro original, e uma inserção revertida após `flush` não permanece no PostgreSQL; sem replay, concorrência, consumidor ou outbox.

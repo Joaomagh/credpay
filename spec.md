@@ -15,9 +15,9 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 - `transacoes-service`: recebe pedidos, valida regras de entrada, mantém o estado consultável e publica eventos;
 - `processamento-service`: consome pedidos de processamento, decide o resultado e publica o evento correspondente.
 
-**Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno. O `processamento-service` possui scaffolding independente, build reproduzível, health check HTTP e decide `APROVADA` para valor menor ou igual ao limite e `REJEITADA` para valor acima dele.
+**Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno. O `processamento-service` possui scaffolding independente, build reproduzível, health check HTTP, decisão `APROVADA`/`REJEITADA` e o primeiro adapter JPA/Flyway para registrar o snapshot completo do processamento em PostgreSQL.
 
-**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor, persistência do segundo serviço e constraints de moeda/status no banco. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda e o caso de uso devolve um snapshot imutável com valor, moeda, limite aplicado e decisão, sem política padrão. O resultado existe apenas em memória, ainda sem gravação ou publicação. O adapter PostgreSQL do primeiro serviço é validado isoladamente e pelo fluxo HTTP completo; sua constraint monetária foi testada por SQL direto.
+**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor, ligação do caso de uso à persistência do processador, replay idempotente, outbox do resultado e publicação de `TransacaoProcessada`. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda e o caso de uso devolve um snapshot imutável com valor, moeda, limite aplicado e decisão, sem política padrão. A nova porta de persistência ainda não é chamada por listener ou endpoint. O adapter PostgreSQL do primeiro serviço é validado isoladamente e pelo fluxo HTTP completo; sua constraint monetária foi testada por SQL direto.
 
 ## 2. Arquitetura vigente
 
@@ -1396,13 +1396,13 @@ Falhas operacionais, ausência de política e mensagens na DLQ não são automat
 
 ### 9.13 Baseline de persistência própria do processador — B02.2
 
-**Estado:** decisão documental de 2026-09-30; nenhuma dependência, configuração, migration, repository ou banco foi adicionada ao `processamento-service`. O Docker local foi consultado antes desta baseline e o pipe `dockerDesktopLinuxEngine` não estava disponível; nenhum start, reset ou container foi executado. A futura evidência PostgreSQL continua obrigatória localmente ou no CI.
+**Estado:** decisão documental integrada e materializada no incremento B02.3. As dependências aprovadas, a configuração obrigatória, a migration V1, a porta e o adapter foram adicionados sem H2 ou banco alternativo. O Docker local permaneceu indisponível; nenhum start, reset ou container foi executado, e o aceite do round-trip continua condicionado ao CI Linux com PostgreSQL real.
 
 #### Escolha de acesso e dependências
 
-O registro de processamento usará JPA para mapear o agregado persistido e participar da transação local Spring. É a mesma estratégia já comprovada no primeiro serviço e reduz novas variáveis. A futura outbox poderá usar JDBC quando seleção ordenada, claim e update condicional exigirem SQL explícito. Conflitos/concorrência também poderão exigir constraint, lock ou SQL nativo específico, sem invalidar o mapeamento JPA do agregado nem criar um repository genérico.
+O registro de processamento usa JPA para mapear o agregado persistido e participar da transação local Spring. É a mesma estratégia já comprovada no primeiro serviço e reduz novas variáveis. A futura outbox poderá usar JDBC quando seleção ordenada, claim e update condicional exigirem SQL explícito. Conflitos/concorrência também poderão exigir constraint, lock ou SQL nativo específico, sem invalidar o mapeamento JPA do agregado nem criar um repository genérico.
 
-| Dependência futura | Escopo | Versão gerenciada já comprovada | Motivo |
+| Dependência adicionada em B02.3 | Escopo | Versão gerenciada já comprovada | Motivo |
 |---|---|---:|---|
 | `spring-boot-starter-data-jpa` | compile | Spring Boot 3.5.16 / Hibernate 6.6.53.Final | entidade, transação local e adapter do resultado |
 | `org.postgresql:postgresql` | runtime | 42.7.11 | driver do banco próprio |
@@ -1411,21 +1411,21 @@ O registro de processamento usará JPA para mapear o agregado persistido e parti
 | `org.testcontainers:junit-jupiter` | test | 1.21.4 | ciclo de vida no JUnit |
 | `org.testcontainers:postgresql` | test | 1.21.4 | PostgreSQL real descartável |
 
-As versões virão do parent Spring Boot existente, sem BOM ou sobrescrita. O próximo incremento adicionará o conjunto somente junto do primeiro teste/adapter; esta baseline não baixa dependências. Não entram Spring AMQP, H2, `spring-boot-testcontainers`, biblioteca de retry, Lombok ou outro mapper.
+As versões vêm do parent Spring Boot existente, sem BOM ou sobrescrita. B02.3 adicionou o conjunto junto do primeiro teste/adapter. Não entram Spring AMQP, H2, `spring-boot-testcontainers`, biblioteca de retry, Lombok ou outro mapper.
 
-Imagem planejada já executada pelo produtor: `postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0`, correspondente a PostgreSQL 17.11 Bookworm. Reutilizar o artefato reduz variáveis, mas o teste do segundo serviço ainda deverá provar sua própria compatibilidade.
+Imagem usada no teste e já executada pelo produtor: `postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0`, correspondente a PostgreSQL 17.11 Bookworm. Reutilizar o artefato reduz variáveis, mas o teste do segundo serviço ainda precisa provar sua própria compatibilidade no CI.
 
 #### Configuração e propriedade
 
-O banco pertence exclusivamente ao `processamento-service`, sem foreign key, consulta ou credencial do banco do produtor. Quando a persistência for materializada, a aplicação exigirá `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` e `SPRING_DATASOURCE_PASSWORD`, sem credencial ou banco em memória padrão. Flyway cria e evolui o schema; Hibernate usa `ddl-auto=validate` e `open-in-view=false`. Testes fornecem conexão e credenciais fictícias via `@DynamicPropertySource`.
+O banco pertence exclusivamente ao `processamento-service`, sem foreign key, consulta ou credencial do banco do produtor. A aplicação exige `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` e `SPRING_DATASOURCE_PASSWORD`, sem credencial ou banco em memória padrão. Flyway cria e evolui o schema; Hibernate usa `ddl-auto=validate` e `open-in-view=false`. Testes fornecem conexão e credenciais fictícias via `@DynamicPropertySource`.
 
-O health check atual sem banco será ajustado no mesmo incremento de ativação para receber PostgreSQL descartável ou ser separado do teste de persistência; não se excluirá globalmente DataSource/Flyway para deixar um contexto artificialmente verde.
+O health check recebe PostgreSQL descartável e mantém DataSource/Flyway ativos; nenhuma exclusão global deixa o contexto artificialmente verde.
 
-#### Migration V1 planejada
+#### Migration V1
 
-Uma única tabela `processamentos` reunirá a marca da entrada e o resultado, pois a v1 não aceita aliases de evento. A migration real ainda poderá ajustar nomes por legibilidade, sem mudar as invariantes abaixo.
+Uma única tabela `processamentos` reúne a marca da entrada e o resultado, pois a v1 não aceita aliases de evento.
 
-| Campo | Tipo planejado | Invariante |
+| Campo | Tipo | Invariante |
 |---|---|---|
 | `event_id` | `uuid` | PK; identidade única da entrada |
 | `transaction_id` | `uuid` | único e obrigatório; uma decisão de negócio por transação |
@@ -1444,13 +1444,13 @@ Uma única tabela `processamentos` reunirá a marca da entrada e o resultado, po
 
 PostgreSQL `timestamptz` possui precisão menor que os nanos de `Instant`. Separar epoch second/nano preserva equivalência temporal sem comparar texto bruto, ordem JSON ou whitespace e sem alterar silenciosamente `TransacaoCriada` v1. `processed_at` é gerado pelo `Clock` antes do commit, será truncado com `Instant.truncatedTo(ChronoUnit.MICROS)` antes de construir/persistir o registro e não participa da equivalência da entrada.
 
-Constraints nomeadas deverão proteger unicidades, literais, relação de correlação, intervalo de nanos e valores numéricos positivos/finitos. Para `valor` e `limite_aplicado`, exigir `> 0` e excluir explicitamente `NaN`, `Infinity` e `-Infinity`; a ordenação especial de `numeric` torna `> 0` isolado insuficiente. A validação completa ISO 4217 continua na aplicação; a constraint de três letras não afirma que todo código é moeda existente. Não haverá limpeza automática: retenção precisa de horizonte de replay aprovado.
+Constraints nomeadas protegem unicidades, literais, relação de correlação, intervalo de nanos e valores numéricos positivos/finitos. Para `valor` e `limite_aplicado`, exigem `> 0` e excluem explicitamente `NaN`, `Infinity` e `-Infinity`; a ordenação especial de `numeric` torna `> 0` isolado insuficiente. A validação completa ISO 4217 continua na aplicação; a constraint de três letras não afirma que todo código é moeda existente. Não há limpeza automática: retenção precisa de horizonte de replay aprovado.
 
-A tabela ainda não é a outbox. B02.3 armazenará `output_event_id` com listener desabilitado, sem contrato/payload de saída. B03 reutilizará exatamente essa identidade ao adicionar a intenção de saída em migration própria e na mesma transação do resultado, antes de qualquer listener real ser habilitado.
+A tabela ainda não é a outbox. B02.3 armazena `output_event_id` com listener desabilitado, sem contrato/payload de saída. B03 reutilizará exatamente essa identidade ao adicionar a intenção de saída em migration própria e na mesma transação do resultado, antes de qualquer listener real ser habilitado.
 
 #### Primeiro round-trip aceito
 
-O primeiro ciclo TDD implementará somente a porta, adapter JPA, entidade e V1 necessários para:
+O primeiro ciclo TDD implementa somente a porta, adapter JPA, entidade e V1 necessários para:
 
 1. iniciar PostgreSQL descartável fixado por digest e aplicar a migration de produção;
 2. gravar um resultado completo numa transação e concluir o commit;
@@ -1460,9 +1460,18 @@ O primeiro ciclo TDD implementará somente a porta, adapter JPA, entidade e V1 n
 
 Esse round-trip prova durabilidade básica depois de commit. Não conclui B02 nem prova deduplicação, equivalência, concorrência, rollback, outbox ou confirmação RabbitMQ. Ciclos posteriores cobrirão ausência, constraints por SQL direto, conflitos sem sobrescrita, falha/rollback e duas transações concorrentes antes de B02 ser marcado concluído.
 
-O adapter receberá um valor imutável representando o registro completo; não uma longa lista de parâmetros. `ResultadoProcessamento` atual não contém identidades nem instantes e evoluirá deliberadamente no ciclo do teste, sem transformar o snapshot anterior em entidade JPA.
+O adapter recebe `ProcessamentoRegistrado`, valor imutável que representa o registro completo; não uma longa lista de parâmetros. `ResultadoProcessamento` continua sendo o snapshot puro da decisão e não foi transformado em entidade JPA.
 
-**Próximo incremento:** implementar esse primeiro round-trip em TDD com as dependências aprovadas. Docker indisponível localmente é falha de ambiente; o teste não será pulado e o CI Linux será barreira obrigatória quando necessário.
+### 9.14 Primeiro round-trip PostgreSQL do resultado — B02.3
+
+- **Red:** após adicionar somente o teste e as seis dependências aprovadas, `testCompile` falhou com seis erros limitados à ausência de `ProcessamentoRegistrado`, `ProcessamentoRepository` e `ProcessamentoJpaRepository`. O Docker não foi alcançado nessa etapa.
+- **Green de implementação:** foi criado um registro imutável completo na camada de aplicação, uma porta de repository, um adapter JPA e uma entidade separada. A migration V1 cria `processamentos` com identidades únicas, literais versionados, correlação, valores positivos/finitos e precisão temporal conforme a baseline. Não há H2, fallback, listener, endpoint ou outbox.
+- **Prova desenhada:** o teste usa a migration de produção num PostgreSQL fixado por digest, grava e conclui uma transação, lê em outra e compara identidades, literais, escalas decimais, moeda, decisão, `processedAt` e `occurredAt` com nanos preservados por epoch second/nano.
+- **Verificação local:** `test-compile` passou; 35 testes sem infraestrutura passaram, sem falhas ou skips. O teste focado chegou ao Testcontainers e terminou com `Could not find a valid Docker environment`, porque o pipe `dockerDesktopLinuxEngine` não existe nesta estação. Isso é bloqueio de ambiente, não green do round-trip; a suíte completa local não foi declarada aprovada.
+- **Barreira de aceite:** o workflow do `processamento-service` deve executar `mvnw verify` e comprovar Flyway, Hibernate `validate`, health e round-trip no PostgreSQL real antes do merge. O SHA e a execução serão registrados após o CI.
+- **Revisão:** a revisão sênior identificou que o slice JPA poderia carregar a configuração obrigatória de limites sem fixture. O teste recebeu apenas `credpay.processamento.limites.BRL=100.00`; a aplicação continua sem limite padrão ou fallback.
+- **Limites:** este slice prova somente durabilidade básica depois do commit. Não prova colisões sem sobrescrita, rollback, concorrência, equivalência/replay, atomicidade com outbox ou mensageria.
+- **Próximo:** comprovar colisões de `eventId`, `transactionId` e `outputEventId` e rollback após `flush`, preservando o registro original e sem ampliar para concorrência ou replay.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
