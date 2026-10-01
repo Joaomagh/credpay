@@ -1,6 +1,7 @@
 package br.com.credpay.processamento.infrastructure.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -18,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -90,5 +92,34 @@ class OutboxProcessamentoJdbcRepositoryIntegrationTest {
         assertThat(persistido.occurredAt()).isEqualTo(processadoEm);
         assertThat(new ObjectMapper().readTree(persistido.payload()))
                 .isEqualTo(new ObjectMapper().readTree(payload));
+    }
+
+    @Test
+    void adicionar_devePreservarOriginal_quandoEventIdDaSaidaForDuplicado() throws Exception {
+        var entradaId = UUID.randomUUID();
+        var transacaoId = UUID.randomUUID();
+        var saidaId = UUID.randomUUID();
+        var processadoEm = Instant.parse("2026-10-01T12:00:01.123456Z");
+        var resultado = new ProcessamentoRegistrado(entradaId, transacaoId,
+                "TransacaoCriada", 1, Instant.parse("2026-10-01T12:00:00Z"),
+                transacaoId, "PENDENTE", new BigDecimal("75.00"), Currency.getInstance("BRL"),
+                new BigDecimal("100.00"), StatusProcessamento.APROVADA, processadoEm, saidaId);
+        var original = new EventoSaidaPendente(saidaId, transacaoId,
+                "TransacaoProcessada", 1, "{\"original\":true}", processadoEm);
+        var conflitante = new EventoSaidaPendente(saidaId, UUID.randomUUID(),
+                "TransacaoProcessada", 1, "{\"original\":false}", processadoEm);
+        var transacoes = new TransactionTemplate(transactionManager);
+        transacoes.executeWithoutResult(status -> {
+            processamentos.inserir(resultado);
+            outbox.adicionar(original);
+        });
+
+        assertThatThrownBy(() -> transacoes.executeWithoutResult(status -> outbox.adicionar(conflitante)))
+                .isInstanceOf(DataIntegrityViolationException.class);
+        var persistido = transacoes.execute(status -> outbox.buscarPorEventId(saidaId));
+        assertThat(persistido).isPresent();
+        assertThat(new ObjectMapper().readTree(persistido.orElseThrow().payload()))
+                .isEqualTo(new ObjectMapper().readTree(original.payload()));
+        assertThat(persistido.orElseThrow().aggregateId()).isEqualTo(transacaoId);
     }
 }
