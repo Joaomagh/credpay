@@ -1396,7 +1396,7 @@ Falhas operacionais, ausência de política e mensagens na DLQ não são automat
 
 ### 9.13 Baseline de persistência própria do processador — B02.2
 
-**Estado:** decisão documental integrada e materializada no incremento B02.3. As dependências aprovadas, a configuração obrigatória, a migration V1, a porta e o adapter foram adicionados sem H2 ou banco alternativo. O Docker local permaneceu indisponível; nenhum start, reset ou container foi executado, e o aceite do round-trip continua condicionado ao CI Linux com PostgreSQL real.
+**Estado:** decisão documental integrada e materializada no incremento B02.3. As dependências aprovadas, a configuração obrigatória, a migration V1, a porta e o adapter foram adicionados sem H2 ou banco alternativo. O Docker local permaneceu indisponível e nenhum start, reset ou container foi executado; o CI Linux comprovou o round-trip com PostgreSQL real.
 
 #### Escolha de acesso e dependências
 
@@ -1468,7 +1468,7 @@ O adapter recebe `ProcessamentoRegistrado`, valor imutável que representa o reg
 - **Green de implementação:** foi criado um registro imutável completo na camada de aplicação, uma porta de repository, um adapter JPA e uma entidade separada. A migration V1 cria `processamentos` com identidades únicas, literais versionados, correlação, valores positivos/finitos e precisão temporal conforme a baseline. Não há H2, fallback, listener, endpoint ou outbox.
 - **Prova desenhada:** o teste usa a migration de produção num PostgreSQL fixado por digest, grava e conclui uma transação, lê em outra e compara identidades, literais, escalas decimais, moeda, decisão, `processedAt` e `occurredAt` com nanos preservados por epoch second/nano.
 - **Verificação local:** `test-compile` passou; 35 testes sem infraestrutura passaram, sem falhas ou skips. O teste focado chegou ao Testcontainers e terminou com `Could not find a valid Docker environment`, porque o pipe `dockerDesktopLinuxEngine` não existe nesta estação. Isso é bloqueio de ambiente, não green do round-trip; a suíte completa local não foi declarada aprovada.
-- **Barreira de aceite:** o workflow do `processamento-service` deve executar `mvnw verify` e comprovar Flyway, Hibernate `validate`, health e round-trip no PostgreSQL real antes do merge. O SHA e a execução serão registrados após o CI.
+- **CI e aceite:** o [Processing Service CI #34](https://github.com/Joaomagh/credpay/actions/runs/36802312464) executou o job `Maven verify` com sucesso no SHA `a6b2101`, comprovando Flyway, Hibernate `validate`, health e round-trip no PostgreSQL real. O SHA documental final também deve permanecer verde antes do merge.
 - **Revisão:** a revisão sênior identificou que o slice JPA poderia carregar a configuração obrigatória de limites sem fixture. O teste recebeu apenas `credpay.processamento.limites.BRL=100.00`; a aplicação continua sem limite padrão ou fallback.
 - **Limites:** este slice prova somente durabilidade básica depois do commit. Não prova colisões sem sobrescrita, rollback, concorrência, equivalência/replay, atomicidade com outbox ou mensageria.
 - **Próximo:** comprovar colisões de `eventId`, `transactionId` e `outputEventId` e rollback após `flush`, preservando o registro original e sem ampliar para concorrência ou replay.
