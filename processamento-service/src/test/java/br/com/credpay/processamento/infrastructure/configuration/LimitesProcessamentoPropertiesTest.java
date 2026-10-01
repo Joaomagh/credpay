@@ -3,7 +3,6 @@ package br.com.credpay.processamento.infrastructure.configuration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
-import br.com.credpay.processamento.ProcessamentoServiceApplication;
 import java.math.BigDecimal;
 import java.util.Currency;
 import java.util.Map;
@@ -12,12 +11,19 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.core.env.SystemEnvironmentPropertySource;
 
 class LimitesProcessamentoPropertiesTest {
 
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
-            .withUserConfiguration(ProcessamentoServiceApplication.class);
+            .withUserConfiguration(LimitesTestConfiguration.class);
+
+    @TestConfiguration(proxyBeanMethods = false)
+    @EnableConfigurationProperties(LimitesProcessamentoProperties.class)
+    static class LimitesTestConfiguration {
+    }
 
     @Test
     void configuracao_devePreservarLimitesIndependentes_quandoMoedasForemConfiguradas() {

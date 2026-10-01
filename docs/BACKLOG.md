@@ -7,7 +7,7 @@ Atualizado em 2026-09-30. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos
 | ID | Resultado | Aceite de saída | Dependências | Estado |
 |---|---|---|---|---|
 | B01 | Contrato de processamento idempotente | identidade, equivalência/conflito, resultado, atomicidade e ack documentados; matriz de falhas revisada | contratos atuais | Definido e revisado; implementação ainda pendente |
-| B02 | Resultado durável e processamento idempotente | PostgreSQL comprova resultado único, replay estável, conflito sem sobrescrita, rollback e concorrência | B01 e baseline própria de persistência | Em andamento; B02.1 concluído, B02.2 pronto abaixo |
+| B02 | Resultado durável e processamento idempotente | PostgreSQL comprova resultado único, replay estável, conflito sem sobrescrita, rollback e concorrência | B01 e baseline própria de persistência | Em andamento; B02.1, B02.2 e B02.3 concluídos; B02.4 próximo |
 | B03 | Saída `TransacaoProcessada` confiável | contrato versionado, resultado + outbox atômicos, publicação confirmada e reenvio com a mesma identidade | B02 | Refinamento |
 | B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | Refinamento |
 | B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | Refinamento |
@@ -21,9 +21,11 @@ Não é uma promessa de uma PR por linha nem um cronograma. Itens grandes serão
 
 **B02.1 — Snapshot da decisão em domínio/aplicação — validado localmente e no CI.** O resultado conserva valor, moeda, limite e status; testes provam uma única consulta e preservação do snapshot após alteração da política. Continua sem banco, identidade de evento ou replay durável. Integração do PR encerra o slice.
 
-**B02.2 — Baseline de persistência própria — definida, aguardando revisão/integração.** JPA foi escolhido para o agregado persistido; seis dependências/versões já comprovadas foram aprovadas para o futuro incremento. Banco obrigatório e próprio, migration V1, constraints, precisão exata do instante recebido e primeiro round-trip estão definidos na seção 9.13 de `spec.md`. Não inclui AMQP, H2 ou listener.
+**B02.2 — Baseline de persistência própria — concluída.** JPA foi escolhido para o agregado persistido; seis dependências/versões comprovadas foram aprovadas. Banco obrigatório e próprio, migration V1, constraints, precisão exata do instante recebido e primeiro round-trip estão definidos na seção 9.13 de `spec.md`. Não inclui AMQP, H2 ou listener.
 
-**B02.3 — Primeiro round-trip PostgreSQL — próximo após integração da baseline.** Adicionar as dependências aprovadas e implementar em TDD porta, adapter JPA, entidade e migration V1. O teste usa commit/contextos separados e recompõe `occurredAt` por epoch second/nano; não alega idempotência, concorrência ou atomicidade da futura outbox.
+**B02.3 — Primeiro round-trip PostgreSQL — concluído.** Dependências aprovadas, porta, adapter JPA, entidade e migration V1 foram adicionados em TDD. O teste usa commit/transações separadas e recompõe `occurredAt` por epoch second/nano. Compilação e 35 testes sem infraestrutura ficaram verdes localmente; o [CI Linux #34](https://github.com/Joaomagh/credpay/actions/runs/36802312464) executou o `verify` completo com sucesso.
+
+**B02.4 — Integridade e rollback — próximo.** Comprovar separadamente que colisões de `eventId`, `transactionId` e `outputEventId` falham sem sobrescrever o primeiro resultado e que uma inserção revertida após `flush` não aparece numa nova transação. Não inclui replay de aplicação, concorrência, listener ou outbox.
 
 B02 só termina com evidências reais de durabilidade, rollback, conflitos e concorrência.
 
