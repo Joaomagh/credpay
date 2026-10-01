@@ -595,6 +595,7 @@ Esse erro representa sintaxe inválida e ocorre antes do caso de uso. O teste MV
 | Evento/versão | Produtor | Consumidor | Campos | Garantias |
 |---|---|---|---|---|
 | `TransacaoCriada` v1 | `transacoes-service` | `processamento-service` planejado | envelope versionado e dados da transação `PENDENTE` | intenção persistida atomicamente via outbox; publicação pelo menos uma vez com confirms/returns |
+| `TransacaoProcessada` v1 | `processamento-service` planejado | `transacoes-service` planejado | identidade de saída, causa e estado final | contrato aprovado; outbox, publicação e consumo ainda não implementados |
 
 Envelope JSON aprovado:
 
@@ -623,6 +624,25 @@ Envelope JSON aprovado:
 - O contrato não contém credenciais, dados pessoais, stack trace nem detalhes de persistência.
 
 O evento representa um fato confirmado no banco, não um comando e não uma promessa de aprovação. A ordem global não é garantida. O consumidor futuro deve tolerar reentrega e deduplicar por `eventId`.
+
+Contrato aprovado para o futuro `TransacaoProcessada` v1 (exemplo; ainda não é emitido):
+
+```json
+{
+  "eventId": "42a06a3b-178b-49db-a08e-1f7dad9ebc38",
+  "eventType": "TransacaoProcessada",
+  "eventVersion": 1,
+  "occurredAt": "2026-09-16T12:00:01.123456Z",
+  "correlationId": "7b8b61c2-9f63-4d74-9f8d-89cb52de0ed9",
+  "causationId": "6dc8d48d-5b20-4ee9-ac7e-832e421121aa",
+  "data": {
+    "transactionId": "7b8b61c2-9f63-4d74-9f8d-89cb52de0ed9",
+    "status": "APROVADA"
+  }
+}
+```
+
+`eventId` reutiliza o `outputEventId` imutável do resultado; `causationId` é o `eventId` de `TransacaoCriada`; `correlationId` e `data.transactionId` são o ID da transação. `occurredAt` é o `processedAt` confirmado, em UTC e precisão de microssegundos, não o horário variável da publicação. `status` aceita somente `APROVADA` ou `REJEITADA`; falha técnica e ausência de política não geram esse evento. Valor, moeda, limite aplicado, chave HTTP e detalhes internos permanecem fora do payload mínimo: o consumidor já possui a transação e só precisa de sua transição final. Campos desconhecidos compatíveis podem ser ignorados; mudança incompatível exige nova versão.
 
 ## 7. Modelo e regras implementadas
 
@@ -1247,6 +1267,8 @@ O publicador futuro lerá registros com `published_at` nulo, publicará e depois
 | dead-letter exchange | `credpay.processamento.dlx.v1` | direct, durável, não auto-delete | futuro `processamento-service` |
 | dead-letter routing key | `transacao.criada.dlq.v1` | literal versionado | futuro `processamento-service` |
 | dead-letter queue | `credpay.processamento.transacao-criada.dlq.v1` | quorum, durável, não exclusiva, não auto-delete | futuro `processamento-service` |
+| exchange do resultado | `credpay.processamento.v1` | direct, durável, não auto-delete; planejada | futuro `processamento-service` |
+| routing key do resultado | `transacao.processada.v1` | literal versionado; planejado | contrato compartilhado |
 
 O produtor declara somente sua exchange. A fila, binding, DLX e DLQ pertencem ao consumidor; o teste do produtor usará uma fila efêmera exclusiva ligada à exchange, sem fazê-lo depender da topologia interna do serviço futuro. Filas quorum em um container de nó único comprovam configuração e comportamento, não alta disponibilidade.
 
@@ -1348,7 +1370,7 @@ Cada item entra em um ciclo próprio. Os itens 1 a 3 e 5 estão comprovados; o i
 
 ### 9.12 Baseline de processamento idempotente
 
-**Estado:** contrato definido em 2026-09-30; persistência básica e idempotência sequencial foram implementadas nos incrementos B02.3–B02.5. Concorrência, consumidor e outbox do processador ainda estão pendentes.
+**Estado:** contrato definido em 2026-09-30; persistência e idempotência sequencial/concorrente foram comprovadas em B02.3–B02.6. Consumidor e outbox do processador ainda estão pendentes.
 
 #### Identidade e equivalência
 
@@ -1367,9 +1389,9 @@ A escolha de conflito para um novo evento da mesma transação evita inventar al
 
 #### Resultado e atomicidade planejados
 
-O banco próprio do `processamento-service` será a autoridade, com unicidade para `eventId` recebido e `transactionId`. Consulta seguida de inserção, sem controle no banco, não basta. A implementação deverá demonstrar concorrência e conflitos sem sobrescrita antes de ativar o listener.
+O banco próprio do `processamento-service` é a autoridade, com unicidade para `eventId` recebido e `transactionId`. Consulta seguida de inserção, sem controle no banco, não basta. Concorrência e conflitos sem sobrescrita já foram comprovados em B02.6; a intenção de saída ainda precisa ser durável antes de ativar o listener.
 
-O registro durável conservará campos semânticos da entrada, valor/moeda, limite efetivamente aplicado, `APROVADA` ou `REJEITADA`, instante de processamento e identidade do evento de saída. Resultado, marca de processamento da entrada e outbox de `TransacaoProcessada` serão confirmados na mesma transação local. Falha em qualquer escrita reverte todas. O formato do evento de saída e o schema/dependências do banco serão refinados antes de suas implementações.
+O registro durável conserva campos semânticos da entrada, valor/moeda, limite efetivamente aplicado, `APROVADA` ou `REJEITADA`, instante de processamento e identidade do evento de saída. Resultado, marca de processamento da entrada e outbox de `TransacaoProcessada` serão confirmados na mesma transação local. Falha em qualquer escrita reverte todas. O formato mínimo do evento está aprovado acima; a outbox e seu schema serão implementados em incrementos posteriores.
 
 Não haverá publicação AMQP direta dentro dessa transação nem acesso ao banco do outro serviço. O publicador da outbox enviará o mesmo evento nas novas tentativas. Consumir a entrada operacionalmente fica bloqueado até a intenção de saída durável existir; um resultado isolado em uma etapa preparatória não autoriza ack da mensagem real.
 
@@ -1502,6 +1524,24 @@ O adapter recebe `ProcessamentoRegistrado`, valor imutável que representa o reg
 - **Verificação:** 20 testes focados de aplicação passaram localmente; o [Processing Service CI #44](https://github.com/Joaomagh/credpay/actions/runs/36905901139) executou `Maven verify` com PostgreSQL real e 57 testes verdes. Na revisão, um teste de regressão revelou que ordenar UUIDs antes do hash não ordenava os recursos reais quando havia colisão; os dois cenários red falharam localmente e ficaram verdes após ordenar/deduplicar os valores `bigint`. O [Processing Service CI #46](https://github.com/Joaomagh/credpay/actions/runs/36909956773) passou no ajuste final com 59 testes, sem erros ou skips. Docker Desktop local continua indisponível.
 - **Limites:** o caso de uso ainda não é chamado por listener; a saída ainda não tem contrato nem outbox. O lock serializa entradas que compartilham qualquer uma das identidades, mas não implica entrega exatamente uma vez nem coordena publicação RabbitMQ. Colisões de hash podem apenas serializar entradas não relacionadas; não autorizam replay incorreto, pois a equivalência é verificada sobre o registro persistido.
 - **Próximo:** definir o contrato versionado mínimo de `TransacaoProcessada` v1 e a atomicidade de resultado + intenção de saída antes de implementar a outbox do processador.
+
+### 9.18 Contrato da saída e atomicidade planejada — B03.1
+
+- **Escopo da decisão:** `TransacaoProcessada` v1 segue o envelope e os campos mínimos da seção 6. O `processamento-service` será dono da exchange `credpay.processamento.v1` e publicará com a routing key `transacao.processada.v1`; o futuro `transacoes-service` será dono de sua fila, binding e política de DLQ. Nomes e configuração dessa fila serão refinados antes do consumo.
+- **Unidade de trabalho:** para uma entrada nova, inserir `processamentos` e uma linha na outbox própria na mesma transação PostgreSQL. `outbox.event_id` será igual a `processamentos.output_event_id`, com unicidade e vínculo verificável; payload e `occurred_at` congelam a decisão registrada. Falha na segunda escrita ou no commit reverte ambas. Nenhum envio AMQP ocorre dentro da transação.
+- **Replay:** entrada equivalente reutiliza resultado e intenção existentes, sem nova política, relógio, `eventId` ou linha de outbox. Entrada divergente preserva ambas as linhas e produz conflito. A publicação futura pode repetir o mesmo payload/`eventId` se ocorrer queda após o broker confirmar e antes de marcar a outbox: a garantia é pelo menos uma vez, não exatamente uma vez.
+- **Registros preparatórios:** a V1 já contém resultados com `output_event_id`, mas sem outbox. A futura migration V2 deve criar a outbox e reconstruir uma intenção por resultado preexistente, reutilizando `output_event_id`, `processed_at`, `event_id` recebido, `transaction_id` e `status`; o teste deve iniciar de uma V1 povoada. O publicador e o listener continuarão desabilitados até a migração e o fluxo atômico serem validados, para não expor resultado sem intenção de saída. Em ambiente de demonstração, a publicação de histórico migrado será verificada antes de habilitar a saída.
+
+| Prova exigida antes de ativar consumo/publicação | Resultado esperado |
+|---|---|
+| Migration V1 povoada para V2 | cada resultado anterior ganha exatamente uma intenção com o mesmo `output_event_id` e payload semanticamente correto |
+| Primeira entrada nova | resultado e uma intenção ficam visíveis juntos após commit |
+| Falha forçada ao inserir a intenção | resultado e intenção ausentes após rollback em nova transação |
+| Replay equivalente após commit | mesmo resultado, mesmo payload e `event_id`, uma linha em cada tabela |
+| Conflito concorrente | perdedora não altera resultado nem intenção vencedora |
+| Publicação futura repetida | mesmo `eventId`/payload; marcação só depois de confirmação e ausência de retorno |
+
+**Limite:** B03.1 é decisão documental, não migration, código, mensagem enviada ou consumidor. O próximo incremento implementa apenas a base persistente da outbox e seu backfill testado; a ligação transacional do caso de uso virá antes de qualquer listener.
 
 ## 10. Observabilidade e SLOs de aprendizado
 

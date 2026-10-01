@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] B03.1 — Definir e aprovar o contrato mínimo de `TransacaoProcessada` v1 e a atomicidade entre resultado e intenção de saída no PostgreSQL próprio, antes de implementar outbox, publicador ou consumidor.
+- [ ] B03.2 — Implementar com TDD a migration V2 e o adapter mínimo da outbox do `processamento-service`, incluindo backfill de resultados V1, unicidade por `outputEventId` e round-trip PostgreSQL; sem ligar o caso de uso, publicador ou consumidor ainda.
