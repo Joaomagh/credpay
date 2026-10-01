@@ -1,6 +1,7 @@
 package br.com.credpay.processamento.infrastructure.persistence;
 
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -48,5 +49,14 @@ class OutboxProcessamentoJdbcRepository implements OutboxProcessamentoRepository
                         resultado.getTimestamp("occurred_at").toInstant()),
                 eventId);
         return encontrados.stream().findFirst();
+    }
+
+    @Override
+    public List<EventoSaidaPendente> buscarPendentes(int limite) {
+        return List.of();
+    }
+
+    @Override
+    public void marcarPublicado(UUID eventId, Instant publicadoEm) {
     }
 }

@@ -172,6 +172,12 @@ class RegistrarProcessamentoServiceTest {
         @Override public Optional<EventoSaidaPendente> buscarPorEventId(UUID eventId) {
             return Optional.ofNullable(eventos.get(eventId));
         }
+
+        @Override public java.util.List<EventoSaidaPendente> buscarPendentes(int limite) {
+            return java.util.List.of();
+        }
+
+        @Override public void marcarPublicado(UUID eventId, Instant publicadoEm) { }
     }
 
     private enum CampoDivergente {

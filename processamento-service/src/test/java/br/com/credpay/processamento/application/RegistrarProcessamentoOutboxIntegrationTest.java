@@ -135,5 +135,13 @@ class RegistrarProcessamentoOutboxIntegrationTest {
         @Override public java.util.Optional<EventoSaidaPendente> buscarPorEventId(UUID eventId) {
             return delegate.buscarPorEventId(eventId);
         }
+
+        @Override public java.util.List<EventoSaidaPendente> buscarPendentes(int limite) {
+            return delegate.buscarPendentes(limite);
+        }
+
+        @Override public void marcarPublicado(UUID eventId, Instant publicadoEm) {
+            delegate.marcarPublicado(eventId, publicadoEm);
+        }
     }
 }
