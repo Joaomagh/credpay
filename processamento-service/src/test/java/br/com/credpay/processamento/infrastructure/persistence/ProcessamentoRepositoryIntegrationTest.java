@@ -1,6 +1,7 @@
 package br.com.credpay.processamento.infrastructure.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -11,11 +12,14 @@ import java.util.UUID;
 import br.com.credpay.processamento.application.ProcessamentoRegistrado;
 import br.com.credpay.processamento.application.ProcessamentoRepository;
 import br.com.credpay.processamento.domain.StatusProcessamento;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -58,6 +62,9 @@ class ProcessamentoRepositoryIntegrationTest {
     @Autowired
     private PlatformTransactionManager transactionManager;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     @Test
     void inserir_devePermitirLeituraCompletaEmOutraTransacao_quandoCommitForConcluido() {
         var processamento = new ProcessamentoRegistrado(
@@ -98,5 +105,105 @@ class ProcessamentoRepositoryIntegrationTest {
         assertThat(persistido.status()).isEqualTo(StatusProcessamento.APROVADA);
         assertThat(persistido.processedAt()).isEqualTo(processamento.processedAt());
         assertThat(persistido.outputEventId()).isEqualTo(processamento.outputEventId());
+    }
+
+    @Test
+    void inserir_deveFalharSemSobrescreverOriginal_quandoEventIdColidir() {
+        var original = processamentoValido(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
+        var conflitante = processamentoDivergente(
+                original.eventId(), UUID.randomUUID(), UUID.randomUUID());
+
+        comprovarColisaoSemSobrescrita(
+                original, conflitante, "processamentos_pkey");
+    }
+
+    @Test
+    void inserir_deveFalharSemSobrescreverOriginal_quandoTransactionIdColidir() {
+        var original = processamentoValido(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
+        var conflitante = processamentoDivergente(
+                UUID.randomUUID(), original.transactionId(), UUID.randomUUID());
+
+        comprovarColisaoSemSobrescrita(
+                original, conflitante, "uq_processamentos_transaction_id");
+    }
+
+    @Test
+    void inserir_deveFalharSemSobrescreverOriginal_quandoOutputEventIdColidir() {
+        var original = processamentoValido(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
+        var conflitante = processamentoDivergente(
+                UUID.randomUUID(), UUID.randomUUID(), original.outputEventId());
+
+        comprovarColisaoSemSobrescrita(
+                original, conflitante, "uq_processamentos_output_event_id");
+    }
+
+    @Test
+    void inserir_deveDescartarRegistro_quandoTransacaoForRevertidaAposFlush() {
+        var processamento = processamentoValido(
+                UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
+        var transacoes = new TransactionTemplate(transactionManager);
+
+        transacoes.executeWithoutResult(status -> {
+            repository.inserir(processamento);
+            entityManager.flush();
+            status.setRollbackOnly();
+        });
+
+        var encontrado = transacoes.execute(
+                status -> repository.buscarPorEventId(processamento.eventId()));
+        assertThat(encontrado).isEmpty();
+    }
+
+    private void comprovarColisaoSemSobrescrita(
+            ProcessamentoRegistrado original,
+            ProcessamentoRegistrado conflitante,
+            String constraintEsperada) {
+        var transacoes = new TransactionTemplate(transactionManager);
+        transacoes.executeWithoutResult(status -> repository.inserir(original));
+
+        assertThatThrownBy(() -> transacoes.executeWithoutResult(
+                status -> repository.inserir(conflitante)))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasStackTraceContaining(constraintEsperada);
+
+        var encontrado = transacoes.execute(
+                status -> repository.buscarPorEventId(original.eventId()));
+        assertThat(encontrado).contains(original);
+    }
+
+    private ProcessamentoRegistrado processamentoValido(
+            UUID eventId, UUID transactionId, UUID outputEventId) {
+        return new ProcessamentoRegistrado(
+                eventId,
+                transactionId,
+                "TransacaoCriada",
+                1,
+                Instant.parse("2026-09-30T12:00:00.123456789Z"),
+                transactionId,
+                "PENDENTE",
+                new BigDecimal("10.00"),
+                Currency.getInstance("BRL"),
+                new BigDecimal("100.000"),
+                StatusProcessamento.APROVADA,
+                Instant.parse("2026-09-30T12:00:01.123456Z"),
+                outputEventId);
+    }
+
+    private ProcessamentoRegistrado processamentoDivergente(
+            UUID eventId, UUID transactionId, UUID outputEventId) {
+        return new ProcessamentoRegistrado(
+                eventId,
+                transactionId,
+                "TransacaoCriada",
+                1,
+                Instant.parse("2026-09-30T13:00:00.987654321Z"),
+                transactionId,
+                "PENDENTE",
+                new BigDecimal("200.000"),
+                Currency.getInstance("USD"),
+                new BigDecimal("50.00"),
+                StatusProcessamento.REJEITADA,
+                Instant.parse("2026-09-30T13:00:01.654321Z"),
+                outputEventId);
     }
 }

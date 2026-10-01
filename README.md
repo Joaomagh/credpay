@@ -23,6 +23,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Implementado | valor zero ou negativo no processador é inválido, independentemente da escala decimal |
 | Implementado | limites externos por moeda, obrigatórios e positivos; configuração inválida impede inicialização e moeda sem política gera erro explícito |
 | Implementado | primeiro repository PostgreSQL do `processamento-service`, com Flyway, identidades únicas e round-trip que preserva decimais e nanos |
+| Implementado | colisões das três identidades e rollback do resultado no PostgreSQL, sem sobrescrita do registro original |
 | Implementado | caso de uso retorna snapshot imutável com valor, moeda, limite aplicado e `APROVADA`/`REJEITADA`; ainda sem gravar ou publicar o resultado |
 | Implementado | health check do Spring Boot Actuator |
 | Implementado | transação válida nasce `PENDENTE` |
@@ -40,7 +41,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Implementado | rollback após `flush` impede que uma inserção revertida permaneça no banco |
 | Implementado | `GET /transacoes/{id}` retorna a representação persistida ou `404 Problem Details` para UUID válido ausente |
 | Implementado | UUID malformado retorna `400 Problem Details` sem consultar o caso de uso nem expor detalhes internos |
-| Implementado | 130 testes automatizados nos dois módulos; suítes do produtor e do processador validadas no CI |
+| Implementado | 134 testes automatizados nos dois módulos; suítes do produtor e do processador validadas no CI |
 | Implementado | `POST /transacoes` exige `Idempotency-Key`, repete a resposta original para payload equivalente e retorna `409` em conflito |
 | Implementado | lock transacional por chave serializa primeiras criações concorrentes; o CI comprovou convergência para uma única transação |
 | Implementado | migration V4 e adapter persistem eventos pendentes na outbox |

@@ -1473,6 +1473,16 @@ O adapter recebe `ProcessamentoRegistrado`, valor imutável que representa o reg
 - **Limites:** este slice prova somente durabilidade básica depois do commit. Não prova colisões sem sobrescrita, rollback, concorrência, equivalência/replay, atomicidade com outbox ou mensageria.
 - **Próximo:** comprovar colisões de `eventId`, `transactionId` e `outputEventId` e rollback após `flush`, preservando o registro original e sem ampliar para concorrência ou replay.
 
+### 9.15 Integridade e rollback do resultado — B02.4
+
+- **Tipo de ciclo:** caracterização de controles já entregues pela migration V1. Não houve red honesto nem mudança de produção; fabricar uma falha exigiria enfraquecer deliberadamente constraints já integradas.
+- **Colisões:** três cenários gravam e commitam o original, tentam em outra transação um registro divergente que repete somente `eventId`, `transactionId` ou `outputEventId`, e exigem respectivamente `processamentos_pkey`, `uq_processamentos_transaction_id` ou `uq_processamentos_output_event_id` numa `DataIntegrityViolationException`.
+- **Não sobrescrita:** depois de cada conflito, uma terceira transação relê o registro pelo `eventId` original e compara os 13 componentes de `ProcessamentoRegistrado`, incluindo escalas, instantes, status e identidades.
+- **Rollback:** outro cenário insere, força `EntityManager.flush()`, marca a transação para rollback e exige `Optional.empty()` numa leitura posterior.
+- **Verificação:** `test-compile` passou e 35 testes sem infraestrutura ficaram verdes localmente, sem falhas, erros ou skips. O Docker local não foi iniciado nem resetado. O [Processing Service CI #37](https://github.com/Joaomagh/credpay/actions/runs/36802986688) executou o `verify` completo com sucesso no SHA `e8db337`, incluindo os cinco cenários PostgreSQL.
+- **Limites:** esses cenários provam controles de armazenamento, não replay reconhecido pela aplicação, concorrência, exatamente uma vez, listener ou outbox.
+- **Próximo:** implementar idempotência sequencial na aplicação: primeira decisão persistida, replay equivalente devolvendo o snapshot original e conflitos explícitos sem sobrescrita.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
