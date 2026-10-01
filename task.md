@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] B03.3 — Ligar em TDD a primeira decisão de `RegistrarProcessamentoService` à outbox na mesma transação, com replay sem segunda intenção e rollback integral quando a escrita da outbox falhar; sem publicador ou consumidor.
+- [ ] B03.4 — Implementar com TDD leitura ordenada das pendências e marcação idempotente de publicação na outbox do `processamento-service`, com PostgreSQL real; sem AMQP, scheduler ou consumidor ainda.

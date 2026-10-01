@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -133,7 +135,8 @@ class RegistrarProcessamentoServiceTest {
     private RegistrarProcessamentoService service(
             LimitesProcessamento limites, Clock clock, GeradorEventIdSaida gerador) {
         return new RegistrarProcessamentoService(repository,
-                new ProcessarTransacaoService(limites), clock, gerador);
+                new ProcessarTransacaoService(limites), clock, gerador,
+                new OutboxEmMemoria(), new ObjectMapper());
     }
 
     private TransacaoCriadaRecebida entrada(BigDecimal valor) {
@@ -156,6 +159,18 @@ class RegistrarProcessamentoServiceTest {
 
         @Override public boolean existePorTransactionId(UUID id) {
             return registros.values().stream().anyMatch(registro -> registro.transactionId().equals(id));
+        }
+    }
+
+    private static final class OutboxEmMemoria implements OutboxProcessamentoRepository {
+        private final Map<UUID, EventoSaidaPendente> eventos = new HashMap<>();
+
+        @Override public void adicionar(EventoSaidaPendente evento) {
+            eventos.put(evento.eventId(), evento);
+        }
+
+        @Override public Optional<EventoSaidaPendente> buscarPorEventId(UUID eventId) {
+            return Optional.ofNullable(eventos.get(eventId));
         }
     }
 
