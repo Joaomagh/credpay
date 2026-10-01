@@ -24,7 +24,8 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Implementado | limites externos por moeda, obrigatórios e positivos; configuração inválida impede inicialização e moeda sem política gera erro explícito |
 | Implementado | primeiro repository PostgreSQL do `processamento-service`, com Flyway, identidades únicas e round-trip que preserva decimais e nanos |
 | Implementado | colisões das três identidades e rollback do resultado no PostgreSQL, sem sobrescrita do registro original |
-| Implementado | caso de uso retorna snapshot imutável com valor, moeda, limite aplicado e `APROVADA`/`REJEITADA`; ainda sem gravar ou publicar o resultado |
+| Implementado | decisão pura retorna snapshot imutável com valor, moeda, limite aplicado e `APROVADA`/`REJEITADA` |
+| Implementado | caso de uso transacional grava a primeira decisão e reutiliza o resultado em replay equivalente; conflitos sequenciais são explícitos |
 | Implementado | health check do Spring Boot Actuator |
 | Implementado | transação válida nasce `PENDENTE` |
 | Implementado | valor ausente ou não positivo e moeda ausente são rejeitados pelo domínio |
@@ -41,7 +42,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Implementado | rollback após `flush` impede que uma inserção revertida permaneça no banco |
 | Implementado | `GET /transacoes/{id}` retorna a representação persistida ou `404 Problem Details` para UUID válido ausente |
 | Implementado | UUID malformado retorna `400 Problem Details` sem consultar o caso de uso nem expor detalhes internos |
-| Implementado | 134 testes automatizados nos dois módulos; suítes do produtor e do processador validadas no CI |
+| Implementado | 145 testes automatizados nos dois módulos; suítes do produtor e do processador validadas no CI |
 | Implementado | `POST /transacoes` exige `Idempotency-Key`, repete a resposta original para payload equivalente e retorna `409` em conflito |
 | Implementado | lock transacional por chave serializa primeiras criações concorrentes; o CI comprovou convergência para uma única transação |
 | Implementado | migration V4 e adapter persistem eventos pendentes na outbox |
@@ -57,7 +58,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
 | Documentado | contrato `TransacaoCriada` v1 e garantia de entrega pelo menos uma vez via outbox |
 | Documentado | baseline RabbitMQ com propriedade da topologia, confirms/returns, retry e DLQ |
-| Ainda não implementado | coordenação entre réplicas publicadoras, consumidor, replay idempotente e outbox do `processamento-service`, imagem da aplicação, Kubernetes e CD |
+| Ainda não implementado | coordenação entre réplicas publicadoras, consumidor, idempotência concorrente e outbox do `processamento-service`, imagem da aplicação, Kubernetes e CD |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 
@@ -175,7 +176,7 @@ $env:SERVER_PORT = "8081"
 .\mvnw.cmd spring-boot:run
 ```
 
-Não existe limite padrão nem conversão cambial. Configuração ausente, moeda inválida, limite não positivo ou banco indisponível impedem a inicialização. O caso de uso seleciona o limite uma vez e retorna um snapshot coerente da decisão; o repository já persiste esse formato, mas ainda não há orquestração entre decisão e gravação. `/actuator/health` em `localhost:8081` comprova apenas a saúde da aplicação e do banco atuais, não um fluxo assíncrono pronto.
+Não existe limite padrão nem conversão cambial. Configuração ausente, moeda inválida, limite não positivo ou banco indisponível impedem a inicialização. A decisão pura seleciona o limite uma vez; um caso de uso transacional registra a primeira execução e relê o snapshot em uma reentrega equivalente. Ainda não há listener RabbitMQ. `/actuator/health` em `localhost:8081` comprova apenas a saúde da aplicação e do banco atuais, não um fluxo assíncrono pronto.
 
 Os testes do `transacoes-service` iniciam PostgreSQL e RabbitMQ descartáveis automaticamente. Para executar esse serviço com o health completo, no terminal posicionado em `transacoes-service`, disponibilize PostgreSQL e RabbitMQ separadamente e configure as conexões sem versionar credenciais:
 

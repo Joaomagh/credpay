@@ -2,11 +2,19 @@ package br.com.credpay.processamento;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import br.com.credpay.processamento.application.ProcessamentoRepository;
+import br.com.credpay.processamento.application.RegistrarProcessamentoService;
+import br.com.credpay.processamento.application.TransacaoCriadaRecebida;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.Currency;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -35,11 +43,43 @@ class ProcessamentoServiceApplicationTest {
     @Autowired
     private TestRestTemplate http;
 
+    @Autowired
+    private RegistrarProcessamentoService processar;
+
+    @Autowired
+    private ProcessamentoRepository repository;
+
+    @Autowired
+    private JdbcTemplate jdbc;
+
     @Test
     void health_deveResponderUp_quandoAplicacaoIniciar() {
         var resposta = http.getForEntity("/actuator/health", String.class);
 
         assertThat(resposta.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(resposta.getBody()).contains("\"status\":\"UP\"");
+    }
+
+    @Test
+    void processar_deveConfirmarPrimeiroResultadoEReusarEmReplay() {
+        var transactionId = UUID.randomUUID();
+        var eventId = UUID.randomUUID();
+        var entrada = new TransacaoCriadaRecebida(eventId, transactionId,
+                Instant.parse("2026-09-30T12:00:00.123456789Z"), transactionId,
+                new BigDecimal("75.0"), Currency.getInstance("BRL"));
+
+        var original = processar.executar(entrada);
+        var persistido = repository.buscarPorEventId(eventId).orElseThrow();
+        var equivalente = new TransacaoCriadaRecebida(eventId, transactionId,
+                entrada.occurredAt(), transactionId,
+                new BigDecimal("75.00"), Currency.getInstance("BRL"));
+        var replay = processar.executar(equivalente);
+        Integer linhas = jdbc.queryForObject(
+                "select count(*) from processamentos where transaction_id = ?",
+                Integer.class, transactionId);
+
+        assertThat(persistido).isEqualTo(original);
+        assertThat(replay).isEqualTo(original);
+        assertThat(linhas).isEqualTo(1);
     }
 }

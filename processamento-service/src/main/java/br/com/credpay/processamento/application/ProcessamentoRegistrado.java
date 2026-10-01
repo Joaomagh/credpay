@@ -39,4 +39,16 @@ public record ProcessamentoRegistrado(
         Objects.requireNonNull(outputEventId, "outputEventId");
         processedAt = processedAt.truncatedTo(ChronoUnit.MICROS);
     }
+
+    public boolean correspondeA(TransacaoCriadaRecebida entrada) {
+        return eventId.equals(entrada.eventId())
+                && transactionId.equals(entrada.transactionId())
+                && eventType.equals("TransacaoCriada")
+                && eventVersion == 1
+                && occurredAt.equals(entrada.occurredAt())
+                && correlationId.equals(entrada.correlationId())
+                && inputStatus.equals("PENDENTE")
+                && valor.compareTo(entrada.valor()) == 0
+                && moeda.equals(entrada.moeda());
+    }
 }

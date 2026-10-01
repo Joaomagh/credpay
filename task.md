@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] B02.5 — Implementar idempotência sequencial na aplicação: persistir a primeira decisão, devolver o snapshot original em reentrega equivalente sem consultar política/relógio/gerador e rejeitar entradas conflitantes sem sobrescrita; sem concorrência, consumidor ou outbox.
+- [ ] B02.6 — Definir e comprovar idempotência concorrente no PostgreSQL: duas entradas equivalentes simultâneas convergem para uma decisão e um `outputEventId`, enquanto entradas divergentes não sobrescrevem o registro; sem consumidor ou outbox.

@@ -8,4 +8,6 @@ public interface ProcessamentoRepository {
     void inserir(ProcessamentoRegistrado processamento);
 
     Optional<ProcessamentoRegistrado> buscarPorEventId(UUID eventId);
+
+    boolean existePorTransactionId(UUID transactionId);
 }
