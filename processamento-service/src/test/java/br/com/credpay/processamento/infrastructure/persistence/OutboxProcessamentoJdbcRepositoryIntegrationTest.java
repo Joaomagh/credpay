@@ -28,7 +28,10 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-@DataJpaTest(properties = "spring.jpa.hibernate.ddl-auto=validate")
+@DataJpaTest(properties = {
+        "spring.jpa.hibernate.ddl-auto=validate",
+        "credpay.processamento.limites.BRL=100.00"
+})
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({ProcessamentoJpaRepository.class, OutboxProcessamentoJdbcRepository.class})
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
