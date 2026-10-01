@@ -18,16 +18,24 @@ class ProcessamentoJpaRepository implements ProcessamentoRepository {
 
     @Override
     public void bloquearIdentidades(UUID eventId, UUID transactionId) {
-        Stream.of(eventId, transactionId).distinct().sorted().forEach(this::bloquear);
+        Stream.of(eventId, transactionId).map(this::chaveDeLock)
+                .distinct().sorted().forEach(this::bloquear);
     }
 
-    private void bloquear(UUID identidade) {
-        entityManager.createNativeQuery("""
-                        SELECT 1
-                        FROM pg_advisory_xact_lock(
-                            hashtextextended(CAST(:identidade AS text), 0))
+    private Long chaveDeLock(UUID identidade) {
+        return (Long) entityManager.createNativeQuery("""
+                        SELECT hashtextextended(CAST(:identidade AS text), 0)
                         """, Long.class)
                 .setParameter("identidade", identidade.toString())
+                .getSingleResult();
+    }
+
+    private void bloquear(Long chave) {
+        entityManager.createNativeQuery("""
+                        SELECT 1
+                        FROM pg_advisory_xact_lock(CAST(:chave AS bigint))
+                        """, Long.class)
+                .setParameter("chave", chave)
                 .getSingleResult();
     }
 
