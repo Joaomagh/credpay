@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] B03.4 — Implementar com TDD leitura ordenada das pendências e marcação idempotente de publicação na outbox do `processamento-service`, com PostgreSQL real; sem AMQP, scheduler ou consumidor ainda.
+- [ ] B03.5 — Definir a baseline RabbitMQ mínima do `processamento-service` para publicar `TransacaoProcessada` v1: dependências justificadas, exchange/routing, confirms/returns e testes negativos, sem implementar publicador ainda.
