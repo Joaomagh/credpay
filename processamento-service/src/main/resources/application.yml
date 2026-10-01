@@ -7,6 +7,9 @@ spring:
       ddl-auto: validate
 
 management:
+  health:
+    rabbit:
+      enabled: false
   endpoints:
     web:
       exposure:

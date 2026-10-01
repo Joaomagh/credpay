@@ -60,6 +60,8 @@ class RabbitMqSaidaTopologyIntegrationTest {
 
     @Test
     void topologia_deveRotearMensagemPersistente_pelaExchangeDeSaida() {
+        assertThat(RabbitMqSaidaConfiguration.TRANSACAO_PROCESSADA_ROUTING_KEY)
+                .isEqualTo("transacao.processada.v1");
         assertThat(exchange.getName()).isEqualTo("credpay.processamento.v1");
         assertThat(exchange.isDurable()).isTrue();
         assertThat(exchange.isAutoDelete()).isFalse();
