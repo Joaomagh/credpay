@@ -1,5 +1,6 @@
 CREATE TABLE outbox_eventos (
-    event_id uuid PRIMARY KEY REFERENCES processamentos (output_event_id),
+    event_id uuid PRIMARY KEY REFERENCES processamentos (output_event_id)
+        DEFERRABLE INITIALLY DEFERRED,
     aggregate_id uuid NOT NULL UNIQUE,
     event_type varchar(100) NOT NULL,
     event_version integer NOT NULL,
