@@ -7,7 +7,7 @@ Atualizado em 2026-09-30. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos
 | ID | Resultado | Aceite de saída | Dependências | Estado |
 |---|---|---|---|---|
 | B01 | Contrato de processamento idempotente | identidade, equivalência/conflito, resultado, atomicidade e ack documentados; matriz de falhas revisada | contratos atuais | Definido e revisado; implementação ainda pendente |
-| B02 | Resultado durável e processamento idempotente | PostgreSQL comprova resultado único, replay estável, conflito sem sobrescrita, rollback e concorrência | B01 e baseline própria de persistência | Em andamento; B02.1–B02.4 concluídos, B02.5 em validação no CI |
+| B02 | Resultado durável e processamento idempotente | PostgreSQL comprova resultado único, replay estável, conflito sem sobrescrita, rollback e concorrência | B01 e baseline própria de persistência | Em andamento; B02.1–B02.5 concluídos, B02.6 próximo |
 | B03 | Saída `TransacaoProcessada` confiável | contrato versionado, resultado + outbox atômicos, publicação confirmada e reenvio com a mesma identidade | B02 | Refinamento |
 | B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | Refinamento |
 | B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | Refinamento |
@@ -27,7 +27,7 @@ Não é uma promessa de uma PR por linha nem um cronograma. Itens grandes serão
 
 **B02.4 — Integridade e rollback — concluído.** Três testes isolam colisões de `eventId`, `transactionId` e `outputEventId`, exigem a constraint correspondente e releem o record original completo. Outro teste executa `flush`, marca rollback e exige ausência numa nova transação. Como a V1 já possuía os controles, são testes de caracterização; o [CI Linux #37](https://github.com/Joaomagh/credpay/actions/runs/36802986688) executou o `verify` completo com sucesso.
 
-**B02.5 — Idempotência sequencial na aplicação — implementação pronta, CI pendente.** A primeira entrada válida decide e persiste; reentrega equivalente reutiliza o snapshot original sem consultar política, relógio ou gerador de identidade; divergência do mesmo evento e novo evento para transação concluída geram conflito sem sobrescrita. Nove testes novos de aplicação estão verdes localmente; o teste vertical PostgreSQL depende do CI.
+**B02.5 — Idempotência sequencial na aplicação — concluído.** A primeira entrada válida decide e persiste; reentrega equivalente reutiliza o snapshot original sem consultar política, relógio ou gerador de identidade; divergência do mesmo evento e novo evento para transação concluída geram conflito sem sobrescrita. Nove testes novos de aplicação ficaram verdes localmente; o [CI Linux #40](https://github.com/Joaomagh/credpay/actions/runs/36904356924) executou `verify` com PostgreSQL real.
 
 **B02.6 — Concorrência — próximo.** Duas chamadas simultâneas equivalentes devem convergir para uma única decisão persistida e retornar o mesmo snapshot; conflitos divergentes devem preservar o original. Refinar mecanismo e prova com PostgreSQL real antes de implementação. Não inclui consumidor ou outbox.
 
@@ -35,7 +35,7 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 ## Revisão e riscos
 
-- Estado atual: B02.4 integrado; B02.5 aguarda CI PostgreSQL. Evidências em `spec.md`.
+- Estado atual: B02.5 validado no CI; B02.6 é o próximo risco a comprovar. Evidências em `spec.md`.
 - Sandbox AI-Jail continua apenas documentado. Retomar sua implementação como iniciativa delimitada; não alegar isolamento atual.
 - Warning Mockito/Byte Buddy conhecido permanece; coordenar correção com evolução de qualidade, sem ocultá-lo.
 - Testes locais com infraestrutura dependem do Docker disponível. CI pode fornecer evidência real, mas falha de infraestrutura não é red de negócio.
