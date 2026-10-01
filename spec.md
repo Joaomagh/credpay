@@ -266,6 +266,7 @@ O futuro consumidor não poderá tratar ausência de política como aprovação 
 - **Red:** os testes com as novas expectativas foram escritos primeiro; a compilação falhou em `testCompile` exclusivamente porque `ResultadoProcessamento` não existia e o caso de uso ainda retornava somente `StatusProcessamento`.
 - **Green focado:** 12 testes em `ProcessarTransacaoServiceTest` e `ResultadoProcessamentoTest`, sem falhas, erros ou skips. A factory pública também rejeita moeda nula com `moeda deve ser informada`.
 - **Regressão e build:** `mvnw.cmd --batch-mode --no-transfer-progress verify` executou 36 testes, sem falhas, erros ou skips, e gerou o JAR.
+- **CI:** [PR #63](https://github.com/Joaomagh/credpay/pull/63), [Processing Service CI #31](https://github.com/Joaomagh/credpay/actions/runs/36800478555) verde no Linux, com Maven `verify`.
 - **Comportamento comprovado:** depois de produzir `APROVADA` com limite `100.00`, alterar a fonte para `50.00` produz uma nova decisão `REJEITADA`, mas não modifica o snapshot anterior. Uma fonte alternante confirma uma única consulta e coerência entre limite/status.
 - **Revisão:** P.O. e dev sênior aceitaram o slice; o coordenador revisou diff e suíte. O warning conhecido de autoanexação Mockito/Byte Buddy permanece.
 - **Limites:** snapshot em memória não é replay, persistência, idempotência nem auditoria. Não há ID, instante, banco, listener ou evento de saída; POM e dependências não mudaram.

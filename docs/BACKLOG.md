@@ -19,7 +19,7 @@ Não é uma promessa de uma PR por linha nem um cronograma. Itens grandes serão
 
 ## Incrementos de B02
 
-**B02.1 — Snapshot da decisão em domínio/aplicação — concluído localmente.** O resultado conserva valor, moeda, limite e status; testes provam uma única consulta e preservação do snapshot após alteração da política. Continua sem banco, identidade de evento ou replay durável. CI/PR do incremento ainda são a barreira remota.
+**B02.1 — Snapshot da decisão em domínio/aplicação — validado localmente e no CI.** O resultado conserva valor, moeda, limite e status; testes provam uma única consulta e preservação do snapshot após alteração da política. Continua sem banco, identidade de evento ou replay durável. Integração do PR encerra o slice.
 
 **B02.2 — Baseline de persistência própria — próximo.** Definir, sem implementar, dependências, banco/configuração, schema mínimo, constraints, precisão dos dados e aceite do primeiro round-trip PostgreSQL. Reutilizar versões já comprovadas no produtor somente após comparar JPA e JDBC para a necessidade concreta. Não incluir AMQP, H2 ou listener.
 
@@ -29,7 +29,7 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 ## Revisão e riscos
 
-- Estado atual: PRs até #62 integradas; B02.1 tem 36 testes locais verdes, sem listener/banco/evento de saída. Evidências históricas em `spec.md`.
+- Estado atual: PRs até #62 integradas; PR #63 tem 36 testes verdes localmente e no CI, sem listener/banco/evento de saída. Evidências em `spec.md`.
 - Sandbox AI-Jail continua apenas documentado. Retomar sua implementação como iniciativa delimitada; não alegar isolamento atual.
 - Warning Mockito/Byte Buddy conhecido permanece; coordenar correção com evolução de qualidade, sem ocultá-lo.
 - Testes locais com infraestrutura dependem do Docker disponível. CI pode fornecer evidência real, mas falha de infraestrutura não é red de negócio.
