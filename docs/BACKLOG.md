@@ -8,7 +8,7 @@ Atualizado em 2026-10-01. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos
 |---|---|---|---|---|
 | B01 | Contrato de processamento idempotente | identidade, equivalência/conflito, resultado, atomicidade e ack documentados; matriz de falhas revisada | contratos atuais | Definido e revisado; implementação ainda pendente |
 | B02 | Resultado durável e processamento idempotente | PostgreSQL comprova resultado único, replay estável, conflito sem sobrescrita, rollback e concorrência | B01 e baseline própria de persistência | Concluído; B02.1–B02.6 comprovados no CI |
-| B03 | Saída `TransacaoProcessada` confiável | contrato versionado, resultado + outbox atômicos, publicação confirmada e reenvio com a mesma identidade | B02 | B03.1 contrato aprovado; B03.2 outbox persistente próximo |
+| B03 | Saída `TransacaoProcessada` confiável | contrato versionado, resultado + outbox atômicos, publicação confirmada e reenvio com a mesma identidade | B02 | B03.1 contrato e B03.2 base persistente concluídos; B03.3 ligação transacional próxima |
 | B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | Refinamento |
 | B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | Refinamento |
 | B06 | Recuperação e diagnóstico demonstráveis | queda, atraso e duplicação testados; correlação, retry/DLQ e replay operacional observáveis | B05; refinar política de `FALHOU` | Refinamento |
@@ -37,11 +37,13 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 **B03.1 — Contrato de saída — concluído documentalmente.** O envelope `TransacaoProcessada` v1 reutiliza `outputEventId`, preserva causa/correlação e informa somente a transição final necessária ao primeiro serviço. Resultado e intenção de publicação deverão ser atômicos; registros preparatórios V1 receberão backfill verificável antes da publicação. Sem código ou AMQP neste incremento.
 
-**B03.2 — Outbox própria — próximo.** Testar migration V2 sobre V1 povoada, integridade e round-trip da intenção; ainda não ligar o caso de uso nem publicar.
+**B03.2 — Outbox própria — concluído.** Migration V2 cria a tabela e reconstrói a intenção dos resultados V1. O adapter JDBC insere e relê a intenção em PostgreSQL real; um teste de caracterização protege unicidade do `event_id`. Ainda não liga o caso de uso nem publica.
+
+**B03.3 — Ligação transacional — próximo.** Primeira decisão grava resultado e outbox juntos; falha da segunda escrita desfaz ambas, e replay não duplica a intenção. Não inclui publicação ou consumo.
 
 ## Revisão e riscos
 
-- Estado atual: B02 concluído no CI; contrato B03.1 documentado, B03.2 é a próxima implementação. Evidências em `spec.md`.
+- Estado atual: B02 concluído no CI; B03.1 e B03.2 concluídos, B03.3 é a próxima implementação. Evidências em `spec.md`.
 - Sandbox AI-Jail continua apenas documentado. Retomar sua implementação como iniciativa delimitada; não alegar isolamento atual.
 - Warning Mockito/Byte Buddy conhecido permanece; coordenar correção com evolução de qualidade, sem ocultá-lo.
 - Testes locais com infraestrutura dependem do Docker disponível. CI pode fornecer evidência real, mas falha de infraestrutura não é red de negócio.

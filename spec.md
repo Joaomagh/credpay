@@ -17,7 +17,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno. O `processamento-service` possui scaffolding independente, build reproduzível, health check HTTP, decisão `APROVADA`/`REJEITADA` e o primeiro adapter JPA/Flyway para registrar o snapshot completo do processamento em PostgreSQL.
 
-**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor, outbox do resultado e publicação de `TransacaoProcessada`. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda; o caso de uso transacional grava a primeira decisão, reutiliza o registro no replay equivalente e serializa entradas concorrentes que compartilham `eventId` ou `transactionId`. Nenhum listener ou endpoint chama esse caso de uso ainda. O adapter PostgreSQL do primeiro serviço é validado isoladamente e pelo fluxo HTTP completo; sua constraint monetária foi testada por SQL direto.
+**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor, ligação atômica do caso de uso à outbox do resultado e publicação de `TransacaoProcessada`. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda; o caso de uso transacional grava a primeira decisão, reutiliza o registro no replay equivalente e serializa entradas concorrentes que compartilham `eventId` ou `transactionId`. A migration V2 cria a outbox própria com backfill dos resultados V1 e um adapter JDBC isolado. Nenhum listener ou endpoint chama esse caso de uso ainda. O adapter PostgreSQL do primeiro serviço é validado isoladamente e pelo fluxo HTTP completo; sua constraint monetária foi testada por SQL direto.
 
 ## 2. Arquitetura vigente
 
@@ -595,7 +595,7 @@ Esse erro representa sintaxe inválida e ocorre antes do caso de uso. O teste MV
 | Evento/versão | Produtor | Consumidor | Campos | Garantias |
 |---|---|---|---|---|
 | `TransacaoCriada` v1 | `transacoes-service` | `processamento-service` planejado | envelope versionado e dados da transação `PENDENTE` | intenção persistida atomicamente via outbox; publicação pelo menos uma vez com confirms/returns |
-| `TransacaoProcessada` v1 | `processamento-service` planejado | `transacoes-service` planejado | identidade de saída, causa e estado final | contrato aprovado; outbox, publicação e consumo ainda não implementados |
+| `TransacaoProcessada` v1 | `processamento-service` planejado | `transacoes-service` planejado | identidade de saída, causa e estado final | contrato aprovado; base da outbox implementada, ligação ao caso de uso, publicação e consumo pendentes |
 
 Envelope JSON aprovado:
 
@@ -1370,7 +1370,7 @@ Cada item entra em um ciclo próprio. Os itens 1 a 3 e 5 estão comprovados; o i
 
 ### 9.12 Baseline de processamento idempotente
 
-**Estado:** contrato definido em 2026-09-30; persistência e idempotência sequencial/concorrente foram comprovadas em B02.3–B02.6. Consumidor e outbox do processador ainda estão pendentes.
+**Estado:** contrato definido em 2026-09-30; persistência e idempotência sequencial/concorrente foram comprovadas em B02.3–B02.6. A base persistente da outbox existe desde B03.2, mas sua ligação ao caso de uso, publicação e consumo ainda estão pendentes.
 
 #### Identidade e equivalência
 
@@ -1542,6 +1542,15 @@ O adapter recebe `ProcessamentoRegistrado`, valor imutável que representa o reg
 | Publicação futura repetida | mesmo `eventId`/payload; marcação só depois de confirmação e ausência de retorno |
 
 **Limite:** B03.1 é decisão documental, não migration, código, mensagem enviada ou consumidor. O próximo incremento implementa apenas a base persistente da outbox e seu backfill testado; a ligação transacional do caso de uso virá antes de qualquer listener.
+
+### 9.19 Base persistente da saída — B03.2
+
+- **Red de migration:** o teste iniciou uma V1 com resultado já confirmado, executou as migrations atuais e tentou ler `outbox_eventos`. No [CI #49](https://github.com/Joaomagh/credpay/actions/runs/36911012752), os 59 testes anteriores passaram e o novo falhou porque a tabela não existia.
+- **Green da migration:** V2 cria `outbox_eventos` no banco próprio e reconstrói uma intenção por resultado V1, reutilizando `output_event_id`, `transaction_id`, `event_id` de entrada, `processed_at` e `resultado`. O payload JSONB segue `TransacaoProcessada` v1; `published_at` nasce nulo. `event_id` é PK e FK diferida para `processamentos.output_event_id`; `aggregate_id` é único. A FK é verificada no commit para permitir que o JPA adie o INSERT do resultado enquanto o JDBC grava a outbox na mesma transação. O [CI #50](https://github.com/Joaomagh/credpay/actions/runs/36911253236) comprovou o backfill em PostgreSQL real.
+- **Red do adapter:** a primeira execução do teste de round-trip não chegou à asserção por falta da fixture de limite BRL no slice; o [CI #51](https://github.com/Joaomagh/credpay/actions/runs/36911579953) registrou essa falha de preparação. Corrigida a fixture, o [CI #52](https://github.com/Joaomagh/credpay/actions/runs/36911836846) iniciou o contexto e falhou porque a consulta da outbox voltou vazia.
+- **Green do adapter:** `OutboxProcessamentoJdbcRepository` insere o payload JSONB e relê a intenção por `eventId`. Um teste confirma resultado e intenção na mesma transação e os relê em outra, sem `flush` artificial; o [CI #53](https://github.com/Joaomagh/credpay/actions/runs/36912080312) executou 61 testes verdes. A PK da outbox também recebeu teste de caracterização para duplicata sem sobrescrita; o [CI #54](https://github.com/Joaomagh/credpay/actions/runs/36912396698) passou com 62 testes, sem falhas, erros ou skips.
+- **Limites:** o caso de uso ainda não escreve a outbox; o teste compõe as duas escritas manualmente para provar a infraestrutura. Não há publicador, confirmação RabbitMQ, listener ou ack. O backfill V1 comprova um resultado preexistente; cenários com múltiplos resultados e falhas de migração exigirão expansão se surgirem dúvidas antes de uma implantação real.
+- **Próximo:** ligar a nova intenção à primeira decisão em `RegistrarProcessamentoService`, com rollback das duas escritas e replay sem nova linha, antes de habilitar consumo.
 
 ## 10. Observabilidade e SLOs de aprendizado
 

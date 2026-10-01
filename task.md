@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] B03.2 — Implementar com TDD a migration V2 e o adapter mínimo da outbox do `processamento-service`, incluindo backfill de resultados V1, unicidade por `outputEventId` e round-trip PostgreSQL; sem ligar o caso de uso, publicador ou consumidor ainda.
+- [ ] B03.3 — Ligar em TDD a primeira decisão de `RegistrarProcessamentoService` à outbox na mesma transação, com replay sem segunda intenção e rollback integral quando a escrita da outbox falhar; sem publicador ou consumidor.
