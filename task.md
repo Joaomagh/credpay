@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] B02.2 — Definir a baseline de persistência própria do processador: comparar JPA/JDBC, fixar dependências e configuração, desenhar schema/constraints/precisão e definir o aceite do primeiro round-trip PostgreSQL, sem implementar banco ou consumidor ainda.
+- [ ] B02.3 — Implementar em TDD o primeiro round-trip PostgreSQL do resultado: dependências aprovadas, porta, adapter JPA, entidade e migration V1; commit e leitura em contexto separado, sem consumidor ou outbox ainda.

@@ -21,9 +21,9 @@ Não é uma promessa de uma PR por linha nem um cronograma. Itens grandes serão
 
 **B02.1 — Snapshot da decisão em domínio/aplicação — validado localmente e no CI.** O resultado conserva valor, moeda, limite e status; testes provam uma única consulta e preservação do snapshot após alteração da política. Continua sem banco, identidade de evento ou replay durável. Integração do PR encerra o slice.
 
-**B02.2 — Baseline de persistência própria — próximo.** Definir, sem implementar, dependências, banco/configuração, schema mínimo, constraints, precisão dos dados e aceite do primeiro round-trip PostgreSQL. Reutilizar versões já comprovadas no produtor somente após comparar JPA e JDBC para a necessidade concreta. Não incluir AMQP, H2 ou listener.
+**B02.2 — Baseline de persistência própria — definida, aguardando revisão/integração.** JPA foi escolhido para o agregado persistido; seis dependências/versões já comprovadas foram aprovadas para o futuro incremento. Banco obrigatório e próprio, migration V1, constraints, precisão exata do instante recebido e primeiro round-trip estão definidos na seção 9.13 de `spec.md`. Não inclui AMQP, H2 ou listener.
 
-A baseline deve resolver antes do schema como preservar exatamente `occurredAt` para equivalência: PostgreSQL `timestamptz` pode reduzir a precisão de um `Instant`. Não mudar o contrato do produtor silenciosamente. O primeiro teste futuro comprovará migration e round-trip após commit em outra transação; não alegará idempotência, concorrência ou atomicidade da futura outbox.
+**B02.3 — Primeiro round-trip PostgreSQL — próximo após integração da baseline.** Adicionar as dependências aprovadas e implementar em TDD porta, adapter JPA, entidade e migration V1. O teste usa commit/contextos separados e recompõe `occurredAt` por epoch second/nano; não alega idempotência, concorrência ou atomicidade da futura outbox.
 
 B02 só termina com evidências reais de durabilidade, rollback, conflitos e concorrência.
 
