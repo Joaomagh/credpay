@@ -65,6 +65,17 @@ class RabbitMqSaidaTopologyIntegrationTest {
     @Autowired(required = false) private PublicadorEventoSaida publicador;
 
     @Test
+    void publicador_deveManterPendente_quandoMensagemNaoTemRota() {
+        var eventId = UUID.randomUUID();
+        var transactionId = UUID.randomUUID();
+        var evento = new EventoSaidaPendente(eventId, transactionId,
+                "TransacaoProcessada", 1,
+                "{\"eventId\":\"" + eventId + "\"}", Instant.parse("2026-10-01T12:00:00Z"));
+
+        assertThat(publicador.publicar(evento)).isFalse();
+    }
+
+    @Test
     void publicador_deveEnviarPayloadEPropriedades_quandoConfirmadoERoteado() {
         var eventId = UUID.randomUUID();
         var transactionId = UUID.randomUUID();
