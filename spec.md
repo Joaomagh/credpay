@@ -15,9 +15,9 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 - `transacoes-service`: recebe pedidos, valida regras de entrada, mantém o estado consultável e publica eventos;
 - `processamento-service`: consome pedidos de processamento, decide o resultado e publica o evento correspondente.
 
-**Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno. O `processamento-service` possui scaffolding independente, build reproduzível, health check HTTP, decisão `APROVADA`/`REJEITADA` e o primeiro adapter JPA/Flyway para registrar o snapshot completo do processamento em PostgreSQL.
+**Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno. O `processamento-service` possui scaffolding independente, build reproduzível, health check HTTP, decisão `APROVADA`/`REJEITADA`, adapter JPA/Flyway para o snapshot e adapter JDBC para gravar a intenção `TransacaoProcessada` v1 atomicamente em PostgreSQL.
 
-**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor, ligação atômica do caso de uso à outbox do resultado e publicação de `TransacaoProcessada`. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda; o caso de uso transacional grava a primeira decisão, reutiliza o registro no replay equivalente e serializa entradas concorrentes que compartilham `eventId` ou `transactionId`. A migration V2 cria a outbox própria com backfill dos resultados V1 e um adapter JDBC isolado. Nenhum listener ou endpoint chama esse caso de uso ainda. O adapter PostgreSQL do primeiro serviço é validado isoladamente e pelo fluxo HTTP completo; sua constraint monetária foi testada por SQL direto.
+**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor e publicação de `TransacaoProcessada`. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda; o caso de uso transacional grava decisão e intenção de saída atomicamente, reutiliza o registro no replay equivalente e serializa entradas concorrentes que compartilham `eventId` ou `transactionId`. A migration V2 cria a outbox própria com backfill dos resultados V1. Nenhum listener ou endpoint chama esse caso de uso ainda. O adapter PostgreSQL do primeiro serviço é validado isoladamente e pelo fluxo HTTP completo; sua constraint monetária foi testada por SQL direto.
 
 ## 2. Arquitetura vigente
 
@@ -595,7 +595,7 @@ Esse erro representa sintaxe inválida e ocorre antes do caso de uso. O teste MV
 | Evento/versão | Produtor | Consumidor | Campos | Garantias |
 |---|---|---|---|---|
 | `TransacaoCriada` v1 | `transacoes-service` | `processamento-service` planejado | envelope versionado e dados da transação `PENDENTE` | intenção persistida atomicamente via outbox; publicação pelo menos uma vez com confirms/returns |
-| `TransacaoProcessada` v1 | `processamento-service` planejado | `transacoes-service` planejado | identidade de saída, causa e estado final | contrato aprovado; base da outbox implementada, ligação ao caso de uso, publicação e consumo pendentes |
+| `TransacaoProcessada` v1 | `processamento-service` | `transacoes-service` planejado | identidade de saída, causa e estado final | intenção gravada junto do resultado; publicação e consumo pendentes |
 
 Envelope JSON aprovado:
 
@@ -1370,7 +1370,7 @@ Cada item entra em um ciclo próprio. Os itens 1 a 3 e 5 estão comprovados; o i
 
 ### 9.12 Baseline de processamento idempotente
 
-**Estado:** contrato definido em 2026-09-30; persistência e idempotência sequencial/concorrente foram comprovadas em B02.3–B02.6. A base persistente da outbox existe desde B03.2, mas sua ligação ao caso de uso, publicação e consumo ainda estão pendentes.
+**Estado:** contrato definido em 2026-09-30; persistência e idempotência sequencial/concorrente foram comprovadas em B02.3–B02.6. A outbox persiste a intenção na mesma transação do resultado desde B03.3; publicação e consumo ainda estão pendentes.
 
 #### Identidade e equivalência
 
@@ -1391,7 +1391,7 @@ A escolha de conflito para um novo evento da mesma transação evita inventar al
 
 O banco próprio do `processamento-service` é a autoridade, com unicidade para `eventId` recebido e `transactionId`. Consulta seguida de inserção, sem controle no banco, não basta. Concorrência e conflitos sem sobrescrita já foram comprovados em B02.6; a intenção de saída ainda precisa ser durável antes de ativar o listener.
 
-O registro durável conserva campos semânticos da entrada, valor/moeda, limite efetivamente aplicado, `APROVADA` ou `REJEITADA`, instante de processamento e identidade do evento de saída. Resultado, marca de processamento da entrada e outbox de `TransacaoProcessada` serão confirmados na mesma transação local. Falha em qualquer escrita reverte todas. O formato mínimo do evento está aprovado acima; a outbox e seu schema serão implementados em incrementos posteriores.
+O registro durável conserva campos semânticos da entrada, valor/moeda, limite efetivamente aplicado, `APROVADA` ou `REJEITADA`, instante de processamento e identidade do evento de saída. Resultado, marca de processamento da entrada e outbox de `TransacaoProcessada` são confirmados na mesma transação local; falha em qualquer escrita reverte todas. O formato mínimo do evento está aprovado acima e é gravado como JSONB na outbox própria.
 
 Não haverá publicação AMQP direta dentro dessa transação nem acesso ao banco do outro serviço. O publicador da outbox enviará o mesmo evento nas novas tentativas. Consumir a entrada operacionalmente fica bloqueado até a intenção de saída durável existir; um resultado isolado em uma etapa preparatória não autoriza ack da mensagem real.
 
@@ -1551,6 +1551,14 @@ O adapter recebe `ProcessamentoRegistrado`, valor imutável que representa o reg
 - **Green do adapter:** `OutboxProcessamentoJdbcRepository` insere o payload JSONB e relê a intenção por `eventId`. Um teste confirma resultado e intenção na mesma transação e os relê em outra, sem `flush` artificial; o [CI #53](https://github.com/Joaomagh/credpay/actions/runs/36912080312) executou 61 testes verdes. A PK da outbox também recebeu teste de caracterização para duplicata sem sobrescrita; o [CI #54](https://github.com/Joaomagh/credpay/actions/runs/36912396698) passou com 62 testes, sem falhas, erros ou skips.
 - **Limites:** o caso de uso ainda não escreve a outbox; o teste compõe as duas escritas manualmente para provar a infraestrutura. Não há publicador, confirmação RabbitMQ, listener ou ack. O backfill V1 comprova um resultado preexistente; cenários com múltiplos resultados e falhas de migração exigirão expansão se surgirem dúvidas antes de uma implantação real.
 - **Próximo:** ligar a nova intenção à primeira decisão em `RegistrarProcessamentoService`, com rollback das duas escritas e replay sem nova linha, antes de habilitar consumo.
+
+### 9.20 Resultado e intenção atômicos — B03.3
+
+- **Red:** o teste vertical com PostgreSQL real exigiu uma intenção `TransacaoProcessada` para a primeira decisão e nenhuma segunda intenção no replay. Também injetou falha depois do INSERT da outbox para exigir rollback de resultado e intenção. No [CI #57](https://github.com/Joaomagh/credpay/actions/runs/36912931176), os 62 testes anteriores passaram; os dois cenários novos falharam porque o caso de uso não chamava a outbox.
+- **Green:** `RegistrarProcessamentoService` escreve a intenção somente após construir e persistir o resultado novo, dentro da mesma transação `READ_COMMITTED`. O payload v1 reutiliza `outputEventId`, `processedAt`, `eventId` recebido e `transactionId`; contém só o estado final necessário. Replay equivalente retorna antes dessas escritas. Serialização JSON falha de modo explícito e causa rollback, sem produzir resultado financeiro alternativo.
+- **Prova:** o teste relê resultado e outbox após commit, verifica o payload semântico e conta uma linha após replay. Uma outbox de teste delega o INSERT real e lança exceção em seguida; após rollback, leituras independentes não encontram nem resultado nem intenção. A FK diferida da V2 permite que o JPA conclua seu INSERT no commit sem `flush` de teste. O [CI #58](https://github.com/Joaomagh/credpay/actions/runs/36913236951) passou com 64 testes, zero falhas, erros ou skips; 20 testes unitários afetados passaram localmente.
+- **Limites:** não há leitura de pendências, marcação, envio AMQP, confirms, listener nem ack. Persistir intenção não equivale a publicá-la. Docker Desktop local continua indisponível; a prova PostgreSQL veio do CI.
+- **Próximo:** ler pendências em ordem e marcar publicação no banco próprio, sem conectar RabbitMQ ainda.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
