@@ -1,6 +1,8 @@
 spring:
   application:
     name: processamento-service
+  rabbitmq:
+    publisher-confirm-type: correlated
   jpa:
     open-in-view: false
     hibernate:
