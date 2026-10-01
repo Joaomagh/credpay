@@ -25,4 +25,16 @@ class ProcessamentoJpaRepository implements ProcessamentoRepository {
         return Optional.ofNullable(entityManager.find(ProcessamentoEntity.class, eventId))
                 .map(ProcessamentoEntity::paraAplicacao);
     }
+
+    @Override
+    public boolean existePorTransactionId(UUID transactionId) {
+        return !entityManager.createQuery(
+                "select processamento.eventId from ProcessamentoEntity processamento "
+                        + "where processamento.transactionId = :transactionId",
+                UUID.class)
+                .setParameter("transactionId", transactionId)
+                .setMaxResults(1)
+                .getResultList()
+                .isEmpty();
+    }
 }

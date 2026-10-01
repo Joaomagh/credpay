@@ -108,6 +108,23 @@ class ProcessamentoRepositoryIntegrationTest {
     }
 
     @Test
+    void existePorTransactionId_deveDiferenciarRegistroPersistidoDeIdAusente() {
+        var processamento = processamentoValido(
+                UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
+        var transacoes = new TransactionTemplate(transactionManager);
+
+        transacoes.executeWithoutResult(status -> repository.inserir(processamento));
+
+        Boolean existente = transacoes.execute(
+                status -> repository.existePorTransactionId(processamento.transactionId()));
+        Boolean ausente = transacoes.execute(
+                status -> repository.existePorTransactionId(UUID.randomUUID()));
+
+        assertThat(existente).isTrue();
+        assertThat(ausente).isFalse();
+    }
+
+    @Test
     void inserir_deveFalharSemSobrescreverOriginal_quandoEventIdColidir() {
         var original = processamentoValido(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
         var conflitante = processamentoDivergente(

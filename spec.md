@@ -17,7 +17,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno. O `processamento-service` possui scaffolding independente, build reproduzível, health check HTTP, decisão `APROVADA`/`REJEITADA` e o primeiro adapter JPA/Flyway para registrar o snapshot completo do processamento em PostgreSQL.
 
-**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor, ligação do caso de uso à persistência do processador, replay idempotente, outbox do resultado e publicação de `TransacaoProcessada`. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda e o caso de uso devolve um snapshot imutável com valor, moeda, limite aplicado e decisão, sem política padrão. A nova porta de persistência ainda não é chamada por listener ou endpoint. O adapter PostgreSQL do primeiro serviço é validado isoladamente e pelo fluxo HTTP completo; sua constraint monetária foi testada por SQL direto.
+**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor, idempotência concorrente do processador, outbox do resultado e publicação de `TransacaoProcessada`. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda; o caso de uso sequencial grava a primeira decisão e reutiliza o registro persistido no replay equivalente. Nenhum listener ou endpoint chama esse caso de uso ainda. O adapter PostgreSQL do primeiro serviço é validado isoladamente e pelo fluxo HTTP completo; sua constraint monetária foi testada por SQL direto.
 
 ## 2. Arquitetura vigente
 
@@ -1348,7 +1348,7 @@ Cada item entra em um ciclo próprio. Os itens 1 a 3 e 5 estão comprovados; o i
 
 ### 9.12 Baseline de processamento idempotente
 
-**Estado:** contrato documental definido em 2026-09-30; persistência, deduplicação, consumidor e outbox do processador ainda não implementados. O caso de uso atual apenas retorna a decisão em memória.
+**Estado:** contrato definido em 2026-09-30; persistência básica e idempotência sequencial foram implementadas nos incrementos B02.3–B02.5. Concorrência, consumidor e outbox do processador ainda estão pendentes.
 
 #### Identidade e equivalência
 
@@ -1482,6 +1482,17 @@ O adapter recebe `ProcessamentoRegistrado`, valor imutável que representa o reg
 - **Verificação:** `test-compile` passou e 35 testes sem infraestrutura ficaram verdes localmente, sem falhas, erros ou skips. O Docker local não foi iniciado nem resetado. O [Processing Service CI #37](https://github.com/Joaomagh/credpay/actions/runs/36802986688) executou o `verify` completo com sucesso no SHA `e8db337`, incluindo os cinco cenários PostgreSQL.
 - **Limites:** esses cenários provam controles de armazenamento, não replay reconhecido pela aplicação, concorrência, exatamente uma vez, listener ou outbox.
 - **Próximo:** implementar idempotência sequencial na aplicação: primeira decisão persistida, replay equivalente devolvendo o snapshot original e conflitos explícitos sem sobrescrita.
+
+### 9.16 Idempotência sequencial da aplicação — B02.5
+
+- **Red:** o teste de aplicação foi escrito antes dos tipos de entrada, caso de uso e conflito; `testCompile` falhou pela ausência desses tipos. A consulta `existePorTransactionId` teve red separado, com apenas o método ausente depois de corrigida a tipagem do teste.
+- **Green local:** `RegistrarProcessamentoService` consulta primeiro `eventId` e depois `transactionId`; somente uma entrada nova consulta a política, captura relógio e gera `outputEventId`. O método transacional registra a primeira decisão. A entrada tipada conserva IDs, instante com nanos, valor e moeda; a equivalência compara o valor com `BigDecimal.compareTo`, sem consultar limite ou resultado de uma nova política.
+- **Conflitos:** mesmo `eventId` divergente e outro `eventId` para transação já concluída produzem `ConflitoProcessamentoException`; o teste parametrizado varia valor, moeda, instante ou transação/correlação e comprova que o registro original não é sobrescrito. A V1 mantém unicidade no banco.
+- **Validação da entrada:** correlação divergente e valor zero tiveram red de execução (nenhuma exceção); as guardas mínimas foram implementadas e os cenários ficaram verdes.
+- **Verificação:** nove testes do novo caso de uso e os 35 testes puros anteriores passaram localmente. O teste vertical exige duas chamadas separadas ao serviço, releitura após commit e uma única linha em PostgreSQL. Docker Desktop local não oferece o pipe `dockerDesktopLinuxEngine`; esse teste e o health completo serão validados pelo CI antes do merge.
+- **Revisão:** o dev sênior identificou que um caso de uso `final` impediria o proxy Spring de aplicar `@Transactional` sem interface; a classe foi tornada extensível antes do CI. O teste de contexto com PostgreSQL é a barreira para essa configuração.
+- **Limite:** a consulta seguida de inserção ainda tem uma janela de corrida. B02.5 comprova chamadas sequenciais, sem alegar idempotência concorrente, intenção de saída durável ou consumo RabbitMQ.
+- **Próximo:** provar e resolver duas entregas concorrentes da mesma entrada no PostgreSQL, preservando uma decisão e uma identidade de saída.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
