@@ -30,6 +30,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Implementado | migration e adapter da outbox própria do processador, com backfill de resultados preparatórios; ainda sem publicação |
 | Implementado | primeira decisão do processador grava resultado e intenção de saída na mesma transação; falha da outbox reverte ambos e replay não duplica a intenção |
 | Implementado | outbox do processador lista pendências em ordem estável e permite marcação idempotente; nenhum publicador a utiliza ainda |
+| Implementado | exchange RabbitMQ durável do processador, testada com rota v1 em broker descartável; ainda sem publicador |
 | Implementado | health check do Spring Boot Actuator |
 | Implementado | transação válida nasce `PENDENTE` |
 | Implementado | valor ausente ou não positivo e moeda ausente são rejeitados pelo domínio |
@@ -46,7 +47,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Implementado | rollback após `flush` impede que uma inserção revertida permaneça no banco |
 | Implementado | `GET /transacoes/{id}` retorna a representação persistida ou `404 Problem Details` para UUID válido ausente |
 | Implementado | UUID malformado retorna `400 Problem Details` sem consultar o caso de uso nem expor detalhes internos |
-| Implementado | 159 testes automatizados nos dois módulos; suítes do produtor e do processador validadas no CI |
+| Implementado | 160 testes automatizados nos dois módulos; suítes do produtor e do processador validadas no CI |
 | Implementado | `POST /transacoes` exige `Idempotency-Key`, repete a resposta original para payload equivalente e retorna `409` em conflito |
 | Implementado | lock transacional por chave serializa primeiras criações concorrentes; o CI comprovou convergência para uma única transação |
 | Implementado | migration V4 e adapter persistem eventos pendentes na outbox |

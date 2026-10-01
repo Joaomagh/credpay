@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] B03.6 — Adicionar apenas as dependências AMQP aprovadas ao `processamento-service` e comprovar com Testcontainers a exchange `credpay.processamento.v1` e a routing key `transacao.processada.v1`; sem publicador, scheduler ou consumidor.
+- [ ] B03.7 — Implementar com TDD o publicador isolado de `TransacaoProcessada` v1, com payload/propriedades, confirm correlacionado e mandatory return testados em RabbitMQ real; sem lote, scheduler, consumidor ou marcação da outbox ainda.
