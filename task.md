@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] B02.4 — Comprovar a integridade do resultado persistido: colisões de `eventId`, `transactionId` e `outputEventId` não sobrescrevem o registro original, e uma inserção revertida após `flush` não permanece no PostgreSQL; sem replay, concorrência, consumidor ou outbox.
+- [ ] B02.5 — Implementar idempotência sequencial na aplicação: persistir a primeira decisão, devolver o snapshot original em reentrega equivalente sem consultar política/relógio/gerador e rejeitar entradas conflitantes sem sobrescrita; sem concorrência, consumidor ou outbox.

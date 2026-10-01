@@ -23,6 +23,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Implementado | valor zero ou negativo no processador é inválido, independentemente da escala decimal |
 | Implementado | limites externos por moeda, obrigatórios e positivos; configuração inválida impede inicialização e moeda sem política gera erro explícito |
 | Implementado | primeiro repository PostgreSQL do `processamento-service`, com Flyway, identidades únicas e round-trip que preserva decimais e nanos |
+| Em validação | colisões das três identidades e rollback do resultado no PostgreSQL, sem sobrescrita do registro original |
 | Implementado | caso de uso retorna snapshot imutável com valor, moeda, limite aplicado e `APROVADA`/`REJEITADA`; ainda sem gravar ou publicar o resultado |
 | Implementado | health check do Spring Boot Actuator |
 | Implementado | transação válida nasce `PENDENTE` |
