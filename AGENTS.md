@@ -13,6 +13,13 @@ Os papéis estão em `docs/roles/`; prioridades em `docs/BACKLOG.md`. Agentes s�
 
 ## 2. Protocolo de cada incremento
 
+### Leitura e contexto
+
+- No início de cada sessão, ler por completo `AGENTS.md`, `CREDPAY_PLAN.md`, `spec.md` e `task.md`.
+- Nos incrementos seguintes da mesma sessão, reler `task.md`, a seção aplicável de `spec.md`, o backlog relacionado e somente os arquivos que serão alterados. Reler o documento completo se houver mudança de objetivo, conflito de informação ou dúvida que o recorte não resolva.
+- Pesquisar e citar trechos específicos com ferramentas de busca; não despejar documentos, diffs ou logs inteiros no contexto sem necessidade de revisão.
+- Cada subagente recebe objetivo, critério de aceite, riscos e arquivos sob sua responsabilidade. Não recebe histórico completo quando um recorte suficiente resolve a tarefa.
+
 Antes de editar:
 
 1. resumir o objetivo e o critério de aceitação;
@@ -26,7 +33,7 @@ Durante o trabalho:
 3. explicar código novo em linguagem que João possa repetir em entrevista;
 4. não esconder falhas, warnings ou limitações.
 
-Ao terminar cada incremento: registrar diff resumido, comandos, resultados e revisão. Com a entrega validada e integrada, selecionar a próxima tarefa pronta e continuar durante a execução ativa. Manter uma única frente de implementação; análises e revisão podem ocorrer em paralelo, com arquivos sob responsabilidade explícita. Bloqueio real é registrado, nunca contornado por redução de teste ou promessa de execução em segundo plano.
+Ao terminar cada incremento: registrar diff resumido, comandos, resultados e revisão. Comunicar o comando, o resultado e somente o trecho de saída necessário para diagnosticar falha; preservar logs extensos apenas quando forem evidência de erro ou quando João pedir a saída completa. Preferir `git diff --stat`, `git diff --check` e diffs de arquivos específicos à inspeção integral do repositório. Com a entrega validada e integrada, selecionar a próxima tarefa pronta e continuar durante a execução ativa. Manter uma única frente de implementação; análises e revisão podem ocorrer em paralelo, com arquivos sob responsabilidade explícita. Bloqueio real é registrado, nunca contornado por redução de teste ou promessa de execução em segundo plano.
 
 ## 3. TDD obrigatório
 
@@ -78,7 +85,10 @@ Se uma restrição não puder ser tecnicamente garantida, declarar a limitação
 - `task.md`: agora/próximo/depois; não virar backlog infinito.
 - `docs/BACKLOG.md`: resultados priorizados, critérios de aceite, dependências e estado; itens distantes são refinados quando necessário.
 - `docs/roles/`: contratos de atuação do P.O., dev sênior e Scrum Master; não duplicar requisitos técnicos nesses arquivos.
+- `README.md`: vitrine pública; atualizar somente quando uma entrega alterar status público, execução, arquitetura visível, risco relevante ou marco de portfólio. Não repetir nele a evidência detalhada que pertence ao `spec.md`.
 - Hurdles e patterns só são registrados quando realmente ocorrerem/forem implementados. Não há quota.
+
+Atualizar `task.md` em todo incremento concluído, `spec.md` quando houver comportamento, decisão ou evidência nova, e `docs/BACKLOG.md` quando o estado/prioridade mudar. Não criar atualizações documentais apenas para repetir a mesma informação em vários arquivos.
 
 ## 8. Quando algo dá errado
 
