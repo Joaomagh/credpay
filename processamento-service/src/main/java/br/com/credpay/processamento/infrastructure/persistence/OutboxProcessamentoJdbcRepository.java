@@ -1,6 +1,8 @@
 package br.com.credpay.processamento.infrastructure.persistence;
 
 import java.sql.Timestamp;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -40,23 +42,42 @@ class OutboxProcessamentoJdbcRepository implements OutboxProcessamentoRepository
                         FROM outbox_eventos
                         WHERE event_id = ?
                         """,
-                (resultado, linha) -> new EventoSaidaPendente(
-                        resultado.getObject("event_id", UUID.class),
-                        resultado.getObject("aggregate_id", UUID.class),
-                        resultado.getString("event_type"),
-                        resultado.getInt("event_version"),
-                        resultado.getString("payload"),
-                        resultado.getTimestamp("occurred_at").toInstant()),
+                this::mapear,
                 eventId);
         return encontrados.stream().findFirst();
     }
 
     @Override
     public List<EventoSaidaPendente> buscarPendentes(int limite) {
-        return List.of();
+        return jdbcTemplate.query("""
+                        SELECT event_id, aggregate_id, event_type, event_version,
+                               payload::text, occurred_at
+                        FROM outbox_eventos
+                        WHERE published_at IS NULL
+                        ORDER BY occurred_at, event_id
+                        LIMIT ?
+                        """,
+                this::mapear,
+                limite);
     }
 
     @Override
     public void marcarPublicado(UUID eventId, Instant publicadoEm) {
+        jdbcTemplate.update("""
+                        UPDATE outbox_eventos
+                        SET published_at = ?
+                        WHERE event_id = ? AND published_at IS NULL
+                        """,
+                Timestamp.from(publicadoEm), eventId);
+    }
+
+    private EventoSaidaPendente mapear(ResultSet resultado, int linha) throws SQLException {
+        return new EventoSaidaPendente(
+                resultado.getObject("event_id", UUID.class),
+                resultado.getObject("aggregate_id", UUID.class),
+                resultado.getString("event_type"),
+                resultado.getInt("event_version"),
+                resultado.getString("payload"),
+                resultado.getTimestamp("occurred_at").toInstant());
     }
 }
