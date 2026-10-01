@@ -1,6 +1,6 @@
-# CLAUDE.md — Acordo de Trabalho do Agente
+# AGENTS.md — Acordo de Trabalho dos Agentes
 
-> Leia este arquivo, `CREDPAY_PLAN.md`, `spec.md` e `task.md` no início de cada sessão. A prioridade é aprendizado verificável: João deve entender e conseguir explicar tudo que entra no projeto.
+> Instruções do repositório para agentes ChatGPT/Codex. Leia este arquivo, `CREDPAY_PLAN.md`, `spec.md` e `task.md` no início de cada sessão. A prioridade é aprendizado verificável: João deve entender e conseguir explicar tudo que entra no projeto.
 
 ## 1. Papéis e autonomia
 

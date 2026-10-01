@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] B02.1 — Retornar um snapshot imutável da decisão com valor, moeda, limite aplicado e status; provar em TDD que uma mudança posterior da política não altera o resultado anterior. Sem persistência, consumidor ou dependência nova.
+- [ ] B02.2 — Definir a baseline de persistência própria do processador: comparar JPA/JDBC, fixar dependências e configuração, desenhar schema/constraints/precisão e definir o aceite do primeiro round-trip PostgreSQL, sem implementar banco ou consumidor ainda.

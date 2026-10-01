@@ -7,7 +7,7 @@ Atualizado em 2026-09-30. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos
 | ID | Resultado | Aceite de saída | Dependências | Estado |
 |---|---|---|---|---|
 | B01 | Contrato de processamento idempotente | identidade, equivalência/conflito, resultado, atomicidade e ack documentados; matriz de falhas revisada | contratos atuais | Definido e revisado; implementação ainda pendente |
-| B02 | Resultado durável e processamento idempotente | PostgreSQL comprova resultado único, replay estável, conflito sem sobrescrita, rollback e concorrência | B01 e baseline própria de persistência | Refinamento; primeiro slice pronto abaixo |
+| B02 | Resultado durável e processamento idempotente | PostgreSQL comprova resultado único, replay estável, conflito sem sobrescrita, rollback e concorrência | B01 e baseline própria de persistência | Em andamento; B02.1 concluído, B02.2 pronto abaixo |
 | B03 | Saída `TransacaoProcessada` confiável | contrato versionado, resultado + outbox atômicos, publicação confirmada e reenvio com a mesma identidade | B02 | Refinamento |
 | B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | Refinamento |
 | B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | Refinamento |
@@ -17,15 +17,19 @@ Atualizado em 2026-09-30. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos
 
 Não é uma promessa de uma PR por linha nem um cronograma. Itens grandes serão divididos por comportamento, mantendo dependências e evidências. Nenhum percentual de conclusão é inferido do número de PRs.
 
-## Próximo slice de B02
+## Incrementos de B02
 
-**B02.1 — Snapshot da decisão em domínio/aplicação.** Retornar valor, moeda, limite efetivamente utilizado e status como resultado imutável. Teste deve provar coerência entre limite/status e que uma alteração posterior da política não modifica a decisão já produzida. Sem banco, evento, deduplicação ou nova dependência; não confundir snapshot em memória com replay durável.
+**B02.1 — Snapshot da decisão em domínio/aplicação — validado localmente e no CI.** O resultado conserva valor, moeda, limite e status; testes provam uma única consulta e preservação do snapshot após alteração da política. Continua sem banco, identidade de evento ou replay durável. Integração do PR encerra o slice.
 
-Depois: refinar dependências/schema do banco próprio e primeiro teste de persistência. B02 só termina com evidências reais de durabilidade e concorrência.
+**B02.2 — Baseline de persistência própria — próximo.** Definir, sem implementar, dependências, banco/configuração, schema mínimo, constraints, precisão dos dados e aceite do primeiro round-trip PostgreSQL. Reutilizar versões já comprovadas no produtor somente após comparar JPA e JDBC para a necessidade concreta. Não incluir AMQP, H2 ou listener.
+
+A baseline deve resolver antes do schema como preservar exatamente `occurredAt` para equivalência: PostgreSQL `timestamptz` pode reduzir a precisão de um `Instant`. Não mudar o contrato do produtor silenciosamente. O primeiro teste futuro comprovará migration e round-trip após commit em outra transação; não alegará idempotência, concorrência ou atomicidade da futura outbox.
+
+B02 só termina com evidências reais de durabilidade, rollback, conflitos e concorrência.
 
 ## Revisão e riscos
 
-- Estado inicial deste ciclo: PRs até #61 integradas; processador com 33 testes, sem listener/banco/evento de saída. Evidências históricas em `spec.md`.
+- Estado atual: PRs até #62 integradas; PR #63 tem 36 testes verdes localmente e no CI, sem listener/banco/evento de saída. Evidências em `spec.md`.
 - Sandbox AI-Jail continua apenas documentado. Retomar sua implementação como iniciativa delimitada; não alegar isolamento atual.
 - Warning Mockito/Byte Buddy conhecido permanece; coordenar correção com evolução de qualidade, sem ocultá-lo.
 - Testes locais com infraestrutura dependem do Docker disponível. CI pode fornecer evidência real, mas falha de infraestrutura não é red de negócio.

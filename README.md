@@ -22,7 +22,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Implementado | valor ou limite nulo no processador falham com erros de domínio explícitos, sem vazar `NullPointerException` |
 | Implementado | valor zero ou negativo no processador é inválido, independentemente da escala decimal |
 | Implementado | limites externos por moeda, obrigatórios e positivos; configuração inválida impede inicialização e moeda sem política gera erro explícito |
-| Implementado | caso de uso seleciona o limite da moeda e retorna `APROVADA`/`REJEITADA`; ainda sem gravar ou publicar o resultado |
+| Implementado | caso de uso retorna snapshot imutável com valor, moeda, limite aplicado e `APROVADA`/`REJEITADA`; ainda sem gravar ou publicar o resultado |
 | Implementado | health check do Spring Boot Actuator |
 | Implementado | transação válida nasce `PENDENTE` |
 | Implementado | valor ausente ou não positivo e moeda ausente são rejeitados pelo domínio |
@@ -39,7 +39,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Implementado | rollback após `flush` impede que uma inserção revertida permaneça no banco |
 | Implementado | `GET /transacoes/{id}` retorna a representação persistida ou `404 Problem Details` para UUID válido ausente |
 | Implementado | UUID malformado retorna `400 Problem Details` sem consultar o caso de uso nem expor detalhes internos |
-| Implementado | 126 testes automatizados nos dois módulos; suíte do produtor validada no CI e suíte do processador com `verify` local |
+| Implementado | 129 testes automatizados nos dois módulos; suíte do produtor validada no CI e suíte do processador com `verify` local |
 | Implementado | `POST /transacoes` exige `Idempotency-Key`, repete a resposta original para payload equivalente e retorna `409` em conflito |
 | Implementado | lock transacional por chave serializa primeiras criações concorrentes; o CI comprovou convergência para uma única transação |
 | Implementado | migration V4 e adapter persistem eventos pendentes na outbox |
@@ -170,7 +170,7 @@ $env:SERVER_PORT = "8081"
 .\mvnw.cmd spring-boot:run
 ```
 
-Não existe limite padrão nem conversão cambial. Configuração ausente, moeda inválida ou limite não positivo impedem a inicialização. O caso de uso já seleciona o limite da moeda e chama o domínio, mas ainda não recebe eventos nem grava resultados. `/actuator/health` em `localhost:8081` comprova apenas a saúde da aplicação atual, não um fluxo assíncrono pronto.
+Não existe limite padrão nem conversão cambial. Configuração ausente, moeda inválida ou limite não positivo impedem a inicialização. O caso de uso seleciona o limite uma vez e retorna um snapshot coerente da decisão, mas ainda não recebe eventos nem grava resultados. `/actuator/health` em `localhost:8081` comprova apenas a saúde da aplicação atual, não um fluxo assíncrono pronto.
 
 Os testes do `transacoes-service` iniciam PostgreSQL e RabbitMQ descartáveis automaticamente. Para executar esse serviço com o health completo, no terminal posicionado em `transacoes-service`, disponibilize PostgreSQL e RabbitMQ separadamente e configure as conexões sem versionar credenciais:
 
@@ -281,7 +281,7 @@ O plano detalhado e os critérios de saída estão em [`CREDPAY_PLAN.md`](CREDPA
 
 | Documento | Papel |
 |---|---|
-| [`CLAUDE.md`](CLAUDE.md) | acordo de trabalho, autonomia, segurança e protocolo dos incrementos |
+| [`AGENTS.md`](AGENTS.md) | instruções para agentes ChatGPT/Codex, autonomia, segurança e protocolo dos incrementos |
 | [`CREDPAY_PLAN.md`](CREDPAY_PLAN.md) | visão, arquitetura-alvo, fases e controle de escopo |
 | [`spec.md`](spec.md) | fonte de verdade técnica, ADRs, contratos e evidências atuais |
 | [`task.md`](task.md) | próximo passo único |
