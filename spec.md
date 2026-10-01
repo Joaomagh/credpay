@@ -1394,6 +1394,76 @@ Falhas operacionais, ausência de política e mensagens na DLQ não são automat
 
 **Revisão documental:** P.O. e dev sênior revisaram o contrato em 2026-09-30. A alternativa de aceitar novo `eventId` como alias da mesma transação foi descartada por não ser exigida pelo produtor v1; o encaminhamento dos conflitos permanentes à DLQ foi explicitado. Validação deste incremento: diff, UTF-8 e links locais; não há teste de runtime nem evidência de persistência adicionada.
 
+### 9.13 Baseline de persistência própria do processador — B02.2
+
+**Estado:** decisão documental de 2026-09-30; nenhuma dependência, configuração, migration, repository ou banco foi adicionada ao `processamento-service`. O Docker local foi consultado antes desta baseline e o pipe `dockerDesktopLinuxEngine` não estava disponível; nenhum start, reset ou container foi executado. A futura evidência PostgreSQL continua obrigatória localmente ou no CI.
+
+#### Escolha de acesso e dependências
+
+O registro de processamento usará JPA para mapear o agregado persistido e participar da transação local Spring. É a mesma estratégia já comprovada no primeiro serviço e reduz novas variáveis. A futura outbox poderá usar JDBC quando seleção ordenada, claim e update condicional exigirem SQL explícito. Conflitos/concorrência também poderão exigir constraint, lock ou SQL nativo específico, sem invalidar o mapeamento JPA do agregado nem criar um repository genérico.
+
+| Dependência futura | Escopo | Versão gerenciada já comprovada | Motivo |
+|---|---|---:|---|
+| `spring-boot-starter-data-jpa` | compile | Spring Boot 3.5.16 / Hibernate 6.6.53.Final | entidade, transação local e adapter do resultado |
+| `org.postgresql:postgresql` | runtime | 42.7.11 | driver do banco próprio |
+| `org.flywaydb:flyway-core` | compile | 11.7.2 | migrations versionadas |
+| `org.flywaydb:flyway-database-postgresql` | runtime | 11.7.2 | suporte Flyway específico |
+| `org.testcontainers:junit-jupiter` | test | 1.21.4 | ciclo de vida no JUnit |
+| `org.testcontainers:postgresql` | test | 1.21.4 | PostgreSQL real descartável |
+
+As versões virão do parent Spring Boot existente, sem BOM ou sobrescrita. O próximo incremento adicionará o conjunto somente junto do primeiro teste/adapter; esta baseline não baixa dependências. Não entram Spring AMQP, H2, `spring-boot-testcontainers`, biblioteca de retry, Lombok ou outro mapper.
+
+Imagem planejada já executada pelo produtor: `postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0`, correspondente a PostgreSQL 17.11 Bookworm. Reutilizar o artefato reduz variáveis, mas o teste do segundo serviço ainda deverá provar sua própria compatibilidade.
+
+#### Configuração e propriedade
+
+O banco pertence exclusivamente ao `processamento-service`, sem foreign key, consulta ou credencial do banco do produtor. Quando a persistência for materializada, a aplicação exigirá `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME` e `SPRING_DATASOURCE_PASSWORD`, sem credencial ou banco em memória padrão. Flyway cria e evolui o schema; Hibernate usa `ddl-auto=validate` e `open-in-view=false`. Testes fornecem conexão e credenciais fictícias via `@DynamicPropertySource`.
+
+O health check atual sem banco será ajustado no mesmo incremento de ativação para receber PostgreSQL descartável ou ser separado do teste de persistência; não se excluirá globalmente DataSource/Flyway para deixar um contexto artificialmente verde.
+
+#### Migration V1 planejada
+
+Uma única tabela `processamentos` reunirá a marca da entrada e o resultado, pois a v1 não aceita aliases de evento. A migration real ainda poderá ajustar nomes por legibilidade, sem mudar as invariantes abaixo.
+
+| Campo | Tipo planejado | Invariante |
+|---|---|---|
+| `event_id` | `uuid` | PK; identidade única da entrada |
+| `transaction_id` | `uuid` | único e obrigatório; uma decisão de negócio por transação |
+| `event_type` | `varchar(64)` | literal `TransacaoCriada` |
+| `event_version` | `integer` | literal `1` na v1 |
+| `event_occurred_epoch_second` | `bigint` | segundos do `Instant` recebido, sem redução de precisão |
+| `event_occurred_nano` | `integer` | `0..999999999`; recompõe exatamente o `Instant` |
+| `correlation_id` | `uuid` | obrigatório e igual a `transaction_id` na v1 |
+| `input_status` | `varchar(16)` | literal `PENDENTE` |
+| `valor` | `numeric` | positivo, finito e sem escala fixa |
+| `moeda` | `varchar(3)` | código de entrada preservado; formato `[A-Z]{3}` |
+| `limite_aplicado` | `numeric` | positivo, finito e sem escala fixa |
+| `resultado` | `varchar(16)` | `APROVADA` ou `REJEITADA` |
+| `processed_at` | `timestamptz(6)` | instante atribuído à primeira decisão persistida, normalizado para micros |
+| `output_event_id` | `uuid` | único e obrigatório; identidade congelada do futuro `TransacaoProcessada` |
+
+PostgreSQL `timestamptz` possui precisão menor que os nanos de `Instant`. Separar epoch second/nano preserva equivalência temporal sem comparar texto bruto, ordem JSON ou whitespace e sem alterar silenciosamente `TransacaoCriada` v1. `processed_at` é gerado pelo `Clock` antes do commit, será truncado com `Instant.truncatedTo(ChronoUnit.MICROS)` antes de construir/persistir o registro e não participa da equivalência da entrada.
+
+Constraints nomeadas deverão proteger unicidades, literais, relação de correlação, intervalo de nanos e valores numéricos positivos/finitos. Para `valor` e `limite_aplicado`, exigir `> 0` e excluir explicitamente `NaN`, `Infinity` e `-Infinity`; a ordenação especial de `numeric` torna `> 0` isolado insuficiente. A validação completa ISO 4217 continua na aplicação; a constraint de três letras não afirma que todo código é moeda existente. Não haverá limpeza automática: retenção precisa de horizonte de replay aprovado.
+
+A tabela ainda não é a outbox. B02.3 armazenará `output_event_id` com listener desabilitado, sem contrato/payload de saída. B03 reutilizará exatamente essa identidade ao adicionar a intenção de saída em migration própria e na mesma transação do resultado, antes de qualquer listener real ser habilitado.
+
+#### Primeiro round-trip aceito
+
+O primeiro ciclo TDD implementará somente a porta, adapter JPA, entidade e V1 necessários para:
+
+1. iniciar PostgreSQL descartável fixado por digest e aplicar a migration de produção;
+2. gravar um resultado completo numa transação e concluir o commit;
+3. limpar/separar o contexto de persistência e ler em outra transação;
+4. comprovar `event_id`, `transaction_id`, `output_event_id`, campos conhecidos da entrada, valor/escala, moeda, limite/escala, resultado, `processed_at` já normalizado e reconstrução exata de `occurredAt` com fixture que contenha nanos além de micros, por exemplo `2026-09-30T12:34:56.123456789Z`;
+5. manter `ddl-auto=validate`, sem H2, mocks ou rollback externo do teste.
+
+Esse round-trip prova durabilidade básica depois de commit. Não conclui B02 nem prova deduplicação, equivalência, concorrência, rollback, outbox ou confirmação RabbitMQ. Ciclos posteriores cobrirão ausência, constraints por SQL direto, conflitos sem sobrescrita, falha/rollback e duas transações concorrentes antes de B02 ser marcado concluído.
+
+O adapter receberá um valor imutável representando o registro completo; não uma longa lista de parâmetros. `ResultadoProcessamento` atual não contém identidades nem instantes e evoluirá deliberadamente no ciclo do teste, sem transformar o snapshot anterior em entidade JPA.
+
+**Próximo incremento:** implementar esse primeiro round-trip em TDD com as dependências aprovadas. Docker indisponível localmente é falha de ambiente; o teste não será pulado e o CI Linux será barreira obrigatória quando necessário.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
