@@ -8,7 +8,7 @@ Atualizado em 2026-10-01. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos
 |---|---|---|---|---|
 | B01 | Contrato de processamento idempotente | identidade, equivalência/conflito, resultado, atomicidade e ack documentados; matriz de falhas revisada | contratos atuais | Definido e revisado; implementação ainda pendente |
 | B02 | Resultado durável e processamento idempotente | PostgreSQL comprova resultado único, replay estável, conflito sem sobrescrita, rollback e concorrência | B01 e baseline própria de persistência | Concluído; B02.1–B02.6 comprovados no CI |
-| B03 | Saída `TransacaoProcessada` confiável | contrato versionado, resultado + outbox atômicos, publicação confirmada e reenvio com a mesma identidade | B02 | B03.1–B03.4 concluídos; B03.5 baseline RabbitMQ próxima |
+| B03 | Saída `TransacaoProcessada` confiável | contrato versionado, resultado + outbox atômicos, publicação confirmada e reenvio com a mesma identidade | B02 | B03.1–B03.5 concluídos; B03.6 topologia RabbitMQ próxima |
 | B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | Refinamento |
 | B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | Refinamento |
 | B06 | Recuperação e diagnóstico demonstráveis | queda, atraso e duplicação testados; correlação, retry/DLQ e replay operacional observáveis | B05; refinar política de `FALHOU` | Refinamento |
@@ -43,11 +43,13 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 **B03.4 — Operações da outbox — concluído.** Leitura de pendências ordenada e limitada, com marcação idempotente comprovada no [CI #62](https://github.com/Joaomagh/credpay/actions/runs/36914275852). Não há chamador nem envio AMQP.
 
-**B03.5 — Baseline RabbitMQ do resultado — próximo.** Definir dependências necessárias, topologia do produtor, confirms/returns e testes negativos antes do primeiro publicador.
+**B03.5 — Baseline RabbitMQ do resultado — concluído documentalmente.** Reutiliza versões e digest já testados no produtor; define exchange própria, propriedades da mensagem, confirms/returns e matriz de falhas, sem adicionar dependências ou publicar.
+
+**B03.6 — Topologia da saída — próximo.** Adicionar as duas dependências aprovadas e comprovar exchange/routing com RabbitMQ real. Ainda sem publicador, scheduler ou consumidor.
 
 ## Revisão e riscos
 
-- Estado atual: B02 concluído no CI; B03.1–B03.4 concluídos, B03.5 é a próxima decisão documental. Evidências em `spec.md`.
+- Estado atual: B02 concluído no CI; B03.1–B03.5 concluídos, B03.6 é a próxima implementação. Evidências em `spec.md`.
 - Sandbox AI-Jail continua apenas documentado. Retomar sua implementação como iniciativa delimitada; não alegar isolamento atual.
 - Warning Mockito/Byte Buddy conhecido permanece; coordenar correção com evolução de qualidade, sem ocultá-lo.
 - Testes locais com infraestrutura dependem do Docker disponível. CI pode fornecer evidência real, mas falha de infraestrutura não é red de negócio.

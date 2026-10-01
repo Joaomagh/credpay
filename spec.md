@@ -1567,6 +1567,31 @@ O adapter recebe `ProcessamentoRegistrado`, valor imutável que representa o reg
 - **Limite de segurança:** estas são operações de armazenamento, não evidência de publicação. Não existe chamador, AMQP, scheduler, claim/lease, retry ou coordenação entre réplicas. A futura marcação só poderá ocorrer após publisher confirm e ausência de mandatory return; marcar antes pode perder a mensagem. Nenhuma garantia de exatamente uma vez foi criada.
 - **Próximo:** definir a baseline RabbitMQ mínima do processador, inclusive dependências concretas, exchange/routing e provas de confirmação, antes de implementar publicador.
 
+### 9.22 Baseline RabbitMQ da saída — B03.5
+
+**Status:** decisão documental para o `processamento-service`; nenhuma dependência ou configuração AMQP foi adicionada neste incremento. Reutiliza versões já comprovadas no `transacoes-service`, sem introduzir outro cliente ou broker.
+
+| Item | Baseline aprovada para implementação futura | Por que é necessário |
+|---|---|---|
+| Cliente AMQP | `spring-boot-starter-amqp`, gerenciado por Spring Boot 3.5.16 (Spring AMQP 3.2.12) | conexão, declaração da exchange e publisher confirms/returns sem cliente paralelo |
+| Teste de broker | `org.testcontainers:rabbitmq`, escopo test, versão gerenciada 1.21.4 | provar topologia e entrega/retorno em RabbitMQ real descartável |
+| Imagem de teste | `rabbitmq:4.3.5-management-alpine@sha256:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1` | mesmo artefato fixado e já executado no CI do produtor |
+| Configuração | `publisher-confirm-type=correlated`, `publisher-returns=true`, `template.mandatory=true` | distinguir recebimento pelo broker de roteamento efetivo |
+
+O `processamento-service` será dono apenas da exchange direct durável `credpay.processamento.v1` e publicará pela routing key `transacao.processada.v1`. Não declarará fila, binding ou DLQ do `transacoes-service`; estes pertencem ao futuro consumidor. Testes da exchange usarão fila temporária exclusiva para observar entrega, sem torná-la contrato operacional.
+
+Mensagem: JSON UTF-8 persistente, `contentType=application/json`, `messageId=eventId`, `type=TransacaoProcessada`, `correlationId=transactionId`; corpo idêntico ao payload congelado na outbox. A intenção só receberá `published_at` após `ack` correlacionado e ausência de mandatory return. `nack`, mensagem sem rota, exceção de conexão, interrupção ou timeout de 5 segundos mantêm a linha pendente. Interrupção preserva a flag da thread. O publicador não abrirá transação distribuída entre PostgreSQL e RabbitMQ.
+
+| Prova incremental antes de habilitar publicação | Resultado esperado |
+|---|---|
+| Exchange declarada com broker real | direct, durável, não auto-delete; fila de teste recebe pela routing key v1 |
+| Publicação confirmada e roteada | propriedades e payload preservados; marcar somente após `ack` sem return |
+| Sem rota ou `nack` | mesmo `eventId` e payload permanecem pendentes |
+| Timeout, conexão indisponível ou interrupção | falha observável; pendência não é apagada nem marcada |
+| Queda após confirmação antes da marcação | nova tentativa usa a mesma identidade; entrega pelo menos uma vez, nunca promessa de exatamente uma vez |
+
+Sem `spring-boot-testcontainers`, Awaitility adicional, cliente RabbitMQ direto, scheduler, claim/lease ou múltiplas réplicas publicadoras nesta baseline. O próximo incremento cobre somente dependências e topologia com teste real; envio e marcação conectados virão depois. Segue-se a mesma distinção entre confirms e consumer acks documentada na seção 9.2.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.

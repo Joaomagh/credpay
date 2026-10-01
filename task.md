@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] B03.5 — Definir a baseline RabbitMQ mínima do `processamento-service` para publicar `TransacaoProcessada` v1: dependências justificadas, exchange/routing, confirms/returns e testes negativos, sem implementar publicador ainda.
+- [ ] B03.6 — Adicionar apenas as dependências AMQP aprovadas ao `processamento-service` e comprovar com Testcontainers a exchange `credpay.processamento.v1` e a routing key `transacao.processada.v1`; sem publicador, scheduler ou consumidor.
