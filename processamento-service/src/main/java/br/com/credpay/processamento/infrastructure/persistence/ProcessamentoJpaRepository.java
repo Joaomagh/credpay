@@ -2,6 +2,7 @@ package br.com.credpay.processamento.infrastructure.persistence;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import br.com.credpay.processamento.application.ProcessamentoRegistrado;
 import br.com.credpay.processamento.application.ProcessamentoRepository;
@@ -14,6 +15,21 @@ class ProcessamentoJpaRepository implements ProcessamentoRepository {
 
     @PersistenceContext
     private EntityManager entityManager;
+
+    @Override
+    public void bloquearIdentidades(UUID eventId, UUID transactionId) {
+        Stream.of(eventId, transactionId).distinct().sorted().forEach(this::bloquear);
+    }
+
+    private void bloquear(UUID identidade) {
+        entityManager.createNativeQuery("""
+                        SELECT 1
+                        FROM pg_advisory_xact_lock(
+                            hashtextextended(CAST(:identidade AS text), 0))
+                        """, Long.class)
+                .setParameter("identidade", identidade.toString())
+                .getSingleResult();
+    }
 
     @Override
     public void inserir(ProcessamentoRegistrado processamento) {
