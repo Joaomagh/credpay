@@ -5,6 +5,8 @@ import java.util.UUID;
 
 public interface ProcessamentoRepository {
 
+    void bloquearIdentidades(UUID eventId, UUID transactionId);
+
     void inserir(ProcessamentoRegistrado processamento);
 
     Optional<ProcessamentoRegistrado> buscarPorEventId(UUID eventId);

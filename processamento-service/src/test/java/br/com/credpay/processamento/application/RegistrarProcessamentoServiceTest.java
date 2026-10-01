@@ -144,6 +144,8 @@ class RegistrarProcessamentoServiceTest {
     private static final class RepositorioEmMemoria implements ProcessamentoRepository {
         private final Map<UUID, ProcessamentoRegistrado> registros = new HashMap<>();
 
+        @Override public void bloquearIdentidades(UUID eventId, UUID transactionId) { }
+
         @Override public void inserir(ProcessamentoRegistrado processamento) {
             registros.put(processamento.eventId(), processamento);
         }

@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] B02.6 — Definir e comprovar idempotência concorrente no PostgreSQL: duas entradas equivalentes simultâneas convergem para uma decisão e um `outputEventId`, enquanto entradas divergentes não sobrescrevem o registro; sem consumidor ou outbox.
+- [ ] B03.1 — Definir e aprovar o contrato mínimo de `TransacaoProcessada` v1 e a atomicidade entre resultado e intenção de saída no PostgreSQL próprio, antes de implementar outbox, publicador ou consumidor.

@@ -2,7 +2,7 @@
 
 > Fonte de verdade do sistema que existe hoje. Preencher somente com decisão tomada, contrato aceito ou comportamento comprovado. Planos futuros ficam em `CREDPAY_PLAN.md`; próximas ações ficam em `task.md`.
 
-**Última atualização:** 2026-09-30
+**Última atualização:** 2026-10-01
 
 **Fase atual:** 4 — Fluxo assíncrono confiável
 
@@ -17,7 +17,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno. O `processamento-service` possui scaffolding independente, build reproduzível, health check HTTP, decisão `APROVADA`/`REJEITADA` e o primeiro adapter JPA/Flyway para registrar o snapshot completo do processamento em PostgreSQL.
 
-**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor, idempotência concorrente do processador, outbox do resultado e publicação de `TransacaoProcessada`. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda; o caso de uso sequencial grava a primeira decisão e reutiliza o registro persistido no replay equivalente. Nenhum listener ou endpoint chama esse caso de uso ainda. O adapter PostgreSQL do primeiro serviço é validado isoladamente e pelo fluxo HTTP completo; sua constraint monetária foi testada por SQL direto.
+**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor, outbox do resultado e publicação de `TransacaoProcessada`. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda; o caso de uso transacional grava a primeira decisão, reutiliza o registro no replay equivalente e serializa entradas concorrentes que compartilham `eventId` ou `transactionId`. Nenhum listener ou endpoint chama esse caso de uso ainda. O adapter PostgreSQL do primeiro serviço é validado isoladamente e pelo fluxo HTTP completo; sua constraint monetária foi testada por SQL direto.
 
 ## 2. Arquitetura vigente
 
@@ -1494,6 +1494,15 @@ O adapter recebe `ProcessamentoRegistrado`, valor imutável que representa o reg
 - **Limite:** a consulta seguida de inserção ainda tem uma janela de corrida. B02.5 comprova chamadas sequenciais, sem alegar idempotência concorrente, intenção de saída durável ou consumo RabbitMQ.
 - **Próximo:** provar e resolver duas entregas concorrentes da mesma entrada no PostgreSQL, preservando uma decisão e uma identidade de saída.
 
+### 9.17 Idempotência concorrente da aplicação — B02.6
+
+- **Red:** o teste de integração abriu duas transações/conexões reais, segurou a primeira antes da decisão e exigiu observar a segunda aguardando um lock no PostgreSQL. No [Processing Service CI #43](https://github.com/Joaomagh/credpay/actions/runs/36905584307), os cinco cenários falharam pelo motivo esperado: a segunda não aguardava; os 52 testes anteriores passaram. A falha local do Testcontainers foi exclusivamente a indisponibilidade do Docker Desktop, não evidência red de comportamento.
+- **Green:** `RegistrarProcessamentoService` adquire locks transacionais para `eventId` e `transactionId` antes de consultar ou decidir. O adapter deriva ambas as chaves de 64 bits no PostgreSQL, remove duplicatas e ordena as chaves efetivamente bloqueadas antes de chamar `pg_advisory_xact_lock`; commit ou rollback libera os locks. A transação usa `READ_COMMITTED` para a segunda chamada enxergar o resultado confirmado pela primeira. As constraints de unicidade continuam sendo a última barreira no banco.
+- **Prova:** replay equivalente, inclusive valor decimal de escala diferente, retorna o snapshot original e um só `outputEventId`; valor divergente, mesmo evento para outra transação e outro evento para a mesma transação produzem conflito sem sobrescrita. Se a primeira decisão falha antes de gravar, a segunda pode decidir e persistir; erros técnicos não viram rejeição financeira. Os testes observam uma espera real em `pg_locks`, sem depender apenas de `sleep`.
+- **Verificação:** 20 testes focados de aplicação passaram localmente; o [Processing Service CI #44](https://github.com/Joaomagh/credpay/actions/runs/36905901139) executou `Maven verify` com PostgreSQL real e 57 testes verdes. Na revisão, um teste de regressão revelou que ordenar UUIDs antes do hash não ordenava os recursos reais quando havia colisão; os dois cenários red falharam localmente e ficaram verdes após ordenar/deduplicar os valores `bigint`. O [Processing Service CI #46](https://github.com/Joaomagh/credpay/actions/runs/36909956773) passou no ajuste final com 59 testes, sem erros ou skips. Docker Desktop local continua indisponível.
+- **Limites:** o caso de uso ainda não é chamado por listener; a saída ainda não tem contrato nem outbox. O lock serializa entradas que compartilham qualquer uma das identidades, mas não implica entrega exatamente uma vez nem coordena publicação RabbitMQ. Colisões de hash podem apenas serializar entradas não relacionadas; não autorizam replay incorreto, pois a equivalência é verificada sobre o registro persistido.
+- **Próximo:** definir o contrato versionado mínimo de `TransacaoProcessada` v1 e a atomicidade de resultado + intenção de saída antes de implementar a outbox do processador.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
@@ -1614,6 +1623,13 @@ Cobertura, scanners e outras ferramentas serão sinais auxiliares, não metas is
 - **Contexto:** confirmar entrada sem preservar decisão e intenção de saída pode perder o resultado; reentregas podem ocorrer mesmo depois de um processamento bem-sucedido.
 - **Decisão:** unicidade por evento recebido e transação, resultado/política congelados e outbox na mesma transação do banco próprio; listener só conclui após commit. Replay equivalente não recalcula; identidade divergente é conflito.
 - **Consequências:** não há exatamente uma vez nem transação distribuída; persistência, concorrência, saída versionada e testes de falha são pré-requisitos do consumo operacional. O snapshot em memória é apenas a primeira etapa.
+
+### ADR-007 — Serialização transacional das identidades de processamento
+
+- **Status:** aceita e implementada no caso de uso, sem listener.
+- **Contexto:** consultar ausência e inserir não faz duas primeiras entregas simultâneas convergirem; a constraint evita duplicata, mas pode expor erro SQL no replay. Compartilhar apenas `transactionId` não cobriria o mesmo `eventId` apresentado com outra transação.
+- **Decisão:** derivar no PostgreSQL as chaves `bigint` de ambas as identidades, deduplicar e adquirir `pg_advisory_xact_lock` em ordem crescente das chaves efetivas, no início de uma transação `READ_COMMITTED`; depois aplicar a equivalência/conflito existentes e persistir. O banco mantém PK e unicidade como defesa final. Não criar tabela de locks nem retry cego neste incremento.
+- **Consequências:** uma entrada concorrente espera o commit/rollback da outra e então lê a decisão durável; locks se liberam automaticamente. Uma colisão do hash de 64 bits reduz paralelismo, mas não muda a decisão. O teste com PostgreSQL real cobre replay, conflitos e rollback; não demonstra throughput de produção nem execução via mensageria.
 
 ## 13. Hurdles e aprendizados reais
 

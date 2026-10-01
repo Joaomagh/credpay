@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.util.Objects;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -22,9 +23,10 @@ public class RegistrarProcessamentoService {
         this.gerador = gerador;
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public ProcessamentoRegistrado executar(TransacaoCriadaRecebida entrada) {
         Objects.requireNonNull(entrada, "entrada");
+        repository.bloquearIdentidades(entrada.eventId(), entrada.transactionId());
         var existente = repository.buscarPorEventId(entrada.eventId());
         if (existente.isPresent()) {
             if (existente.orElseThrow().correspondeA(entrada)) {

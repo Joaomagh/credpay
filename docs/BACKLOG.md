@@ -1,13 +1,13 @@
 # CredPay — Backlog do MVP
 
-Atualizado em 2026-09-30. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos e evidências: [spec](../spec.md). Uma única ação executável: [task](../task.md). Papéis: [P.O.](roles/product-owner.md), [dev sênior](roles/senior-developer.md) e [Scrum Master](roles/scrum-master.md).
+Atualizado em 2026-10-01. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos e evidências: [spec](../spec.md). Uma única ação executável: [task](../task.md). Papéis: [P.O.](roles/product-owner.md), [dev sênior](roles/senior-developer.md) e [Scrum Master](roles/scrum-master.md).
 
 ## Prioridades
 
 | ID | Resultado | Aceite de saída | Dependências | Estado |
 |---|---|---|---|---|
 | B01 | Contrato de processamento idempotente | identidade, equivalência/conflito, resultado, atomicidade e ack documentados; matriz de falhas revisada | contratos atuais | Definido e revisado; implementação ainda pendente |
-| B02 | Resultado durável e processamento idempotente | PostgreSQL comprova resultado único, replay estável, conflito sem sobrescrita, rollback e concorrência | B01 e baseline própria de persistência | Em andamento; B02.1–B02.5 concluídos, B02.6 próximo |
+| B02 | Resultado durável e processamento idempotente | PostgreSQL comprova resultado único, replay estável, conflito sem sobrescrita, rollback e concorrência | B01 e baseline própria de persistência | Concluído; B02.1–B02.6 comprovados no CI |
 | B03 | Saída `TransacaoProcessada` confiável | contrato versionado, resultado + outbox atômicos, publicação confirmada e reenvio com a mesma identidade | B02 | Refinamento |
 | B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | Refinamento |
 | B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | Refinamento |
@@ -29,13 +29,13 @@ Não é uma promessa de uma PR por linha nem um cronograma. Itens grandes serão
 
 **B02.5 — Idempotência sequencial na aplicação — concluído.** A primeira entrada válida decide e persiste; reentrega equivalente reutiliza o snapshot original sem consultar política, relógio ou gerador de identidade; divergência do mesmo evento e novo evento para transação concluída geram conflito sem sobrescrita. Nove testes novos de aplicação ficaram verdes localmente; o [CI Linux #40](https://github.com/Joaomagh/credpay/actions/runs/36904356924) executou `verify` com PostgreSQL real.
 
-**B02.6 — Concorrência — próximo.** Duas chamadas simultâneas equivalentes devem convergir para uma única decisão persistida e retornar o mesmo snapshot; conflitos divergentes devem preservar o original. Refinar mecanismo e prova com PostgreSQL real antes de implementação. Não inclui consumidor ou outbox.
+**B02.6 — Concorrência — concluído.** Duas chamadas simultâneas equivalentes convergem para uma única decisão persistida e retornam o mesmo snapshot; conflitos divergentes preservam o original. O [CI Linux #46](https://github.com/Joaomagh/credpay/actions/runs/36909956773) comprovou os cenários com PostgreSQL real e a regressão da ordem das chaves de lock. Não inclui consumidor ou outbox.
 
 B02 só termina com evidências reais de durabilidade, rollback, conflitos e concorrência.
 
 ## Revisão e riscos
 
-- Estado atual: B02.5 validado no CI; B02.6 é o próximo risco a comprovar. Evidências em `spec.md`.
+- Estado atual: B02 concluído no CI; B03.1 define contrato e atomicidade da saída antes da implementação. Evidências em `spec.md`.
 - Sandbox AI-Jail continua apenas documentado. Retomar sua implementação como iniciativa delimitada; não alegar isolamento atual.
 - Warning Mockito/Byte Buddy conhecido permanece; coordenar correção com evolução de qualidade, sem ocultá-lo.
 - Testes locais com infraestrutura dependem do Docker disponível. CI pode fornecer evidência real, mas falha de infraestrutura não é red de negócio.
