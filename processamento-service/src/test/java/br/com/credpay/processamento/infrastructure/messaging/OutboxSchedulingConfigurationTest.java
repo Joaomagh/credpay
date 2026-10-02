@@ -3,6 +3,7 @@ package br.com.credpay.processamento.infrastructure.messaging;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.timeout;
 
 import br.com.credpay.processamento.application.PublicarOutboxProcessamento;
 import org.junit.jupiter.api.Test;
@@ -50,5 +51,15 @@ class OutboxSchedulingConfigurationTest {
                     metodo.invoke(scheduler);
                     verify(publicador).publicarProximo();
                 });
+    }
+
+    @Test
+    void scheduler_deveDispararAutomaticamente_quandoHabilitado() {
+        contextRunner
+                .withPropertyValues(
+                        "credpay.outbox.publisher.enabled=true",
+                        "credpay.outbox.publisher.interval=PT0.05S")
+                .run(contexto -> verify(publicador, timeout(3_000).atLeastOnce())
+                        .publicarProximo());
     }
 }
