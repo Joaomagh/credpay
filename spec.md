@@ -1619,6 +1619,13 @@ Sem `spring-boot-testcontainers`, Awaitility adicional, cliente RabbitMQ direto,
 - **Limites:** falta simular a queda entre confirm e marcação, que pode gerar duplicata legítima; também faltam scheduler, listener, política de múltiplas réplicas e health do broker quando o fluxo for ativado. O método existe, mas só é chamado por testes; o RabbitMQ ainda não é dependência operacional do processo em repouso.
 - **Próximo:** forçar a falha entre confirmação e marcação e provar reenvio da mesma intenção, sem habilitar execução automática.
 
+### 9.26 Recuperação entre confirmação e marcação — B03.9
+
+- **Prova:** um wrapper de teste para a porta da outbox lança exceção controlada imediatamente antes de `marcarPublicado`, depois de o publicador obter confirmação RabbitMQ. O broker entrega a primeira mensagem, mas `published_at` continua nulo em PostgreSQL. Desarmada a falha, uma segunda chamada publica a mesma linha, com o mesmo `eventId` e payload, e registra o instante. A fila de teste é durável, única e removida no `finally`.
+- **Tipo de teste:** caracterização/regressão de uma propriedade já entregue pelo desenho de B03.8; não houve red honesto nem alteração de produção. Fabricar red exigiria enfraquecer a condição de marcação já integrada. O [CI #83](https://github.com/Joaomagh/credpay/actions/runs/37054296624) executou 72 testes, zero falhas, erros ou skips, com PostgreSQL e RabbitMQ reais; `test-compile` e `git diff --check` passaram localmente.
+- **Consequência:** a entrega é pelo menos uma vez; a duplicata é legítima após falha nessa janela. O consumidor futuro deverá deduplicar por `eventId`. O teste não prova recuperação automática, pois ainda não há scheduler, nem segurança com múltiplas réplicas.
+- **Próximo:** ativar um scheduler opt-in para uma única réplica e incluir RabbitMQ no health quando essa publicação estiver habilitada.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
