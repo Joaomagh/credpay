@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] B04.5 — Provar o caminho válido do listener opt-in: persistir resultado e intenção de saída antes do ack em RabbitMQ e PostgreSQL reais, mantendo o consumo desligado por padrão.
+- [ ] B04.6 — Provar replay equivalente pelo listener opt-in: duas entregas do mesmo `TransacaoCriada` deixam um único resultado e uma única intenção de saída.

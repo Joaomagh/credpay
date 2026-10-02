@@ -11,7 +11,7 @@ Cada capacidade entra em um incremento pequeno, testado e documentado. Assim, o 
 
 ## Status atual
 
-O projeto está na fase de fluxo assíncrono confiável: ambos os serviços persistem suas próprias decisões e publicam eventos por outbox; o `processamento-service` ainda não consome `TransacaoCriada`. O consumidor RabbitMQ e a integração ponta a ponta são os próximos componentes do fluxo.
+O projeto está na fase de fluxo assíncrono confiável: ambos os serviços persistem suas próprias decisões e publicam eventos por outbox. O `processamento-service` tem um listener de entrada opt-in validado no caminho positivo, mas ele permanece desligado por padrão até cobrir reentrega, falhas e configuração operacional. A integração ponta a ponta ainda não está pronta.
 
 | Estado | Entrega |
 |---|---|
@@ -32,6 +32,7 @@ O projeto está na fase de fluxo assíncrono confiável: ambos os serviços pers
 | Implementado | publicação de uma pendência da outbox do processador: marca após confirmação roteada e preserva a intenção quando não há rota |
 | Implementado | exchange RabbitMQ durável e publicador do processador, com payload e propriedades v1 testados em broker descartável |
 | Implementado | scheduler opt-in de uma réplica para a saída do processador; RabbitMQ participa do health quando a publicação é habilitada |
+| Comprovado | listener de `TransacaoCriada` opt-in mantém a entrega sem ack enquanto resultado e outbox aguardam commit, em PostgreSQL e RabbitMQ reais |
 | Implementado | health check do Spring Boot Actuator |
 | Implementado | transação válida nasce `PENDENTE` |
 | Implementado | valor ausente ou não positivo e moeda ausente são rejeitados pelo domínio |
@@ -64,7 +65,7 @@ O projeto está na fase de fluxo assíncrono confiável: ambos os serviços pers
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
 | Documentado | contrato `TransacaoCriada` v1 e garantia de entrega pelo menos uma vez via outbox |
 | Documentado | baseline RabbitMQ com propriedade da topologia, confirms/returns, retry e DLQ |
-| Ainda não implementado | coordenação entre réplicas publicadoras, consumidor, fluxo ponta a ponta, imagem da aplicação, Kubernetes e CD |
+| Ainda não implementado | coordenação entre réplicas publicadoras, consumo seguro completo, fluxo ponta a ponta, imagem da aplicação, Kubernetes e CD |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 
@@ -168,7 +169,7 @@ cd processamento-service
 .\mvnw.cmd --batch-mode --no-transfer-progress verify
 ```
 
-Seu smoke test inicia a aplicação em porta aleatória com PostgreSQL descartável e comprova `GET /actuator/health` com estado `UP`. Ainda não há listener RabbitMQ nem endpoint de negócio nesse serviço; a porta de persistência existe, mas ainda não está ligada ao caso de uso.
+Seu smoke test inicia a aplicação em porta aleatória com PostgreSQL descartável e comprova `GET /actuator/health` com estado `UP`. O listener RabbitMQ permanece desligado por padrão; seu caminho positivo tem teste próprio com PostgreSQL e RabbitMQ reais. Não há endpoint de negócio nesse serviço.
 
 Para executar o processador fora dos testes, configure ao menos uma moeda. No terminal de `processamento-service`, o exemplo abaixo fornece limites fictícios e usa outra porta para não conflitar com o produtor:
 
@@ -182,7 +183,7 @@ $env:SERVER_PORT = "8081"
 .\mvnw.cmd spring-boot:run
 ```
 
-Não existe limite padrão nem conversão cambial. Configuração ausente, moeda inválida, limite não positivo ou banco indisponível impedem a inicialização. A decisão pura seleciona o limite uma vez; um caso de uso transacional registra a primeira execução e relê o snapshot em uma reentrega equivalente. Ainda não há listener RabbitMQ. Com o publicador desligado, `/actuator/health` em `localhost:8081` cobre a aplicação e o banco, não um fluxo assíncrono pronto. Para ativar a saída em uma única réplica, configure `CREDPAY_OUTBOX_PUBLISHER_ENABLED=true`, `CREDPAY_OUTBOX_PUBLISHER_INTERVAL=PT1S` e a conexão RabbitMQ no ambiente; o broker passará a integrar o health. Sem fila/binding do futuro consumidor, eventos permanecem pendentes.
+Não existe limite padrão nem conversão cambial. Configuração ausente, moeda inválida, limite não positivo ou banco indisponível impedem a inicialização. A decisão pura seleciona o limite uma vez; um caso de uso transacional registra a primeira execução e relê o snapshot em uma reentrega equivalente. O listener de entrada tem opt-in, usado até agora somente em teste, e não deve ser ativado operacionalmente antes dos cenários de falha. Com o publicador desligado, `/actuator/health` em `localhost:8081` cobre a aplicação e o banco, não um fluxo assíncrono pronto. Para ativar a saída em uma única réplica, configure `CREDPAY_OUTBOX_PUBLISHER_ENABLED=true`, `CREDPAY_OUTBOX_PUBLISHER_INTERVAL=PT1S` e a conexão RabbitMQ no ambiente; o broker passará a integrar o health. Sem rota de destino operacional, eventos permanecem pendentes.
 
 Os testes do `transacoes-service` iniciam PostgreSQL e RabbitMQ descartáveis automaticamente. Para executar esse serviço com o health completo, no terminal posicionado em `transacoes-service`, disponibilize PostgreSQL e RabbitMQ separadamente e configure as conexões sem versionar credenciais:
 
@@ -216,11 +217,11 @@ Em Linux ou macOS, use `./mvnw` no lugar de `.\mvnw.cmd`. O `POST /transacoes` r
 
 A aplicação não possui fallback volátil: sem DataSource válido ela falha ao iniciar. Flyway aplica as migrations e Hibernate valida o schema; nos testes de integração, o container e as propriedades de conexão são gerenciados automaticamente.
 
-O scheduler da outbox vem desligado. Para ativá-lo em uma única réplica, configure `CREDPAY_OUTBOX_PUBLISHER_ENABLED=true`; `CREDPAY_OUTBOX_PUBLISHER_INTERVAL` aceita uma duração como `PT1S`. O produtor declara a exchange, mas a fila e o binding de negócio pertencerão ao futuro consumidor. Enquanto não houver rota, os eventos permanecem pendentes. A presença do RabbitMQ também participa do health do Actuator.
+O scheduler da outbox vem desligado. Para ativá-lo em uma única réplica, configure `CREDPAY_OUTBOX_PUBLISHER_ENABLED=true`; `CREDPAY_OUTBOX_PUBLISHER_INTERVAL` aceita uma duração como `PT1S`. O produtor declara apenas sua exchange; fila e binding pertencem ao processador e só são declarados com opt-in próprio. Enquanto não houver rota, os eventos permanecem pendentes. A presença do RabbitMQ também participa do health do Actuator quando a publicação é ligada.
 
 ## Arquitetura planejada
 
-O monorepo possui dois aplicativos Spring Boot independentes, cada um responsável por seu build, configuração e banco. O `processamento-service` já possui resultado idempotente, schema e outbox próprios e publicação opt-in; o consumo de `TransacaoCriada` e a integração ponta a ponta ainda não existem.
+O monorepo possui dois aplicativos Spring Boot independentes, cada um responsável por seu build, configuração e banco. O `processamento-service` já possui resultado idempotente, schema e outbox próprios, publicação opt-in e listener de entrada testado somente no caminho positivo; consumo seguro completo e integração ponta a ponta ainda não existem.
 
 ```text
 Cliente

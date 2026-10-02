@@ -6,7 +6,7 @@
 
 **Fase atual:** 4 — Fluxo assíncrono confiável
 
-**Estado:** criação e consulta HTTP persistentes; processamento idempotente e duas outboxes transacionais comprovados; publicadores RabbitMQ com scheduler opt-in de réplica única em cada serviço; topologia, parser e recuperação de rota da DLQ testados no processador, ainda sem listener ou fluxo ponta a ponta
+**Estado:** criação e consulta HTTP persistentes; processamento idempotente e duas outboxes transacionais comprovados; publicadores RabbitMQ com scheduler opt-in de réplica única em cada serviço; listener de entrada opt-in validado no caminho positivo, ainda sem tratamento de falhas ou fluxo ponta a ponta
 
 ## 1. Contexto e limites atuais
 
@@ -17,7 +17,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno. O `processamento-service` possui scaffolding independente, build reproduzível, health check HTTP, decisão `APROVADA`/`REJEITADA`, adapter JPA/Flyway para o snapshot e adapter JDBC para gravar a intenção `TransacaoProcessada` v1 atomicamente em PostgreSQL.
 
-**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras e consumidor de `TransacaoCriada`. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda; o caso de uso transacional grava decisão e intenção de saída atomicamente, reutiliza o registro no replay equivalente e serializa entradas concorrentes que compartilham `eventId` ou `transactionId`. A migration V2 cria a outbox própria com backfill dos resultados V1; o caso de uso de publicação lê uma pendência e a marca após `ack` sem return. Um scheduler opt-in de réplica única pode chamar esse caso de uso. A exchange RabbitMQ e o emissor do processador já foram testados, sem fila operacional de consumo. Nenhum listener ou endpoint chama o caso de uso de registro ainda. O adapter PostgreSQL do primeiro serviço é validado isoladamente e pelo fluxo HTTP completo; sua constraint monetária foi testada por SQL direto.
+**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras e consumo operacional completo de `TransacaoCriada`. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda; o caso de uso transacional grava decisão e intenção de saída atomicamente, reutiliza o registro no replay equivalente e serializa entradas concorrentes que compartilham `eventId` ou `transactionId`. A migration V2 cria a outbox própria com backfill dos resultados V1; o caso de uso de publicação lê uma pendência e a marca após `ack` sem return. Um scheduler opt-in de réplica única pode chamar esse caso de uso. O listener experimental chama o registro somente quando topologia e listener são habilitados explicitamente; falhas, retries, política operacional do broker e fluxo ponta a ponta ainda não estão prontos. O adapter PostgreSQL do primeiro serviço é validado isoladamente e pelo fluxo HTTP completo; sua constraint monetária foi testada por SQL direto.
 
 ## 2. Arquitetura vigente
 
@@ -1289,9 +1289,9 @@ O produtor declara somente sua exchange. A fila, binding, DLX e DLQ pertencem ao
 
 Publisher confirms cobrem produtor → broker e são independentes do ack do consumidor. Mensagens obrigatórias sem rota precisam ser tratadas por publisher returns; um `ack` isolado não prova roteamento. Essas decisões seguem as referências oficiais de [confirms/acks](https://www.rabbitmq.com/docs/confirms) e [Spring AMQP confirms/returns](https://docs.spring.io/spring-amqp/reference/amqp/template.html).
 
-### 9.3 Consumo, retry e DLQ planejados
+### 9.3 Consumo, retry e DLQ parciais
 
-O contrato refinado de B04.1 está na seção 9.28. O futuro consumidor usará ack pelo container somente após sucesso/commit do listener, prefetch inicial `10` e três tentativas totais para falhas transitórias, com esperas de 1 e 2 segundos; depois rejeitará sem requeue para a DLX. Payload inválido ou versão incompatível seguirá diretamente para DLQ. A deduplicação persistente por `eventId` já existe no caso de uso, mas ainda não foi conectada ao broker.
+O contrato refinado de B04.1 está na seção 9.28. O listener opt-in já usa ack pelo container após sucesso/commit e prefetch `10` no caminho válido. Ainda faltam três tentativas totais para falhas transitórias, com esperas de 1 e 2 segundos, seguidas de rejeição sem requeue para a DLX; payload inválido ou versão incompatível deverão ir diretamente à DLQ. A deduplicação persistente por `eventId` já existe no caso de uso, mas o replay via broker ainda não foi provado.
 
 DLQ não é garantia absoluta de entrega: o dead-lettering também pode falhar. Em quorum queues, a estratégia padrão é `at-most-once`; `at-least-once` exige configuração adicional e prova, conforme a seção 9.28. Um container de nó único não prova alta disponibilidade nem recuperação de falhas de quorum. Referências: [Quorum Queues](https://www.rabbitmq.com/docs/quorum-queues) e [Dead Letter Exchanges](https://www.rabbitmq.com/docs/dlx).
 
@@ -1704,6 +1704,16 @@ Com política efetiva `at-least-once` na fila quorum de origem, o teste remove o
 
 **Próximo:** B04.5, provar o caminho válido do listener opt-in e ack somente após commit em RabbitMQ e PostgreSQL reais, sem habilitação por padrão.
 
+### 9.32 Listener opt-in com ack após commit no caminho válido — B04.5
+
+`TransacaoCriadaListener` só é criado quando `credpay.processamento.consumer.topology.enabled=true` **e** `credpay.processamento.consumer.listener.enabled=true`. Recebe uma mensagem da fila própria, usa o parser de B04.3 e chama `RegistrarProcessamentoService.executar`. Há um consumidor, `prefetch=10` e `AcknowledgeMode.AUTO`: o container confirma a entrega após o retorno do método, que ocorre depois do commit da transação do serviço. Os dois flags ficam ausentes/desligados na configuração padrão. Não há handler de erro, retry ou ativação operacional neste incremento.
+
+**TDD e evidência:** [CI #118](https://github.com/Joaomagh/credpay/actions/runs/37067608989) falhou por vazamento da fixture para outro contexto e não conta como red de comportamento. Após isolá-la, [CI #119](https://github.com/Joaomagh/credpay/actions/runs/37067850746) foi o red válido: o contexto subiu e a pausa antes do commit nunca foi alcançada, pois não existia listener. No primeiro green, [CI #120](https://github.com/Joaomagh/credpay/actions/runs/37068431322) chegou à pausa, mas a leitura imediata da estatística de entregas sem ack ainda mostrava zero. Uma espera limitada preservou a asserção; [CI #121](https://github.com/Joaomagh/credpay/actions/runs/37069062896) passou com 101 testes, zero falhas/erros/skips. Durante a pausa após inserir a outbox, outra conexão não via resultado nem intenção e o broker mostrava uma entrega sem ack. Após liberar a transação, ambos ficaram duráveis e a fila voltou a zero. `test-compile` e `git diff --check` passaram localmente; Docker Desktop local indisponível.
+
+**Limites:** a prova é do caminho válido em PostgreSQL/RabbitMQ de teste. Não prova replay pelo listener, crash entre commit e ack, erro permanente para DLQ, retry finito ou política de broker provisionada fora da fixture. O listener não deve ser habilitado em execução normal antes dessas proteções; sem tratamento, exceções do listener podem causar reentrega ilimitada. Nenhuma dependência foi adicionada.
+
+**Próximo:** B04.6, provar replay equivalente do mesmo evento pelo listener sem duplicar resultado nem intenção de saída.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
@@ -1813,21 +1823,21 @@ Cobertura, scanners e outras ferramentas serão sinais auxiliares, não metas is
 
 ### ADR-005 — RabbitMQ com confirmação e propriedade de topologia
 
-- **Status:** aceita; topologia e publicação dos dois serviços implementadas, consumo pendente
+- **Status:** aceita; topologia e publicação dos dois serviços implementadas, listener de entrada apenas opt-in/testado no caminho válido
 - **Contexto:** a outbox remove a janela de gravação local, mas não prova que o broker recebeu ou roteou a mensagem. Declarar filas do consumidor no produtor também acoplaria implantações independentes.
 - **Decisão:** usar exchange direct durável pertencente ao produtor, filas quorum pertencentes ao consumidor, mensagens persistentes, mandatory returns e publisher confirms correlacionados. Marcar a outbox somente após confirmação sem retorno.
 - **Consequências:** falhas permanecem recuperáveis na outbox e recursos têm dono claro. A entrega continua pelo menos uma vez, exige deduplicação e adiciona latência/complexidade de confirmação. Alta disponibilidade não é comprovada pelo container de nó único.
 
 ### ADR-006 — Resultado idempotente e saída atômica antes do consumidor
 
-- **Status:** resultado idempotente e saída atômica implementados; listener e ack de entrada pendentes, conforme seção 9.12.
+- **Status:** resultado idempotente, saída atômica e ack após commit no caminho válido implementados; tratamento de falhas e ativação operacional pendentes.
 - **Contexto:** confirmar entrada sem preservar decisão e intenção de saída pode perder o resultado; reentregas podem ocorrer mesmo depois de um processamento bem-sucedido.
 - **Decisão:** unicidade por evento recebido e transação, resultado/política congelados e outbox na mesma transação do banco próprio; listener só conclui após commit. Replay equivalente não recalcula; identidade divergente é conflito.
 - **Consequências:** não há exatamente uma vez nem transação distribuída; persistência, concorrência, saída versionada e testes de falha são pré-requisitos do consumo operacional. O snapshot em memória é apenas a primeira etapa.
 
 ### ADR-007 — Serialização transacional das identidades de processamento
 
-- **Status:** aceita e implementada no caso de uso, sem listener.
+- **Status:** aceita e implementada no caso de uso; listener opt-in testado somente no caminho válido.
 - **Contexto:** consultar ausência e inserir não faz duas primeiras entregas simultâneas convergirem; a constraint evita duplicata, mas pode expor erro SQL no replay. Compartilhar apenas `transactionId` não cobriria o mesmo `eventId` apresentado com outra transação.
 - **Decisão:** derivar no PostgreSQL as chaves `bigint` de ambas as identidades, deduplicar e adquirir `pg_advisory_xact_lock` em ordem crescente das chaves efetivas, no início de uma transação `READ_COMMITTED`; depois aplicar a equivalência/conflito existentes e persistir. O banco mantém PK e unicidade como defesa final. Não criar tabela de locks nem retry cego neste incremento.
 - **Consequências:** uma entrada concorrente espera o commit/rollback da outra e então lê a decisão durável; locks se liberam automaticamente. Uma colisão do hash de 64 bits reduz paralelismo, mas não muda a decisão. O teste com PostgreSQL real cobre replay, conflitos e rollback; não demonstra throughput de produção nem execução via mensageria.
