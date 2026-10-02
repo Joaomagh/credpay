@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import br.com.credpay.processamento.application.EventoSaidaPendente;
 import br.com.credpay.processamento.application.OutboxProcessamentoRepository;
+import br.com.credpay.processamento.application.ProcessamentoRegistrado;
+import br.com.credpay.processamento.application.ProcessamentoRepository;
 import br.com.credpay.processamento.support.ProducerExchangeFixture;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -11,6 +13,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
@@ -69,6 +73,7 @@ class TransacaoCriadaListenerIntegrationTest {
     @Autowired private RabbitTemplate rabbitTemplate;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private PausaAntesDoCommit pausa;
+    @Autowired private ObservadorDeBusca observador;
 
     @Test
     void deveManterEntregaSemAckAteResultadoEOutboxConfirmarem() throws Exception {
@@ -95,6 +100,39 @@ class TransacaoCriadaListenerIntegrationTest {
         }
         assertThat(quantidadeNoBanco("processamentos", "event_id", eventId)).isEqualTo(1);
         assertThat(quantidadeNoBanco("outbox_eventos", "aggregate_id", transactionId)).isEqualTo(1);
+        aguardarEstadoFila("messages", 0, 10);
+    }
+
+    @Test
+    void deveConfirmarReplayEquivalenteSemDuplicarResultadoOuOutbox() throws Exception {
+        var eventId = UUID.randomUUID();
+        var transactionId = UUID.randomUUID();
+        var mensagem = mensagem(eventId, transactionId);
+        pausa.desarmar();
+        observador.armar(eventId);
+
+        rabbitTemplate.send("credpay.transacoes.v1", "transacao.criada.v1", mensagem);
+        var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        while (quantidadeNoBanco("outbox_eventos", "aggregate_id", transactionId) == 0
+                && System.nanoTime() < prazo) {
+            TimeUnit.MILLISECONDS.sleep(50);
+        }
+        assertThat(quantidadeNoBanco("processamentos", "event_id", eventId)).isEqualTo(1);
+        var outputEventId = jdbc.queryForObject(
+                "select output_event_id from processamentos where event_id = ?", UUID.class, eventId);
+
+        rabbitTemplate.send("credpay.transacoes.v1", "transacao.criada.v1", mensagem);
+        try {
+            assertThat(observador.aguardarSegundaBusca(10, TimeUnit.SECONDS)).isTrue();
+            assertThat(quantidadeNoBanco("processamentos", "event_id", eventId)).isEqualTo(1);
+            assertThat(quantidadeNoBanco("outbox_eventos", "aggregate_id", transactionId)).isEqualTo(1);
+            assertThat(jdbc.queryForObject(
+                    "select output_event_id from processamentos where event_id = ?", UUID.class, eventId))
+                    .isEqualTo(outputEventId);
+            aguardarEstadoFila("messages_unacknowledged", 1, 20);
+        } finally {
+            observador.liberar();
+        }
         aguardarEstadoFila("messages", 0, 10);
     }
 
@@ -145,6 +183,13 @@ class TransacaoCriadaListenerIntegrationTest {
                 @Qualifier("outboxProcessamentoJdbcRepository") OutboxProcessamentoRepository delegate) {
             return new PausaAntesDoCommit(delegate);
         }
+
+        @Bean
+        @Primary
+        ObservadorDeBusca processamentoComObservador(
+                @Qualifier("processamentoJpaRepository") ProcessamentoRepository delegate) {
+            return new ObservadorDeBusca(delegate);
+        }
     }
 
     static class PausaAntesDoCommit implements OutboxProcessamentoRepository {
@@ -161,6 +206,11 @@ class TransacaoCriadaListenerIntegrationTest {
             liberada = new CountDownLatch(1);
         }
 
+        void desarmar() {
+            inserida = null;
+            liberada = null;
+        }
+
         boolean aguardarInsercao(long tempo, TimeUnit unidade) throws InterruptedException {
             return inserida.await(tempo, unidade);
         }
@@ -172,7 +222,11 @@ class TransacaoCriadaListenerIntegrationTest {
         @Override
         public void adicionar(EventoSaidaPendente evento) {
             delegate.adicionar(evento);
-            inserida.countDown();
+            var sinal = inserida;
+            if (sinal == null) {
+                return;
+            }
+            sinal.countDown();
             try {
                 if (!liberada.await(30, TimeUnit.SECONDS)) {
                     throw new IllegalStateException("espera de commit excedida");
@@ -196,6 +250,65 @@ class TransacaoCriadaListenerIntegrationTest {
         @Override
         public void marcarPublicado(UUID eventId, Instant publicadoEm) {
             delegate.marcarPublicado(eventId, publicadoEm);
+        }
+    }
+
+    static class ObservadorDeBusca implements ProcessamentoRepository {
+        private final ProcessamentoRepository delegate;
+        private final AtomicInteger buscas = new AtomicInteger();
+        private volatile UUID eventIdObservado;
+        private volatile CountDownLatch segundaBusca;
+        private volatile CountDownLatch liberada;
+
+        ObservadorDeBusca(ProcessamentoRepository delegate) {
+            this.delegate = delegate;
+        }
+
+        void armar(UUID eventId) {
+            eventIdObservado = eventId;
+            buscas.set(0);
+            segundaBusca = new CountDownLatch(1);
+            liberada = new CountDownLatch(1);
+        }
+
+        boolean aguardarSegundaBusca(long tempo, TimeUnit unidade) throws InterruptedException {
+            return segundaBusca.await(tempo, unidade);
+        }
+
+        void liberar() {
+            liberada.countDown();
+        }
+
+        @Override
+        public void bloquearIdentidades(UUID eventId, UUID transactionId) {
+            delegate.bloquearIdentidades(eventId, transactionId);
+        }
+
+        @Override
+        public void inserir(ProcessamentoRegistrado processamento) {
+            delegate.inserir(processamento);
+        }
+
+        @Override
+        public Optional<ProcessamentoRegistrado> buscarPorEventId(UUID eventId) {
+            var encontrado = delegate.buscarPorEventId(eventId);
+            if (eventId.equals(eventIdObservado) && buscas.incrementAndGet() == 2) {
+                segundaBusca.countDown();
+                try {
+                    if (!liberada.await(30, TimeUnit.SECONDS)) {
+                        throw new IllegalStateException("espera de replay excedida");
+                    }
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("espera de replay interrompida", exception);
+                }
+            }
+            return encontrado;
+        }
+
+        @Override
+        public boolean existePorTransactionId(UUID transactionId) {
+            return delegate.existePorTransactionId(transactionId);
         }
     }
 }
