@@ -2,6 +2,8 @@ package br.com.credpay.processamento.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -24,19 +26,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-@SpringBootTest(properties = "credpay.processamento.limites.BRL=100.00")
+@SpringBootTest(properties = {
+        "credpay.processamento.limites.BRL=100.00",
+        "credpay.outbox.publisher.enabled=true",
+        "credpay.outbox.publisher.interval=PT1H"
+})
+@AutoConfigureMockMvc
 @Import(PublicarOutboxProcessamentoIntegrationTest.FalhaNaMarcacaoConfiguration.class)
 @Testcontainers
 class PublicarOutboxProcessamentoIntegrationTest {
@@ -73,12 +82,19 @@ class PublicarOutboxProcessamentoIntegrationTest {
     @Autowired private RabbitTemplate rabbitTemplate;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private FalhaNaMarcacao falhaNaMarcacao;
+    @Autowired private MockMvc mvc;
 
     @BeforeEach
     void limparDados() {
         falhaNaMarcacao.desarmar();
         jdbc.update("delete from outbox_eventos");
         jdbc.update("delete from processamentos");
+    }
+
+    @Test
+    void healthRabbit_deveEstarAtivo_quandoPublicacaoAutomaticaForHabilitada() throws Exception {
+        mvc.perform(get("/actuator/health/rabbit"))
+                .andExpect(status().isOk());
     }
 
     @Test
