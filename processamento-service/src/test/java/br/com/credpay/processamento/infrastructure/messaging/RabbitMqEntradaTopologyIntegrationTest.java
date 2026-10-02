@@ -120,12 +120,7 @@ class RabbitMqEntradaTopologyIntegrationTest {
         aguardarDlqCheia();
         var payload = "evento-de-teste";
         rabbitTemplate.convertAndSend("", entrada.getName(), payload);
-        rabbitTemplate.execute(channel -> {
-            var entrega = channel.basicGet(entrada.getName(), false);
-            assertThat(entrega).isNotNull();
-            channel.basicReject(entrega.getEnvelope().getDeliveryTag(), false);
-            return null;
-        });
+        rejeitarDaEntrada();
         var ocupante = rabbitTemplate.receive(dlq.getName(), 5_000);
         assertThat(ocupante).isNotNull();
         assertThat(new String(ocupante.getBody(), StandardCharsets.UTF_8)).isEqualTo("ocupante");
@@ -133,6 +128,46 @@ class RabbitMqEntradaTopologyIntegrationTest {
         var recebida = rabbitTemplate.receive(dlq.getName(), 15_000);
         assertThat(recebida).isNotNull();
         assertThat(new String(recebida.getBody(), StandardCharsets.UTF_8)).isEqualTo(payload);
+    }
+
+    @Test
+    void deadLetterDeveAguardarBindingERetomarAposRestaurarRota() throws Exception {
+        var payload = "evento-sem-rota";
+        admin.removeBinding(dlqBinding);
+        try {
+            assertThat(bindingsDoBroker()).doesNotContain(dlx.getName() + "\texchange\t" + dlq.getName());
+            rabbitTemplate.convertAndSend("", entrada.getName(), payload);
+            rejeitarDaEntrada();
+
+            assertThat(rabbitTemplate.receive(dlq.getName(), 2_000)).isNull();
+            assertThat(bindingsDoBroker()).doesNotContain(dlx.getName() + "\texchange\t" + dlq.getName());
+        } finally {
+            admin.declareBinding(dlqBinding);
+        }
+
+        var recebida = rabbitTemplate.receive(dlq.getName(), 30_000);
+        assertThat(recebida).isNotNull();
+        assertThat(new String(recebida.getBody(), StandardCharsets.UTF_8)).isEqualTo(payload);
+    }
+
+    private String bindingsDoBroker() throws Exception {
+        var resultado = RABBITMQ.execInContainer("rabbitmqctl", "list_bindings");
+        assertThat(resultado.getExitCode()).isZero();
+        return resultado.getStdout();
+    }
+
+    private void rejeitarDaEntrada() {
+        rabbitTemplate.execute(channel -> {
+            var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+            var entrega = channel.basicGet(entrada.getName(), false);
+            while (entrega == null && System.nanoTime() < prazo) {
+                TimeUnit.MILLISECONDS.sleep(50);
+                entrega = channel.basicGet(entrada.getName(), false);
+            }
+            assertThat(entrega).isNotNull();
+            channel.basicReject(entrega.getEnvelope().getDeliveryTag(), false);
+            return null;
+        });
     }
 
     private void aguardarDlqCheia() throws InterruptedException {
