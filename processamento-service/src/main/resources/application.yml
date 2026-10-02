@@ -11,10 +11,16 @@ spring:
     hibernate:
       ddl-auto: validate
 
+credpay:
+  outbox:
+    publisher:
+      enabled: ${CREDPAY_OUTBOX_PUBLISHER_ENABLED:false}
+      interval: ${CREDPAY_OUTBOX_PUBLISHER_INTERVAL:PT1S}
+
 management:
   health:
     rabbit:
-      enabled: false
+      enabled: ${credpay.outbox.publisher.enabled:false}
   endpoints:
     web:
       exposure:
