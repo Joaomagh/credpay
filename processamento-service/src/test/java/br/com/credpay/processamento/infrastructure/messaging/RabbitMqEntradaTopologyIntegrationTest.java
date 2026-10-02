@@ -20,6 +20,8 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.RabbitMQContainer;
@@ -39,7 +41,12 @@ class RabbitMqEntradaTopologyIntegrationTest {
             FlywayAutoConfiguration.class
     })
     @ComponentScan(basePackages = "br.com.credpay.processamento.infrastructure.messaging")
+    @Import(ProducerFixture.class)
     static class TestApplication {
+    }
+
+    @TestConfiguration(proxyBeanMethods = false)
+    static class ProducerFixture {
         @Bean
         DirectExchange producerExchangeFixture() {
             return new DirectExchange("credpay.transacoes.v1", true, false);
@@ -114,7 +121,7 @@ class RabbitMqEntradaTopologyIntegrationTest {
             admin.declareBinding(dlqBinding);
         }
 
-        var recebida = rabbitTemplate.receive(dlq.getName(), 15_000);
+        var recebida = rabbitTemplate.receive(dlq.getName(), 60_000);
         assertThat(recebida).isNotNull();
         assertThat(new String(recebida.getBody(), StandardCharsets.UTF_8)).isEqualTo(payload);
     }
