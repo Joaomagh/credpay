@@ -2,7 +2,7 @@ package br.com.credpay.processamento.infrastructure.messaging;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import br.com.credpay.processamento.support.InputTopologyTestApplication;
+import br.com.credpay.testing.InputTopologyTestApplication;
 import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +12,7 @@ import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -61,6 +62,9 @@ class RabbitMqEntradaTopologyIntegrationTest {
 
     @BeforeEach
     void configurarPoliticaDeDeadLetter() throws Exception {
+        assertThat(rabbitTemplate.getConnectionFactory()).isInstanceOf(CachingConnectionFactory.class);
+        assertThat(((CachingConnectionFactory) rabbitTemplate.getConnectionFactory()).getPort())
+                .isEqualTo(RABBITMQ.getAmqpPort());
         var politica = "{\"dead-letter-strategy\":\"at-least-once\","
                 + "\"overflow\":\"reject-publish\",\"max-length\":10000,"
                 + "\"dead-letter-exchange\":\"credpay.processamento.dlx.v1\","
