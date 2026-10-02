@@ -71,7 +71,7 @@ class PublicarOutboxProcessamentoIntegrationTest {
 
     @Test
     void publicarProximo_deveEntregarEventoEMarcarPendente_aposConfirmacaoRoteada() throws Exception {
-        var fila = new Queue("credpay.test." + UUID.randomUUID(), false, false, false);
+        var fila = new Queue("credpay.test." + UUID.randomUUID(), true, false, false);
         admin.declareQueue(fila);
         try {
             admin.declareBinding(BindingBuilder.bind(fila)
