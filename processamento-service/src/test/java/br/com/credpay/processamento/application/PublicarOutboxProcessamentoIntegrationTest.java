@@ -101,6 +101,39 @@ class PublicarOutboxProcessamentoIntegrationTest {
         }
     }
 
+    @Test
+    void publicarProximo_deveReenviarMesmoEvento_quandoRotaSurgirAposFalha() throws Exception {
+        var fila = new Queue("credpay.test." + UUID.randomUUID(), true, false, false);
+        admin.declareQueue(fila);
+        try {
+            var transacaoId = UUID.randomUUID();
+            var resultado = registrar.executar(new TransacaoCriadaRecebida(
+                    UUID.randomUUID(), transacaoId, Instant.parse("2026-10-01T12:00:00Z"),
+                    transacaoId, new BigDecimal("75.00"), Currency.getInstance("BRL")));
+            var eventId = resultado.outputEventId();
+            var payload = jdbc.queryForObject(
+                    "select payload::text from outbox_eventos where event_id = ?", String.class, eventId);
+
+            assertThat(publicarOutbox.publicarProximo()).isFalse();
+            assertThat(publicadoEm(eventId)).isNull();
+            assertThat(jdbc.queryForObject("select count(*) from outbox_eventos where event_id = ?",
+                    Integer.class, eventId)).isEqualTo(1);
+
+            admin.declareBinding(BindingBuilder.bind(fila)
+                    .to(exchange).with("transacao.processada.v1"));
+
+            assertThat(publicarOutbox.publicarProximo()).isTrue();
+            var mensagem = rabbitTemplate.receive(fila.getName(), 5_000);
+            assertThat(mensagem).isNotNull();
+            assertThat(mensagem.getMessageProperties().getMessageId()).isEqualTo(eventId.toString());
+            assertThat(objectMapper.readTree(mensagem.getBody()))
+                    .isEqualTo(objectMapper.readTree(payload));
+            assertThat(publicadoEm(eventId)).isNotNull();
+        } finally {
+            admin.deleteQueue(fila.getName());
+        }
+    }
+
     private Timestamp publicadoEm(UUID eventId) {
         return jdbc.queryForObject("select published_at from outbox_eventos where event_id = ?",
                 (resultado, linha) -> resultado.getTimestamp("published_at"), eventId);
