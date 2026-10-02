@@ -2,9 +2,14 @@ package br.com.credpay.processamento.infrastructure.messaging;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.nio.charset.StandardCharsets;
+
 import org.junit.jupiter.api.Test;
+import org.springframework.amqp.core.AmqpAdmin;
+import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringBootConfiguration;
@@ -14,6 +19,7 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.RabbitMQContainer;
@@ -21,7 +27,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-@SpringBootTest(classes = RabbitMqEntradaTopologyIntegrationTest.TestApplication.class)
+@SpringBootTest(classes = RabbitMqEntradaTopologyIntegrationTest.TestApplication.class,
+        properties = "credpay.processamento.consumer.topology.enabled=true")
 @Testcontainers
 class RabbitMqEntradaTopologyIntegrationTest {
 
@@ -33,6 +40,10 @@ class RabbitMqEntradaTopologyIntegrationTest {
     })
     @ComponentScan(basePackages = "br.com.credpay.processamento.infrastructure.messaging")
     static class TestApplication {
+        @Bean
+        DirectExchange producerExchangeFixture() {
+            return new DirectExchange("credpay.transacoes.v1", true, false);
+        }
     }
 
     @Container
@@ -61,6 +72,10 @@ class RabbitMqEntradaTopologyIntegrationTest {
     @Qualifier("processamentoDeadLetterExchange")
     private DirectExchange dlx;
 
+    @Autowired private AmqpAdmin admin;
+    @Autowired private RabbitTemplate rabbitTemplate;
+    @Autowired @Qualifier("transacaoCriadaDlqBinding") private Binding dlqBinding;
+
     @Test
     void topologia_deveDeclararFilasQuorumEDeadLetteringLimitado() {
         assertThat(entrada).isNotNull();
@@ -80,5 +95,27 @@ class RabbitMqEntradaTopologyIntegrationTest {
         assertThat(dlx).isNotNull();
         assertThat(dlx.getName()).isEqualTo("credpay.processamento.dlx.v1");
         assertThat(dlx.isDurable()).isTrue();
+    }
+
+    @Test
+    void deadLetterDeveAguardarDestinoEEntregarAposRestaurarBinding() {
+        var payload = "evento-de-teste";
+        admin.removeBinding(dlqBinding);
+        try {
+            rabbitTemplate.convertAndSend("credpay.transacoes.v1", "transacao.criada.v1", payload);
+            rabbitTemplate.execute(channel -> {
+                var entrega = channel.basicGet(entrada.getName(), false);
+                assertThat(entrega).isNotNull();
+                channel.basicReject(entrega.getEnvelope().getDeliveryTag(), false);
+                return null;
+            });
+            assertThat(rabbitTemplate.receive(dlq.getName(), 500)).isNull();
+        } finally {
+            admin.declareBinding(dlqBinding);
+        }
+
+        var recebida = rabbitTemplate.receive(dlq.getName(), 15_000);
+        assertThat(recebida).isNotNull();
+        assertThat(new String(recebida.getBody(), StandardCharsets.UTF_8)).isEqualTo(payload);
     }
 }
