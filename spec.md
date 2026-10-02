@@ -6,7 +6,7 @@
 
 **Fase atual:** 4 — Fluxo assíncrono confiável
 
-**Estado:** criação e consulta HTTP persistentes; processamento idempotente e duas outboxes transacionais comprovados; publicadores RabbitMQ com scheduler opt-in de réplica única em cada serviço; topologia de entrada opt-in testada no processador, ainda sem listener ou fluxo ponta a ponta
+**Estado:** criação e consulta HTTP persistentes; processamento idempotente e duas outboxes transacionais comprovados; publicadores RabbitMQ com scheduler opt-in de réplica única em cada serviço; topologia e parser de entrada testados no processador, ainda sem listener ou fluxo ponta a ponta
 
 ## 1. Contexto e limites atuais
 
@@ -1681,6 +1681,18 @@ A política RabbitMQ, escopada à fila quorum de entrada, define `dead-letter-st
 **Evidência:** [CI #92](https://github.com/Joaomagh/credpay/actions/runs/37057606496) vermelho pela ausência da fila; [CI #106](https://github.com/Joaomagh/credpay/actions/runs/37062544845) verde com 79 testes, zero falhas/erros/skips. No RabbitMQ 4.3.5 real, os testes confirmaram declaração, política efetiva, roteamento pela exchange do produtor e entrega do mesmo payload à DLQ após o teste ocupar e liberar sua única vaga. Isso caracteriza o comportamento observado, mas não prova por si só que o broker tentou publicar enquanto a DLQ estava cheia. `test-compile` e 26 testes sem Docker passaram localmente; o Docker Desktop local não estava disponível. Houve correção de fixture para não reutilizar o contexto de outro teste. Os contadores imediatos de `rabbitmqctl list_queues` divergiram da observação por AMQP, por isso não foram usados como prova de retenção.
 
 **Limite de prova:** a retenção durante a recusa efetiva da DLQ e a recuperação após remover/restaurar seu binding não ficaram demonstradas nos experimentos iniciais; não são alegadas como garantias deste incremento. Também não há prova de alta disponibilidade com broker de nó único. Antes de ativar listener, validar esses cenários e a política operacional; falha nessa verificação deve manter o consumo desativado. Esta etapa não introduz dependência nova.
+
+No [CI #109](https://github.com/Joaomagh/credpay/actions/runs/37064110328), o teste leu a contagem da DLQ imediatamente após publicar o ocupante e encontrou `0`: uma corrida da fixture, não uma falha comprovada da topologia. A espera limitada pela condição observável corrigiu a fixture; o [CI #110](https://github.com/Joaomagh/credpay/actions/runs/37064493609) voltou a passar sem reduzir a asserção.
+
+### 9.30 Validação isolada de `TransacaoCriada` v1 — B04.3
+
+`TransacaoCriadaMessageParser` transforma uma `Message` AMQP em `TransacaoCriadaRecebida` sem acessar banco nem tomar decisão financeira. Exige objeto JSON legível, tipo `TransacaoCriada`, versão inteira `1`, UUIDs canônicos, `occurredAt` como instante, `data` objeto, `amount` textual interpretado por `BigDecimal`, moeda ISO 4217 e `status=PENDENTE`. O domínio rejeita valor não positivo e correlação JSON divergente da transação. O parser exige `messageId=eventId`, `type=TransacaoCriada` e `correlationId=data.transactionId` nos headers AMQP; campos JSON adicionais compatíveis são aceitos. Erros de parsing retornam `IllegalArgumentException` com nome do campo, sem incluir o valor recebido ou registrar o payload. A classe não é listener nem bean ativo.
+
+**TDD:** red inicial por ausência do parser; novo red com duas coerções indevidas do Jackson (`eventVersion` textual e `amount` numérico), corrigidas com checagem de tipos; red de `data` ausente e UUID inválido que aparecia na mensagem de erro, corrigidos por validação/sanitização; red de UUID abreviado aceito pelo JDK, corrigido pela exigência da forma canônica. Teste focado verde com 20 cenários; 45 testes sem Docker verdes localmente; [CI #110](https://github.com/Joaomagh/credpay/actions/runs/37064493609) verde com 99 testes, zero falhas, erros ou skips. O warning Mockito/Byte Buddy conhecido permanece.
+
+**Limites:** sem listener, ack, classificação de falhas, retry, DLQ operacional, limite de tamanho do payload ou prova de JSON com chaves duplicadas. Esses itens devem ser avaliados antes de ativar a entrada; nenhum contrato de pagamento real é inferido desta validação isolada. Nenhuma dependência foi adicionada.
+
+**Próximo:** B04.4, provar retenção e recuperação do dead-lettering quando o destino recusa ou perde a rota, sem habilitar listener.
 
 ## 10. Observabilidade e SLOs de aprendizado
 

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import br.com.credpay.testing.InputTopologyTestApplication;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -116,8 +117,7 @@ class RabbitMqEntradaTopologyIntegrationTest {
     @Test
     void deadLetterDeveAguardarDlqCheiaEEntregarAposLiberarCapacidade() throws Exception {
         rabbitTemplate.convertAndSend("", dlq.getName(), "ocupante");
-        assertThat(admin.getQueueProperties(dlq.getName()).get("QUEUE_MESSAGE_COUNT"))
-                .isEqualTo(1);
+        aguardarDlqCheia();
         var payload = "evento-de-teste";
         rabbitTemplate.convertAndSend("", entrada.getName(), payload);
         rabbitTemplate.execute(channel -> {
@@ -133,5 +133,18 @@ class RabbitMqEntradaTopologyIntegrationTest {
         var recebida = rabbitTemplate.receive(dlq.getName(), 15_000);
         assertThat(recebida).isNotNull();
         assertThat(new String(recebida.getBody(), StandardCharsets.UTF_8)).isEqualTo(payload);
+    }
+
+    private void aguardarDlqCheia() throws InterruptedException {
+        var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        Object quantidade;
+        do {
+            quantidade = admin.getQueueProperties(dlq.getName()).get("QUEUE_MESSAGE_COUNT");
+            if (Integer.valueOf(1).equals(quantidade)) {
+                return;
+            }
+            TimeUnit.MILLISECONDS.sleep(50);
+        } while (System.nanoTime() < prazo);
+        assertThat(quantidade).isEqualTo(1);
     }
 }

@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] B04.3 — Validar em TDD o envelope JSON e as propriedades AMQP de `TransacaoCriada` v1 no adaptador de entrada, sem listener nem decisão de negócio.
+- [ ] B04.4 — Provar em RabbitMQ real a retenção e recuperação do dead-lettering quando a DLQ recusa ou perde a rota, sem habilitar listener.
