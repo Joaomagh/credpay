@@ -1,15 +1,15 @@
 # CredPay — Backlog do MVP
 
-Atualizado em 2026-10-01. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos e evidências: [spec](../spec.md). Uma única ação executável: [task](../task.md). Papéis: [P.O.](roles/product-owner.md), [dev sênior](roles/senior-developer.md) e [Scrum Master](roles/scrum-master.md).
+Atualizado em 2026-10-02. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos e evidências: [spec](../spec.md). Uma única ação executável: [task](../task.md). Papéis: [P.O.](roles/product-owner.md), [dev sênior](roles/senior-developer.md) e [Scrum Master](roles/scrum-master.md).
 
 ## Prioridades
 
 | ID | Resultado | Aceite de saída | Dependências | Estado |
 |---|---|---|---|---|
-| B01 | Contrato de processamento idempotente | identidade, equivalência/conflito, resultado, atomicidade e ack documentados; matriz de falhas revisada | contratos atuais | Definido e revisado; implementação ainda pendente |
+| B01 | Contrato de processamento idempotente | identidade, equivalência/conflito, resultado, atomicidade e ack documentados; matriz de falhas revisada | contratos atuais | Contrato definido; resultado/outbox implementados, listener/ack pendentes |
 | B02 | Resultado durável e processamento idempotente | PostgreSQL comprova resultado único, replay estável, conflito sem sobrescrita, rollback e concorrência | B01 e baseline própria de persistência | Concluído; B02.1–B02.6 comprovados no CI |
-| B03 | Saída `TransacaoProcessada` confiável | contrato versionado, resultado + outbox atômicos, publicação confirmada e reenvio com a mesma identidade | B02 | B03.1–B03.9 concluídos; B03.10 scheduler opt-in próximo |
-| B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | Refinamento |
+| B03 | Saída `TransacaoProcessada` confiável | contrato versionado, resultado + outbox atômicos, publicação confirmada e reenvio com a mesma identidade | B02 | Concluído; B03.1–B03.10 comprovados |
+| B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | B04.1 contrato de consumo próximo |
 | B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | Refinamento |
 | B06 | Recuperação e diagnóstico demonstráveis | queda, atraso e duplicação testados; correlação, retry/DLQ e replay operacional observáveis | B05; refinar política de `FALHOU` | Refinamento |
 | B07 | Ambiente local reproduzível | imagens/Compose e depois Kubernetes local com probes e recursos; roteiro demonstra fluxo e falha | B05 e B06 | Refinamento |
@@ -53,11 +53,13 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 **B03.9 — Janela confirm/marcação — concluído.** Falha controlada após confirmação e antes de `published_at` deixa a intenção pendente; a nova tentativa entrega o mesmo `eventId`/payload e só então marca. [CI #83](https://github.com/Joaomagh/credpay/actions/runs/37054296624) verde com PostgreSQL e RabbitMQ reais, 72 testes. É caracterização do desenho existente, sem red artificial ou mudança de produção.
 
-**B03.10 — Scheduler da saída — próximo.** Opt-in explícito, uma réplica publicadora, health RabbitMQ ativo quando a publicação estiver ligada; sem consumidor ou eleição entre réplicas.
+**B03.10 — Scheduler da saída — concluído.** Opt-in explícito, uma réplica publicadora, uma pendência por disparo e intervalo configurável. Indicador RabbitMQ ativo somente quando a publicação é habilitada. [CI #89](https://github.com/Joaomagh/credpay/actions/runs/37055939067) verde com 76 testes; sem consumidor ou eleição entre réplicas.
+
+**B04.1 — Contrato do consumidor — próximo.** Refinar fila/binding de propriedade do processador, validação do evento recebido, confirmação somente após commit, política de retry e DLQ antes do primeiro listener.
 
 ## Revisão e riscos
 
-- Estado atual: B02 concluído no CI; B03.1–B03.9 concluídos, B03.10 é a próxima implementação. Evidências em `spec.md`.
+- Estado atual: B02 e B03 concluídos no CI; B04.1 é a próxima decisão documental antes do listener. Evidências em `spec.md`.
 - Sandbox AI-Jail continua apenas documentado. Retomar sua implementação como iniciativa delimitada; não alegar isolamento atual.
 - Warning Mockito/Byte Buddy conhecido permanece; coordenar correção com evolução de qualidade, sem ocultá-lo.
 - Testes locais com infraestrutura dependem do Docker disponível. CI pode fornecer evidência real, mas falha de infraestrutura não é red de negócio.

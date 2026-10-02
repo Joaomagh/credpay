@@ -11,7 +11,7 @@ Cada capacidade entra em um incremento pequeno, testado e documentado. Assim, o 
 
 ## Status atual
 
-O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` persiste transações e publica eventos por outbox, enquanto o `processamento-service` já possui fundação executável, health check e sua primeira decisão de domínio. O consumidor RabbitMQ e a integração entre os serviços são os próximos componentes do fluxo.
+O projeto está na fase de fluxo assíncrono confiável: ambos os serviços persistem suas próprias decisões e publicam eventos por outbox; o `processamento-service` ainda não consome `TransacaoCriada`. O consumidor RabbitMQ e a integração ponta a ponta são os próximos componentes do fluxo.
 
 | Estado | Entrega |
 |---|---|
@@ -27,10 +27,11 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Implementado | decisão pura retorna snapshot imutável com valor, moeda, limite aplicado e `APROVADA`/`REJEITADA` |
 | Implementado | caso de uso transacional grava a primeira decisão e reutiliza o resultado em replay equivalente; conflitos sequenciais são explícitos |
 | Implementado | duas entradas concorrentes com `eventId` ou `transactionId` compartilhado convergem para o resultado original ou conflito explícito, comprovado com PostgreSQL real |
-| Implementado | migration e adapter da outbox própria do processador, com backfill de resultados preparatórios; ainda sem publicação |
+| Implementado | migration e adapter da outbox própria do processador, com backfill de resultados preparatórios |
 | Implementado | primeira decisão do processador grava resultado e intenção de saída na mesma transação; falha da outbox reverte ambos e replay não duplica a intenção |
-| Implementado | publicação manual de uma pendência da outbox do processador: marca após confirmação roteada e preserva a intenção quando não há rota; ainda sem scheduler ou consumidor |
-| Implementado | exchange RabbitMQ durável do processador, testada com rota v1 em broker descartável; ainda sem publicador |
+| Implementado | publicação de uma pendência da outbox do processador: marca após confirmação roteada e preserva a intenção quando não há rota |
+| Implementado | exchange RabbitMQ durável e publicador do processador, com payload e propriedades v1 testados em broker descartável |
+| Implementado | scheduler opt-in de uma réplica para a saída do processador; RabbitMQ participa do health quando a publicação é habilitada |
 | Implementado | health check do Spring Boot Actuator |
 | Implementado | transação válida nasce `PENDENTE` |
 | Implementado | valor ausente ou não positivo e moeda ausente são rejeitados pelo domínio |
@@ -47,7 +48,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Implementado | rollback após `flush` impede que uma inserção revertida permaneça no banco |
 | Implementado | `GET /transacoes/{id}` retorna a representação persistida ou `404 Problem Details` para UUID válido ausente |
 | Implementado | UUID malformado retorna `400 Problem Details` sem consultar o caso de uso nem expor detalhes internos |
-| Implementado | 160 testes automatizados nos dois módulos; suítes do produtor e do processador validadas no CI |
+| Implementado | testes automatizados nos dois módulos, incluindo PostgreSQL e RabbitMQ reais no CI |
 | Implementado | `POST /transacoes` exige `Idempotency-Key`, repete a resposta original para payload equivalente e retorna `409` em conflito |
 | Implementado | lock transacional por chave serializa primeiras criações concorrentes; o CI comprovou convergência para uma única transação |
 | Implementado | migration V4 e adapter persistem eventos pendentes na outbox |
@@ -63,7 +64,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
 | Documentado | contrato `TransacaoCriada` v1 e garantia de entrega pelo menos uma vez via outbox |
 | Documentado | baseline RabbitMQ com propriedade da topologia, confirms/returns, retry e DLQ |
-| Ainda não implementado | coordenação entre réplicas publicadoras, consumidor, execução automática da outbox de saída do `processamento-service`, imagem da aplicação, Kubernetes e CD |
+| Ainda não implementado | coordenação entre réplicas publicadoras, consumidor, fluxo ponta a ponta, imagem da aplicação, Kubernetes e CD |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 
@@ -181,7 +182,7 @@ $env:SERVER_PORT = "8081"
 .\mvnw.cmd spring-boot:run
 ```
 
-Não existe limite padrão nem conversão cambial. Configuração ausente, moeda inválida, limite não positivo ou banco indisponível impedem a inicialização. A decisão pura seleciona o limite uma vez; um caso de uso transacional registra a primeira execução e relê o snapshot em uma reentrega equivalente. Ainda não há listener RabbitMQ. `/actuator/health` em `localhost:8081` comprova apenas a saúde da aplicação e do banco atuais, não um fluxo assíncrono pronto.
+Não existe limite padrão nem conversão cambial. Configuração ausente, moeda inválida, limite não positivo ou banco indisponível impedem a inicialização. A decisão pura seleciona o limite uma vez; um caso de uso transacional registra a primeira execução e relê o snapshot em uma reentrega equivalente. Ainda não há listener RabbitMQ. Com o publicador desligado, `/actuator/health` em `localhost:8081` cobre a aplicação e o banco, não um fluxo assíncrono pronto. Para ativar a saída em uma única réplica, configure `CREDPAY_OUTBOX_PUBLISHER_ENABLED=true`, `CREDPAY_OUTBOX_PUBLISHER_INTERVAL=PT1S` e a conexão RabbitMQ no ambiente; o broker passará a integrar o health. Sem fila/binding do futuro consumidor, eventos permanecem pendentes.
 
 Os testes do `transacoes-service` iniciam PostgreSQL e RabbitMQ descartáveis automaticamente. Para executar esse serviço com o health completo, no terminal posicionado em `transacoes-service`, disponibilize PostgreSQL e RabbitMQ separadamente e configure as conexões sem versionar credenciais:
 
@@ -219,7 +220,7 @@ O scheduler da outbox vem desligado. Para ativá-lo em uma única réplica, conf
 
 ## Arquitetura planejada
 
-O monorepo possui dois aplicativos Spring Boot independentes, cada um responsável por seu build, configuração e banco. O `processamento-service` já possui seu primeiro schema próprio; consumo, idempotência e saída ainda serão introduzidos somente com os respectivos comportamentos.
+O monorepo possui dois aplicativos Spring Boot independentes, cada um responsável por seu build, configuração e banco. O `processamento-service` já possui resultado idempotente, schema e outbox próprios e publicação opt-in; o consumo de `TransacaoCriada` e a integração ponta a ponta ainda não existem.
 
 ```text
 Cliente

@@ -24,6 +24,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.actuate.amqp.RabbitHealthIndicator;
+import org.springframework.boot.actuate.health.Status;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
@@ -36,7 +38,11 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-@SpringBootTest(properties = "credpay.processamento.limites.BRL=100.00")
+@SpringBootTest(properties = {
+        "credpay.processamento.limites.BRL=100.00",
+        "credpay.outbox.publisher.enabled=true",
+        "credpay.outbox.publisher.interval=PT1H"
+})
 @Import(PublicarOutboxProcessamentoIntegrationTest.FalhaNaMarcacaoConfiguration.class)
 @Testcontainers
 class PublicarOutboxProcessamentoIntegrationTest {
@@ -73,12 +79,19 @@ class PublicarOutboxProcessamentoIntegrationTest {
     @Autowired private RabbitTemplate rabbitTemplate;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private FalhaNaMarcacao falhaNaMarcacao;
+    @Autowired(required = false) private RabbitHealthIndicator rabbitHealthIndicator;
 
     @BeforeEach
     void limparDados() {
         falhaNaMarcacao.desarmar();
         jdbc.update("delete from outbox_eventos");
         jdbc.update("delete from processamentos");
+    }
+
+    @Test
+    void healthRabbit_deveEstarAtivo_quandoPublicacaoAutomaticaForHabilitada() throws Exception {
+        assertThat(rabbitHealthIndicator).isNotNull();
+        assertThat(rabbitHealthIndicator.health().getStatus()).isEqualTo(Status.UP);
     }
 
     @Test

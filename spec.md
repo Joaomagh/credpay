@@ -2,11 +2,11 @@
 
 > Fonte de verdade do sistema que existe hoje. Preencher somente com decisão tomada, contrato aceito ou comportamento comprovado. Planos futuros ficam em `CREDPAY_PLAN.md`; próximas ações ficam em `task.md`.
 
-**Última atualização:** 2026-10-01
+**Última atualização:** 2026-10-02
 
 **Fase atual:** 4 — Fluxo assíncrono confiável
 
-**Estado:** criação e consulta HTTP persistentes; idempotência e outbox transacional comprovadas; publicação RabbitMQ confirmada com lote e scheduler opt-in de réplica única
+**Estado:** criação e consulta HTTP persistentes; processamento idempotente e duas outboxes transacionais comprovados; publicadores RabbitMQ com scheduler opt-in de réplica única em cada serviço; ainda sem consumidor ou fluxo ponta a ponta
 
 ## 1. Contexto e limites atuais
 
@@ -17,7 +17,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno. O `processamento-service` possui scaffolding independente, build reproduzível, health check HTTP, decisão `APROVADA`/`REJEITADA`, adapter JPA/Flyway para o snapshot e adapter JDBC para gravar a intenção `TransacaoProcessada` v1 atomicamente em PostgreSQL.
 
-**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras, consumidor e execução automática da publicação de `TransacaoProcessada`. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda; o caso de uso transacional grava decisão e intenção de saída atomicamente, reutiliza o registro no replay equivalente e serializa entradas concorrentes que compartilham `eventId` ou `transactionId`. A migration V2 cria a outbox própria com backfill dos resultados V1; o caso de uso de publicação pode ler uma pendência e marcá-la após `ack` sem return. A exchange RabbitMQ e o emissor isolado do processador já foram testados, sem fila operacional de consumo. Nenhum listener ou endpoint chama o caso de uso de registro ainda; nenhum scheduler chama o publicador. O adapter PostgreSQL do primeiro serviço é validado isoladamente e pelo fluxo HTTP completo; sua constraint monetária foi testada por SQL direto.
+**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras e consumidor de `TransacaoCriada`. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda; o caso de uso transacional grava decisão e intenção de saída atomicamente, reutiliza o registro no replay equivalente e serializa entradas concorrentes que compartilham `eventId` ou `transactionId`. A migration V2 cria a outbox própria com backfill dos resultados V1; o caso de uso de publicação lê uma pendência e a marca após `ack` sem return. Um scheduler opt-in de réplica única pode chamar esse caso de uso. A exchange RabbitMQ e o emissor do processador já foram testados, sem fila operacional de consumo. Nenhum listener ou endpoint chama o caso de uso de registro ainda. O adapter PostgreSQL do primeiro serviço é validado isoladamente e pelo fluxo HTTP completo; sua constraint monetária foi testada por SQL direto.
 
 ## 2. Arquitetura vigente
 
@@ -205,7 +205,7 @@ O smoke test inicia o servidor em porta aleatória e verifica `GET /actuator/hea
 
 ## 4. Configuração e segredos
 
-O `transacoes-service` usa as propriedades padrão do Spring para uma conexão PostgreSQL obrigatória. Os testes fornecem URL, usuário e senha fictícia dinamicamente; a execução real deve recebê-las do ambiente. Nesse serviço não existe perfil sem persistência nem credencial padrão versionada. O `processamento-service` ainda não usa banco e exige apenas os limites por moeda descritos abaixo.
+Cada serviço exige seu próprio PostgreSQL; os testes fornecem URL, usuário e senha fictícia dinamicamente, e a execução real deve recebê-los do ambiente. Não existe perfil sem persistência nem credencial padrão versionada. O `processamento-service` também exige limites por moeda; sua publicação RabbitMQ é opt-in.
 
 | Serviço | Variável | Obrigatória | Valor padrão | Propósito | Sensível |
 |---|---|---|---|---|---|
@@ -217,6 +217,11 @@ O `transacoes-service` usa as propriedades padrão do Spring para uma conexão P
 | transacoes-service | `CREDPAY_OUTBOX_PUBLISHER_ENABLED` | não | `false` | ativa scheduler em uma única réplica | não |
 | transacoes-service | `CREDPAY_OUTBOX_PUBLISHER_INTERVAL` | não | `PT1S` | intervalo após terminar um lote e atraso inicial | não |
 | processamento-service | `CREDPAY_PROCESSAMENTO_LIMITES_<MOEDA>` | ao menos uma moeda | nenhum | limite decimal positivo da moeda ISO 4217; exemplo fictício `CREDPAY_PROCESSAMENTO_LIMITES_BRL=100.00` | não |
+| processamento-service | `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD` | sim | nenhum | conexão ao PostgreSQL próprio | usuário/senha: sim |
+| processamento-service | `CREDPAY_OUTBOX_PUBLISHER_ENABLED` | não | `false` | ativa scheduler e indicador RabbitMQ em uma única réplica | não |
+| processamento-service | `CREDPAY_OUTBOX_PUBLISHER_INTERVAL` | não | `PT1S` | intervalo após uma tentativa e atraso inicial | não |
+| processamento-service | `SPRING_RABBITMQ_HOST` / `SPRING_RABBITMQ_PORT` | para publicação habilitada | padrões Spring Boot | endereço AMQP do broker | não |
+| processamento-service | `SPRING_RABBITMQ_USERNAME` / `SPRING_RABBITMQ_PASSWORD` | configurar conforme o broker | padrões Spring Boot; definir no ambiente | autenticação no RabbitMQ | sim |
 
 Valores reais nunca entram neste documento. `.env.example` usa placeholders; arquivos locais de segredo devem ser ignorados pelo Git.
 
@@ -595,7 +600,7 @@ Esse erro representa sintaxe inválida e ocorre antes do caso de uso. O teste MV
 | Evento/versão | Produtor | Consumidor | Campos | Garantias |
 |---|---|---|---|---|
 | `TransacaoCriada` v1 | `transacoes-service` | `processamento-service` planejado | envelope versionado e dados da transação `PENDENTE` | intenção persistida atomicamente via outbox; publicação pelo menos uma vez com confirms/returns |
-| `TransacaoProcessada` v1 | `processamento-service` | `transacoes-service` planejado | identidade de saída, causa e estado final | intenção gravada junto do resultado; publicação e consumo pendentes |
+| `TransacaoProcessada` v1 | `processamento-service` | `transacoes-service` planejado | identidade de saída, causa e estado final | intenção gravada junto do resultado; publicação confirmada opt-in; consumo pendente |
 
 Envelope JSON aprovado:
 
@@ -625,7 +630,7 @@ Envelope JSON aprovado:
 
 O evento representa um fato confirmado no banco, não um comando e não uma promessa de aprovação. A ordem global não é garantida. O consumidor futuro deve tolerar reentrega e deduplicar por `eventId`.
 
-Contrato aprovado para o futuro `TransacaoProcessada` v1 (exemplo; ainda não é emitido):
+Contrato implementado para `TransacaoProcessada` v1 (exemplo; ainda sem consumidor):
 
 ```json
 {
@@ -1370,7 +1375,7 @@ Cada item entra em um ciclo próprio. Os itens 1 a 3 e 5 estão comprovados; o i
 
 ### 9.12 Baseline de processamento idempotente
 
-**Estado:** contrato definido em 2026-09-30; persistência e idempotência sequencial/concorrente foram comprovadas em B02.3–B02.6. A outbox persiste a intenção na mesma transação do resultado desde B03.3; publicação e consumo ainda estão pendentes.
+**Estado:** contrato definido em 2026-09-30; persistência e idempotência sequencial/concorrente foram comprovadas em B02.3–B02.6. A outbox persiste a intenção na mesma transação do resultado desde B03.3; a publicação opt-in foi comprovada em B03.7–B03.10; consumo ainda está pendente.
 
 #### Identidade e equivalência
 
@@ -1389,11 +1394,11 @@ A escolha de conflito para um novo evento da mesma transação evita inventar al
 
 #### Resultado e atomicidade planejados
 
-O banco próprio do `processamento-service` é a autoridade, com unicidade para `eventId` recebido e `transactionId`. Consulta seguida de inserção, sem controle no banco, não basta. Concorrência e conflitos sem sobrescrita já foram comprovados em B02.6; a intenção de saída ainda precisa ser durável antes de ativar o listener.
+O banco próprio do `processamento-service` é a autoridade, com unicidade para `eventId` recebido e `transactionId`. Consulta seguida de inserção, sem controle no banco, não basta. Concorrência e conflitos sem sobrescrita já foram comprovados em B02.6; a intenção de saída já é durável desde B03.3, mas o listener ainda não foi ativado.
 
 O registro durável conserva campos semânticos da entrada, valor/moeda, limite efetivamente aplicado, `APROVADA` ou `REJEITADA`, instante de processamento e identidade do evento de saída. Resultado, marca de processamento da entrada e outbox de `TransacaoProcessada` são confirmados na mesma transação local; falha em qualquer escrita reverte todas. O formato mínimo do evento está aprovado acima e é gravado como JSONB na outbox própria.
 
-Não haverá publicação AMQP direta dentro dessa transação nem acesso ao banco do outro serviço. O publicador da outbox enviará o mesmo evento nas novas tentativas. Consumir a entrada operacionalmente fica bloqueado até a intenção de saída durável existir; um resultado isolado em uma etapa preparatória não autoriza ack da mensagem real.
+Não há publicação AMQP direta dentro dessa transação nem acesso ao banco do outro serviço. O publicador da outbox envia o mesmo evento nas novas tentativas. A intenção de saída já é durável; consumir a entrada operacionalmente ainda depende do contrato de validação, ack, retry e DLQ do listener. Um resultado isolado não autoriza ack da mensagem real.
 
 #### Confirmação e falhas
 
@@ -1626,6 +1631,14 @@ Sem `spring-boot-testcontainers`, Awaitility adicional, cliente RabbitMQ direto,
 - **Consequência:** a entrega é pelo menos uma vez; a duplicata é legítima após falha nessa janela. O consumidor futuro deverá deduplicar por `eventId`. O teste não prova recuperação automática, pois ainda não há scheduler, nem segurança com múltiplas réplicas.
 - **Próximo:** ativar um scheduler opt-in para uma única réplica e incluir RabbitMQ no health quando essa publicação estiver habilitada.
 
+### 9.27 Publicação automática opt-in da saída — B03.10
+
+- **Red do scheduler:** `OutboxSchedulingConfigurationTest` exigiu bean somente com `credpay.outbox.publisher.enabled=true` e delegação de um disparo ao caso de uso. O teste focado local compilou e falhou apenas pela ausência do bean; o cenário desabilitado passou.
+- **Green do scheduler:** configuração condicional com `@EnableScheduling`; intervalo e atraso inicial configuráveis, padrão `PT1S`. Cada disparo tenta uma pendência. O teste focado passou com dois cenários e depois acrescentou uma caracterização de disparo automático, chegando a três cenários verdes localmente e no [CI #89](https://github.com/Joaomagh/credpay/actions/runs/37055939067). Não há lote, eleição, claim ou suporte a múltiplas réplicas publicadoras.
+- **Health:** com o starter AMQP e publicação desligada, o indicador RabbitMQ permanece desabilitado para preservar o health baseado no banco. Quando `CREDPAY_OUTBOX_PUBLISHER_ENABLED=true`, `management.health.rabbit.enabled` acompanha a mesma opção. O primeiro teste HTTP de `/actuator/health/rabbit` obteve 404 nos [CI #86](https://github.com/Joaomagh/credpay/actions/runs/37055059555) e [#87](https://github.com/Joaomagh/credpay/actions/runs/37055361810), mesmo após ligar o indicador: subcaminho HTTP não era evidência adequada sob a visibilidade padrão de componentes. A verificação corrigida injeta `RabbitHealthIndicator` e exige `UP` com broker real; [CI #88](https://github.com/Joaomagh/credpay/actions/runs/37055674513) e [#89](https://github.com/Joaomagh/credpay/actions/runs/37055939067) verdes.
+- **Operação:** por padrão `CREDPAY_OUTBOX_PUBLISHER_ENABLED=false`; `CREDPAY_OUTBOX_PUBLISHER_INTERVAL` aceita duração como `PT1S`. Ativar somente em uma réplica e com RabbitMQ configurado. Na ausência de binding do futuro consumidor, mandatory return conserva as intenções pendentes. Não existe consumo nem conclusão ponta a ponta.
+- **Próximo:** definir o contrato seguro do consumidor `TransacaoCriada` v1, incluindo fila, validação, ack após commit, retry limitado e DLQ, antes de criar listener.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
@@ -1735,14 +1748,14 @@ Cobertura, scanners e outras ferramentas serão sinais auxiliares, não metas is
 
 ### ADR-005 — RabbitMQ com confirmação e propriedade de topologia
 
-- **Status:** aceita; lado produtor implementado, topologia e consumo do segundo serviço pendentes
+- **Status:** aceita; topologia e publicação dos dois serviços implementadas, consumo pendente
 - **Contexto:** a outbox remove a janela de gravação local, mas não prova que o broker recebeu ou roteou a mensagem. Declarar filas do consumidor no produtor também acoplaria implantações independentes.
 - **Decisão:** usar exchange direct durável pertencente ao produtor, filas quorum pertencentes ao consumidor, mensagens persistentes, mandatory returns e publisher confirms correlacionados. Marcar a outbox somente após confirmação sem retorno.
 - **Consequências:** falhas permanecem recuperáveis na outbox e recursos têm dono claro. A entrega continua pelo menos uma vez, exige deduplicação e adiciona latência/complexidade de confirmação. Alta disponibilidade não é comprovada pelo container de nó único.
 
 ### ADR-006 — Resultado idempotente e saída atômica antes do consumidor
 
-- **Status:** aceita como contrato; implementação pendente, conforme seção 9.12.
+- **Status:** resultado idempotente e saída atômica implementados; listener e ack de entrada pendentes, conforme seção 9.12.
 - **Contexto:** confirmar entrada sem preservar decisão e intenção de saída pode perder o resultado; reentregas podem ocorrer mesmo depois de um processamento bem-sucedido.
 - **Decisão:** unicidade por evento recebido e transação, resultado/política congelados e outbox na mesma transação do banco próprio; listener só conclui após commit. Replay equivalente não recalcula; identidade divergente é conflito.
 - **Consequências:** não há exatamente uma vez nem transação distribuída; persistência, concorrência, saída versionada e testes de falha são pré-requisitos do consumo operacional. O snapshot em memória é apenas a primeira etapa.

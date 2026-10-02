@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] B03.10 — Implementar com TDD um scheduler opt-in de réplica única para a outbox do processador, ativando health RabbitMQ quando habilitado; sem consumidor ou coordenação de múltiplas réplicas.
+- [ ] B04.1 — Definir e revisar o contrato de consumo seguro de `TransacaoCriada` v1: fila/binding, validação, ack após commit, retry limitado e DLQ; sem criar listener ainda.
