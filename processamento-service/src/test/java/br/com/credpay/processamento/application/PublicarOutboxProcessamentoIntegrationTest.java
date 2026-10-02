@@ -12,9 +12,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.AmqpAdmin;
-import org.springframework.amqp.core.AnonymousQueue;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -71,7 +71,7 @@ class PublicarOutboxProcessamentoIntegrationTest {
 
     @Test
     void publicarProximo_deveEntregarEventoEMarcarPendente_aposConfirmacaoRoteada() throws Exception {
-        var fila = new AnonymousQueue();
+        var fila = new Queue("credpay.test." + UUID.randomUUID(), false, false, false);
         admin.declareQueue(fila);
         try {
             admin.declareBinding(BindingBuilder.bind(fila)
