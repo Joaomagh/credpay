@@ -57,7 +57,7 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 **B04.1 — Contrato do consumidor — concluído documentalmente.** A seção 9.28 de `spec.md` define fila/binding, validação do envelope e propriedades AMQP, ack após commit, classificação de erros, três tentativas transitórias e DLQ. O dead-lettering `at-least-once` exige política efetiva e teste; quorum sozinho não basta. Nenhum listener ou dependência foi criado.
 
-**B04.2 — Topologia de entrada — concluído com limite.** Filas quorum, DLX e bindings opt-in declarados pelo processador; política escopada aplicada no teste e transferência após DLQ cheia comprovada no [CI #105](https://github.com/Joaomagh/credpay/actions/runs/37062164299). Sem listener. Política operacional e recuperação de rota ausente ainda não comprovadas, portanto consumo permanece desativado.
+**B04.2 — Topologia de entrada — concluído com limite.** Filas quorum, DLX e bindings opt-in declarados pelo processador; política escopada aplicada no teste, roteamento e entrega após liberar vaga da DLQ observados no [CI #106](https://github.com/Joaomagh/credpay/actions/runs/37062544845). Sem listener. A retenção sob recusa efetiva, a recuperação de rota ausente e a política operacional ainda não foram comprovadas, portanto consumo permanece desativado.
 
 **B04.3 — Validação da entrada — próximo.** Primeiro teste negativo do envelope/propriedades AMQP de `TransacaoCriada` v1; validar sem listener ou decisão financeira.
 
