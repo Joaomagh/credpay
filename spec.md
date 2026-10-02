@@ -1260,7 +1260,7 @@ O publicador futuro lerá registros com `published_at` nulo, publicará e depois
 
 ## 9. Mensageria e tratamento de falhas
 
-**Estado:** dependências, topologia do produtor, operações da outbox, publicação confirmada em lote e scheduler opt-in implementados. A primeira versão admite uma única réplica publicadora.
+**Estado:** ambos os serviços possuem outbox e publicação confirmada com scheduler opt-in de réplica única. A topologia de entrada, listener, retry e DLQ do processador ainda não foram implementados.
 
 ### 9.1 Topologia mínima
 
@@ -1268,12 +1268,12 @@ O publicador futuro lerá registros com `published_at` nulo, publicará e depois
 |---|---|---|---|
 | exchange de eventos | `credpay.transacoes.v1` | direct, durável, não auto-delete | `transacoes-service` |
 | routing key | `transacao.criada.v1` | literal versionado | contrato compartilhado |
-| fila de processamento | `credpay.processamento.transacao-criada.v1` | quorum, durável, não exclusiva, não auto-delete | futuro `processamento-service` |
-| dead-letter exchange | `credpay.processamento.dlx.v1` | direct, durável, não auto-delete | futuro `processamento-service` |
-| dead-letter routing key | `transacao.criada.dlq.v1` | literal versionado | futuro `processamento-service` |
-| dead-letter queue | `credpay.processamento.transacao-criada.dlq.v1` | quorum, durável, não exclusiva, não auto-delete | futuro `processamento-service` |
-| exchange do resultado | `credpay.processamento.v1` | direct, durável, não auto-delete; planejada | futuro `processamento-service` |
-| routing key do resultado | `transacao.processada.v1` | literal versionado; planejado | contrato compartilhado |
+| fila de processamento | `credpay.processamento.transacao-criada.v1` | quorum, durável, não exclusiva, não auto-delete; ainda não declarada | `processamento-service` |
+| dead-letter exchange | `credpay.processamento.dlx.v1` | direct, durável, não auto-delete; ainda não declarada | `processamento-service` |
+| dead-letter routing key | `transacao.criada.dlq.v1` | literal versionado; ainda não aplicado | `processamento-service` |
+| dead-letter queue | `credpay.processamento.transacao-criada.dlq.v1` | quorum, durável, não exclusiva, não auto-delete; ainda não declarada | `processamento-service` |
+| exchange do resultado | `credpay.processamento.v1` | direct, durável, não auto-delete; implementada | `processamento-service` |
+| routing key do resultado | `transacao.processada.v1` | literal versionado; implementado | contrato compartilhado |
 
 O produtor declara somente sua exchange. A fila, binding, DLX e DLQ pertencem ao consumidor; o teste do produtor usará uma fila efêmera exclusiva ligada à exchange, sem fazê-lo depender da topologia interna do serviço futuro. Filas quorum em um container de nó único comprovam configuração e comportamento, não alta disponibilidade.
 
@@ -1291,9 +1291,9 @@ Publisher confirms cobrem produtor → broker e são independentes do ack do con
 
 ### 9.3 Consumo, retry e DLQ planejados
 
-O futuro consumidor usará ack automático após sucesso do listener, prefetch inicial `10` e três tentativas totais para falhas transitórias, com esperas de 1 e 2 segundos. Depois disso, rejeitará sem requeue para a DLX. Payload inválido ou versão incompatível não será repetido indefinidamente: seguirá diretamente para DLQ com erro observável. A deduplicação persistente por `eventId` deverá existir antes de considerar o consumo confiável.
+O contrato refinado de B04.1 está na seção 9.28. O futuro consumidor usará ack pelo container somente após sucesso/commit do listener, prefetch inicial `10` e três tentativas totais para falhas transitórias, com esperas de 1 e 2 segundos; depois rejeitará sem requeue para a DLX. Payload inválido ou versão incompatível seguirá diretamente para DLQ. A deduplicação persistente por `eventId` já existe no caso de uso, mas ainda não foi conectada ao broker.
 
-DLQ não é garantia absoluta de entrega: o dead-lettering também pode falhar. A v1 aceita essa limitação no ambiente local; quorum queues foram escolhidas porque suportam dead-lettering pelo menos uma vez quando configurado, mas cluster e falhas de quorum exigirão experimento próprio. Referência: [Dead Letter Exchanges](https://www.rabbitmq.com/docs/4.3/dlx).
+DLQ não é garantia absoluta de entrega: o dead-lettering também pode falhar. Em quorum queues, a estratégia padrão é `at-most-once`; `at-least-once` exige configuração adicional e prova, conforme a seção 9.28. Um container de nó único não prova alta disponibilidade nem recuperação de falhas de quorum. Referências: [Quorum Queues](https://www.rabbitmq.com/docs/quorum-queues) e [Dead Letter Exchanges](https://www.rabbitmq.com/docs/dlx).
 
 ### 9.4 Dependências e ambiente aprovados
 
@@ -1638,6 +1638,39 @@ Sem `spring-boot-testcontainers`, Awaitility adicional, cliente RabbitMQ direto,
 - **Health:** com o starter AMQP e publicação desligada, o indicador RabbitMQ permanece desabilitado para preservar o health baseado no banco. Quando `CREDPAY_OUTBOX_PUBLISHER_ENABLED=true`, `management.health.rabbit.enabled` acompanha a mesma opção. O primeiro teste HTTP de `/actuator/health/rabbit` obteve 404 nos [CI #86](https://github.com/Joaomagh/credpay/actions/runs/37055059555) e [#87](https://github.com/Joaomagh/credpay/actions/runs/37055361810), mesmo após ligar o indicador: subcaminho HTTP não era evidência adequada sob a visibilidade padrão de componentes. A verificação corrigida injeta `RabbitHealthIndicator` e exige `UP` com broker real; [CI #88](https://github.com/Joaomagh/credpay/actions/runs/37055674513) e [#89](https://github.com/Joaomagh/credpay/actions/runs/37055939067) verdes.
 - **Operação:** por padrão `CREDPAY_OUTBOX_PUBLISHER_ENABLED=false`; `CREDPAY_OUTBOX_PUBLISHER_INTERVAL` aceita duração como `PT1S`. Ativar somente em uma réplica e com RabbitMQ configurado. Na ausência de binding do futuro consumidor, mandatory return conserva as intenções pendentes. Não existe consumo nem conclusão ponta a ponta.
 - **Próximo:** definir o contrato seguro do consumidor `TransacaoCriada` v1, incluindo fila, validação, ack após commit, retry limitado e DLQ, antes de criar listener.
+
+### 9.28 Contrato de consumo seguro de `TransacaoCriada` — B04.1
+
+**Estado:** decisão documental; nenhuma fila, binding, política de broker ou listener foi implementado neste incremento. O caso de uso de registro e a outbox de saída já são duráveis, mas isso ainda não autoriza afirmar que o fluxo de entrada está ativo.
+
+| Fronteira | Contrato aprovado para a v1 |
+|---|---|
+| Origem | consumir somente a fila `credpay.processamento.transacao-criada.v1`, pertencente ao `processamento-service`, ligada à exchange do produtor `credpay.transacoes.v1` pela routing key `transacao.criada.v1` |
+| Topologia | fila de entrada e DLQ quorum, duráveis, não exclusivas e não auto-delete; DLX direct `credpay.processamento.dlx.v1` com routing key `transacao.criada.dlq.v1`; o produtor não declara recursos do consumidor |
+| Paralelismo inicial | um consumidor na v1, `prefetch=10`; a serialização por identidades no PostgreSQL continua sendo a defesa para reentregas/concorrência |
+| Ack | `AcknowledgeMode.AUTO` do container Spring, que confirma a mensagem após o listener retornar com o commit do caso de uso concluído; nunca `autoAck`/no-ack do protocolo RabbitMQ |
+| Transação | `RegistrarProcessamentoService` confirma resultado e intenção de saída na mesma transação PostgreSQL; não há transação distribuída com RabbitMQ |
+| Reentrega | o mesmo `eventId` e conteúdo equivalente reutilizam resultado, política congelada e `outputEventId`, sem nova linha na outbox; divergência é conflito permanente |
+| Retry | erro operacional transitório recebe no máximo três tentativas totais, incluindo a primeira, com esperas de 1 e 2 segundos; após esgotar, rejeitar sem requeue para DLQ; erro permanente vai direto à DLQ |
+| Ativação | listener permanece desligado até topologia, validação, ack pós-commit, classificação de erros e DLQ passarem em RabbitMQ/PostgreSQL reais |
+
+O adaptador de entrada validará **antes de decidir**: JSON objeto legível; `eventId` e `data.transactionId` como UUID; `eventType=TransacaoCriada`, `eventVersion=1`, `data.status=PENDENTE`; `occurredAt` como `Instant`; `data.amount` como texto decimal positivo sem conversão binária; `data.currency` como código ISO 4217; `correlationId=data.transactionId`; propriedades AMQP `messageId=eventId`, `type=TransacaoCriada` e `correlationId=data.transactionId`. Campos JSON adicionais compatíveis podem ser ignorados; ausência, tipo incorreto, versão desconhecida ou inconsistência de identidade são erros permanentes. O payload cru não será escrito em log. A política de moeda ausente no processador é erro operacional, nunca decisão financeira `REJEITADA`.
+
+| Resultado do listener | Tratamento exigido |
+|---|---|
+| entrada válida nova | commit de resultado e intenção, então retorno normal e ack pelo container |
+| reentrega equivalente | reler snapshot original; retorno normal e ack, sem nova decisão ou evento |
+| JSON/contrato inválido, versão incompatível ou conflito de identidade | não decidir nem sobrescrever; rejeitar sem requeue e encaminhar à DLQ, com diagnóstico seguro |
+| banco indisponível, timeout de infraestrutura ou ausência de política configurada para a moeda | não converter em estado financeiro; retry limitado e, se persistir, DLQ com motivo observável |
+| queda depois do commit e antes do ack | reentrega idempotente encontra o registro durável; ack somente depois da nova execução terminar |
+
+O mecanismo de retry do listener deve classificar falhas permanentes sem tentativas inúteis e impedir requeue infinito. A escolha/versão de uma eventual dependência Spring Retry será verificada e justificada no incremento que implementar esse mecanismo; **nenhuma dependência é adicionada agora**. Falha de conexão do container com o broker é recuperação de infraestrutura, não uma tentativa de processamento de uma mensagem. O teste verificará número de entregas/tentativas e destino final, sem depender apenas de mocks.
+
+Para dead-lettering confiável, a fila quorum de origem não deve ser confundida com garantia automática: no RabbitMQ 4.3 o padrão é `at-most-once`. A v1 **almeja** `at-least-once` entre fila de entrada e DLQ por política do broker escopada à fila de origem, com `dead-letter-strategy=at-least-once`, `overflow=reject-publish`, `dead-letter-exchange` e routing key configurados, além da feature flag necessária. Antes de ligar o listener, teste real deve provar configuração efetiva, roteamento à DLQ, retenção na origem quando o destino não confirma e recuperação após restaurar o destino. Limite finito de comprimento/capacidade será escolhido e testado no incremento de topologia; até lá não há alegação de proteção contra crescimento ilimitado. Se o mecanismo não puder ser comprovado no ambiente local, registrar a limitação e não chamar a DLQ de at-least-once. Mesmo com essa estratégia, duplicatas na DLQ são possíveis e um nó único não prova alta disponibilidade. Referência: [RabbitMQ Quorum Queues](https://www.rabbitmq.com/docs/quorum-queues).
+
+**Critérios de prova incremental:** (1) declarar topologia e política efetiva sem listener; (2) validar entrada correta e negativa sem decisão; (3) confirmar ack somente após commit e reentrega equivalente após queda; (4) demonstrar retry limitado, erro permanente direto à DLQ e falha do destino de dead-lettering; (5) manter `eventId` e intenção de saída únicos. Cada etapa terá seu próprio red/green quando introduzir comportamento, sem ativação antecipada do consumidor.
+
+**Próximo:** implementar e testar somente a topologia/política de entrada e DLQ em RabbitMQ real, ainda sem listener.
 
 ## 10. Observabilidade e SLOs de aprendizado
 

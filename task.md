@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] B04.1 — Definir e revisar o contrato de consumo seguro de `TransacaoCriada` v1: fila/binding, validação, ack após commit, retry limitado e DLQ; sem criar listener ainda.
+- [ ] B04.2 — Implementar e testar somente a topologia/política da fila de entrada e DLQ de `TransacaoCriada` em RabbitMQ real, com limite finito e sem listener.
