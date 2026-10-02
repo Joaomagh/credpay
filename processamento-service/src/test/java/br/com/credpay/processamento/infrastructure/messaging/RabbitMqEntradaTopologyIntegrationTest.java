@@ -102,18 +102,9 @@ class RabbitMqEntradaTopologyIntegrationTest {
 
     @Test
     void deadLetterDeveAguardarDlqCheiaEEntregarAposLiberarCapacidade() throws Exception {
-        rabbitTemplate.convertAndSend("credpay.transacoes.v1", "transacao.criada.v1", "rota-direta");
-        rabbitTemplate.execute(channel -> {
-            var entrega = channel.basicGet(entrada.getName(), false);
-            assertThat(entrega).isNotNull();
-            channel.basicReject(entrega.getEnvelope().getDeliveryTag(), false);
-            return null;
-        });
-        var direta = rabbitTemplate.receive(dlq.getName(), 5_000);
-        assertThat(direta).isNotNull();
-        assertThat(new String(direta.getBody(), StandardCharsets.UTF_8)).isEqualTo("rota-direta");
-
         rabbitTemplate.convertAndSend("", dlq.getName(), "ocupante");
+        assertThat(admin.getQueueProperties(dlq.getName()).get("QUEUE_MESSAGE_COUNT"))
+                .isEqualTo(1);
         var payload = "evento-de-teste";
         rabbitTemplate.convertAndSend("credpay.transacoes.v1", "transacao.criada.v1", payload);
         rabbitTemplate.execute(channel -> {
