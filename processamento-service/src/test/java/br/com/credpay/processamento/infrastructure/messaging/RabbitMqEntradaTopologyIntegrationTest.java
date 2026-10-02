@@ -68,6 +68,10 @@ class RabbitMqEntradaTopologyIntegrationTest {
         var resultado = RABBITMQ.execInContainer("rabbitmqctl", "set_policy", "--apply-to", "quorum_queues",
                 "credpay-processing-input", "^credpay[.]processamento[.]transacao-criada[.]v1$", politica);
         assertThat(resultado.getExitCode()).isZero();
+        var politicaDlq = RABBITMQ.execInContainer("rabbitmqctl", "set_policy", "--apply-to", "quorum_queues",
+                "credpay-processing-dlq-limit", "^credpay[.]processamento[.]transacao-criada[.]dlq[.]v1$",
+                "{\"max-length\":1,\"overflow\":\"reject-publish\"}");
+        assertThat(politicaDlq.getExitCode()).isZero();
         admin.declareExchange(producerExchange);
         admin.declareExchange(dlx);
         admin.declareQueue(entrada);
@@ -97,7 +101,7 @@ class RabbitMqEntradaTopologyIntegrationTest {
     }
 
     @Test
-    void deadLetterDeveAguardarDestinoEEntregarAposRestaurarBinding() throws Exception {
+    void deadLetterDeveAguardarDlqCheiaEEntregarAposLiberarCapacidade() throws Exception {
         rabbitTemplate.convertAndSend("credpay.transacoes.v1", "transacao.criada.v1", "rota-direta");
         rabbitTemplate.execute(channel -> {
             var entrega = channel.basicGet(entrada.getName(), false);
@@ -109,32 +113,22 @@ class RabbitMqEntradaTopologyIntegrationTest {
         assertThat(direta).isNotNull();
         assertThat(new String(direta.getBody(), StandardCharsets.UTF_8)).isEqualTo("rota-direta");
 
+        rabbitTemplate.convertAndSend("", dlq.getName(), "ocupante");
         var payload = "evento-de-teste";
-        admin.removeBinding(dlqBinding);
-        try {
-            rabbitTemplate.convertAndSend("credpay.transacoes.v1", "transacao.criada.v1", payload);
-            rabbitTemplate.execute(channel -> {
-                var entrega = channel.basicGet(entrada.getName(), false);
-                assertThat(entrega).isNotNull();
-                channel.basicReject(entrega.getEnvelope().getDeliveryTag(), false);
-                return null;
-            });
-            assertThat(rabbitTemplate.receive(dlq.getName(), 500)).isNull();
-            var semRota = RABBITMQ.execInContainer("rabbitmqctl", "list_queues", "name", "messages",
-                    "messages_ready", "messages_unacknowledged");
-            System.out.println("Sem rota DLQ: " + semRota.getStdout());
-        } finally {
-            admin.declareBinding(dlqBinding);
-        }
+        rabbitTemplate.convertAndSend("credpay.transacoes.v1", "transacao.criada.v1", payload);
+        rabbitTemplate.execute(channel -> {
+            var entrega = channel.basicGet(entrada.getName(), false);
+            assertThat(entrega).isNotNull();
+            channel.basicReject(entrega.getEnvelope().getDeliveryTag(), false);
+            return null;
+        });
+        var retida = RABBITMQ.execInContainer("rabbitmqctl", "list_queues", "name", "messages");
+        assertThat(retida.getStdout()).contains(entrada.getName() + "\t1");
+        var ocupante = rabbitTemplate.receive(dlq.getName(), 5_000);
+        assertThat(ocupante).isNotNull();
+        assertThat(new String(ocupante.getBody(), StandardCharsets.UTF_8)).isEqualTo("ocupante");
 
-        var flags = RABBITMQ.execInContainer("rabbitmqctl", "list_feature_flags");
-        System.out.println("Feature flags RabbitMQ: " + flags.getStdout());
-        var bindings = RABBITMQ.execInContainer("rabbitmqctl", "list_bindings");
-        System.out.println("Bindings RabbitMQ: " + bindings.getStdout());
-        var estado = RABBITMQ.execInContainer("rabbitmqctl", "list_queues", "name", "arguments",
-                "messages_ready", "messages_unacknowledged");
-        System.out.println("Diagnóstico RabbitMQ: " + estado.getStdout());
-        var recebida = rabbitTemplate.receive(dlq.getName(), 5_000);
+        var recebida = rabbitTemplate.receive(dlq.getName(), 15_000);
         assertThat(recebida).isNotNull();
         assertThat(new String(recebida.getBody(), StandardCharsets.UTF_8)).isEqualTo(payload);
     }
