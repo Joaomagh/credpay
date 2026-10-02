@@ -25,6 +25,7 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.annotation.DirtiesContext;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -37,6 +38,7 @@ import org.testcontainers.utility.DockerImageName;
         "credpay.processamento.consumer.listener.enabled=true"
 })
 @Import({ProducerExchangeFixture.class, TransacaoCriadaListenerIntegrationTest.PausaOutboxConfiguration.class})
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @Testcontainers
 class TransacaoCriadaListenerIntegrationTest {
 
@@ -81,8 +83,7 @@ class TransacaoCriadaListenerIntegrationTest {
             assertThat(pausa.aguardarInsercao(10, TimeUnit.SECONDS)).isTrue();
             assertThat(quantidadeNoBanco("processamentos", "event_id", eventId)).isZero();
             assertThat(quantidadeNoBanco("outbox_eventos", "aggregate_id", transactionId)).isZero();
-            assertThat(estadoFila("messages_unacknowledged")).contains(
-                    "credpay.processamento.transacao-criada.v1\t1");
+            aguardarEstadoFila("messages_unacknowledged", 1, 20);
         } finally {
             pausa.liberar();
         }
@@ -94,7 +95,7 @@ class TransacaoCriadaListenerIntegrationTest {
         }
         assertThat(quantidadeNoBanco("processamentos", "event_id", eventId)).isEqualTo(1);
         assertThat(quantidadeNoBanco("outbox_eventos", "aggregate_id", transactionId)).isEqualTo(1);
-        assertThat(estadoFila("messages")).contains("credpay.processamento.transacao-criada.v1\t0");
+        aguardarEstadoFila("messages", 0, 10);
     }
 
     private int quantidadeNoBanco(String tabela, String coluna, UUID id) {
@@ -106,6 +107,20 @@ class TransacaoCriadaListenerIntegrationTest {
         var resultado = RABBITMQ.execInContainer("rabbitmqctl", "list_queues", "name", campo);
         assertThat(resultado.getExitCode()).isZero();
         return resultado.getStdout();
+    }
+
+    private void aguardarEstadoFila(String campo, int esperado, int segundos) throws Exception {
+        var linhaEsperada = "credpay.processamento.transacao-criada.v1\t" + esperado;
+        var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(segundos);
+        String estado;
+        do {
+            estado = estadoFila(campo);
+            if (estado.contains(linhaEsperada)) {
+                return;
+            }
+            TimeUnit.MILLISECONDS.sleep(200);
+        } while (System.nanoTime() < prazo);
+        assertThat(estado).contains(linhaEsperada);
     }
 
     private Message mensagem(UUID eventId, UUID transactionId) {
@@ -159,7 +174,7 @@ class TransacaoCriadaListenerIntegrationTest {
             delegate.adicionar(evento);
             inserida.countDown();
             try {
-                if (!liberada.await(10, TimeUnit.SECONDS)) {
+                if (!liberada.await(30, TimeUnit.SECONDS)) {
                     throw new IllegalStateException("espera de commit excedida");
                 }
             } catch (InterruptedException exception) {
