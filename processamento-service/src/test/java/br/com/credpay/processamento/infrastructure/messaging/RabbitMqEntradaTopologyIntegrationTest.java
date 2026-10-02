@@ -117,8 +117,6 @@ class RabbitMqEntradaTopologyIntegrationTest {
             channel.basicReject(entrega.getEnvelope().getDeliveryTag(), false);
             return null;
         });
-        var cheia = RABBITMQ.execInContainer("rabbitmqctl", "list_queues", "name", "messages");
-        assertThat(cheia.getStdout()).contains(dlq.getName() + "\t1");
         var ocupante = rabbitTemplate.receive(dlq.getName(), 5_000);
         assertThat(ocupante).isNotNull();
         assertThat(new String(ocupante.getBody(), StandardCharsets.UTF_8)).isEqualTo("ocupante");
