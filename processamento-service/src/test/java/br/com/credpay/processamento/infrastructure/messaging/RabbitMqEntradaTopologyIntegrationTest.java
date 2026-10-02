@@ -105,6 +105,15 @@ class RabbitMqEntradaTopologyIntegrationTest {
     }
 
     @Test
+    void bindingDeveReceberEventoPelaExchangeDoProdutor() {
+        rabbitTemplate.convertAndSend(producerExchange.getName(), "transacao.criada.v1", "entrada-de-teste");
+
+        var recebida = rabbitTemplate.receive(entrada.getName(), 5_000);
+        assertThat(recebida).isNotNull();
+        assertThat(new String(recebida.getBody(), StandardCharsets.UTF_8)).isEqualTo("entrada-de-teste");
+    }
+
+    @Test
     void deadLetterDeveAguardarDlqCheiaEEntregarAposLiberarCapacidade() throws Exception {
         rabbitTemplate.convertAndSend("", dlq.getName(), "ocupante");
         assertThat(admin.getQueueProperties(dlq.getName()).get("QUEUE_MESSAGE_COUNT"))

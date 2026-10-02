@@ -9,7 +9,7 @@ Atualizado em 2026-10-02. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos
 | B01 | Contrato de processamento idempotente | identidade, equivalência/conflito, resultado, atomicidade e ack documentados; matriz de falhas revisada | contratos atuais | Contrato definido; resultado/outbox implementados, listener/ack pendentes |
 | B02 | Resultado durável e processamento idempotente | PostgreSQL comprova resultado único, replay estável, conflito sem sobrescrita, rollback e concorrência | B01 e baseline própria de persistência | Concluído; B02.1–B02.6 comprovados no CI |
 | B03 | Saída `TransacaoProcessada` confiável | contrato versionado, resultado + outbox atômicos, publicação confirmada e reenvio com a mesma identidade | B02 | Concluído; B03.1–B03.10 comprovados |
-| B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | B04.1 contrato definido; B04.2 topologia próxima |
+| B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | B04.1 contrato e B04.2 topologia opt-in concluídos; B04.3 validação próxima |
 | B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | Refinamento |
 | B06 | Recuperação e diagnóstico demonstráveis | queda, atraso e duplicação testados; correlação, retry/DLQ e replay operacional observáveis | B05; refinar política de `FALHOU` | Refinamento |
 | B07 | Ambiente local reproduzível | imagens/Compose e depois Kubernetes local com probes e recursos; roteiro demonstra fluxo e falha | B05 e B06 | Refinamento |
@@ -57,11 +57,13 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 **B04.1 — Contrato do consumidor — concluído documentalmente.** A seção 9.28 de `spec.md` define fila/binding, validação do envelope e propriedades AMQP, ack após commit, classificação de erros, três tentativas transitórias e DLQ. O dead-lettering `at-least-once` exige política efetiva e teste; quorum sozinho não basta. Nenhum listener ou dependência foi criado.
 
-**B04.2 — Topologia de entrada — próximo.** Declarar fila quorum e DLQ de propriedade do processador, binding ao produtor e política/limite de dead-lettering; provar comportamento com RabbitMQ real antes de qualquer listener.
+**B04.2 — Topologia de entrada — concluído com limite.** Filas quorum, DLX e bindings opt-in declarados pelo processador; política escopada aplicada no teste e transferência após DLQ cheia comprovada no [CI #105](https://github.com/Joaomagh/credpay/actions/runs/37062164299). Sem listener. Política operacional e recuperação de rota ausente ainda não comprovadas, portanto consumo permanece desativado.
+
+**B04.3 — Validação da entrada — próximo.** Primeiro teste negativo do envelope/propriedades AMQP de `TransacaoCriada` v1; validar sem listener ou decisão financeira.
 
 ## Revisão e riscos
 
-- Estado atual: B02 e B03 concluídos no CI; B04.1 definido, B04.2 é a próxima implementação sem listener. Evidências em `spec.md`.
+- Estado atual: B02 e B03 concluídos no CI; B04.1 definido e B04.2 topologia opt-in testada, sem listener. Evidências e limites em `spec.md`.
 - Sandbox AI-Jail continua apenas documentado. Retomar sua implementação como iniciativa delimitada; não alegar isolamento atual.
 - Warning Mockito/Byte Buddy conhecido permanece; coordenar correção com evolução de qualidade, sem ocultá-lo.
 - Testes locais com infraestrutura dependem do Docker disponível. CI pode fornecer evidência real, mas falha de infraestrutura não é red de negócio.
