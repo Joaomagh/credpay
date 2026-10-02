@@ -2,7 +2,7 @@ package br.com.credpay.processamento.infrastructure.messaging;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import br.com.credpay.processamento.support.ProducerExchangeFixture;
+import br.com.credpay.processamento.support.InputTopologyTestApplication;
 import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Test;
@@ -13,14 +13,7 @@ import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.SpringBootConfiguration;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
-import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
-import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Import;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.RabbitMQContainer;
@@ -28,21 +21,10 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-@SpringBootTest(classes = RabbitMqEntradaTopologyIntegrationTest.TestApplication.class,
+@SpringBootTest(classes = InputTopologyTestApplication.class,
         properties = "credpay.processamento.consumer.topology.enabled=true")
 @Testcontainers
 class RabbitMqEntradaTopologyIntegrationTest {
-
-    @SpringBootConfiguration
-    @EnableAutoConfiguration(exclude = {
-            DataSourceAutoConfiguration.class,
-            HibernateJpaAutoConfiguration.class,
-            FlywayAutoConfiguration.class
-    })
-    @ComponentScan(basePackages = "br.com.credpay.processamento.infrastructure.messaging")
-    @Import(ProducerExchangeFixture.class)
-    static class TestApplication {
-    }
 
     @Container
     static final RabbitMQContainer RABBITMQ = new RabbitMQContainer(
@@ -97,6 +79,17 @@ class RabbitMqEntradaTopologyIntegrationTest {
 
     @Test
     void deadLetterDeveAguardarDestinoEEntregarAposRestaurarBinding() throws Exception {
+        rabbitTemplate.convertAndSend("credpay.transacoes.v1", "transacao.criada.v1", "rota-direta");
+        rabbitTemplate.execute(channel -> {
+            var entrega = channel.basicGet(entrada.getName(), false);
+            assertThat(entrega).isNotNull();
+            channel.basicReject(entrega.getEnvelope().getDeliveryTag(), false);
+            return null;
+        });
+        var direta = rabbitTemplate.receive(dlq.getName(), 5_000);
+        assertThat(direta).isNotNull();
+        assertThat(new String(direta.getBody(), StandardCharsets.UTF_8)).isEqualTo("rota-direta");
+
         var payload = "evento-de-teste";
         admin.removeBinding(dlqBinding);
         try {
