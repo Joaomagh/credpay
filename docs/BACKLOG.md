@@ -9,7 +9,7 @@ Atualizado em 2026-10-02. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos
 | B01 | Contrato de processamento idempotente | identidade, equivalência/conflito, resultado, atomicidade e ack documentados; matriz de falhas revisada | contratos atuais | Contrato definido; resultado/outbox implementados, listener/ack pendentes |
 | B02 | Resultado durável e processamento idempotente | PostgreSQL comprova resultado único, replay estável, conflito sem sobrescrita, rollback e concorrência | B01 e baseline própria de persistência | Concluído; B02.1–B02.6 comprovados no CI |
 | B03 | Saída `TransacaoProcessada` confiável | contrato versionado, resultado + outbox atômicos, publicação confirmada e reenvio com a mesma identidade | B02 | Concluído; B03.1–B03.10 comprovados |
-| B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | B04.1 contrato, B04.2 topologia opt-in e B04.3 parser concluídos; B04.4 prova de falha do destino próxima |
+| B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | B04.1–B04.4 concluídos; B04.5 caminho válido do listener opt-in próximo |
 | B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | Refinamento |
 | B06 | Recuperação e diagnóstico demonstráveis | queda, atraso e duplicação testados; correlação, retry/DLQ e replay operacional observáveis | B05; refinar política de `FALHOU` | Refinamento |
 | B07 | Ambiente local reproduzível | imagens/Compose e depois Kubernetes local com probes e recursos; roteiro demonstra fluxo e falha | B05 e B06 | Refinamento |
@@ -61,11 +61,13 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 **B04.3 — Validação da entrada — concluído.** Parser sem listener valida envelope, tipos e propriedades AMQP; rejeições não incluem payload no erro. Red/green local e [CI #110](https://github.com/Joaomagh/credpay/actions/runs/37064493609) verde com 99 testes.
 
-**B04.4 — Falha do destino de dead-lettering — próximo.** Provar em RabbitMQ real que mensagem rejeitada não se perde quando a DLQ recusa publicação ou a rota desaparece, e chega após a recuperação. A prova exige observar a falha efetiva antes de restaurar o destino. Sem listener ou ativação operacional neste recorte.
+**B04.4 — Falha do destino de dead-lettering — concluído para rota ausente.** A mensagem rejeitada permaneceu na origem sem binding da DLQ e chegou com o mesmo payload depois da restauração no [CI #115](https://github.com/Joaomagh/credpay/actions/runs/37066089787). A espera de até 210 segundos reflete o retry interno; sem promessa de recuperação instantânea. Recusa efetiva por DLQ cheia e falha de nó não foram provadas. Sem listener ou política operacional.
+
+**B04.5 — Ack após commit no caminho válido — próximo.** Com listener habilitado somente por opt-in no teste, publicar `TransacaoCriada` válido e provar em RabbitMQ/PostgreSQL reais que resultado e intenção de saída são duráveis antes do ack. A execução normal segue com consumidor desligado; sem retry, classificação de falhas ou ativação operacional neste recorte. Próximos slices de B04 devem cobrir reentrega após falha e destino de erros antes da ativação.
 
 ## Revisão e riscos
 
-- Estado atual: B02 e B03 concluídos no CI; B04.1–B04.3 definidos/testados, ainda sem listener. Evidências e limites em `spec.md`.
+- Estado atual: B02 e B03 concluídos no CI; B04.1–B04.4 definidos/testados, ainda sem listener. Evidências e limites em `spec.md`.
 - Sandbox AI-Jail continua apenas documentado. Retomar sua implementação como iniciativa delimitada; não alegar isolamento atual.
 - Warning Mockito/Byte Buddy conhecido permanece; coordenar correção com evolução de qualidade, sem ocultá-lo.
 - Testes locais com infraestrutura dependem do Docker disponível. CI pode fornecer evidência real, mas falha de infraestrutura não é red de negócio.

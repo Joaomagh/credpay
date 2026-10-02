@@ -6,7 +6,7 @@
 
 **Fase atual:** 4 — Fluxo assíncrono confiável
 
-**Estado:** criação e consulta HTTP persistentes; processamento idempotente e duas outboxes transacionais comprovados; publicadores RabbitMQ com scheduler opt-in de réplica única em cada serviço; topologia e parser de entrada testados no processador, ainda sem listener ou fluxo ponta a ponta
+**Estado:** criação e consulta HTTP persistentes; processamento idempotente e duas outboxes transacionais comprovados; publicadores RabbitMQ com scheduler opt-in de réplica única em cada serviço; topologia, parser e recuperação de rota da DLQ testados no processador, ainda sem listener ou fluxo ponta a ponta
 
 ## 1. Contexto e limites atuais
 
@@ -1693,6 +1693,16 @@ No [CI #109](https://github.com/Joaomagh/credpay/actions/runs/37064110328), o te
 **Limites:** sem listener, ack, classificação de falhas, retry, DLQ operacional, limite de tamanho do payload ou prova de JSON com chaves duplicadas. Esses itens devem ser avaliados antes de ativar a entrada; nenhum contrato de pagamento real é inferido desta validação isolada. Nenhuma dependência foi adicionada.
 
 **Próximo:** B04.4, provar retenção e recuperação do dead-lettering quando o destino recusa ou perde a rota, sem habilitar listener.
+
+### 9.31 Retenção e recuperação da rota de dead-lettering — B04.4
+
+Com política efetiva `at-least-once` na fila quorum de origem, o teste remove o binding DLX→DLQ, publica e rejeita uma mensagem sem requeue. Com a rota ainda ausente, verifica que a DLQ não recebeu o payload e que `rabbitmqctl list_queues name messages` mantém uma mensagem na origem. Após restaurar o binding, recebe o **mesmo payload** na DLQ. Isso exercita uma falha real de roteamento, sem listener da aplicação nem alteração do código de produção.
+
+**Evidência:** [CI #113](https://github.com/Joaomagh/credpay/actions/runs/37065126334) e [CI #114](https://github.com/Joaomagh/credpay/actions/runs/37065508507) falharam porque a espera de 30 segundos não cobria a nova tentativa interna; o diagnóstico de #114 confirmou política efetiva e `messages=1` na origem. O [CI #115](https://github.com/Joaomagh/credpay/actions/runs/37066089787) passou com 100 testes, zero falhas/erros/skips, após ampliar a espera máxima para 210 segundos. A classe de topologia levou 190 segundos nessa execução. O [material oficial do RabbitMQ](https://www.rabbitmq.com/blog/2022/03/29/at-least-once-dead-lettering) descreve retry periódico com intervalo padrão de três minutos; o tempo observado no CI é compatível, mas não constitui SLA.
+
+**Limites:** a prova cobre rota ausente/restaurada em broker de nó único, não recusa efetiva por DLQ cheia, falha de nó ou alta disponibilidade. A política foi aplicada apenas pela fixture Testcontainers; provisionamento e verificação operacionais continuam pendentes. O listener permanece desligado. O tempo de recuperação precisa ser considerado na futura operação/monitoramento da DLQ. Nenhuma dependência nova entrou.
+
+**Próximo:** B04.5, provar o caminho válido do listener opt-in e ack somente após commit em RabbitMQ e PostgreSQL reais, sem habilitação por padrão.
 
 ## 10. Observabilidade e SLOs de aprendizado
 

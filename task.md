@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] B04.4 — Provar em RabbitMQ real a retenção e recuperação do dead-lettering quando a DLQ recusa ou perde a rota, sem habilitar listener.
+- [ ] B04.5 — Provar o caminho válido do listener opt-in: persistir resultado e intenção de saída antes do ack em RabbitMQ e PostgreSQL reais, mantendo o consumo desligado por padrão.
