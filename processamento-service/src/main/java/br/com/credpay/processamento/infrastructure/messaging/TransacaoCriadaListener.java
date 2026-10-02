@@ -1,7 +1,9 @@
 package br.com.credpay.processamento.infrastructure.messaging;
 
 import br.com.credpay.processamento.application.RegistrarProcessamentoService;
+import br.com.credpay.processamento.application.TransacaoCriadaRecebida;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -22,6 +24,12 @@ final class TransacaoCriadaListener {
 
     @RabbitListener(queues = RabbitMqEntradaConfiguration.ENTRADA, ackMode = "AUTO", concurrency = "1")
     void receber(Message message) {
-        registrar.executar(parser.parsear(message));
+        TransacaoCriadaRecebida entrada;
+        try {
+            entrada = parser.parsear(message);
+        } catch (IllegalArgumentException exception) {
+            throw new AmqpRejectAndDontRequeueException("TransacaoCriada invalida: " + exception.getMessage());
+        }
+        registrar.executar(entrada);
     }
 }
