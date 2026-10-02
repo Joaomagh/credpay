@@ -1,4 +1,4 @@
-package br.com.credpay.processamento.infrastructure.messaging;
+package br.com.credpay.processamento;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
