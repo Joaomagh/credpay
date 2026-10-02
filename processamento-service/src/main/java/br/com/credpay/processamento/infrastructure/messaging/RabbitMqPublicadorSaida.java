@@ -44,7 +44,7 @@ class RabbitMqPublicadorSaida implements PublicadorEventoSaida {
         try {
             var confirmacao = correlacao.getFuture().get(
                     CONFIRMACAO_TIMEOUT_SEGUNDOS, TimeUnit.SECONDS);
-            return confirmacao.isAck();
+            return confirmacao.isAck() && correlacao.getReturned() == null;
         } catch (InterruptedException excecao) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("interrompido ao aguardar confirmação do RabbitMQ", excecao);

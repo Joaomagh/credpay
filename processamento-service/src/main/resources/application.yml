@@ -3,6 +3,9 @@ spring:
     name: processamento-service
   rabbitmq:
     publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
   jpa:
     open-in-view: false
     hibernate:
