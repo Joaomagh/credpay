@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] B04.6 — Provar replay equivalente pelo listener opt-in: duas entregas do mesmo `TransacaoCriada` deixam um único resultado e uma única intenção de saída.
+- [ ] B04.7 — Provar que `TransacaoCriada` inválido é rejeitado diretamente para DLQ pelo listener opt-in, sem decisão nem requeue repetido.

@@ -6,7 +6,7 @@
 
 **Fase atual:** 4 — Fluxo assíncrono confiável
 
-**Estado:** criação e consulta HTTP persistentes; processamento idempotente e duas outboxes transacionais comprovados; publicadores RabbitMQ com scheduler opt-in de réplica única em cada serviço; listener de entrada opt-in validado no caminho positivo, ainda sem tratamento de falhas ou fluxo ponta a ponta
+**Estado:** criação e consulta HTTP persistentes; processamento idempotente e duas outboxes transacionais comprovados; publicadores RabbitMQ com scheduler opt-in de réplica única em cada serviço; listener de entrada opt-in validado no caminho positivo e replay equivalente, ainda sem tratamento de falhas ou fluxo ponta a ponta
 
 ## 1. Contexto e limites atuais
 
@@ -1713,6 +1713,16 @@ Com política efetiva `at-least-once` na fila quorum de origem, o teste remove o
 **Limites:** a prova é do caminho válido em PostgreSQL/RabbitMQ de teste. Não prova replay pelo listener, crash entre commit e ack, erro permanente para DLQ, retry finito ou política de broker provisionada fora da fixture. O listener não deve ser habilitado em execução normal antes dessas proteções; sem tratamento, exceções do listener podem causar reentrega ilimitada. Nenhuma dependência foi adicionada.
 
 **Próximo:** B04.6, provar replay equivalente do mesmo evento pelo listener sem duplicar resultado nem intenção de saída.
+
+### 9.33 Replay equivalente pelo listener — B04.6
+
+O teste de integração envia duas vezes o mesmo `TransacaoCriada` à exchange do produtor com a fila de entrada ligada. Um observador de teste confirma a segunda busca pelo `eventId` no caso de uso e a pausa antes do retorno deixa a segunda entrega sem ack. Com PostgreSQL real, há uma única linha em `processamentos`, uma única intenção na outbox e o mesmo `outputEventId` da primeira decisão. Após liberar o retorno, a fila volta a zero. Não há mudança de código de produção.
+
+**Evidência:** o teste nasceu verde porque a idempotência já estava implementada no caso de uso; é caracterização do caminho RabbitMQ → listener → aplicação, não um ciclo red/green fabricado. O [CI #124](https://github.com/Joaomagh/credpay/actions/runs/37070642793) executou 102 testes, zero falhas/erros/skips, em PostgreSQL e RabbitMQ reais. `test-compile` e `git diff --check` passaram localmente; Docker Desktop local continua indisponível.
+
+**Limites:** duas publicações equivalentes não simulam uma queda entre commit e ack, nem provam retries transitórios ou tratamento de payload inválido. A política do broker e o listener operacional seguem pendentes. Nenhuma dependência foi adicionada.
+
+**Próximo:** B04.7, rejeitar mensagem inválida diretamente para DLQ com motivo verificável, sem nova decisão e sem requeue inútil.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
