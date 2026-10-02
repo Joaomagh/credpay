@@ -101,10 +101,17 @@ class RabbitMqEntradaTopologyIntegrationTest {
                 return null;
             });
             assertThat(rabbitTemplate.receive(dlq.getName(), 500)).isNull();
+            var semRota = RABBITMQ.execInContainer("rabbitmqctl", "list_queues", "name", "messages",
+                    "messages_ready", "messages_unacknowledged");
+            System.out.println("Sem rota DLQ: " + semRota.getStdout());
         } finally {
             admin.declareBinding(dlqBinding);
         }
 
+        var flags = RABBITMQ.execInContainer("rabbitmqctl", "list_feature_flags");
+        System.out.println("Feature flags RabbitMQ: " + flags.getStdout());
+        var bindings = RABBITMQ.execInContainer("rabbitmqctl", "list_bindings");
+        System.out.println("Bindings RabbitMQ: " + bindings.getStdout());
         var estado = RABBITMQ.execInContainer("rabbitmqctl", "list_queues", "name", "arguments",
                 "messages_ready", "messages_unacknowledged");
         System.out.println("Diagnóstico RabbitMQ: " + estado.getStdout());
