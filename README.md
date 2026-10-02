@@ -29,7 +29,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Implementado | duas entradas concorrentes com `eventId` ou `transactionId` compartilhado convergem para o resultado original ou conflito explícito, comprovado com PostgreSQL real |
 | Implementado | migration e adapter da outbox própria do processador, com backfill de resultados preparatórios; ainda sem publicação |
 | Implementado | primeira decisão do processador grava resultado e intenção de saída na mesma transação; falha da outbox reverte ambos e replay não duplica a intenção |
-| Implementado | outbox do processador lista pendências em ordem estável e permite marcação idempotente; nenhum publicador a utiliza ainda |
+| Implementado | outbox do processador lista pendências em ordem estável e permite marcação idempotente; o publicador RabbitMQ isolado confirma envio/rota, mas ainda não lê nem marca a outbox |
 | Implementado | exchange RabbitMQ durável do processador, testada com rota v1 em broker descartável; ainda sem publicador |
 | Implementado | health check do Spring Boot Actuator |
 | Implementado | transação válida nasce `PENDENTE` |
@@ -63,7 +63,7 @@ O projeto está na fase de fluxo assíncrono confiável: o `transacoes-service` 
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
 | Documentado | contrato `TransacaoCriada` v1 e garantia de entrega pelo menos uma vez via outbox |
 | Documentado | baseline RabbitMQ com propriedade da topologia, confirms/returns, retry e DLQ |
-| Ainda não implementado | coordenação entre réplicas publicadoras, consumidor, publicação da saída do `processamento-service`, imagem da aplicação, Kubernetes e CD |
+| Ainda não implementado | coordenação entre réplicas publicadoras, consumidor, publicação operacional da outbox de saída do `processamento-service`, imagem da aplicação, Kubernetes e CD |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 

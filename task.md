@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] B03.7 — Implementar com TDD o publicador isolado de `TransacaoProcessada` v1, com payload/propriedades, confirm correlacionado e mandatory return testados em RabbitMQ real; sem lote, scheduler, consumidor ou marcação da outbox ainda.
+- [ ] B03.8 — Ligar, com TDD e PostgreSQL/RabbitMQ reais, a publicação de uma pendência da outbox à marcação somente após confirmação sem retorno; sem scheduler, consumidor ou múltiplas réplicas.
