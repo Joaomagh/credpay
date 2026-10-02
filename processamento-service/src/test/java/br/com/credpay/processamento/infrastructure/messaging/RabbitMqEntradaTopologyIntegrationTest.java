@@ -55,6 +55,8 @@ class RabbitMqEntradaTopologyIntegrationTest {
 
     @Autowired private AmqpAdmin admin;
     @Autowired private RabbitTemplate rabbitTemplate;
+    @Autowired @Qualifier("producerExchangeFixture") private DirectExchange producerExchange;
+    @Autowired @Qualifier("transacaoCriadaBinding") private Binding entradaBinding;
     @Autowired @Qualifier("transacaoCriadaDlqBinding") private Binding dlqBinding;
 
     @BeforeEach
@@ -66,6 +68,12 @@ class RabbitMqEntradaTopologyIntegrationTest {
         var resultado = RABBITMQ.execInContainer("rabbitmqctl", "set_policy", "--apply-to", "quorum_queues",
                 "credpay-processing-input", "^credpay[.]processamento[.]transacao-criada[.]v1$", politica);
         assertThat(resultado.getExitCode()).isZero();
+        admin.declareExchange(producerExchange);
+        admin.declareExchange(dlx);
+        admin.declareQueue(entrada);
+        admin.declareQueue(dlq);
+        admin.declareBinding(entradaBinding);
+        admin.declareBinding(dlqBinding);
     }
 
     @Test
