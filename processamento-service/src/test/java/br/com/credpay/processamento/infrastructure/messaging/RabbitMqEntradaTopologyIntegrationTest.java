@@ -2,6 +2,7 @@ package br.com.credpay.processamento.infrastructure.messaging;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import br.com.credpay.processamento.support.ProducerExchangeFixture;
 import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Test;
@@ -19,9 +20,7 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.RabbitMQContainer;
@@ -41,16 +40,8 @@ class RabbitMqEntradaTopologyIntegrationTest {
             FlywayAutoConfiguration.class
     })
     @ComponentScan(basePackages = "br.com.credpay.processamento.infrastructure.messaging")
-    @Import(ProducerFixture.class)
+    @Import(ProducerExchangeFixture.class)
     static class TestApplication {
-    }
-
-    @TestConfiguration(proxyBeanMethods = false)
-    static class ProducerFixture {
-        @Bean
-        DirectExchange producerExchangeFixture() {
-            return new DirectExchange("credpay.transacoes.v1", true, false);
-        }
     }
 
     @Container
@@ -105,7 +96,7 @@ class RabbitMqEntradaTopologyIntegrationTest {
     }
 
     @Test
-    void deadLetterDeveAguardarDestinoEEntregarAposRestaurarBinding() {
+    void deadLetterDeveAguardarDestinoEEntregarAposRestaurarBinding() throws Exception {
         var payload = "evento-de-teste";
         admin.removeBinding(dlqBinding);
         try {
@@ -121,7 +112,10 @@ class RabbitMqEntradaTopologyIntegrationTest {
             admin.declareBinding(dlqBinding);
         }
 
-        var recebida = rabbitTemplate.receive(dlq.getName(), 60_000);
+        var estado = RABBITMQ.execInContainer("rabbitmqctl", "list_queues", "name", "arguments",
+                "messages_ready", "messages_unacknowledged");
+        System.out.println("Diagnóstico RabbitMQ: " + estado.getStdout());
+        var recebida = rabbitTemplate.receive(dlq.getName(), 5_000);
         assertThat(recebida).isNotNull();
         assertThat(new String(recebida.getBody(), StandardCharsets.UTF_8)).isEqualTo(payload);
     }
