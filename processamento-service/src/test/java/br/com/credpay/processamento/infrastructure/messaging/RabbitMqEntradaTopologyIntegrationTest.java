@@ -106,7 +106,7 @@ class RabbitMqEntradaTopologyIntegrationTest {
         assertThat(admin.getQueueProperties(dlq.getName()).get("QUEUE_MESSAGE_COUNT"))
                 .isEqualTo(1);
         var payload = "evento-de-teste";
-        rabbitTemplate.convertAndSend("credpay.transacoes.v1", "transacao.criada.v1", payload);
+        rabbitTemplate.convertAndSend("", entrada.getName(), payload);
         rabbitTemplate.execute(channel -> {
             var entrega = channel.basicGet(entrada.getName(), false);
             assertThat(entrega).isNotNull();
