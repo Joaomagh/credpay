@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] B04.2 — Implementar e testar somente a topologia/política da fila de entrada e DLQ de `TransacaoCriada` em RabbitMQ real, com limite finito e sem listener.
+- [ ] B04.3 — Validar em TDD o envelope JSON e as propriedades AMQP de `TransacaoCriada` v1 no adaptador de entrada, sem listener nem decisão de negócio.

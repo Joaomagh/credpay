@@ -6,7 +6,7 @@
 
 **Fase atual:** 4 — Fluxo assíncrono confiável
 
-**Estado:** criação e consulta HTTP persistentes; processamento idempotente e duas outboxes transacionais comprovados; publicadores RabbitMQ com scheduler opt-in de réplica única em cada serviço; ainda sem consumidor ou fluxo ponta a ponta
+**Estado:** criação e consulta HTTP persistentes; processamento idempotente e duas outboxes transacionais comprovados; publicadores RabbitMQ com scheduler opt-in de réplica única em cada serviço; topologia de entrada opt-in testada no processador, ainda sem listener ou fluxo ponta a ponta
 
 ## 1. Contexto e limites atuais
 
@@ -1671,6 +1671,16 @@ Para dead-lettering confiável, a fila quorum de origem não deve ser confundida
 **Critérios de prova incremental:** (1) declarar topologia e política efetiva sem listener; (2) validar entrada correta e negativa sem decisão; (3) confirmar ack somente após commit e reentrega equivalente após queda; (4) demonstrar retry limitado, erro permanente direto à DLQ e falha do destino de dead-lettering; (5) manter `eventId` e intenção de saída únicos. Cada etapa terá seu próprio red/green quando introduzir comportamento, sem ativação antecipada do consumidor.
 
 **Próximo:** implementar e testar somente a topologia/política de entrada e DLQ em RabbitMQ real, ainda sem listener.
+
+### 9.29 Topologia de entrada e DLQ opt-in — B04.2
+
+O `processamento-service` declara, somente com `credpay.processamento.consumer.topology.enabled=true`, a fila quorum durável `credpay.processamento.transacao-criada.v1`, seu binding com `credpay.transacoes.v1`/`transacao.criada.v1`, a DLX direct durável `credpay.processamento.dlx.v1` e a fila quorum durável `credpay.processamento.transacao-criada.dlq.v1` ligada por `transacao.criada.dlq.v1`. A exchange do produtor pertence ao `transacoes-service`: o teste a declara como fixture, não a configuração de produção do consumidor. O padrão é desligado; não há listener, ack, retry de processamento ou fluxo ponta a ponta.
+
+A política RabbitMQ, escopada à fila quorum de entrada, define `dead-letter-strategy=at-least-once`, `overflow=reject-publish`, `max-length=10000`, DLX e routing key. A DLQ de teste recebe política própria `max-length=1` e `overflow=reject-publish` para simular destino cheio. As políticas são aplicadas no container do teste, **não** são provisionadas pela aplicação; implantação futura deverá instalá-las e verificar sua definição efetiva e a feature flag `stream_queue` antes de habilitar o consumidor. `max-length=10000` limita mensagens, não bytes nem tempo de retenção; a DLQ operacional ainda precisa de política de capacidade e procedimento de inspeção/replay.
+
+**Evidência:** [CI #92](https://github.com/Joaomagh/credpay/actions/runs/37057606496) vermelho pela ausência da fila; [CI #106](https://github.com/Joaomagh/credpay/actions/runs/37062544845) verde com 79 testes, zero falhas/erros/skips. No RabbitMQ 4.3.5 real, os testes confirmaram declaração, política efetiva, roteamento pela exchange do produtor e entrega do mesmo payload à DLQ após o teste ocupar e liberar sua única vaga. Isso caracteriza o comportamento observado, mas não prova por si só que o broker tentou publicar enquanto a DLQ estava cheia. `test-compile` e 26 testes sem Docker passaram localmente; o Docker Desktop local não estava disponível. Houve correção de fixture para não reutilizar o contexto de outro teste. Os contadores imediatos de `rabbitmqctl list_queues` divergiram da observação por AMQP, por isso não foram usados como prova de retenção.
+
+**Limite de prova:** a retenção durante a recusa efetiva da DLQ e a recuperação após remover/restaurar seu binding não ficaram demonstradas nos experimentos iniciais; não são alegadas como garantias deste incremento. Também não há prova de alta disponibilidade com broker de nó único. Antes de ativar listener, validar esses cenários e a política operacional; falha nessa verificação deve manter o consumo desativado. Esta etapa não introduz dependência nova.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
