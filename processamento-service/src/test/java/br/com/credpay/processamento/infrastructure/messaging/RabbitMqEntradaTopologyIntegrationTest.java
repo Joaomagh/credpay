@@ -133,8 +133,6 @@ class RabbitMqEntradaTopologyIntegrationTest {
     @Test
     void deadLetterDeveAguardarBindingERetomarAposRestaurarRota() throws Exception {
         var payload = "evento-sem-rota";
-        var plugin = RABBITMQ.execInContainer("rabbitmq-plugins", "enable", "rabbitmq_prometheus");
-        assertThat(plugin.getExitCode()).isZero();
         admin.removeBinding(dlqBinding);
         try {
             assertThat(bindingsDoBroker()).doesNotContain(dlx.getName() + "\texchange\t" + dlq.getName());
@@ -143,19 +141,15 @@ class RabbitMqEntradaTopologyIntegrationTest {
 
             assertThat(rabbitTemplate.receive(dlq.getName(), 2_000)).isNull();
             assertThat(bindingsDoBroker()).doesNotContain(dlx.getName() + "\texchange\t" + dlq.getName());
-            var filas = RABBITMQ.execInContainer("rabbitmqctl", "list_queues", "name",
-                    "effective_policy_definition", "messages");
-            System.out.println("Política efetiva e filas: " + filas.getStdout());
-            var metricas = RABBITMQ.execInContainer("wget", "-qO-", "http://localhost:15692/metrics");
-            System.out.println("Dead letters: " + metricas.getStdout().lines()
-                    .filter(linha -> linha.startsWith("rabbitmq_global_messages_dead_lettered_")).toList());
-            System.out.println("Avisos broker: " + RABBITMQ.getLogs().lines()
-                    .filter(linha -> linha.toLowerCase().contains("dead letter")).toList());
+            var filas = RABBITMQ.execInContainer("rabbitmqctl", "list_queues", "name", "messages");
+            assertThat(filas.getExitCode()).isZero();
+            assertThat(filas.getStdout()).contains(entrada.getName() + "\t1");
         } finally {
             admin.declareBinding(dlqBinding);
         }
 
-        var recebida = rabbitTemplate.receive(dlq.getName(), 30_000);
+        // O consumidor interno de dead-lettering pode aguardar até três minutos para repetir a rota.
+        var recebida = rabbitTemplate.receive(dlq.getName(), 210_000);
         assertThat(recebida).isNotNull();
         assertThat(new String(recebida.getBody(), StandardCharsets.UTF_8)).isEqualTo(payload);
     }
