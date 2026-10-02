@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] B03.8 — Ligar, com TDD e PostgreSQL/RabbitMQ reais, a publicação de uma pendência da outbox à marcação somente após confirmação sem retorno; sem scheduler, consumidor ou múltiplas réplicas.
+- [ ] B03.9 — Provar com teste de falha entre confirmação RabbitMQ e marcação da outbox que uma nova tentativa reutiliza o mesmo `eventId` e payload; sem scheduler, consumidor ou múltiplas réplicas.
