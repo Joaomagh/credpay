@@ -4,6 +4,9 @@ spring:
   rabbitmq:
     publisher-confirm-type: correlated
     publisher-returns: true
+    listener:
+      simple:
+        prefetch: 10
     template:
       mandatory: true
   jpa:
