@@ -3,6 +3,11 @@ package br.com.credpay.processamento.infrastructure.messaging;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.UUID;
+
+import br.com.credpay.processamento.application.EventoSaidaPendente;
+import br.com.credpay.processamento.application.PublicadorEventoSaida;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.AmqpAdmin;
@@ -57,6 +62,49 @@ class RabbitMqSaidaTopologyIntegrationTest {
     @Autowired private DirectExchange exchange;
     @Autowired private AmqpAdmin admin;
     @Autowired private RabbitTemplate rabbitTemplate;
+    @Autowired(required = false) private PublicadorEventoSaida publicador;
+
+    @Test
+    void publicador_deveManterPendente_quandoMensagemNaoTemRota() {
+        var eventId = UUID.randomUUID();
+        var transactionId = UUID.randomUUID();
+        var evento = new EventoSaidaPendente(eventId, transactionId,
+                "TransacaoProcessada", 1,
+                "{\"eventId\":\"" + eventId + "\"}", Instant.parse("2026-10-01T12:00:00Z"));
+
+        assertThat(publicador.publicar(evento)).isFalse();
+    }
+
+    @Test
+    void publicador_deveEnviarPayloadEPropriedades_quandoConfirmadoERoteado() {
+        var eventId = UUID.randomUUID();
+        var transactionId = UUID.randomUUID();
+        var payload = "{\"eventId\":\"" + eventId + "\",\"eventType\":\"TransacaoProcessada\"}";
+        var evento = new EventoSaidaPendente(eventId, transactionId,
+                "TransacaoProcessada", 1, payload, Instant.parse("2026-10-01T12:00:00Z"));
+        var filaTeste = new AnonymousQueue();
+        admin.declareQueue(filaTeste);
+        try {
+            admin.declareBinding(BindingBuilder.bind(filaTeste)
+                    .to(exchange).with(RabbitMqSaidaConfiguration.TRANSACAO_PROCESSADA_ROUTING_KEY));
+
+            assertThat(publicador).isNotNull();
+            assertThat(publicador.publicar(evento)).isTrue();
+
+            var recebida = rabbitTemplate.receive(filaTeste.getName(), 5_000);
+            assertThat(recebida).isNotNull();
+            assertThat(new String(recebida.getBody(), StandardCharsets.UTF_8)).isEqualTo(payload);
+            assertThat(recebida.getMessageProperties().getReceivedDeliveryMode())
+                    .isEqualTo(MessageDeliveryMode.PERSISTENT);
+            assertThat(recebida.getMessageProperties().getContentType()).isEqualTo("application/json");
+            assertThat(recebida.getMessageProperties().getContentEncoding()).isEqualTo("UTF-8");
+            assertThat(recebida.getMessageProperties().getMessageId()).isEqualTo(eventId.toString());
+            assertThat(recebida.getMessageProperties().getType()).isEqualTo("TransacaoProcessada");
+            assertThat(recebida.getMessageProperties().getCorrelationId()).isEqualTo(transactionId.toString());
+        } finally {
+            admin.deleteQueue(filaTeste.getName());
+        }
+    }
 
     @Test
     void topologia_deveRotearMensagemPersistente_pelaExchangeDeSaida() {
