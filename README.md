@@ -11,7 +11,7 @@ Cada capacidade entra em um incremento pequeno, testado e documentado. Assim, o 
 
 ## Status atual
 
-O projeto está na fase de fluxo assíncrono confiável: ambos os serviços persistem suas próprias decisões e publicam eventos por outbox. O `processamento-service` tem um listener de entrada opt-in validado no caminho positivo, mas ele permanece desligado por padrão até cobrir reentrega, falhas e configuração operacional. A integração ponta a ponta ainda não está pronta.
+O projeto está na fase de fluxo assíncrono confiável: ambos os serviços persistem suas próprias decisões e publicam eventos por outbox. O `processamento-service` tem um listener de entrada opt-in validado no caminho positivo, no replay equivalente e na rejeição de JSON inválido; ele permanece desligado por padrão até cobrir as demais falhas e a configuração operacional. A integração ponta a ponta ainda não está pronta.
 
 | Estado | Entrega |
 |---|---|
@@ -33,6 +33,7 @@ O projeto está na fase de fluxo assíncrono confiável: ambos os serviços pers
 | Implementado | exchange RabbitMQ durável e publicador do processador, com payload e propriedades v1 testados em broker descartável |
 | Implementado | scheduler opt-in de uma réplica para a saída do processador; RabbitMQ participa do health quando a publicação é habilitada |
 | Comprovado | listener de `TransacaoCriada` opt-in mantém a entrega sem ack enquanto resultado e outbox aguardam commit, em PostgreSQL e RabbitMQ reais |
+| Comprovado | replay equivalente pelo listener não duplica resultado/outbox; JSON inválido vai direto à DLQ no teste com broker real |
 | Implementado | health check do Spring Boot Actuator |
 | Implementado | transação válida nasce `PENDENTE` |
 | Implementado | valor ausente ou não positivo e moeda ausente são rejeitados pelo domínio |

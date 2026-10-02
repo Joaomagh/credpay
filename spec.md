@@ -6,7 +6,7 @@
 
 **Fase atual:** 4 — Fluxo assíncrono confiável
 
-**Estado:** criação e consulta HTTP persistentes; processamento idempotente e duas outboxes transacionais comprovados; publicadores RabbitMQ com scheduler opt-in de réplica única em cada serviço; listener de entrada opt-in validado no caminho positivo e replay equivalente, ainda sem tratamento de falhas ou fluxo ponta a ponta
+**Estado:** criação e consulta HTTP persistentes; processamento idempotente e duas outboxes transacionais comprovados; publicadores RabbitMQ com scheduler opt-in de réplica única em cada serviço; listener de entrada opt-in validado no caminho positivo, replay equivalente e rejeição de JSON inválido, ainda sem retry transitório ou fluxo ponta a ponta
 
 ## 1. Contexto e limites atuais
 
@@ -1702,6 +1702,8 @@ Com política efetiva `at-least-once` na fila quorum de origem, o teste remove o
 
 **Limites:** a prova cobre rota ausente/restaurada em broker de nó único, não recusa efetiva por DLQ cheia, falha de nó ou alta disponibilidade. A política foi aplicada apenas pela fixture Testcontainers; provisionamento e verificação operacionais continuam pendentes. O listener permanece desligado. O tempo de recuperação precisa ser considerado na futura operação/monitoramento da DLQ. Nenhuma dependência nova entrou.
 
+No [CI #129](https://github.com/Joaomagh/credpay/actions/runs/37073249056), uma leitura única de `rabbitmqctl list_queues` ainda mostrou `messages=0` após a rejeição, antes de a estatística de retenção aparecer. A fixture agora aguarda até 15 segundos por `messages=1` com a rota ausente; não libera a rota se isso não for observado. O [CI #130](https://github.com/Joaomagh/credpay/actions/runs/37073573236) voltou a passar com 103 testes. A prova de retenção foi mantida, não removida.
+
 **Próximo:** B04.5, provar o caminho válido do listener opt-in e ack somente após commit em RabbitMQ e PostgreSQL reais, sem habilitação por padrão.
 
 ### 9.32 Listener opt-in com ack após commit no caminho válido — B04.5
@@ -1723,6 +1725,16 @@ O teste de integração envia duas vezes o mesmo `TransacaoCriada` à exchange d
 **Limites:** duas publicações equivalentes não simulam uma queda entre commit e ack, nem provam retries transitórios ou tratamento de payload inválido. A política do broker e o listener operacional seguem pendentes. Nenhuma dependência foi adicionada.
 
 **Próximo:** B04.7, rejeitar mensagem inválida diretamente para DLQ com motivo verificável, sem nova decisão e sem requeue inútil.
+
+### 9.34 JSON inválido rejeitado diretamente para DLQ — B04.7
+
+O listener captura apenas `IllegalArgumentException` do parser de entrada e lança `AmqpRejectAndDontRequeueException` com mensagem de campo/contrato, sem incluir corpo ou valores recebidos. O container rejeita a entrega sem requeue; a política `at-least-once` da fila quorum encaminha para a DLQ. Exceções do caso de uso ou do banco não são capturadas neste incremento.
+
+**TDD e evidência:** o teste novo fixa uma política efetiva no RabbitMQ descartável, publica JSON malformado, exige `x-first-death-reason=rejected` na DLQ e ausência de novas linhas de resultado/outbox. O [CI #127](https://github.com/Joaomagh/credpay/actions/runs/37071897057) falhou antes da correção, mas o requeue repetido produziu cerca de 86 MB de logs e impediu recuperar a linha final da asserção pelo conector; isso é uma limitação da evidência red, não um green omitido. O [CI #128](https://github.com/Joaomagh/credpay/actions/runs/37072605070) passou e mostrou uma rejeição com diagnóstico `TransacaoCriada invalida: JSON inválido`. Após a correção da fixture de retenção não relacionada, o [CI #130](https://github.com/Joaomagh/credpay/actions/runs/37073573236) confirmou 103 testes, zero falhas/erros/skips. `test-compile` e `git diff --check` passaram localmente; Docker Desktop local indisponível. O teste não aceita `delivery_limit` como substituto de rejeição direta.
+
+**Limites:** só erros emitidos pelo parser são classificados como permanentes. Conflito de identidade do caso de uso, indisponibilidade de banco e falhas sem classificação continuam sem retry seguro; por isso o listener segue desligado por padrão. Não há política operacional provisionada fora da fixture nem prova de payload sensível em todos os caminhos de log. Nenhuma dependência foi adicionada.
+
+**Próximo:** B04.8, classificar conflito de identidade como permanente e provar DLQ sem sobrescrever o resultado original, com teste red limitado para evitar explosão de logs.
 
 ## 10. Observabilidade e SLOs de aprendizado
 

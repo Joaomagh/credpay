@@ -141,9 +141,7 @@ class RabbitMqEntradaTopologyIntegrationTest {
 
             assertThat(rabbitTemplate.receive(dlq.getName(), 2_000)).isNull();
             assertThat(bindingsDoBroker()).doesNotContain(dlx.getName() + "\texchange\t" + dlq.getName());
-            var filas = RABBITMQ.execInContainer("rabbitmqctl", "list_queues", "name", "messages");
-            assertThat(filas.getExitCode()).isZero();
-            assertThat(filas.getStdout()).contains(entrada.getName() + "\t1");
+            aguardarMensagemRetidaNaOrigem();
         } finally {
             admin.declareBinding(dlqBinding);
         }
@@ -158,6 +156,21 @@ class RabbitMqEntradaTopologyIntegrationTest {
         var resultado = RABBITMQ.execInContainer("rabbitmqctl", "list_bindings");
         assertThat(resultado.getExitCode()).isZero();
         return resultado.getStdout();
+    }
+
+    private void aguardarMensagemRetidaNaOrigem() throws Exception {
+        var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+        String filas;
+        do {
+            var resultado = RABBITMQ.execInContainer("rabbitmqctl", "list_queues", "name", "messages");
+            assertThat(resultado.getExitCode()).isZero();
+            filas = resultado.getStdout();
+            if (filas.contains(entrada.getName() + "\t1")) {
+                return;
+            }
+            TimeUnit.MILLISECONDS.sleep(200);
+        } while (System.nanoTime() < prazo);
+        assertThat(filas).contains(entrada.getName() + "\t1");
     }
 
     private void rejeitarDaEntrada() {

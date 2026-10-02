@@ -4,4 +4,4 @@
 
 ## Próximo
 
-- [ ] B04.7 — Provar que `TransacaoCriada` inválido é rejeitado diretamente para DLQ pelo listener opt-in, sem decisão nem requeue repetido.
+- [ ] B04.8 — Provar que conflito de identidade no listener opt-in vai diretamente à DLQ e preserva o resultado original, sem requeue repetido.
