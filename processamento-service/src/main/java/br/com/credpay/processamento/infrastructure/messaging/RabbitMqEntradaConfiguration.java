@@ -21,14 +21,7 @@ class RabbitMqEntradaConfiguration {
 
     @Bean
     Queue transacaoCriadaQueue() {
-        return QueueBuilder.durable(ENTRADA)
-                .quorum()
-                .withArgument("x-dead-letter-strategy", "at-least-once")
-                .withArgument("x-overflow", "reject-publish")
-                .withArgument("x-max-length", 10_000)
-                .deadLetterExchange(DLX)
-                .deadLetterRoutingKey(ROTA_DLQ)
-                .build();
+        return QueueBuilder.durable(ENTRADA).quorum().build();
     }
 
     @Bean
