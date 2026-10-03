@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B05.5a validado na PR #100: 79 testes do parser, verify local 153, CI #133/Secret Scan #40 verdes. Reinspeção sem bloqueante; integrar após checks no SHA final. Spec 9.46.
+- B05.5b validado no CI transações #136 (257 testes)/Secret Scan #43, PR #101; integração ainda depende do CI processador aplicável e checks finais. Spec 9.47.
 
 ## Próximo
 
-- [ ] B05.5b — Após integrar parser, topologia/políticas próprias do retorno opt-in. Testar declarações, referência à exchange do processador, políticas efetivas/flag/escopo, roteamento e reaplicação preservando sentinelas em broker real. Sem listener/dependência nova.
+- [ ] B05.5c — Após integrar topologia/políticas, implementar listener seguro do retorno: commit antes de ack, replay, rejeições permanentes e retry operacional limitado. Refinar menor slice sem anunciar consumo seguro antes de comprovar classificação/limites.

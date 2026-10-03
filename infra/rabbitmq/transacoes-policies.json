@@ -1,0 +1,29 @@
+{
+  "policies": [
+    {
+      "vhost": "/",
+      "name": "credpay-transactions-input",
+      "pattern": "^credpay[.]transacoes[.]transacao-processada[.]v1$",
+      "apply-to": "quorum_queues",
+      "priority": 10,
+      "definition": {
+        "dead-letter-strategy": "at-least-once",
+        "overflow": "reject-publish",
+        "max-length": 10000,
+        "dead-letter-exchange": "credpay.transacoes.dlx.v1",
+        "dead-letter-routing-key": "transacao.processada.dlq.v1"
+      }
+    },
+    {
+      "vhost": "/",
+      "name": "credpay-transactions-dlq-limit",
+      "pattern": "^credpay[.]transacoes[.]transacao-processada[.]dlq[.]v1$",
+      "apply-to": "quorum_queues",
+      "priority": 10,
+      "definition": {
+        "max-length": 1000,
+        "overflow": "reject-publish"
+      }
+    }
+  ]
+}
