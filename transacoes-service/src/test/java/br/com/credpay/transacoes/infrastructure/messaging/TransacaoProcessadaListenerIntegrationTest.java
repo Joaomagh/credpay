@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.StreamSupport;
 
 import br.com.credpay.transacoes.application.CriarTransacao;
+import br.com.credpay.transacoes.TransacoesServiceApplication;
 import br.com.credpay.transacoes.application.TransicaoRecebida;
 import br.com.credpay.transacoes.application.TransicaoRepository;
 import br.com.credpay.transacoes.domain.StatusTransacao;
@@ -50,7 +51,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 
-@SpringBootTest(properties = {"credpay.transacoes.consumer.topology.enabled=true",
+@SpringBootTest(classes = TransacoesServiceApplication.class, properties = {"credpay.transacoes.consumer.topology.enabled=true",
         "credpay.transacoes.consumer.listener.enabled=true", "spring.rabbitmq.listener.simple.auto-startup=false"})
 @Import(TransacaoProcessadaListenerIntegrationTest.Fixture.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)

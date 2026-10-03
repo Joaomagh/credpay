@@ -1932,6 +1932,8 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Integração anterior:** PR #101 integrada em 9a4d62d após CI transações #137 (257 testes), processador #150 (114 testes, 8m34s) e Secret Scan #44 verdes no último SHA d0506b4. Fixtures e políticas próprias comprovadas; não prova listener.
 
+**Falha de isolamento descoberta:** [CI #139](https://github.com/Joaomagh/credpay/actions/runs/37154438604), SHA f99c29e, teve 263 testes e quatro erros, nenhuma falha de assertion. O novo teste no pacote messaging encontrou duas SpringBootConfiguration vizinhas, antes da preparação; a fixture antiga RabbitMqTopologyIntegrationTest usava ComponentScan amplo e importou beans das novas fixtures, causando conflito producerExchangeFixture. Não é o red esperado de negócio. Experimento mínimo: explicitar TransacoesServiceApplication no novo SpringBootTest e trocar scan da fixture antiga por imports somente de RabbitMqConfiguration/RabbitMqPublicadorEvento. Não habilitar override de bean nem reduzir testes; repetir CI antes de implementar endpoint.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.

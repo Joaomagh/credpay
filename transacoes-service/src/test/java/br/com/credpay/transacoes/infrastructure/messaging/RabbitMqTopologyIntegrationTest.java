@@ -22,7 +22,7 @@ import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.RabbitMQContainer;
@@ -40,7 +40,7 @@ class RabbitMqTopologyIntegrationTest {
             HibernateJpaAutoConfiguration.class,
             FlywayAutoConfiguration.class
     })
-    @ComponentScan(basePackages = "br.com.credpay.transacoes.infrastructure.messaging")
+    @Import({RabbitMqConfiguration.class, RabbitMqPublicadorEvento.class})
     static class TestApplication {
     }
 
