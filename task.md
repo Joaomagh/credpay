@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B04.11 integrado na PR #92 (`d02f29c`): recusa do worker, retenção e recuperação após liberar a DLQ comprovadas no CI #143, com 113 testes do `processamento-service`. CI #144 e Secret Scan #9 verdes no SHA final. Resumos, ADRs e pendências documentais reconciliados; warnings das fixtures seguem em B08.2, sem correção alegada.
+- B04.12 integrado na PR #93 (`ef31015`): políticas operacionais e reaplicação comprovadas no CI #147, com 114 testes; Secret Scan #12 verde no SHA final. B05.1 define contrato do retorno, causalidade, histórico atômico, replay e compatibilidade HTTP na spec 9.40. Warnings das fixtures continuam em B08.2.
 
-## Agora
+## Próximo
 
-- [ ] B04.12 — Artefato de políticas, runbook e teste de importação/reaplicação preparados. Compilação e 75 testes sem infraestrutura verdes; Docker local indisponível. Aguardar broker real, suíte completa e revisão no CI antes de integrar. Depois avançar a B05.
+- [ ] B05.2 — Implementar em TDD o domínio imutável PENDENTE → APROVADA/REJEITADA, proteção de estados finais e reconstrução sem reiniciar estado. Sem listener, migration ou atualização persistente neste incremento.
