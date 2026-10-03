@@ -2024,6 +2024,8 @@ O workflow `.github/workflows/secret-scan.yml` usa checkout fixado por SHA, hist
 
 **Revisão final:** o [Secret Scan #2](https://github.com/Joaomagh/credpay/actions/runs/37098215430), SHA `95658c2`, passou com o canário exigindo 42 e histórico limpo. O [Secret Scan #3](https://github.com/Joaomagh/credpay/actions/runs/37098282309) também passou no SHA final `f819a88` antes da integração da [PR #90](https://github.com/Joaomagh/credpay/pull/90), commit `9ee6cf3`. A revisão assistida confirmou exceções estreitas, flags, permissões e limites; não é certificação externa. A inspeção limitada do log de #1 não encontrou o padrão sintético AWS completo sem redação. As buscas limitadas de logs registradas nos incrementos não equivalem à revisão completa de logs/artefatos ainda pendente em B08.1.
 
+**Revisão de achados B04.12:** o hook bloqueou o primeiro push com três fingerprints `generic-api-key` no commit `7aeb70d`: artefato operacional (linha 14), teste (110) e runbook (50). A inspeção e outro agente confirmaram a mesma routing key pública da DLQ, que seleciona destino e não autentica. Foram adicionadas somente essas três exceções por fingerprint em `.gitleaksignore`, sem excluir arquivo/regra ou contornar o hook. Controle positivo via stdin continuou retornando exatamente `42`; entrada limpa retornou `0`. Nenhuma credencial real foi encontrada ou exibida. Varredura e hook serão repetidos antes do push.
+
 ## 17. Checklist por incremento
 
 - [ ] critério de aceitação entendido e escopo mantido;
