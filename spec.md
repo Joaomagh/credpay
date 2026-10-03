@@ -1902,6 +1902,18 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Aceite:** [CI #130](https://github.com/Joaomagh/credpay/actions/runs/37151996635), SHA d42e6cf, passou 174 testes sem falhas/erros/skips em 52 s, incluindo os dois HTTP com PostgreSQL real. Secret Scan #37 verde. Revisão assistida sem bloqueante; resposta de criação reconstrói o contrato original a partir dos dados imutáveis, sem persistir outro snapshot ou reiniciar o estado. Diff/UTF-8 serão conferidos e CI/scanner exigidos no último SHA documental antes de integrar a PR #99. B05.5a é o próximo resultado pronto; demais dependem dele.
 
+### 9.46 Parser isolado do resultado — B05.5a
+
+**Desenho:** TransacaoProcessadaMessageParser converte envelope JSON e propriedades AMQP em TransacaoProcessadaRecebida, sem bean/listener/banco. Valida objetos, campos textuais, versão inteira 1, UUIDs completos (hexadecimal aceita caixa como no parser de criação), correlação, dois status finais e propriedades iguais à identidade canônica. Instant conserva nanos e aceita representação com offset equivalente; campos extras são ignorados. Rejeições IllegalArgumentException têm mensagens fixas por campo e nenhuma causa com conteúdo externo; não adicionar amount/currency ao resultado nem abstração compartilhada entre serviços.
+
+**TDD local:** API ausente deu red deliberado; primeira implementação mínima passou dois cenários finais com record completo/nanos. Matriz de validação mostrou 73 falhas entre 77 testes, incluindo identidade/propriedades aceitas indevidamente e erros de biblioteca que ecoavam conteúdo. Antes do green, removida expectativa incorreta de data={} produzir erro data: objeto vazio é estruturalmente objeto e falha pelo campo transactionId ausente, já coberto. Não contar essa expectativa como red de negócio. Depois das guardas, 77 focados passaram. Extras/offset e alguns formatos já rejeitados pela implementação mínima nasceram verdes, são caracterizações. Verify offline com 151 testes/JAR passou; warnings Mockito/Byte Buddy conhecidos permanecem. Logs ignorados .local/b05-5a-*.log; revisão e CI completos pendentes antes do aceite.
+
+**Aprendizado:** parser protege a fronteira de transporte; causalidade e idempotência continuam no caso de uso transacional. Validar propriedade AMQP não confirma entrega ou commit. B05.5b prepara topologia/políticas antes de criar listener.
+
+**Achado tratado na revisão:** leitura padrão aceitava objeto seguido de outro objeto ou lixo textual. Dois testes novos deram red: 79 executados, duas falhas por nenhuma exceção. ObjectReader local com FAIL_ON_TRAILING_TOKENS corrigiu o corpo inteiro sem mutar ObjectMapper compartilhado; 79 focados e verify offline com 153 testes/JAR verdes. A rejeição mantém JSON inválido sem causa. Sem ampliar para limites de payload ou política de campos duplicados; não há contrato específico desses itens neste slice.
+
+**Aceite:** [CI #133](https://github.com/Joaomagh/credpay/actions/runs/37152699748), SHA a74ee1d, e [Secret Scan #40](https://github.com/Joaomagh/credpay/actions/runs/37152699539) verdes. Suíte completa inclui todos os 79 testes do parser e fixtures reais anteriores; reinspeção assistida sem bloqueante. Nenhum consumo ativado ou dependência adicionada. PR #100 exige checks do SHA documental final antes do merge. Próximo B05.5b usa políticas próprias e referência à exchange do produtor, sem declará-la na aplicação consumidora.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.

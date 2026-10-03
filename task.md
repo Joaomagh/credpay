@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B05.4c validado na PR #99: CI #130/Secret Scan #37 verdes; 174 testes, POST original PENDENTE e GET final com histórico/outbox intactos. Integração aguarda checks no SHA documental final; spec 9.45.
+- B05.5a validado na PR #100: 79 testes do parser, verify local 153, CI #133/Secret Scan #40 verdes. Reinspeção sem bloqueante; integrar após checks no SHA final. Spec 9.46.
 
 ## Próximo
 
-- [ ] B05.5a — Após integrar B05.4c, parser isolado de TransacaoProcessada.v1: envelope/propriedades AMQP, dois finais, precisão de nanos, campos extras compatíveis e rejeição segura. Sem listener/banco/dependência nova.
+- [ ] B05.5b — Após integrar parser, topologia/políticas próprias do retorno opt-in. Testar declarações, referência à exchange do processador, políticas efetivas/flag/escopo, roteamento e reaplicação preservando sentinelas em broker real. Sem listener/dependência nova.
