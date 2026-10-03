@@ -1980,6 +1980,8 @@ O workflow `.github/workflows/secret-scan.yml` usa checkout fixado por SHA, hist
 
 **Validação:** checksum Windows conferido, CLI 8.30.1 executada; varredura `git --redact=100 --no-banner --log-level error --ignore-gitleaks-allow --log-opts="--all" .` retornou 0 após a revisão dos três fingerprints. Controle positivo via `stdin` retornou 42 com a flag exclusiva, inclusive com as exceções presentes; entrada limpa retornou 0. Hook ativado por `git config --local core.hooksPath .githooks`; `git hook run pre-push` retornou 0, índice confirmou modo `100755` e LF. `git check-ignore --no-index` confirmou binário/relatório em `.local` e os nove caminhos adicionais de credenciais bloqueados. O [Secret Scan #1](https://github.com/Joaomagh/credpay/actions/runs/37098101748) passou antes do ajuste de código exclusivo do canário; repetir o CI com esse ajuste antes do merge. Push local passou pelo hook ativo. UTF-8 estrito e `git diff --check` passaram. Configuração operacional não recebe red artificial de negócio.
 
+**Revisão final:** o [Secret Scan #2](https://github.com/Joaomagh/credpay/actions/runs/37098215430), SHA `95658c2`, passou com o canário exigindo 42 e histórico limpo. A revisão assistida confirmou exceções estreitas, flags, permissões e limites; não é certificação externa. A inspeção limitada do log de #1 não encontrou o padrão sintético AWS completo sem redação. Logs/artefatos dos demais runs continuam no escopo pendente de B08.1.
+
 ## 17. Checklist por incremento
 
 - [ ] critério de aceitação entendido e escopo mantido;
