@@ -1892,11 +1892,13 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 ### 9.45 Replay da resposta HTTP original após estado final — B05.4c
 
-**Decisão em execução:** a representação de criação sempre terá PENDENTE, mesmo no replay após aplicação final; GET continua refletindo banco. Alterar somente CriarTransacaoService.paraResultado, sem UPDATE, DTO/snapshot extra ou modificar dados/escala originais. Dois testes unitários novos exigem resposta PENDENTE e objeto final intacto; red local executou oito testes com duas falhas esperadas (retornava APROVADA/REJEITADA). Mapper ainda não alterado; aguardar red HTTP real antes de implementar.
+**Decisão:** a representação de criação sempre terá PENDENTE, mesmo no replay após aplicação final; GET continua refletindo banco. Alterado somente CriarTransacaoService.paraResultado, sem UPDATE, DTO/snapshot extra ou modificar dados/escala originais. Dois testes unitários novos exigem resposta PENDENTE e objeto final intacto; red local executou oito testes com duas falhas esperadas (retornava APROVADA/REJEITADA).
 
 **Teste vertical:** nova fixture HTTP/PostgreSQL para os dois estados cria pelo POST, aplica pelo caso de uso real e repete POST com escala equivalente diferente. Exige resposta/cabeçalho originais, GET final, escala original, um histórico completo e outbox de criação inteira intacta. MockMvcPrint.NONE somente nesta fixture e mensagens fixas para comparação de body/outbox evitam dump de payload financeiro em falha; diagnóstico de status permanece. Toda a suíte compila; Docker local indisponível exige CI para red/green real. O verify local sem infraestrutura passará a excluir **/*HttpTest (as duas fixtures HTTP precisam PostgreSQL), além de IntegrationTest/PostgresRuntimeTest; CI continua executando todos sem skips.
 
 **Próximo refinado pelo P.O.:** B05.5a parser isolado, B05.5b topologia/políticas próprias opt-in, B05.5c listener com ack após commit e classificação/retry limitados, B05.5d fluxo dos dois aplicativos reais com bancos próprios. Saída construída pela fixture não contará como fluxo completo. Sem HA, tuning, painel ou replay operacional da DLQ em B05.
+
+**Red e green local:** [CI #129](https://github.com/Joaomagh/credpay/actions/runs/37151788466), SHA fe2442b, executou 174 testes com quatro falhas esperadas, zero erros/skips: dois unitários e os dois HTTP esperavam PENDENTE, receberam APROVADA/REJEITADA. PostgreSQL real disponível; Secret Scan #36 verde. Depois da mudança mínima, oito focados e verify offline com 74 testes/JAR passaram; warnings Mockito/Byte Buddy conhecidos permanecem. Logs locais ignorados em .local/b05-4c-*.log. Green HTTP e revisão final pendentes antes de aceitar/integrar a PR #99.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
