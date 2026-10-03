@@ -45,7 +45,7 @@ docker exec $rabbitContainer rabbitmqctl --quiet --formatter=json list_consumers
 Confira **cada fila pelo nome exato**, não por busca de palavras no conjunto:
 
 - `stream_queue` deve estar `enabled`. Se não estiver, parar e revisar a preparação; este roteiro não habilita flags automaticamente.
-- Ambas as filas devem ser `quorum`, `durable=true`, com `arguments={"x-queue-type":"quorum"}`. Argumentos `x-*` adicionais exigem revisão, pois podem prevalecer sobre a política.
+- Ambas as filas devem ser `quorum`, `durable=true`, com `arguments=[["x-queue-type","longstr","quorum"]]` na saída JSON desta CLI (nome/tipo/valor AMQP). Argumentos `x-*` adicionais exigem revisão, pois podem prevalecer sobre a política.
 - `policy` deve corresponder à tabela de capacidade e `operator_policy` deve estar vazio. Política concorrente de maior prioridade, empate ou operator policy exige investigação; não apagar políticas nem recriar filas para passar a conferência.
 - `effective_policy_definition` da entrada deve ser exatamente `{"dead-letter-strategy":"at-least-once","overflow":"reject-publish","max-length":10000,"dead-letter-exchange":"credpay.processamento.dlx.v1","dead-letter-routing-key":"transacao.criada.dlq.v1"}`. A DLQ deve ser exatamente `{"max-length":1000,"overflow":"reject-publish"}`. Ordem das chaves JSON é irrelevante.
 - `credpay.transacoes.v1` e `credpay.processamento.dlx.v1` devem ser exchanges `direct`, duráveis. Binding de entrada: `credpay.transacoes.v1` → fila de entrada, routing key `transacao.criada.v1`. Binding de DLQ: `credpay.processamento.dlx.v1` → DLQ, routing key `transacao.criada.dlq.v1`. Destinos devem ser filas.

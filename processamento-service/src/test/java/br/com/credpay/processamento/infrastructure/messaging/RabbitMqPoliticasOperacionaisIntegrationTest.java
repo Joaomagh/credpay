@@ -122,7 +122,8 @@ class RabbitMqPoliticasOperacionaisIntegrationTest {
         assertThat(fila.path("durable").asBoolean()).isTrue();
         assertThat(fila.path("policy").asText()).isEqualTo(politica);
         assertThat(fila.path("operator_policy").asText()).isEmpty();
-        assertThat(fila.path("arguments")).isEqualTo(JSON.readTree("{\"x-queue-type\":\"quorum\"}"));
+        // rabbitmqctl exposes the AMQP table as name/type/value triples, not a management API object.
+        assertThat(fila.path("arguments")).isEqualTo(JSON.readTree("[[\"x-queue-type\",\"longstr\",\"quorum\"]]"));
         assertThat(fila.path("effective_policy_definition")).isEqualTo(JSON.readTree(definicao));
     }
 
