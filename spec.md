@@ -1748,6 +1748,20 @@ O listener captura somente `ConflitoProcessamentoException` da chamada transacio
 
 **Próximo:** B04.9, provar retry operacional com no máximo três tentativas totais e intervalos de 1 e 2 segundos, recuperação ou DLQ ao esgotar, sem repetir erros permanentes. `dependency:tree` offline confirmou Spring Retry 2.0.13 já transitivo de Spring AMQP 3.2.12; não há necessidade identificada de dependência nova.
 
+### 9.36 Retry limitado no consumidor opt-in — B04.9
+
+**Baseline:** Spring Retry 2.0.13 já transitivo de Spring AMQP 3.2.12, confirmado por `dependency:tree` offline. A factory nomeada usa primeiro `SimpleRabbitListenerContainerFactoryConfigurer` do Boot e depois adiciona advice stateless; preserva prefetch e configuração do container. Factory/interceptor só existem com ambas as flags de topologia/listener habilitadas. Nenhuma dependência ou POM novo.
+
+`SimpleRetryPolicy` limita a três tentativas totais e percorre causas para não repetir `AmqpRejectAndDontRequeueException`. Todas as outras exceções, inclusive desconhecidas ou ausência de política por moeda, são retryáveis até esse limite; não é uma allowlist que prove que toda falha é transitória. `ExponentialBackOffPolicy` configura intervalo inicial de 1000 ms, multiplicador 2 e máximo de 2000 ms. O advice envolve o listener; cada chamada ao serviço abre sua própria transação, sem transação externa que englobe todas as tentativas.
+
+O recoverer preserva a rejeição permanente segura encontrada na cadeia; no esgotamento lança rejeição sem requeue, mensagem fixa `TransacaoCriada com falha operacional apos 3 tentativas`, sem causa nem logging do `Message`. Isso não converte falha operacional em resultado financeiro `REJEITADA`/`FALHOU`, nem garante sanitização de todos os logs da infraestrutura.
+
+**TDD:** antes da implementação, quatro testes executaram com três falhas esperadas: não recuperou após falha inicial, não rejeitou seguramente ao esgotar e não desembrulhou a rejeição permanente. O cenário default-off já passava e é caracterização. Após a implementação, a fixture com um único argumento falhou no recoverer AMQP; foi corrigida para a assinatura canal/mensagem do container, sem alterar a produção para acomodá-la. Quatro testes verdes e `verify` sem classes de infraestrutura com 75 testes/JAR. A duração observada de pelo menos três segundos prova espera total mínima; os intervalos individuais são configuração inspecionada, não medidos separadamente. Mockito/Byte Buddy continua com warning conhecido.
+
+**Integração preparada, aguardando CI:** decorator da outbox faz INSERT real e lança falha controlada após ele. Na recuperação, pausa a segunda tentativa antes do INSERT, lê resultado/outbox por outra conexão e exige ausência; depois libera, exige exatamente duas chamadas e um único commit. No esgotamento, exige três chamadas, nenhuma linha das novas identidades e mensagem original na DLQ com `rejected`. São falhas controladas na aplicação com banco real, não queda real de PostgreSQL. Docker local indisponível; não há green local de integração alegado.
+
+**Revisão:** agente revisor não encontrou bloqueante; foram reforçadas as verificações de ausência da factory nas combinações incompletas de flags. Crash entre commit/ack, provisionamento de política operacional e ativação normal seguem pendentes.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.

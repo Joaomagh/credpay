@@ -71,7 +71,7 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 **B04.8 — Conflito de identidade para DLQ — concluído.** Red unitário observado; [CI #133](https://github.com/Joaomagh/credpay/actions/runs/37095277698) verde com 106 testes e registro original completo preservado, corpo/identidade divergentes na DLQ e motivo `rejected`. Nenhum novo POM/dependência. Retry transitório, crash pós-commit e política operacional ficam em slices posteriores.
 
-**B04.9 — Retry operacional limitado — próximo.** Três tentativas totais, com esperas de 1 e 2 segundos; provar recuperação após falha com rollback anterior ou DLQ após esgotamento sem resultado/intenção novos. Erros permanentes não recebem retry. Usar a capacidade já transitiva Spring Retry 2.0.13 e diagnóstico fixo, sem recoverer que publique o corpo da mensagem em log. Testes verificam tentativas efetivas, não apenas `x-death`.
+**B04.9 — Retry operacional limitado — em validação.** Red observado; quatro testes de retry e 75 testes sem infraestrutura verdes. Factory opt-in, três tentativas totais, esperas configuradas de 1 e 2 segundos e recoverer seguro sem dependência nova. Integração preparada para rollback/recuperação e esgotamento, aguardando CI. Exceções desconhecidas também recebem retry limitado; não é uma allowlist só de falhas transitórias.
 
 ## Incrementos de B08
 

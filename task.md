@@ -4,7 +4,7 @@
 
 ## Último incremento
 
-- B04.8 validado: red observado, 71 testes sem infraestrutura verdes localmente e 106 testes completos no CI #133. Conflito vai à DLQ sem alterar resultado/outbox. Busca limitada de histórico e log do CI sem os padrões de segredo pesquisados; B08.1 ainda pendente.
+- B04.9 em validação: red observado e retry mínimo implementado; 75 testes sem infraestrutura verdes, prova de rollback/recuperação/esgotamento aguarda CI real. B04.8 integrado no PR #88. B08.1 segue pendente, sem evidência de vazamento na busca limitada realizada.
 
 ## Próximo
 
