@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B08.1 parcial validado: Gitleaks 8.30.1, hook pre-push ativo neste checkout e Secret Scan #2 verdes, incluindo canário com código exclusivo. Três falsos positivos históricos revisados por fingerprint; nenhum segredo real confirmado. Revisão complementar de logs/artefatos permanece no backlog.
+- B04.10 validado: CI #140 verde com 113 testes; reentrega real após commit/antes do ACK preservou resultado/outbox completos. Nenhuma alteração de produção; Secret Scan #5 verde. Warnings Hikari de conexão fechada registrados para diagnóstico em B08.2.
 
 ## Próximo
 
-- [ ] B04.10 em validação — Comprovar no CI a reentrega real após commit e antes do ACK, preservando resultado e outbox; manter consumo operacional desativado.
+- [ ] B04.11 — Comprovar recusa efetiva do dead-lettering com DLQ cheia, retenção na origem e recuperação após liberar capacidade, sem ativar consumo operacional.
