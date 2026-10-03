@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -25,6 +26,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
@@ -48,6 +53,7 @@ import org.testcontainers.utility.MountableFile;
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Execution(ExecutionMode.SAME_THREAD)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class FluxoCredPayE2E {
 
     private static final String POSTGRES_IMAGE = "postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0";
@@ -80,6 +86,7 @@ class FluxoCredPayE2E {
     private RabbitTemplate rabbit;
     private int duplicatasEntrada;
     private int duplicatasSaida;
+    private Process processoProcessamento;
 
     @BeforeAll
     @Timeout(value = 5, unit = TimeUnit.MINUTES)
@@ -125,6 +132,7 @@ class FluxoCredPayE2E {
     }
 
     @ParameterizedTest
+    @Order(1)
     @CsvSource({"50.000,APROVADA", "150.000,REJEITADA"})
     @Timeout(value = 2, unit = TimeUnit.MINUTES)
     void post_deveConcluirEConservarResultadoNoReplayDosEventosEDoPost(String valor, String status) throws Exception {
@@ -201,6 +209,91 @@ class FluxoCredPayE2E {
         aguardarFilasVazias();
     }
 
+    @Test
+    @Order(2)
+    @Timeout(value = 2, unit = TimeUnit.MINUTES)
+    void processadorParado_devePreservarPendenteERecuperarPeloEventoOriginal() throws Exception {
+        aguardarFilasVazias();
+        encerrarProcessos(List.of(processoProcessamento));
+        aguardarSomenteConsumidorDeResultado();
+        var resposta = enviar(HttpRequest.newBuilder(uri("/transacoes"))
+                .header("Content-Type", "application/json").header("Idempotency-Key", UUID.randomUUID().toString())
+                .POST(HttpRequest.BodyPublishers.ofString("{\"valor\":50.000,\"moeda\":\"BRL\"}")));
+        assertThat(resposta.statusCode()).isEqualTo(201);
+        var original = JSON.readTree(resposta.body());
+        assertThat(original.path("status").asText()).isEqualTo("PENDENTE");
+        var id = UUID.fromString(original.path("id").asText());
+        var location = resposta.headers().firstValue("Location").orElseThrow();
+        assertThat(location).isEqualTo("/transacoes/" + id);
+        aguardarEntradaPublicadaEPronta(id);
+        assertThat(aguardarFinal(location, "PENDENTE")).withFailMessage("GET durante indisponibilidade não preservou resposta PENDENTE").isEqualTo(original);
+        assertThat(processamento.queryForObject("SELECT COUNT(*) FROM processamentos WHERE transaction_id = ?", Integer.class, id)).isZero();
+        assertThat(processamento.queryForObject("SELECT COUNT(*) FROM outbox_eventos WHERE aggregate_id = ?", Integer.class, id)).isZero();
+        assertThat(transacoes.queryForObject("SELECT COUNT(*) FROM historico_transacoes WHERE transaction_id = ?", Integer.class, id)).isZero();
+        var entrada = transacoes.queryForMap("SELECT * FROM outbox_eventos WHERE aggregate_id = ?", id);
+        var transacao = new LinkedHashMap<>(transacoes.queryForMap("SELECT * FROM transacoes WHERE id = ?", id));
+
+        fase++;
+        var porta = portaLivre();
+        var reiniciado = iniciar("processamento", PROCESSAMENTO, porta, true, true);
+        aguardarHealth(reiniciado, porta, "processamento reiniciado");
+        conferirConsumidores();
+        var finalizada = aguardarFinal(location, "APROVADA");
+        assertThat(finalizada.path("id").asText()).isEqualTo(id.toString());
+        assertThat(finalizada.path("valor").decimalValue()).isEqualByComparingTo("50.000");
+        assertThat(finalizada.path("moeda").asText()).isEqualTo("BRL");
+        aguardarPublicacoes(id);
+        var registro = processamento.queryForMap("SELECT * FROM processamentos WHERE transaction_id = ?", id);
+        var saida = processamento.queryForMap("SELECT * FROM outbox_eventos WHERE aggregate_id = ?", id);
+        var historico = transacoes.queryForMap("SELECT * FROM historico_transacoes WHERE transaction_id = ?", id);
+        assertThat(registro.get("event_id")).isEqualTo(entrada.get("event_id"));
+        assertThat(registro.get("output_event_id")).isEqualTo(saida.get("event_id"));
+        assertThat(registro.get("correlation_id")).isEqualTo(id);
+        assertThat(registro.get("resultado")).isEqualTo("APROVADA");
+        assertThat(historico.get("event_id")).isEqualTo(saida.get("event_id"));
+        assertThat(historico.get("causation_id")).isEqualTo(entrada.get("event_id"));
+        assertThat(historico.get("correlation_id")).isEqualTo(id);
+        assertThat(historico.get("estado_anterior")).isEqualTo("PENDENTE");
+        assertThat(historico.get("estado_final")).isEqualTo("APROVADA");
+        transacao.put("status", "APROVADA");
+        assertThat(transacoes.queryForMap("SELECT * FROM transacoes WHERE id = ?", id))
+                .withFailMessage("recuperação alterou dados além do status da transação").isEqualTo(transacao);
+        assertThat(transacoes.queryForMap("SELECT * FROM outbox_eventos WHERE aggregate_id = ?", id))
+                .withFailMessage("recuperação alterou a intenção original já publicada").isEqualTo(entrada);
+        conferirUnicidade(transacoes, "transacoes", "id", id);
+        conferirUnicidade(transacoes, "outbox_eventos", "aggregate_id", id);
+        conferirUnicidade(transacoes, "historico_transacoes", "transaction_id", id);
+        conferirUnicidade(processamento, "processamentos", "transaction_id", id);
+        conferirUnicidade(processamento, "outbox_eventos", "aggregate_id", id);
+        aguardarFilasVazias();
+    }
+
+    private void aguardarSomenteConsumidorDeResultado() throws Exception {
+        var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        do {
+            var consumidores = consultar("list_consumers");
+            if (consumidores.size() == 1 && FILAS.get(2).equals(consumidores.get(0).path("queue_name").asText())
+                    && consumidores.get(0).path("ack_required").asBoolean()
+                    && consumidores.get(0).path("prefetch_count").asInt() == 1) return;
+            TimeUnit.MILLISECONDS.sleep(200);
+        } while (System.nanoTime() < prazo);
+        throw new AssertionError("processador parado não deixou somente o consumidor de resultado ativo");
+    }
+
+    private void aguardarEntradaPublicadaEPronta(UUID id) throws Exception {
+        var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        do {
+            var publicada = transacoes.queryForObject("SELECT COUNT(*) FROM outbox_eventos WHERE aggregate_id = ? AND published_at IS NOT NULL", Integer.class, id) == 1;
+            var filas = consultar("list_queues", "name", "messages_ready", "messages_unacknowledged");
+            var entrada = porNome(filas, FILAS.get(0));
+            if (publicada && entrada.path("messages_ready").asInt() == 1 && entrada.path("messages_unacknowledged").asInt() == 0
+                    && FILAS.subList(1, 4).stream().allMatch(nome -> porNome(filas, nome).path("messages_ready").asInt() == 0
+                            && porNome(filas, nome).path("messages_unacknowledged").asInt() == 0)) return;
+            TimeUnit.MILLISECONDS.sleep(200);
+        } while (System.nanoTime() < prazo);
+        throw new AssertionError("evento original não ficou publicado e pronto enquanto processador estava parado");
+    }
+
     private List<List<Map<String, Object>>> bancoInteiro() {
         return List.of(transacoes.queryForList("SELECT * FROM transacoes ORDER BY id"),
                 transacoes.queryForList("SELECT * FROM historico_transacoes ORDER BY event_id"),
@@ -270,6 +363,7 @@ class FluxoCredPayE2E {
         ambiente.put("SPRING_RABBITMQ_VIRTUAL_HOST", "/");
         var iniciado = processo.redirectErrorStream(true).redirectOutput(logs.resolve(fase + "-" + modulo + ".log").toFile()).start();
         aplicativos.add(iniciado);
+        if ("processamento".equals(servico)) processoProcessamento = iniciado;
         return iniciado;
     }
 
@@ -287,9 +381,13 @@ class FluxoCredPayE2E {
     }
 
     private void encerrarAplicativos() throws InterruptedException {
+        encerrarProcessos(List.copyOf(aplicativos));
+    }
+
+    private void encerrarProcessos(List<Process> alvos) throws InterruptedException {
         InterruptedException interrupcao = null;
-        for (var processo : aplicativos) processo.destroy();
-        for (var processo : aplicativos) {
+        for (var processo : alvos) processo.destroy();
+        for (var processo : alvos) {
             try {
                 if (!processo.waitFor(20, TimeUnit.SECONDS)) {
                     processo.destroyForcibly();
@@ -309,7 +407,7 @@ class FluxoCredPayE2E {
             Thread.currentThread().interrupt();
             throw interrupcao;
         }
-        assertThat(aplicativos).withFailMessage("processos filhos ainda vivos após cleanup limitado").isEmpty();
+        assertThat(alvos.stream().anyMatch(Process::isAlive)).withFailMessage("processos filhos ainda vivos após cleanup limitado").isFalse();
     }
 
     private void importar(String servico) throws Exception {
