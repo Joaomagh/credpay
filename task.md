@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B05.5c2 validado na PR #103: CI #145/Secret Scan #52 verdes, 273 testes com rejeições reais para DLQ e banco intacto. Revisão sem bloqueante; integração depende de checks no SHA final. Ativação operacional proibida até c3; spec 9.49.
+- B05.5c3 validado na PR #104: CI #148/Secret Scan #55 verdes, 279 testes com retry/rollback/DLQ reais. Runbook atualizado para ativação manual conferida; integração exige CIs aplicáveis no SHA final. Spec 9.50.
 
 ## Próximo
 
-- [ ] B05.5c3 — Após integrar c2, limitar falhas operacionais a três tentativas com esperas 1/2 s; provar rollback/recuperação, esgotamento para DLQ e permanentes sem retry. Atualizar runbook somente após aceite real.
+- [ ] B05.5d1 — Após integrar c3, executar dois JARs reais com bancos próprios/broker no CI e comprovar POST → duas outboxes → GET APROVADA/REJEITADA. Sem saída fabricada; B05 só termina após duplicata/replay em d2.
