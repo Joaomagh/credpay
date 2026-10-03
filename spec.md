@@ -1291,7 +1291,7 @@ Publisher confirms cobrem produtor → broker e são independentes do ack do con
 
 ### 9.3 Consumo, retry e DLQ parciais
 
-O contrato refinado de B04.1 está na seção 9.28. O listener opt-in já usa ack pelo container após sucesso/commit e prefetch `10` no caminho válido. Ainda faltam três tentativas totais para falhas transitórias, com esperas de 1 e 2 segundos, seguidas de rejeição sem requeue para a DLX; payload inválido ou versão incompatível deverão ir diretamente à DLQ. A deduplicação persistente por `eventId` já existe no caso de uso, mas o replay via broker ainda não foi provado.
+O contrato refinado de B04.1 está na seção 9.28. O listener opt-in usa ack pelo container após sucesso/commit e prefetch `10`. Payload inválido e conflito de identidade são rejeitados sem requeue; demais falhas recebem até três tentativas totais, com esperas configuradas de 1 e 2 segundos, e rejeição segura ao esgotar (B04.7–B04.9). Replay equivalente e reentrega real após fechamento da conexão entre commit/ack preservaram resultado/outbox no broker real (B04.6/B04.10). Não há exactly-once: deduplicação durável continua necessária. Consumo operacional permanece desligado até provisionamento/verificação da política e fechamento das lacunas de dead-lettering.
 
 DLQ não é garantia absoluta de entrega: o dead-lettering também pode falhar. Em quorum queues, a estratégia padrão é `at-most-once`; `at-least-once` exige configuração adicional e prova, conforme a seção 9.28. Um container de nó único não prova alta disponibilidade nem recuperação de falhas de quorum. Referências: [Quorum Queues](https://www.rabbitmq.com/docs/quorum-queues) e [Dead Letter Exchanges](https://www.rabbitmq.com/docs/dlx).
 
@@ -1415,7 +1415,7 @@ O listener futuro chamará um caso de uso transacional e só retornará com suce
 | JSON inválido ou versão incompatível | não decidir; encaminhamento permanente conforme política de DLQ | broker real e payload inválido |
 | Publicação da saída repete após queda | evento mantém identidade; futuro consumidor do resultado também deduplica | teste de republicação e aplicação idempotente no produtor |
 
-Falhas operacionais, ausência de política e mensagens na DLQ não são automaticamente `REJEITADA` nem `FALHOU`. A política existente de tentativas limitadas/prefetch da seção 9.3 será comprovada na integração; limites de dead-lettering continuam válidos. Não apagar resultados/marcas de deduplicação na v1; retenção depende de um horizonte de replay futuro. Banco crescente, falhas de DLQ e garantia apenas pelo menos uma vez permanecem riscos explícitos.
+Falhas operacionais, ausência de política e mensagens na DLQ não são automaticamente `REJEITADA` nem `FALHOU`. B04.9 comprovou recuperação após falha controlada/rollback e esgotamento na integração; isso não prova replay operacional após correção de configuração nem todos os tipos de indisponibilidade. Os limites de dead-lettering continuam válidos. Não apagar resultados/marcas de deduplicação na v1; retenção depende de um horizonte de replay futuro. Banco crescente, falhas de DLQ e garantia apenas pelo menos uma vez permanecem riscos explícitos.
 
 **Primeiro slice de implementação:** produzir um snapshot imutável de valor, moeda, limite e decisão, com teste de alteração posterior da política. Sem banco/identidade de evento nessa etapa; isso não prova idempotência ou durabilidade.
 
@@ -1775,6 +1775,22 @@ O teste confirma o container/fila-alvo, usa `shutdown()` para reconstruir o prox
 **Limites:** fechamento de conexão não é process kill, falha de nó ou prova de HA. Consumidor operacional continua desativado. Warnings conhecidos de Mockito/Byte Buddy permanecem. O CI registrou 39 warnings Hikari de conexões PostgreSQL já fechadas; diagnóstico do ciclo de vida das fixtures/contextos registrado em B08.2, sem silenciar logs ou afirmar causa não comprovada.
 
 **Próximo:** B04.11, comprovar a tentativa de dead-lettering efetivamente recusada pela DLQ cheia, retenção e recuperação depois de liberar capacidade. Depois, provisionamento mínimo da política e avanço a B05; falha de nó/carga ficam em B06, não expandem indefinidamente B04.
+
+### 9.38 Recusa efetiva da DLQ cheia — B04.11
+
+**Experimento comprovado:** o cenário antigo liberava capacidade imediatamente após rejeitar a entrada, antes de provar tentativa de publicação do worker. Foi fortalecido para manter dois ocupantes na DLQ de `max-length=1`: o [FIFO da versão 4.3.5](https://github.com/rabbitmq/rabbitmq-server/blob/v4.3.5/deps/rabbit/src/rabbit_fifo.erl) considera excesso com `>`, permitindo overshoot; a contagem não é um limite estrito nem prova isolada de recusa.
+
+Depois de rejeitar um único evento com `messageId`, o teste usa `rabbitmqctl eval` somente de leitura no broker descartável. Consulta `sys:get_status` dos workers do [supervisor](https://github.com/rabbitmq/rabbitmq-server/blob/v4.3.5/deps/rabbit/src/rabbit_fifo_dlx_sup.erl), seleciona a fila de origem e exige `publish_count >= 1` com a DLQ em `rejected`, conforme o [worker](https://github.com/rabbitmq/rabbitmq-server/blob/v4.3.5/deps/rabbit/src/rabbit_fifo_dlx_worker.erl). A [fila quorum](https://github.com/rabbitmq/rabbitmq-server/blob/v4.3.5/deps/rabbit/src/rabbit_quorum_queue.erl) produz a rejeição por limite; não é um nack de publicação diagnóstica separada.
+
+Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ, o teste drena os ocupantes e espera o mesmo corpo/messageId, motivo `rejected` e origem vazia. Timeout de até 210 segundos respeita a recuperação do broker, sem espera fixa apresentada como evidência. `format_status` omite o corpo das entregas; a expressão projeta apenas booleano/estados fixos. Não imprimir estado completo, stderr diagnóstico ou conteúdo inesperado em asserções. Esquema incompatível falha explicitamente.
+
+**Precisão da evidência:** o worker conserva a rejeição e o destino, mas descarta o código do motivo. A atribuição à capacidade vem da política/ocupação e do cenário controlado, apoiada no código da fila quorum; o teste não lê diretamente `maxlen`. Revisão assistida verificou essa distinção, filtro da origem, segurança da projeção e cleanup, sem bloqueante.
+
+**Validação:** [CI #143](https://github.com/Joaomagh/credpay/actions/runs/37099496150) passou com 113 testes, zero falhas/erros/skips, em 8 min 6 s. Os quatro cenários de topologia passaram, incluindo recusa efetiva, retenção e recuperação, em 370,7 segundos; o aumento reflete duas esperas de recuperação do broker, não sleep fixo usado como prova. [Secret Scan #8](https://github.com/Joaomagh/credpay/actions/runs/37099496135) verde. `test-compile` local e UTF-8/diff-check passaram; Docker local indisponível, sem integração local alegada. Caracterização nasceu verde, sem red artificial ou produção/POM/dependência nova. Busca limitada de formatos de segredo/payload bruto no log sem candidatos; 38 warnings Hikari de conexão fechada continuam em B08.2.
+
+**Limites:** diagnóstico interno acoplado à versão/digest fixados, exclusivo da fixture, não API operacional da aplicação. Um único evento permite atribuir a pendência observada; não prova HA, ausência de duplicatas ou throughput. Cleanup remove somente as duas filas do broker descartável, incluindo o worker/pendências da origem, e o próximo `BeforeEach` as recria. Consumo operacional segue desligado até provisionamento/verificação da política. Foram corrigidos os resumos vigentes em 9.3/9.12 que ainda tratavam retry/reentrega já comprovados como futuros, sem reescrever a evidência histórica de cada incremento.
+
+**Próximo:** B04.12, versionar e validar o provisionamento mínimo das políticas, com capacidade finita, feature flag/precondições e verificação da definição efetiva antes de habilitar consumo. Sem cluster, tuning, dashboard ou implantação externa; então B05 para fechar o fluxo consultável.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
