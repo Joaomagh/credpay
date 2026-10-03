@@ -9,7 +9,7 @@ Atualizado em 2026-10-03. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos
 | B01 | Contrato de processamento idempotente | identidade, equivalência/conflito, resultado, atomicidade e ack documentados; matriz de falhas revisada | contratos atuais | Contrato definido; resultado/outbox e ack após commit implementados; falhas operacionais em B04 |
 | B02 | Resultado durável e processamento idempotente | PostgreSQL comprova resultado único, replay estável, conflito sem sobrescrita, rollback e concorrência | B01 e baseline própria de persistência | Concluído; B02.1–B02.6 comprovados no CI |
 | B03 | Saída `TransacaoProcessada` confiável | contrato versionado, resultado + outbox atômicos, publicação confirmada e reenvio com a mesma identidade | B02 | Concluído; B03.1–B03.10 comprovados |
-| B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | B04.1–B04.7 concluídos; B04.8 conflito permanente para DLQ próximo |
+| B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | B04.1–B04.8 concluídos; B04.9 retry operacional limitado próximo |
 | B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | Refinamento |
 | B06 | Recuperação e diagnóstico demonstráveis | queda, atraso e duplicação testados; correlação, retry/DLQ e replay operacional observáveis | B05; refinar política de `FALHOU` | Refinamento |
 | B07 | Ambiente local reproduzível | imagens/Compose e depois Kubernetes local com probes e recursos; roteiro demonstra fluxo e falha | B05 e B06 | Refinamento |
@@ -69,7 +69,9 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 **B04.7 — JSON inválido para DLQ — concluído.** O [CI #128](https://github.com/Joaomagh/credpay/actions/runs/37072605070) comprovou rejeição sem requeue (`x-first-death-reason=rejected`) e nenhum resultado/outbox novo. O red #127 gerou logs excessivos; detalhes e limite de evidência em `spec.md`. Conflito de aplicação e falhas transitórias ainda não são classificados.
 
-**B04.8 — Conflito de identidade para DLQ — em validação.** Red unitário observado e 31 testes focados verdes. Integração preparada com registro original completo preservado, corpo/identidade divergentes na DLQ e motivo `rejected`; aguarda CI real. Retry transitório, crash pós-commit e política operacional ficam em slices posteriores.
+**B04.8 — Conflito de identidade para DLQ — concluído.** Red unitário observado; [CI #133](https://github.com/Joaomagh/credpay/actions/runs/37095277698) verde com 106 testes e registro original completo preservado, corpo/identidade divergentes na DLQ e motivo `rejected`. Nenhum novo POM/dependência. Retry transitório, crash pós-commit e política operacional ficam em slices posteriores.
+
+**B04.9 — Retry operacional limitado — próximo.** Três tentativas totais, com esperas de 1 e 2 segundos; provar recuperação após falha com rollback anterior ou DLQ após esgotamento sem resultado/intenção novos. Erros permanentes não recebem retry. Usar a capacidade já transitiva Spring Retry 2.0.13 e diagnóstico fixo, sem recoverer que publique o corpo da mensagem em log. Testes verificam tentativas efetivas, não apenas `x-death`.
 
 ## Incrementos de B08
 
@@ -77,7 +79,7 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 ## Revisão e riscos
 
-- Estado atual: B02 e B03 concluídos no CI; B04.1–B04.7 testados, com listener de entrada opt-in ainda não seguro para ativação operacional. Evidências e limites em `spec.md`.
+- Estado atual: B02 e B03 concluídos no CI; B04.1–B04.8 testados, com listener de entrada opt-in ainda não seguro para ativação operacional. Evidências e limites em `spec.md`.
 - Sandbox AI-Jail continua apenas documentado. Retomar sua implementação como iniciativa delimitada; não alegar isolamento atual.
 - Warning Mockito/Byte Buddy conhecido permanece; coordenar correção com evolução de qualidade, sem ocultá-lo.
 - Testes locais com infraestrutura dependem do Docker disponível. CI pode fornecer evidência real, mas falha de infraestrutura não é red de negócio.

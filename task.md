@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B04.8 em validação: red observado e 31 testes focados verdes; prova RabbitMQ/PostgreSQL aguarda CI. Busca limitada em 305 commits locais alcançáveis não encontrou os formatos de segredo pesquisados; B08.1 permanece para revisão complementar.
+- B04.8 validado: red observado, 71 testes sem infraestrutura verdes localmente e 106 testes completos no CI #133. Conflito vai à DLQ sem alterar resultado/outbox. Busca limitada de histórico e log do CI sem os padrões de segredo pesquisados; B08.1 ainda pendente.
 
 ## Próximo
 
-- [ ] B04.8 — Provar que conflito de identidade no listener opt-in vai diretamente à DLQ e preserva o resultado original, sem requeue repetido.
+- [ ] B04.9 — Provar retry operacional limitado a três tentativas (esperas de 1 e 2 segundos), com recuperação ou DLQ ao esgotar e sem retry para erros permanentes.

@@ -6,7 +6,7 @@
 
 **Fase atual:** 4 — Fluxo assíncrono confiável
 
-**Estado:** criação e consulta HTTP persistentes; processamento idempotente e duas outboxes transacionais comprovados; publicadores RabbitMQ com scheduler opt-in de réplica única em cada serviço; listener de entrada opt-in validado no caminho positivo, replay equivalente e rejeição de JSON inválido, ainda sem retry transitório ou fluxo ponta a ponta
+**Estado:** criação e consulta HTTP persistentes; processamento idempotente e duas outboxes transacionais comprovados; publicadores RabbitMQ com scheduler opt-in de réplica única em cada serviço; listener de entrada opt-in validado no caminho positivo, replay equivalente e rejeição de JSON inválido/conflito de identidade, ainda sem retry transitório ou fluxo ponta a ponta
 
 ## 1. Contexto e limites atuais
 
@@ -1742,9 +1742,11 @@ O listener captura somente `ConflitoProcessamentoException` da chamada transacio
 
 **TDD local:** `mvnw.cmd -Dtest=TransacaoCriadaListenerTest test` executou um teste com uma falha esperada: recebeu `ConflitoProcessamentoException` em vez da rejeição sem requeue. Após implementação mínima, o comando focado com `TransacaoCriadaListenerTest,TransacaoCriadaMessageParserTest,RegistrarProcessamentoServiceTest` passou com 31 testes, zero falhas/erros/skips. O segundo teste do listener é regressão de caracterização: indisponibilidade de banco preserva a exceção operacional, sem red artificial. Houve um erro de compilação acidental na asserção de `Map<?, ?>` do header e um comando PowerShell com lista não delimitada; ambos corrigidos, não contados como red. Warning Mockito/Byte Buddy permanece.
 
-**Integração preparada, ainda aguardando CI:** publica entrada válida e espera resultado/outbox e fila vazia; publica as mesmas identidades com valor divergente válido; exige segunda mensagem na DLQ com corpo/messageId preservados, origem correta e motivo `rejected`. Compara todas as colunas de resultado/outbox antes/depois e exige uma única linha de cada agregado. `x-death.count=1` mede dead-letterings, não tentativas do listener; não é prova isolada contra requeue. Política efetiva configurada na fixture, sem depender da ordem dos testes. Docker Desktop local continua sem engine disponível, portanto não há alegação de green local da integração.
+**Integração comprovada:** o [CI #133](https://github.com/Joaomagh/credpay/actions/runs/37095277698) executou 106 testes, zero falhas/erros/skips, em 4 min 35 s. O cenário publica entrada válida e espera resultado/outbox e fila vazia; publica as mesmas identidades com valor divergente válido; exige segunda mensagem na DLQ com corpo/messageId preservados, origem correta e motivo `rejected`. Compara todas as colunas de resultado/outbox antes/depois e exige uma única linha de cada agregado. `x-death.count=1` mede dead-letterings, não tentativas do listener; não é prova isolada contra requeue. Política efetiva configurada na fixture, sem depender da ordem dos testes. Docker Desktop local continua sem engine disponível; `verify` local limitado às classes sem infraestrutura passou com 71 testes e JAR gerado, não substituindo o CI completo.
 
 **Revisão:** outro agente fez revisão somente leitura, sem achado bloqueante; destacou a semântica limitada de `x-death.count`. Nenhuma dependência, POM, endpoint ou contrato de evento alterado. Retry transitório, crash entre commit/ack e política operacional permanecem fora deste slice.
+
+**Próximo:** B04.9, provar retry operacional com no máximo três tentativas totais e intervalos de 1 e 2 segundos, recuperação ou DLQ ao esgotar, sem repetir erros permanentes. `dependency:tree` offline confirmou Spring Retry 2.0.13 já transitivo de Spring AMQP 3.2.12; não há necessidade identificada de dependência nova.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
@@ -1924,6 +1926,8 @@ A inspeção dos nomes rastreados e a busca por formatos comuns de chave privada
 **Limites:** `.gitignore` impede inclusão acidental de arquivos não rastreados; não remove arquivos já versionados, não apaga histórico e não impede `git add -f`. Se houver vazamento, revogar/rotacionar primeiro e tratar o histórico mediante autorização específica. Não publicar payload financeiro em logs. A revisão de histórico/logs e a verificação automatizada de segredos permanecem como B08.1 antes da entrega; sandbox AI-Jail continua apenas documentado.
 
 **Verificação adicional do histórico, 2026-10-03:** `git rev-list --all` enumerou 305 commits alcançáveis nas referências locais. `git grep -l -I -E` em cada commit não encontrou os padrões pesquisados de chave privada, token GitHub/AWS/Slack ou chave OpenAI; o inventário de nomes históricos não encontrou `.env`, chaves/keystores, credenciais ou dumps/logs típicos. Somente contagens e nomes candidatos seriam exibidos, nunca valores. Isso não cobre commits remotos inalcançáveis, reflogs, logs/artefatos de CI nem todos os formatos de segredo. Não foi identificado vazamento que justifique rotação ou reescrita de histórico. B08.1 continua pendente para revisão complementar e automação.
+
+**Log verificado:** a busca limitada no log do job Maven do CI #133 não encontrou os formatos comuns de segredo acima nem candidatos às formas pesquisadas de payload bruto (`body`/`failedMessage` com `amount`, ou `amount` junto de `currency`). A mensagem observada para conflito foi fixa. A mesma busca nas mensagens dos commits locais também não encontrou os padrões. Essas buscas não cobrem outros formatos, outros logs nem artefatos; B08.1 não está concluído.
 
 ## 17. Checklist por incremento
 
