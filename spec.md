@@ -1856,6 +1856,8 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **TDD inicial:** teste exige commit/releitura completa com PostgreSQL real, preservação monetária e nanos não múltiplos de micros. Red local somente pela ausência deliberada de porta/record; foram adicionados os tipos mínimos, sem adapter/migration. Compilação e red de integração serão registrados separadamente; Docker indisponível não conta como red. CI aplicável deve observar o comportamento ausente antes de implementar. Revisão assistida de desenho confirmou risco de FK isolada e necessidade de falha real na segunda escrita.
 
+**Red remoto observado:** [CI #113](https://github.com/Joaomagh/credpay/actions/runs/37147563843), SHA `30f851f`, executou 109 testes: 108 anteriores passaram, novo cenário teve um erro pela ausência de bean `TransicaoRepository`. PostgreSQL/Flyway reais estavam disponíveis. Secret Scan #20 passou. Depois deste red, adapter transacional e primeira V5 foram escritos para o round-trip; constraints adicionais serão testadas no próximo ciclo antes de completar esta migration ainda não integrada.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
