@@ -1,0 +1,353 @@
+package br.com.credpay.transacoes.e2e;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.math.BigDecimal;
+import java.net.ServerSocket;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.StreamSupport;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.containers.RabbitMQContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.utility.MountableFile;
+
+@Testcontainers
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+class FluxoCredPayE2E {
+
+    private static final String POSTGRES_IMAGE = "postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0";
+    private static final Path RAIZ = Path.of("..").toAbsolutePath().normalize();
+    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
+    private static final List<String> FILAS = List.of("credpay.processamento.transacao-criada.v1",
+            "credpay.processamento.transacao-criada.dlq.v1", "credpay.transacoes.transacao-processada.v1",
+            "credpay.transacoes.transacao-processada.dlq.v1");
+
+    @Container static final PostgreSQLContainer<?> TRANSACOES = new PostgreSQLContainer<>(POSTGRES_IMAGE)
+            .withDatabaseName("credpay_transacoes_e2e").withUsername("test").withPassword("test");
+    @Container static final PostgreSQLContainer<?> PROCESSAMENTO = new PostgreSQLContainer<>(POSTGRES_IMAGE)
+            .withDatabaseName("credpay_processamento_e2e").withUsername("test").withPassword("test");
+    @Container static final RabbitMQContainer RABBIT = new RabbitMQContainer(DockerImageName.parse(
+            "rabbitmq:4.3.5-management-alpine@sha256:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1")
+            .asCompatibleSubstituteFor("rabbitmq"))
+            .withCopyFileToContainer(MountableFile.forHostPath(RAIZ.resolve("infra/rabbitmq/processamento-policies.json")),
+                    "/tmp/processamento-policies.json")
+            .withCopyFileToContainer(MountableFile.forHostPath(RAIZ.resolve("infra/rabbitmq/transacoes-policies.json")),
+                    "/tmp/transacoes-policies.json");
+
+    private final List<Process> aplicativos = new ArrayList<>();
+    private final Path logs = RAIZ.resolve(".local/e2e/" + UUID.randomUUID());
+    private JdbcTemplate transacoes;
+    private JdbcTemplate processamento;
+    private int portaTransacoes;
+    private int fase;
+
+    @BeforeAll
+    @Timeout(value = 5, unit = TimeUnit.MINUTES)
+    void prepararAplicativosReais() throws Exception {
+        try {
+            transacoes = jdbc(TRANSACOES);
+            processamento = jdbc(PROCESSAMENTO);
+            iniciar(false, false);
+            var exchanges = consultar("list_exchanges", "name", "type", "durable");
+            conferirExchange(exchanges, "credpay.transacoes.v1");
+            conferirExchange(exchanges, "credpay.processamento.v1");
+            encerrarAplicativos();
+
+            iniciar(true, false);
+            importar("processamento");
+            importar("transacoes");
+            conferirPreparacao();
+            assertThat(consultar("list_consumers")).isEmpty();
+            encerrarAplicativos();
+
+            iniciar(true, true);
+            conferirConsumidores();
+            assertThat(transacoes.queryForObject("SELECT to_regclass('public.processamentos')", String.class)).isNull();
+            assertThat(processamento.queryForObject("SELECT to_regclass('public.transacoes')", String.class)).isNull();
+        } catch (Exception | AssertionError falha) {
+            encerrarAplicativos();
+            throw falha;
+        }
+    }
+
+    @AfterAll
+    void encerrar() throws InterruptedException { encerrarAplicativos(); }
+
+    @ParameterizedTest
+    @CsvSource({"50.000,APROVADA", "150.000,REJEITADA"})
+    @Timeout(value = 2, unit = TimeUnit.MINUTES)
+    void post_deveConcluirPelosDoisAplicativosComCausalidadeEDadosPreservados(String valor, String status) throws Exception {
+        var resposta = enviar(HttpRequest.newBuilder(uri("/transacoes"))
+                .header("Content-Type", "application/json").header("Idempotency-Key", UUID.randomUUID().toString())
+                .POST(HttpRequest.BodyPublishers.ofString("{\"valor\":" + valor + ",\"moeda\":\"BRL\"}")));
+        assertThat(resposta.statusCode()).isEqualTo(201);
+        var original = JSON.readTree(resposta.body());
+        assertThat(original.path("status").asText()).isEqualTo("PENDENTE");
+        var id = UUID.fromString(original.path("id").asText());
+        var location = resposta.headers().firstValue("Location").orElseThrow();
+        assertThat(location).isEqualTo("/transacoes/" + id);
+
+        var finalizada = aguardarFinal(location, status);
+        assertThat(finalizada.path("id").asText()).isEqualTo(id.toString());
+        assertThat(finalizada.path("valor").decimalValue()).isEqualByComparingTo(new BigDecimal(valor));
+        assertThat(finalizada.path("moeda").asText()).isEqualTo("BRL");
+        aguardarPublicacoes(id);
+
+        var entrada = transacoes.queryForMap("SELECT * FROM outbox_eventos WHERE aggregate_id = ?", id);
+        var registro = processamento.queryForMap("SELECT * FROM processamentos WHERE transaction_id = ?", id);
+        var saida = processamento.queryForMap("SELECT * FROM outbox_eventos WHERE aggregate_id = ?", id);
+        var historico = transacoes.queryForMap("SELECT * FROM historico_transacoes WHERE transaction_id = ?", id);
+        assertThat(registro.get("event_id")).isEqualTo(entrada.get("event_id"));
+        assertThat(registro.get("output_event_id")).isEqualTo(saida.get("event_id"));
+        assertThat(registro.get("correlation_id")).isEqualTo(id);
+        assertThat(registro.get("resultado")).isEqualTo(status);
+        assertThat((BigDecimal) registro.get("valor")).isEqualByComparingTo(new BigDecimal(valor));
+        assertThat(registro.get("moeda")).isEqualTo("BRL");
+        assertThat((BigDecimal) registro.get("limite_aplicado")).isEqualByComparingTo("100.00");
+        assertThat(historico.get("event_id")).isEqualTo(saida.get("event_id"));
+        assertThat(historico.get("causation_id")).isEqualTo(entrada.get("event_id"));
+        assertThat(historico.get("correlation_id")).isEqualTo(id);
+        assertThat(historico.get("estado_anterior")).isEqualTo("PENDENTE");
+        assertThat(historico.get("estado_final")).isEqualTo(status);
+        assertThat(historico.get("origem")).isEqualTo("processamento-service/TransacaoProcessada.v1");
+        var payload = JSON.readTree(saida.get("payload").toString());
+        assertThat(payload.path("causationId").asText()).isEqualTo(entrada.get("event_id").toString());
+        assertThat(payload.path("data").path("status").asText()).isEqualTo(status);
+        var ocorrido = Instant.parse(payload.path("occurredAt").asText());
+        assertThat(historico.get("occurred_at_epoch_second")).isEqualTo(ocorrido.getEpochSecond());
+        assertThat(historico.get("occurred_at_nano")).isEqualTo(ocorrido.getNano());
+        assertThat(transacoes.queryForObject("SELECT scale(valor) FROM transacoes WHERE id = ?", Integer.class, id)).isEqualTo(3);
+        conferirUnicidade(transacoes, "transacoes", "id", id);
+        conferirUnicidade(transacoes, "historico_transacoes", "transaction_id", id);
+        conferirUnicidade(transacoes, "outbox_eventos", "aggregate_id", id);
+        conferirUnicidade(processamento, "processamentos", "transaction_id", id);
+        conferirUnicidade(processamento, "outbox_eventos", "aggregate_id", id);
+        aguardarFilasVazias();
+    }
+
+    private void iniciar(boolean topologia, boolean consumirEPublicar) throws Exception {
+        fase++;
+        portaTransacoes = portaLivre();
+        int portaProcessamento;
+        do { portaProcessamento = portaLivre(); } while (portaProcessamento == portaTransacoes);
+        var primeiro = iniciar("transacoes", TRANSACOES, portaTransacoes, topologia, consumirEPublicar);
+        var segundo = iniciar("processamento", PROCESSAMENTO, portaProcessamento, topologia, consumirEPublicar);
+        aguardarHealth(primeiro, portaTransacoes, "transacoes");
+        aguardarHealth(segundo, portaProcessamento, "processamento");
+    }
+
+    private Process iniciar(String servico, PostgreSQLContainer<?> banco, int porta, boolean topologia,
+            boolean consumirEPublicar) throws Exception {
+        var modulo = servico + "-service";
+        var jar = RAIZ.resolve(modulo + "/target/" + modulo + "-0.0.1-SNAPSHOT.jar").normalize();
+        assertThat(jar.startsWith(RAIZ) && Files.isRegularFile(jar)).as("JAR real compilado no workspace: " + modulo).isTrue();
+        Files.createDirectories(logs);
+        var processo = new ProcessBuilder("java", "-Xmx256m", "-jar", jar.toString(), "--server.port=" + porta,
+                "--management.health.rabbit.enabled=true", "--credpay." + servico + ".consumer.topology.enabled=" + topologia,
+                "--credpay." + servico + ".consumer.listener.enabled=" + consumirEPublicar,
+                "--credpay.outbox.publisher.enabled=" + consumirEPublicar, "--credpay.processamento.limites.BRL=100.00");
+        processo.directory(RAIZ.toFile());
+        var ambiente = processo.environment();
+        ambiente.put("SPRING_DATASOURCE_URL", banco.getJdbcUrl());
+        ambiente.put("SPRING_DATASOURCE_USERNAME", banco.getUsername());
+        ambiente.put("SPRING_DATASOURCE_PASSWORD", banco.getPassword());
+        ambiente.put("SPRING_RABBITMQ_HOST", RABBIT.getHost());
+        ambiente.put("SPRING_RABBITMQ_PORT", RABBIT.getAmqpPort().toString());
+        ambiente.put("SPRING_RABBITMQ_USERNAME", RABBIT.getAdminUsername());
+        ambiente.put("SPRING_RABBITMQ_PASSWORD", RABBIT.getAdminPassword());
+        ambiente.put("SPRING_RABBITMQ_VIRTUAL_HOST", "/");
+        var iniciado = processo.redirectErrorStream(true).redirectOutput(logs.resolve(fase + "-" + modulo + ".log").toFile()).start();
+        aplicativos.add(iniciado);
+        return iniciado;
+    }
+
+    private void aguardarHealth(Process processo, int porta, String servico) throws Exception {
+        var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(60);
+        do {
+            assertThat(processo.isAlive()).as("processo " + servico + " ativo; logs locais em " + logs).isTrue();
+            try {
+                var resposta = enviar(HttpRequest.newBuilder(URI.create("http://localhost:" + porta + "/actuator/health")).GET());
+                if (resposta.statusCode() == 200 && "UP".equals(JSON.readTree(resposta.body()).path("status").asText())) return;
+            } catch (java.io.IOException indisponivelDuranteStartup) { /* startup ainda não abriu HTTP */ }
+            TimeUnit.MILLISECONDS.sleep(200);
+        } while (System.nanoTime() < prazo);
+        throw new AssertionError("health não ficou UP no prazo para " + servico + "; logs locais em " + logs);
+    }
+
+    private void encerrarAplicativos() throws InterruptedException {
+        InterruptedException interrupcao = null;
+        for (var processo : aplicativos) processo.destroy();
+        for (var processo : aplicativos) {
+            try {
+                if (!processo.waitFor(20, TimeUnit.SECONDS)) {
+                    processo.destroyForcibly();
+                    processo.waitFor(5, TimeUnit.SECONDS);
+                }
+            } catch (InterruptedException exception) {
+                interrupcao = exception;
+                processo.destroyForcibly();
+                try { processo.waitFor(5, TimeUnit.SECONDS); }
+                catch (InterruptedException repetida) { interrupcao = repetida; }
+            } finally {
+                if (processo.isAlive()) processo.destroyForcibly();
+            }
+        }
+        aplicativos.removeIf(processo -> !processo.isAlive());
+        if (interrupcao != null) {
+            Thread.currentThread().interrupt();
+            throw interrupcao;
+        }
+        assertThat(aplicativos).withFailMessage("processos filhos ainda vivos após cleanup limitado").isEmpty();
+    }
+
+    private void importar(String servico) throws Exception {
+        var resultado = RABBIT.execInContainer("rabbitmqctl", "--timeout", "5", "import_definitions", "/tmp/" + servico + "-policies.json");
+        assertThat(resultado.getExitCode()).as("importação das políticas " + servico).isZero();
+    }
+
+    private void conferirPreparacao() throws Exception {
+        assertThat(porNome(consultar("list_feature_flags", "name", "state"), "stream_queue").path("state").asText()).isEqualTo("enabled");
+        var filas = consultar("list_queues", "name", "type", "durable", "arguments", "policy", "operator_policy", "effective_policy_definition");
+        var arquivos = List.of("processamento", "transacoes");
+        for (int modulo = 0; modulo < arquivos.size(); modulo++) {
+            var politicas = JSON.readTree(Files.readString(RAIZ.resolve("infra/rabbitmq/" + arquivos.get(modulo) + "-policies.json"))).path("policies");
+            for (int indice = 0; indice < 2; indice++) {
+                var fila = porNome(filas, FILAS.get(modulo * 2 + indice));
+                assertThat(fila.path("type").asText()).isEqualTo("quorum");
+                assertThat(fila.path("durable").asBoolean()).isTrue();
+                assertThat(fila.path("arguments")).isEqualTo(JSON.readTree("[[\"x-queue-type\",\"longstr\",\"quorum\"]]"));
+                assertThat(fila.path("policy").asText()).isEqualTo(politicas.get(indice).path("name").asText());
+                assertThat(fila.path("operator_policy").asText()).isEmpty();
+                assertThat(fila.path("effective_policy_definition")).isEqualTo(politicas.get(indice).path("definition"));
+            }
+        }
+        var exchanges = consultar("list_exchanges", "name", "type", "durable");
+        for (var nome : List.of("credpay.transacoes.v1", "credpay.processamento.v1", "credpay.transacoes.dlx.v1", "credpay.processamento.dlx.v1")) conferirExchange(exchanges, nome);
+        var bindings = consultar("list_bindings", "source_name", "destination_name", "destination_kind", "routing_key");
+        conferirBinding(bindings, "credpay.transacoes.v1", FILAS.get(0), "transacao.criada.v1");
+        conferirBinding(bindings, "credpay.processamento.dlx.v1", FILAS.get(1), "transacao.criada.dlq.v1");
+        conferirBinding(bindings, "credpay.processamento.v1", FILAS.get(2), "transacao.processada.v1");
+        conferirBinding(bindings, "credpay.transacoes.dlx.v1", FILAS.get(3), "transacao.processada.dlq.v1");
+    }
+
+    private void conferirConsumidores() throws Exception {
+        var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        JsonNode consumidores;
+        do {
+            consumidores = consultar("list_consumers");
+            var observados = consumidores;
+            boolean exatos = observados.size() == 2 && List.of(0, 2).stream().allMatch(indice ->
+                    StreamSupport.stream(observados.spliterator(), false).filter(linha ->
+                            FILAS.get(indice).equals(linha.path("queue_name").asText())
+                            && linha.path("ack_required").asBoolean()
+                            && linha.path("prefetch_count").asInt() == (indice == 0 ? 10 : 1)).count() == 1);
+            if (exatos) break;
+            TimeUnit.MILLISECONDS.sleep(200);
+        } while (System.nanoTime() < prazo);
+        assertThat(consumidores).hasSize(2);
+        for (int indice : List.of(0, 2)) {
+            var encontrados = StreamSupport.stream(consumidores.spliterator(), false)
+                    .filter(linha -> FILAS.get(indice).equals(linha.path("queue_name").asText())).toList();
+            assertThat(encontrados).hasSize(1);
+            assertThat(encontrados.getFirst().path("ack_required").asBoolean()).isTrue();
+            assertThat(encontrados.getFirst().path("prefetch_count").asInt()).isEqualTo(indice == 0 ? 10 : 1);
+        }
+    }
+
+    private JsonNode aguardarFinal(String location, String status) throws Exception {
+        var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(20);
+        do {
+            var resposta = enviar(HttpRequest.newBuilder(uri(location)).GET());
+            assertThat(resposta.statusCode()).isEqualTo(200);
+            var body = JSON.readTree(resposta.body());
+            if (status.equals(body.path("status").asText())) return body;
+            TimeUnit.MILLISECONDS.sleep(100);
+        } while (System.nanoTime() < prazo);
+        throw new AssertionError("GET não alcançou estado final esperado no prazo: " + status);
+    }
+
+    private void aguardarPublicacoes(UUID id) throws InterruptedException {
+        var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        do {
+            boolean primeira = transacoes.queryForObject("SELECT COUNT(*) FROM outbox_eventos WHERE aggregate_id = ? AND published_at IS NOT NULL", Integer.class, id) == 1;
+            boolean segunda = processamento.queryForObject("SELECT COUNT(*) FROM outbox_eventos WHERE aggregate_id = ? AND published_at IS NOT NULL", Integer.class, id) == 1;
+            if (primeira && segunda) return;
+            TimeUnit.MILLISECONDS.sleep(100);
+        } while (System.nanoTime() < prazo);
+        throw new AssertionError("ambas intenções não ficaram publicadas no prazo");
+    }
+
+    private void aguardarFilasVazias() throws Exception {
+        var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        do {
+            var filas = consultar("list_queues", "name", "messages");
+            if (FILAS.stream().allMatch(nome -> porNome(filas, nome).path("messages").asInt() == 0)) return;
+            TimeUnit.MILLISECONDS.sleep(200);
+        } while (System.nanoTime() < prazo);
+        throw new AssertionError("origens/DLQs não ficaram vazias após fluxo final");
+    }
+
+    private JsonNode consultar(String comando, String... campos) throws Exception {
+        var argumentos = new ArrayList<>(List.of("rabbitmqctl", "--timeout", "5", "--quiet", "--formatter=json", comando));
+        argumentos.addAll(List.of(campos));
+        var resultado = RABBIT.execInContainer(argumentos.toArray(String[]::new));
+        assertThat(resultado.getExitCode()).as("consulta do broker: " + comando).isZero();
+        return JSON.readTree(resultado.getStdout());
+    }
+
+    private JsonNode porNome(JsonNode linhas, String nome) {
+        var encontrados = StreamSupport.stream(linhas.spliterator(), false).filter(linha -> nome.equals(linha.path("name").asText())).toList();
+        assertThat(encontrados).as("recurso exato no broker: " + nome).hasSize(1);
+        return encontrados.getFirst();
+    }
+
+    private void conferirExchange(JsonNode exchanges, String nome) {
+        var exchange = porNome(exchanges, nome);
+        assertThat(exchange.path("type").asText()).isEqualTo("direct");
+        assertThat(exchange.path("durable").asBoolean()).isTrue();
+    }
+
+    private void conferirBinding(JsonNode bindings, String origem, String destino, String rota) {
+        assertThat(StreamSupport.stream(bindings.spliterator(), false).filter(linha -> origem.equals(linha.path("source_name").asText())
+                && destino.equals(linha.path("destination_name").asText()) && "queue".equals(linha.path("destination_kind").asText())
+                && rota.equals(linha.path("routing_key").asText())).count()).isEqualTo(1);
+    }
+
+    private void conferirUnicidade(JdbcTemplate banco, String tabela, String coluna, UUID id) {
+        assertThat(banco.queryForObject("SELECT COUNT(*) FROM " + tabela + " WHERE " + coluna + " = ?", Integer.class, id)).isEqualTo(1);
+    }
+
+    private JdbcTemplate jdbc(PostgreSQLContainer<?> container) {
+        return new JdbcTemplate(new DriverManagerDataSource(container.getJdbcUrl(), container.getUsername(), container.getPassword()));
+    }
+
+    private int portaLivre() throws Exception { try (var socket = new ServerSocket(0)) { return socket.getLocalPort(); } }
+    private URI uri(String caminho) { return URI.create("http://localhost:" + portaTransacoes + caminho); }
+    private HttpResponse<String> enviar(HttpRequest.Builder request) throws Exception {
+        return HTTP.send(request.timeout(Duration.ofSeconds(3)).build(), HttpResponse.BodyHandlers.ofString());
+    }
+}

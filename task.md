@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B05.5c3 validado na PR #104: CI #148/Secret Scan #55 verdes, 279 testes com retry/rollback/DLQ reais. Runbook atualizado para ativação manual conferida; integração exige CIs aplicáveis no SHA final. Spec 9.50.
+- B05.5d1 validado no Application Flow CI #1 da PR #105: dois estados finais pelos dois JARs reais, duas outboxes publicadas e causalidade/bancos próprios comprovados. Integração depende de suíte afetada/checks finais; spec 9.51.
 
 ## Próximo
 
-- [ ] B05.5d1 — Após integrar c3, executar dois JARs reais com bancos próprios/broker no CI e comprovar POST → duas outboxes → GET APROVADA/REJEITADA. Sem saída fabricada; B05 só termina após duplicata/replay em d2.
+- [ ] B05.5d2 — Após integrar d1, republicar eventos reais da outbox e comprovar ack/replay, registros completos intactos/histórico único e POST original PENDENTE enquanto GET permanece final.

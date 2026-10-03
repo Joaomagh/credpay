@@ -2,6 +2,7 @@
 
 [![Transaction Service CI](https://github.com/Joaomagh/credpay/actions/workflows/transacoes-service-ci.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/transacoes-service-ci.yml)
 [![Processing Service CI](https://github.com/Joaomagh/credpay/actions/workflows/processamento-service-ci.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/processamento-service-ci.yml)
+[![Application Flow CI](https://github.com/Joaomagh/credpay/actions/workflows/credpay-flow-ci.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/credpay-flow-ci.yml)
 [![Secret Scan](https://github.com/Joaomagh/credpay/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/secret-scan.yml)
 
 > Laboratório de engenharia backend para construir e explicar, com evidências, um fluxo assíncrono de transações.
@@ -12,7 +13,7 @@ Cada capacidade entra em um incremento pequeno, testado e documentado. Assim, o 
 
 ## Status atual
 
-O projeto está na fase de fluxo assíncrono confiável: ambos os serviços persistem suas próprias decisões e publicam eventos por outbox. O `processamento-service` tem um listener opt-in com ack após commit, replay equivalente, rejeição de JSON inválido/conflito e retry limitado testados em PostgreSQL/RabbitMQ reais. Reentrega pós-commit e retenção/recuperação sob recusa da DLQ também foram comprovadas. O provisionamento mínimo foi validado; o listener permanece desligado por padrão e sua ativação manual exige a [conferência operacional](infra/rabbitmq/README.md). A integração ponta a ponta ainda não está pronta.
+O projeto está na fase de fluxo assíncrono confiável: os dois aplicativos reais já comprovaram POST → duas outboxes → GET APROVADA/REJEITADA, com bancos próprios e histórico causal único. Ambos os listeners opt-in têm ack após commit, replay, rejeições permanentes e retry limitado testados em PostgreSQL/RabbitMQ reais. Reentrega pós-commit e retenção/recuperação sob recusa da DLQ foram comprovadas no processador. Flags permanecem desligadas por padrão e ativação manual exige conferência operacional pelos runbooks. A prova de duplicata/replay no fluxo completo ainda está pendente; recuperação operacional, ambiente local e observabilidade continuam no backlog.
 
 | Estado | Entrega |
 |---|---|
@@ -57,6 +58,7 @@ O projeto está na fase de fluxo assíncrono confiável: ambos os serviços pers
 | Comprovado | aplicação idempotente do resultado grava estado final e histórico atomicamente, inclusive em concorrência real |
 | Comprovado | replay do POST mantém resposta original `PENDENTE`; GET expõe estado final, com dados/histórico/outbox preservados |
 | Comprovado | listener de retorno opt-in aplica antes de ack; replay preserva histórico, permanentes vão à DLQ e retry operacional limita três tentativas com rollback |
+| Comprovado | dois JARs reais percorrem POST → processamento → ambas outboxes publicadas → GET APROVADA/REJEITADA, com bancos próprios e causalidade preservada |
 | Implementado | lock transacional por chave serializa primeiras criações concorrentes; o CI comprovou convergência para uma única transação |
 | Implementado | migration V4 e adapter persistem eventos pendentes na outbox |
 | Implementado | primeira criação gera um `TransacaoCriada` v1; replay e conflito não duplicam evento e falha da outbox causa rollback |
@@ -219,7 +221,7 @@ Invoke-RestMethod `
 Invoke-RestMethod http://localhost:8080/transacoes/<uuid-retornado>
 ```
 
-Em Linux ou macOS, use `./mvnw` no lugar de `.\mvnw.cmd`. O `POST /transacoes` retorna `201 Created`, `Location` e a representação original `PENDENTE`, inclusive no replay após conclusão; o `GET` pelo UUID retorna o estado atual persistido. O fluxo completo entre os dois serviços ainda está pendente. A preparação e ativação manual do retorno seguem [este runbook](infra/rabbitmq/TRANSACOES.md); flags permanecem desligadas por padrão e a conferência efetiva é obrigatória.
+Em Linux ou macOS, use `./mvnw` no lugar de `.\mvnw.cmd`. O `POST /transacoes` retorna `201 Created`, `Location` e a representação original `PENDENTE`, inclusive no replay após conclusão; o `GET` pelo UUID retorna o estado atual persistido. A prova dos dois aplicativos reais está em [infra/e2e](infra/e2e/README.md), ainda sem aceite de duplicata/replay do fluxo completo. A preparação e ativação manual do retorno seguem [este runbook](infra/rabbitmq/TRANSACOES.md); flags permanecem desligadas por padrão e a conferência efetiva é obrigatória.
 
 A aplicação não possui fallback volátil: sem DataSource válido ela falha ao iniciar. Flyway aplica as migrations e Hibernate valida o schema; nos testes de integração, o container e as propriedades de conexão são gerenciados automaticamente.
 
