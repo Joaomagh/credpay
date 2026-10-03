@@ -9,7 +9,7 @@ Atualizado em 2026-10-03. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos
 | B01 | Contrato de processamento idempotente | identidade, equivalência/conflito, resultado, atomicidade e ack documentados; matriz de falhas revisada | contratos atuais | Contrato definido; resultado/outbox e ack após commit implementados; falhas operacionais em B04 |
 | B02 | Resultado durável e processamento idempotente | PostgreSQL comprova resultado único, replay estável, conflito sem sobrescrita, rollback e concorrência | B01 e baseline própria de persistência | Concluído; B02.1–B02.6 comprovados no CI |
 | B03 | Saída `TransacaoProcessada` confiável | contrato versionado, resultado + outbox atômicos, publicação confirmada e reenvio com a mesma identidade | B02 | Concluído; B03.1–B03.10 comprovados |
-| B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | B04.1–B04.10 concluídos; B04.11 recusa efetiva da DLQ cheia próximo |
+| B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | B04.1–B04.11 concluídos; B04.12 provisionamento mínimo próximo |
 | B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | Refinamento |
 | B06 | Recuperação e diagnóstico demonstráveis | queda, atraso e duplicação testados; correlação, retry/DLQ e replay operacional observáveis | B05; refinar política de `FALHOU` | Refinamento |
 | B07 | Ambiente local reproduzível | imagens/Compose e depois Kubernetes local com probes e recursos; roteiro demonstra fluxo e falha | B05 e B06 | Refinamento |
@@ -75,7 +75,9 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 **B04.10 — Perda de conexão depois do commit — concluído.** [CI #140](https://github.com/Joaomagh/credpay/actions/runs/37098555364), 113 testes verdes, comprovou banco durável/mensagem sem ack antes do fechamento real, reentrega pelo broker (`redelivered=true`), corpo/identidade iguais, snapshot/outbox completos intactos, uma linha de cada tabela e ack final sem DLQ. Advice da fixture fora da transação/retry; sem alteração de produção, process kill ou prova de HA.
 
-**B04.11 — Recusa efetiva da DLQ cheia — em validação.** Manter capacidade esgotada até observar a tentativa recusada do próprio worker de dead-lettering, não apenas um publish diagnóstico com nack ou espera fixa. Comprovar retenção na origem, liberar capacidade somente depois, receber o mesmo corpo/identidade e exigir origem vazia. Broker real, timeout e limpeza seguros; nenhuma dependência/produção nova salvo defeito real. Depois deste cenário, provisionamento mínimo verificável da política e retorno imediato a B05; não abrir experimentos de nó/quorum/carga antes do fluxo vertical.
+**B04.11 — Recusa efetiva da DLQ cheia — concluído.** [CI #143](https://github.com/Joaomagh/credpay/actions/runs/37099496150), 113 testes verdes, comprovou rejeição do worker/destino em cenário controlado, retenção na origem, dois ocupantes mantidos antes da liberação e recuperação do mesmo corpo/identidade com origem vazia. Não observa diretamente o código `maxlen`, não prova HA/ausência de duplicatas. Diagnóstico interno seguro da versão fixada, somente fixture, cleanup das filas descartáveis. Nenhuma produção/dependência nova.
+
+**B04.12 — Provisionamento mínimo verificável — próximo.** Versionar configuração de políticas de origem/DLQ com capacidade finita e rejeição sem descarte, padrão reproduzível de aplicação e inspeção da definição efetiva/feature flag. Validar com broker real e manter listener desligado sem pré-condições demonstradas. Não introduzir cluster, tuning, painel ou implantação externa; depois avançar imediatamente a B05. Novos experimentos de nó/quorum/carga ficam em B06, salvo risco concreto de perda/corrupção/exposição.
 
 ## Incrementos de B08
 
@@ -85,7 +87,7 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 **B08.2 — Ciclo de vida das fixtures PostgreSQL — diagnóstico pendente.** CI #140 verde registrou 39 warnings Hikari de conexão já fechada. Investigar ordem de fechamento dos containers/contextos/pools e corrigir sob regressão real se comprovado. Aceite: contexto/containers encerrados corretamente, suíte completa verde e ausência dos warnings indevidos, sem silenciar logger ou reduzir teste. Não atribuir causa antes do diagnóstico; não impede B04.11 nem substitui revisão de segurança B08.1.
 
-- Estado atual: B02 e B03 concluídos no CI; B04.1–B04.10 testados, com listener de entrada opt-in ainda não seguro para ativação operacional. Evidências e limites em `spec.md`.
+- Estado atual: B02 e B03 concluídos no CI; B04.1–B04.11 testados, com listener de entrada opt-in aguardando provisionamento operacional. Evidências e limites em `spec.md`.
 - Sandbox AI-Jail continua apenas documentado. Retomar sua implementação como iniciativa delimitada; não alegar isolamento atual.
 - Warning Mockito/Byte Buddy conhecido permanece; coordenar correção com evolução de qualidade, sem ocultá-lo.
 - Testes locais com infraestrutura dependem do Docker disponível. CI pode fornecer evidência real, mas falha de infraestrutura não é red de negócio.

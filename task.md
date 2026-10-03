@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B04.10 validado: CI #140 verde com 113 testes; reentrega real após commit/antes do ACK preservou resultado/outbox completos. Nenhuma alteração de produção; Secret Scan #5 verde. Warnings Hikari de conexão fechada registrados para diagnóstico em B08.2.
+- B04.11 validado: CI #143 verde com 113 testes; recusa do worker, retenção e recuperação após liberar a DLQ comprovadas. Nenhuma mudança de produção; Secret Scan #8 verde. Diagnóstico de lifecycle das fixtures em B08.2, sem silenciar warnings.
 
 ## Próximo
 
-- [ ] B04.11 em validação — Comprovar no CI recusa efetiva do dead-lettering com DLQ cheia, retenção na origem e recuperação após liberar capacidade, sem ativar consumo operacional.
+- [ ] B04.12 — Versionar e validar o provisionamento mínimo das políticas de entrada/DLQ, capacidade e pré-condições antes de habilitar consumo; depois avançar a B05.
