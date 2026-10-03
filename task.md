@@ -8,4 +8,4 @@
 
 ## Próximo
 
-- [ ] B05.3 — Implementar em TDD a persistência atômica de estado final e histórico/recebimento: migration e adapters próprios, identidade/precisão preservadas, unicidade e rollback em PostgreSQL real. Sem listener ou ativação do fluxo neste incremento.
+- [ ] B05.3 em execução — Teste de commit/releitura escrito; porta e record mínimos compilam após red de API ausente. Observar red de integração no CI antes do adapter/migration, pois Docker local está indisponível. Depois provar constraints e rollback real da segunda escrita; sem listener.

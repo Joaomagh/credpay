@@ -1850,6 +1850,12 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Aceite remoto:** o [Transaction Service CI #110](https://github.com/Joaomagh/credpay/actions/runs/37137259753), SHA `eadf5ee`, passou com 108 testes, zero falhas/erros/skips, em 1 min 3 s. Os 15 cenários do repository incluíram as duas releituras finais em PostgreSQL; os 20 de domínio e três de mapper também passaram. [Secret Scan #17](https://github.com/Joaomagh/credpay/actions/runs/37137259708) verde. Revisão assistida sem bloqueante, com limite explícito da fixture: prova snapshot inserido, não atualização de transação anteriormente PENDENTE. Log desse job sem warnings Hikari de conexão fechada; isso não resolve o diagnóstico pendente do processador em B08.2. Busca limitada de formas de payload bruto sem candidatos. O SHA documental final da [PR #95](https://github.com/Joaomagh/credpay/pull/95) deve permanecer verde antes do merge.
 
+### 9.42 Persistência atômica de estado e histórico — B05.3
+
+**Desenho em execução:** `TransicaoRepository` registra a transição e permite leitura por evento; `TransicaoRecebida` conserva todos os campos semânticos do envelope, estados, origem e instante local. Adapter JDBC transacional atualizará somente status de PENDENTE e inserirá histórico; nenhuma escrita isolada ou listener. Migration V5 terá PK de evento, unicidade por transação, FK da transação e FK composta causa/transação à outbox local; tipo/versão da criação serão conferidos no adapter. Não exigir published_at nem inventar histórico antigo. Instante recebido usa epoch second/nano; instante local será truncado a micros antes da escrita, precisão suportada por TIMESTAMPTZ.
+
+**TDD inicial:** teste exige commit/releitura completa com PostgreSQL real, preservação monetária e nanos não múltiplos de micros. Red local somente pela ausência deliberada de porta/record; foram adicionados os tipos mínimos, sem adapter/migration. Compilação e red de integração serão registrados separadamente; Docker indisponível não conta como red. CI aplicável deve observar o comportamento ausente antes de implementar. Revisão assistida de desenho confirmou risco de FK isolada e necessidade de falha real na segunda escrita.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
