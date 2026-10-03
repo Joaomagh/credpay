@@ -28,6 +28,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.DirectExchange;
@@ -205,6 +206,79 @@ class TransacaoProcessadaListenerIntegrationTest {
                 Integer.class, original.id())).isEqualTo(1);
         assertThat(jdbc.queryForMap("SELECT * FROM outbox_eventos WHERE event_id = ?", causa))
                 .withFailMessage("outbox original alterada pelo replay de resultado").isEqualTo(outboxOriginal);
+        assertThat(rabbit.receive(RabbitMqResultadoConfiguration.DLQ, 200)).isNull();
+    }
+
+    @Test
+    void receber_deveEnviarJsonInvalidoParaDlqSemAlterarBanco() throws Exception {
+        var antes = banco();
+        clock.resetar();
+        var message = new Message("{".getBytes(StandardCharsets.UTF_8), new MessageProperties());
+
+        rabbit.send("credpay.processamento.v1", "transacao.processada.v1", message);
+
+        conferirRejeicao(message);
+        assertThat(banco()).withFailMessage("contrato inválido alterou o banco").isEqualTo(antes);
+        assertThat(clock.chamadas.get()).isZero();
+    }
+
+    @Test
+    void receber_deveEnviarConflitoParaDlqPreservandoResultadoOriginal() throws Exception {
+        var original = criar.executar(UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"));
+        var causa = jdbc.queryForObject("SELECT event_id FROM outbox_eventos WHERE aggregate_id = ?", UUID.class, original.id());
+        var evento = UUID.randomUUID();
+        clock.resetar();
+        rabbit.send("credpay.processamento.v1", "transacao.processada.v1",
+                mensagem(evento, original.id(), causa, StatusTransacao.APROVADA));
+        aguardarHistorico(evento);
+        aguardarFila("messages", 0, 10);
+        var antes = banco();
+        var conflitante = mensagem(evento, original.id(), causa, StatusTransacao.REJEITADA);
+
+        rabbit.send("credpay.processamento.v1", "transacao.processada.v1", conflitante);
+
+        conferirRejeicao(conflitante);
+        assertThat(banco()).withFailMessage("conflito alterou resultado, histórico ou outbox").isEqualTo(antes);
+        assertThat(estado(original.id())).isEqualTo("APROVADA");
+        assertThat(clock.chamadas.get()).isEqualTo(1);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void receber_deveEnviarRecusaParaDlqSemCriarTransicao(boolean transacaoExiste) throws Exception {
+        var id = transacaoExiste
+                ? criar.executar(UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL")).id()
+                : UUID.randomUUID();
+        var antes = banco();
+        clock.resetar();
+        var message = mensagem(UUID.randomUUID(), id, UUID.randomUUID(), StatusTransacao.APROVADA);
+
+        rabbit.send("credpay.processamento.v1", "transacao.processada.v1", message);
+
+        conferirRejeicao(message);
+        assertThat(banco()).withFailMessage("recusa causal alterou o banco").isEqualTo(antes);
+        if (transacaoExiste) assertThat(estado(id)).isEqualTo("PENDENTE");
+        else assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM transacoes WHERE id = ?", Integer.class, id)).isZero();
+        assertThat(clock.chamadas.get()).isZero();
+    }
+
+    private java.util.List<java.util.List<java.util.Map<String, Object>>> banco() {
+        return java.util.List.of(
+                jdbc.queryForList("SELECT * FROM transacoes ORDER BY id"),
+                jdbc.queryForList("SELECT * FROM historico_transacoes ORDER BY event_id"),
+                jdbc.queryForList("SELECT * FROM outbox_eventos ORDER BY event_id"));
+    }
+
+    private void conferirRejeicao(Message original) throws Exception {
+        var rejeitada = rabbit.receive(RabbitMqResultadoConfiguration.DLQ, 10_000);
+        assertThat(rejeitada).as("mensagem rejeitada recebida na DLQ real").isNotNull();
+        assertThat(rejeitada.getBody()).withFailMessage("corpo da mensagem rejeitada foi alterado").isEqualTo(original.getBody());
+        assertThat(rejeitada.getMessageProperties().getMessageId()).isEqualTo(original.getMessageProperties().getMessageId());
+        assertThat(rejeitada.getMessageProperties().getCorrelationId()).isEqualTo(original.getMessageProperties().getCorrelationId());
+        assertThat(rejeitada.getMessageProperties().getType()).isEqualTo(original.getMessageProperties().getType());
+        assertThat(rejeitada.getMessageProperties().getHeaders()).containsEntry("x-first-death-reason", "rejected");
+        assertThat(rejeitada.getMessageProperties().getHeaders()).containsEntry("x-first-death-queue", ENTRADA);
+        aguardarFila("messages", 0, 10);
         assertThat(rabbit.receive(RabbitMqResultadoConfiguration.DLQ, 200)).isNull();
     }
 

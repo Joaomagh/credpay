@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B05.5c1 validado na PR #102: CI #142/Secret Scan #49 verdes, commit/ack nos dois finais e replay comprovados. Integração depende dos CIs aplicáveis no SHA final. Ativação operacional proibida; spec 9.48.
+- B05.5c1 integrado na PR #102 (99588cb), após CI transações #143/processador #153 e Secret Scan #50 verdes no SHA final. Commit/ack nos dois finais e replay comprovados. Ativação operacional proibida até c2/c3; spec 9.48.
 
 ## Próximo
 
-- [ ] B05.5c2 — Após integrar c1, rejeitar contrato inválido/conflito/recusa permanente para DLQ sem requeue e sem alterar banco, com diagnóstico seguro. TDD antes da classificação; retry operacional fica em c3.
+- [ ] B05.5c2 — Em execução: classificação permanente deu red/green local; verificar DLQ/banco reais, revisão e CI no SHA final antes de integrar. Retry operacional permanece em c3.

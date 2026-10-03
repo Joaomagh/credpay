@@ -1940,6 +1940,14 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Aceite de c1:** [CI #142](https://github.com/Joaomagh/credpay/actions/runs/37155351518), SHA 8edd764, passou 265 testes sem falhas/erros/skips em 1m54s, incluindo três reais do listener (35,74 s). Replay nasceu verde como caracterização, não red artificial; preserva record completo, outbox original, Clock/escrita únicos e entrega observada antes do ack final. Secret Scan #49 verde. Compile/verify offline 160/JAR, diff/UTF-8 e revisão assistida sem bloqueante. README atualizado pelo marco público experimental; runbook exige listener false e proíbe ativação até c2/c3. CI processador também aplicável por mudança no runbook, além dos checks no último SHA documental, antes de integrar PR #102. c1 não encerra B05.5c.
 
+### 9.49 Rejeições permanentes no retorno — B05.5c2
+
+**Objetivo e decisão:** contrato inválido, conflito de identidade e recusa por transação/causa inválida rejeitam sem requeue; exceção AMQP traz diagnóstico fixo sem causa interna. Captura de IllegalArgumentException fica somente no parser, cujos erros são seguros; aplicação captura somente os dois tipos permanentes. Falhas de infraestrutura continuam propagadas, aguardando retry limitado em c3. Sem dependência, migration ou mudança de política. Listener permanece experimental e ativação operacional proibida.
+
+**TDD local:** `mvnw.cmd --batch-mode --no-transfer-progress -o -Dtest=TransacaoProcessadaListenerTest test` executou quatro testes: três falhas esperadas pelo tipo de exceção original (JSON inválido/conflito/recusa), zero erros/skips. Após classificação mínima, quatro verdes. Falha operacional preserva a mesma exceção como caracterização já verde. Fixture real acrescenta JSON inválido, conflito depois de commit e recusa por causa desconhecida/transação desconhecida; exige corpo/identidades na DLQ, razão rejected, origem drenada e snapshot inteiro das três tabelas intacto. Verificação remota e revisão ainda pendentes; Docker local indisponível não é evidência de comportamento.
+
+**Integração anterior:** PR #102 integrada em 99588cb após CI transações #143/processador #153 e Secret Scan #50 verdes no último SHA 0ebb6e8. c1 isoladamente não encerra B05.5c.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
