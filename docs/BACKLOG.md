@@ -69,11 +69,11 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 **B04.7 — JSON inválido para DLQ — concluído.** O [CI #128](https://github.com/Joaomagh/credpay/actions/runs/37072605070) comprovou rejeição sem requeue (`x-first-death-reason=rejected`) e nenhum resultado/outbox novo. O red #127 gerou logs excessivos; detalhes e limite de evidência em `spec.md`. Conflito de aplicação e falhas transitórias ainda não são classificados.
 
-**B04.8 — Conflito de identidade para DLQ — próximo.** Processar uma entrada válida, enviar outra com a mesma identidade e dados divergentes, e exigir que o registro original permaneça intacto e a segunda mensagem seja rejeitada diretamente para DLQ com motivo `rejected`. O teste red deve ser limitado para não inundar logs. Retry transitório, crash pós-commit e política operacional ficam em slices posteriores.
+**B04.8 — Conflito de identidade para DLQ — em validação.** Red unitário observado e 31 testes focados verdes. Integração preparada com registro original completo preservado, corpo/identidade divergentes na DLQ e motivo `rejected`; aguarda CI real. Retry transitório, crash pós-commit e política operacional ficam em slices posteriores.
 
 ## Incrementos de B08
 
-**B08.1 — Revisão de publicação segura — refinamento, obrigatória antes da entrega.** A ausência de `.gitignore` na raiz foi corrigida em 2026-10-03; a inspeção limitada do snapshot atual não encontrou formatos comuns de segredo. Aceite restante: revisar histórico rastreado e logs/artefatos de CI sem divulgar valores, definir detecção automatizada de segredos e comprovar que exemplos usam dados fictícios. Uma descoberta real antecipa este item e exige revogação/rotação; reescrever histórico exige autorização específica. Não inclui tornar o repositório privado nem apagar documentação pública.
+**B08.1 — Revisão de publicação segura — refinamento, obrigatória antes da entrega.** `.gitignore` comum implementado; busca limitada no snapshot e em 305 commits locais alcançáveis não encontrou os formatos pesquisados de segredo (limites em spec, seção 16). Aceite restante: revisão complementar do histórico, logs/artefatos de CI sem divulgar valores, detecção automatizada e exemplos fictícios. Uma descoberta real antecipa este item e exige revogação/rotação; reescrever histórico exige autorização específica. Não inclui tornar o repositório privado nem apagar documentação pública.
 
 ## Revisão e riscos
 

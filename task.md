@@ -4,7 +4,7 @@
 
 ## Último incremento
 
-- Higiene de publicação: `.gitignore` na raiz protege arquivos locais sensíveis; documentação pública preservada. Revisão mais ampla de histórico/logs e automação de detecção registrada como B08.1, sem alegar auditoria completa.
+- B04.8 em validação: red observado e 31 testes focados verdes; prova RabbitMQ/PostgreSQL aguarda CI. Busca limitada em 305 commits locais alcançáveis não encontrou os formatos de segredo pesquisados; B08.1 permanece para revisão complementar.
 
 ## Próximo
 
