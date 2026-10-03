@@ -1948,6 +1948,8 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Integração anterior:** PR #102 integrada em 99588cb após CI transações #143/processador #153 e Secret Scan #50 verdes no último SHA 0ebb6e8. c1 isoladamente não encerra B05.5c.
 
+**Aceite de c2:** [CI #145](https://github.com/Joaomagh/credpay/actions/runs/37156850300), SHA 2c5ca82, passou 273 testes, zero falhas/erros/skips, inclusive sete reais do listener (57,29 s). Quatro casos novos provam DLQ com razão rejected/fila de origem exata, corpo/identidades preservados e snapshot completo intacto; três anteriores protegem commit/ack e replay. Secret Scan #52 verde; revisão assistida sem bloqueante recomendou conferir origem da rejeição, aplicado. Verify offline corrigido passou 164/JAR: primeira seleção incluiu PostgresRuntimeTest e falhou somente por Docker indisponível (165 testes, um erro), não red de negócio nem redução do CI. Comando local corrigido: `mvnw.cmd --batch-mode --no-transfer-progress -o '-Dtest=!**/*IntegrationTest,!**/*ApplicationTest,!**/*HttpTest,!PostgresRuntimeTest' verify`. Diff/UTF-8/scanner local aprovados. PR #103 depende de checks do último SHA documental antes de integrar. Mockito/Byte Buddy continuam com warnings conhecidos; ativação proibida até c3.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
