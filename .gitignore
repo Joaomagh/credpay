@@ -25,6 +25,16 @@ secrets/
 *.jks
 *.keystore
 credentials.json
+service-account.json
+.ssh/
+.aws/
+.docker/
+.npmrc
+.pypirc
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
 
 # Logs e exportações podem conter dados operacionais; migrations SQL permanecem públicas
 *.log

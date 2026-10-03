@@ -8,4 +8,4 @@
 
 ## Próximo
 
-- [ ] B04.10 — Provar reentrega real após fechamento da conexão entre commit e ack, com `redelivered=true` e sem duplicar/alterar resultado ou outbox.
+- [ ] B08.1 — Validar scanner/hook pre-push e CI de segredos com controle positivo; depois retomar B04.10, já refinado no backlog.

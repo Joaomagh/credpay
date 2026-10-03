@@ -1945,6 +1945,41 @@ A inspeção dos nomes rastreados e a busca por formatos comuns de chave privada
 
 **Log verificado:** a busca limitada no log do job Maven do CI #133 não encontrou os formatos comuns de segredo acima nem candidatos às formas pesquisadas de payload bruto (`body`/`failedMessage` com `amount`, ou `amount` junto de `currency`). A mensagem observada para conflito foi fixa. A mesma busca nas mensagens dos commits locais também não encontrou os padrões. Essas buscas não cobrem outros formatos, outros logs nem artefatos; B08.1 não está concluído.
 
+### 16.1 Baseline de detecção de segredos — B08.1
+
+**Decisão:** adicionar Gitleaks CLI 8.30.1 como ferramenta de qualidade, sem dependência Java ou instalação global. A [release](https://github.com/gitleaks/gitleaks/releases/tag/v8.30.1) é publicada pelo projeto sob [MIT](https://github.com/gitleaks/gitleaks/blob/v8.30.1/LICENSE); [flags e modos](https://github.com/gitleaks/gitleaks/blob/v8.30.1/README.md) foram verificados. Artefatos conferidos no [manifesto oficial](https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_checksums.txt):
+
+| Plataforma | Arquivo | SHA256 |
+|---|---|---|
+| Linux x64, CI | gitleaks_8.30.1_linux_x64.tar.gz | 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb |
+| Windows x64, workspace | gitleaks_8.30.1_windows_x64.zip | d29144deff3a68aa93ced33dddf84b7fdc26070add4aa0f4513094c8332afc4e |
+
+O download local fica limitado a `.local/gitleaks`, ignorado pelo Git, com validação SHA256 antes da extração. Nenhum hook/configuração anterior foi encontrado neste checkout; `git config --local core.hooksPath .githooks` habilita o hook versionado apenas neste repositório. `.gitattributes` mantém LF e o índice Git registra modo executável. O hook exige a versão aprovada, varre commits alcançáveis com `--all` antes do push e bloqueia se houver achado, falha do scanner ou binário ausente. A [semântica do hook pre-push](https://git-scm.com/docs/githooks#_pre_push) foi conferida.
+
+Preparação em PowerShell, a partir da raiz deste repositório. Antes de configurar, verificar `git config --local --get core.hooksPath` e hooks existentes; não sobrescrever uma configuração anterior sem revisar sua integração:
+
+```powershell
+New-Item -ItemType Directory -Force .local/gitleaks | Out-Null
+Invoke-WebRequest https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_windows_x64.zip -OutFile .local/gitleaks/gitleaks.zip
+$expected = 'd29144deff3a68aa93ced33dddf84b7fdc26070add4aa0f4513094c8332afc4e'
+if ((Get-FileHash .local/gitleaks/gitleaks.zip -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) { throw 'Checksum incorreto; não extrair nem executar' }
+Expand-Archive .local/gitleaks/gitleaks.zip -DestinationPath .local/gitleaks -Force
+.\.local\gitleaks\gitleaks.exe version
+git config --local core.hooksPath .githooks
+git hook run pre-push
+if ($LASTEXITCODE -ne 0) { throw 'Hook não validado; não publicar' }
+```
+
+O workflow `.github/workflows/secret-scan.yml` usa checkout fixado por SHA, histórico completo, `persist-credentials: false`, somente `contents: read`, runner padrão e timeout de cinco minutos. Baixa o artefato Linux com checksum fixado, prova o detector com padrão sintético em diretório efêmero e varre histórico em PRs e pushes para main, sem filtro de caminhos. Sem verbose, relatórios publicados, artifacts, credencial fornecida ao scanner ou supressão automática; redaction 100% e comentários inline de allow ignorados. O checksum protege a escolha do artefato, mas o publicador e o runner/host continuam confiáveis.
+
+**Limites:** CI detecta após o push; o hook local é a barreira antes da publicação, mas é contornável por `--no-verify`, desativação ou alteração local. Novos clones precisam preparar o binário e habilitar o hook; não é ativado automaticamente pelo clone. O scanner não prova ausência de todos os segredos/dados pessoais e não cobre logs externos nem commits órfãos. Nenhuma reescrita do histórico ou rotação foi feita sem vazamento identificado. Revisão complementar dos logs/artefatos segue pendente.
+
+**Achados revisados:** a primeira varredura retornou código 1 e três fingerprints `generic-api-key`. A inspeção histórica e a revisão independente confirmaram uma routing key pública em asserção de topologia RabbitMQ e o mesmo UUID fictício de `Idempotency-Key` em dois commits do README. O header deduplica pedidos, não autentica. `.gitleaksignore` lista somente esses três fingerprints, com contexto; nenhuma regra, arquivo ou faixa de histórico é excluída. Um novo achado exige revisão própria, não inclusão automática nessa lista. Nenhum valor de credencial foi exibido e nenhum vazamento real foi confirmado.
+
+**Controle positivo:** a primeira fixture sintética retornou 0 porque continha caracteres fora do padrão AWS reconhecido pela [regra oficial desta versão](https://github.com/gitleaks/gitleaks/blob/v8.30.1/config/gitleaks.toml). A fixture foi corrigida para o alfabeto aceito e retorna 1. É apenas um padrão fictício, construído em memória/diretório temporário, sem conta ou credencial real; prova detecção, não validade de acesso. Não foi reduzida a regra do scanner para fazer o teste passar.
+
+**Validação local:** checksum Windows conferido, CLI 8.30.1 executada; varredura `git --redact=100 --no-banner --log-level error --ignore-gitleaks-allow --log-opts="--all" .` retornou 0 após a revisão dos três fingerprints. Controle positivo via `stdin` retornou 1, inclusive com as exceções presentes. Hook ativado por `git config --local core.hooksPath .githooks`; `git hook run pre-push` retornou 0, índice confirmou modo `100755` e LF. `git check-ignore --no-index` confirmou binário/relatório em `.local` e os nove caminhos adicionais de credenciais bloqueados. CI ainda aguardando execução. Configuração operacional não recebe red artificial de negócio.
+
 ## 17. Checklist por incremento
 
 - [ ] critério de aceitação entendido e escopo mantido;
