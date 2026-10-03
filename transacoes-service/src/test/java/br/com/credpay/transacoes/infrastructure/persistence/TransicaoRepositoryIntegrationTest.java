@@ -16,6 +16,7 @@ import br.com.credpay.transacoes.domain.StatusTransacao;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,12 +25,14 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.annotation.DirtiesContext;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest
 @Testcontainers
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class TransicaoRepositoryIntegrationTest {
 
     @Container
@@ -153,6 +156,64 @@ class TransicaoRepositoryIntegrationTest {
                 Arguments.of("origem", "'Outro'", "ck_historico_origem"),
                 Arguments.of("occurred_at_nano", "-1", "ck_historico_nano"),
                 Arguments.of("occurred_at_nano", "1000000000", "ck_historico_nano"));
+    }
+
+    @Test
+    void registrar_deveRecusarTransacaoAusenteSemInventarHistorico() {
+        var transicao = preparar(StatusTransacao.APROVADA);
+        jdbc.update("DELETE FROM transacoes WHERE id = ?", transicao.transactionId());
+
+        assertThatThrownBy(() -> repository.registrar(transicao))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("transição exige transação pendente e causa de criação local");
+
+        assertThat(repository.buscarPorEvento(transicao.eventId())).isEmpty();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM transacoes WHERE id = ?",
+                Integer.class, transicao.transactionId())).isZero();
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = StatusTransacao.class, names = {"APROVADA", "REJEITADA"})
+    void registrar_devePreservarEstadoFinalSemInventarHistorico(StatusTransacao estado) {
+        var transicao = preparar(StatusTransacao.APROVADA);
+        jdbc.update("UPDATE transacoes SET status = ? WHERE id = ?", estado.name(), transicao.transactionId());
+
+        assertThatThrownBy(() -> repository.registrar(transicao))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("transição exige transação pendente e causa de criação local");
+
+        assertThat(repository.buscarPorEvento(transicao.eventId())).isEmpty();
+        assertThat(jdbc.queryForObject("SELECT status FROM transacoes WHERE id = ?",
+                String.class, transicao.transactionId())).isEqualTo(estado.name());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"Outro, 1", "TransacaoCriada, 2"})
+    void registrar_deveRecusarCausaComTipoOuVersaoIncorreta(String tipo, int versao) {
+        var transicao = preparar(StatusTransacao.APROVADA);
+        jdbc.update("UPDATE outbox_eventos SET event_type = ?, event_version = ? WHERE event_id = ?",
+                tipo, versao, transicao.causationId());
+
+        assertThatThrownBy(() -> repository.registrar(transicao))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("transição exige transação pendente e causa de criação local");
+
+        assertThat(repository.buscarPorEvento(transicao.eventId())).isEmpty();
+        assertThat(jdbc.queryForObject("SELECT status FROM transacoes WHERE id = ?",
+                String.class, transicao.transactionId())).isEqualTo("PENDENTE");
+    }
+
+    @Test
+    void registrar_deveTruncarSomenteInstanteLocalParaMicros() {
+        var original = preparar(StatusTransacao.APROVADA);
+        var entrada = new TransicaoRecebida(original.eventId(), original.transactionId(), original.eventType(),
+                original.eventVersion(), original.correlationId(), original.causationId(), original.estadoAnterior(),
+                original.estadoFinal(), original.origem(), original.occurredAt(),
+                Instant.parse("2026-10-03T12:00:01.654321987Z"));
+
+        repository.registrar(entrada);
+
+        assertThat(repository.buscarPorEvento(original.eventId())).contains(original);
     }
 
     private TransicaoRecebida preparar(StatusTransacao resultado) {
