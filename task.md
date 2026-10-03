@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B04.9 validado: 75 testes sem infraestrutura verdes e 112 testes completos no CI #136. Retry limitado comprovou rollback, recuperação e DLQ ao esgotar; sem dependência nova. B08.1 permanece pendente, sem evidência de vazamento nas buscas limitadas realizadas.
+- B08.1 parcial validado: Gitleaks 8.30.1, hook pre-push ativo neste checkout e Secret Scan #1 verdes, incluindo controle positivo. Três falsos positivos históricos revisados por fingerprint; nenhum segredo real confirmado. Revisão complementar de logs/artefatos permanece no backlog.
 
 ## Próximo
 
-- [ ] B08.1 — Validar scanner/hook pre-push e CI de segredos com controle positivo; depois retomar B04.10, já refinado no backlog.
+- [ ] B04.10 — Comprovar reentrega real após commit e antes do ACK, preservando resultado e outbox; manter consumo operacional desativado.

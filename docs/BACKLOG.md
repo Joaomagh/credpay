@@ -77,7 +77,7 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 ## Incrementos de B08
 
-**B08.1 — Revisão de publicação segura — antecipada, em validação.** `.gitignore` comum e buscas limitadas sem os formatos pesquisados de segredo. Baseline Gitleaks 8.30.1 (hashes em spec 16.1), hook pre-push e CI preparados; validar histórico alcançável e detector com controle positivo sem segredo real/relatório público. CI atua após o push; hook local contornável é a barreira pré-publicação. Revisão complementar de logs/artefatos continua pendente. Reescrever histórico exige autorização específica; não inclui tornar o repo privado ou apagar documentos.
+**B08.1 — Revisão de publicação segura — parcialmente concluída.** `.gitignore` comum e Gitleaks 8.30.1 (hashes em spec 16.1), hook pre-push ativo neste checkout e [Secret Scan #1](https://github.com/Joaomagh/credpay/actions/runs/37098101748) passaram, inclusive controle positivo; três falsos positivos históricos revisados por fingerprint. Nenhum segredo real confirmado. CI atua após o push; hook local contornável exige preparo em novos clones. Revisão complementar de logs/artefatos continua pendente. Reescrever histórico exige autorização específica; não inclui tornar o repo privado ou apagar documentos.
 
 ## Revisão e riscos
 
