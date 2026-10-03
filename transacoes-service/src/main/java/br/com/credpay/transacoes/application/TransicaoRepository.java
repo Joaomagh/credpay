@@ -5,6 +5,8 @@ import java.util.UUID;
 
 public interface TransicaoRepository {
 
+    void bloquearIdentidades(UUID eventId, UUID transactionId);
+
     void registrar(TransicaoRecebida transicao);
 
     Optional<TransicaoRecebida> buscarPorEvento(UUID eventId);

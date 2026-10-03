@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B05.4a validado na PR #97: CI #121 verde com 162 testes e Secret Scan #28 verde. Aplicação sequencial, replay semântico e causalidade comprovados; evidências/limites na spec 9.43. Checks do último SHA obrigatórios antes do merge.
+- B05.4b validado na PR #98: CI #126 verde com 170 testes e Secret Scan #33 verde. Disputas reais, conflitos e liberação após rollback comprovados; spec 9.44. Refatoração local verde; checks do SHA final obrigatórios antes de integrar.
 
 ## Próximo
 
-- [ ] B05.4b — Implementar em TDD serialização por eventId/transactionId em READ_COMMITTED. Provar convergência equivalente, conflito sem sobrescrita, recuperação após rollback e ordem das chaves efetivas de advisory lock com PostgreSQL real; sem listener.
+- [ ] B05.4c — Em TDD, preservar representação original PENDENTE no replay do POST, mesmo após resultado aplicado, enquanto GET continua final. Teste HTTP/PostgreSQL exige dados originais/escala, histórico único e outbox intacta; nunca atualizar estado de volta para PENDENTE.

@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import br.com.credpay.transacoes.application.TransicaoRecebida;
 import br.com.credpay.transacoes.application.TransicaoRecusadaException;
@@ -21,6 +22,20 @@ class TransicaoJdbcRepository implements TransicaoRepository {
 
     TransicaoJdbcRepository(JdbcTemplate jdbc) {
         this.jdbc = jdbc;
+    }
+
+    @Override
+    public void bloquearIdentidades(UUID eventId, UUID transactionId) {
+        Stream.of(eventId, transactionId).map(this::chaveDeLock)
+                .distinct().sorted().forEach(this::bloquear);
+    }
+
+    private Long chaveDeLock(UUID identidade) {
+        return jdbc.queryForObject("SELECT hashtextextended(CAST(? AS text), 0)", Long.class, identidade.toString());
+    }
+
+    private void bloquear(Long chave) {
+        jdbc.queryForObject("SELECT 1 FROM pg_advisory_xact_lock(CAST(? AS bigint))", Long.class, chave);
     }
 
     @Override
