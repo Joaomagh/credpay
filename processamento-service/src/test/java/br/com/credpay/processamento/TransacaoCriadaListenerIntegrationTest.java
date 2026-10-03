@@ -10,6 +10,7 @@ import br.com.credpay.processamento.support.ProducerExchangeFixture;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -138,17 +139,7 @@ class TransacaoCriadaListenerIntegrationTest {
 
     @Test
     void deveRejeitarJsonInvalidoDiretamenteParaDlqSemDecisao() throws Exception {
-        var politica = "{\"dead-letter-strategy\":\"at-least-once\","
-                + "\"overflow\":\"reject-publish\",\"max-length\":10000,"
-                + "\"dead-letter-exchange\":\"credpay.processamento.dlx.v1\","
-                + "\"dead-letter-routing-key\":\"transacao.criada.dlq.v1\"}";
-        var configuracao = RABBITMQ.execInContainer("rabbitmqctl", "set_policy", "--apply-to",
-                "quorum_queues", "credpay-processing-input",
-                "^credpay[.]processamento[.]transacao-criada[.]v1$", politica);
-        assertThat(configuracao.getExitCode()).isZero();
-        var efetiva = RABBITMQ.execInContainer("rabbitmqctl", "list_queues", "name",
-                "effective_policy_definition");
-        assertThat(efetiva.getStdout()).contains("at-least-once", "reject-publish");
+        configurarDeadLetteringConfiavel();
         var resultadosAntes = totalNoBanco("processamentos");
         var intencoesAntes = totalNoBanco("outbox_eventos");
 
@@ -161,6 +152,64 @@ class TransacaoCriadaListenerIntegrationTest {
                 .containsEntry("x-first-death-reason", "rejected");
         assertThat(totalNoBanco("processamentos")).isEqualTo(resultadosAntes);
         assertThat(totalNoBanco("outbox_eventos")).isEqualTo(intencoesAntes);
+    }
+
+    @Test
+    void deveRejeitarConflitoDiretamenteParaDlqPreservandoResultadoEOutbox() throws Exception {
+        configurarDeadLetteringConfiavel();
+        pausa.desarmar();
+        var eventId = UUID.randomUUID();
+        var transactionId = UUID.randomUUID();
+        rabbitTemplate.send("credpay.transacoes.v1", "transacao.criada.v1",
+                mensagem(eventId, transactionId));
+
+        var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        while (quantidadeNoBanco("outbox_eventos", "aggregate_id", transactionId) == 0
+                && System.nanoTime() < prazo) {
+            TimeUnit.MILLISECONDS.sleep(50);
+        }
+        assertThat(quantidadeNoBanco("processamentos", "event_id", eventId)).isEqualTo(1);
+        assertThat(quantidadeNoBanco("outbox_eventos", "aggregate_id", transactionId)).isEqualTo(1);
+        aguardarEstadoFila("messages", 0, 10);
+        var resultadoOriginal = jdbc.queryForMap(
+                "select * from processamentos where event_id = ?", eventId);
+        var outboxOriginal = jdbc.queryForMap(
+                "select * from outbox_eventos where aggregate_id = ?", transactionId);
+        var divergente = mensagem(eventId, transactionId, "20.50");
+
+        rabbitTemplate.send("credpay.transacoes.v1", "transacao.criada.v1", divergente);
+
+        var morta = rabbitTemplate.receive("credpay.processamento.transacao-criada.dlq.v1", 10_000);
+        assertThat(morta).isNotNull();
+        assertThat(morta.getBody()).isEqualTo(divergente.getBody());
+        assertThat(morta.getMessageProperties().getMessageId()).isEqualTo(eventId.toString());
+        assertThat(morta.getMessageProperties().getHeaders())
+                .containsEntry("x-first-death-reason", "rejected")
+                .containsEntry("x-first-death-queue", "credpay.processamento.transacao-criada.v1");
+        var mortes = (List<?>) morta.getMessageProperties().getHeaders().get("x-death");
+        assertThat(mortes).hasSize(1);
+        assertThat(((Map<?, ?>) mortes.getFirst()).get("count")).isEqualTo(1L);
+        assertThat(jdbc.queryForMap("select * from processamentos where event_id = ?", eventId))
+                .isEqualTo(resultadoOriginal);
+        assertThat(jdbc.queryForMap("select * from outbox_eventos where aggregate_id = ?", transactionId))
+                .isEqualTo(outboxOriginal);
+        assertThat(quantidadeNoBanco("processamentos", "event_id", eventId)).isEqualTo(1);
+        assertThat(quantidadeNoBanco("outbox_eventos", "aggregate_id", transactionId)).isEqualTo(1);
+        aguardarEstadoFila("messages", 0, 10);
+    }
+
+    private void configurarDeadLetteringConfiavel() throws Exception {
+        var politica = "{\"dead-letter-strategy\":\"at-least-once\","
+                + "\"overflow\":\"reject-publish\",\"max-length\":10000,"
+                + "\"dead-letter-exchange\":\"credpay.processamento.dlx.v1\","
+                + "\"dead-letter-routing-key\":\"transacao.criada.dlq.v1\"}";
+        var configuracao = RABBITMQ.execInContainer("rabbitmqctl", "set_policy", "--apply-to",
+                "quorum_queues", "credpay-processing-input",
+                "^credpay[.]processamento[.]transacao-criada[.]v1$", politica);
+        assertThat(configuracao.getExitCode()).isZero();
+        var efetiva = RABBITMQ.execInContainer("rabbitmqctl", "list_queues", "name",
+                "effective_policy_definition");
+        assertThat(efetiva.getStdout()).contains("at-least-once", "reject-publish");
     }
 
     private int quantidadeNoBanco(String tabela, String coluna, UUID id) {
@@ -193,12 +242,16 @@ class TransacaoCriadaListenerIntegrationTest {
     }
 
     private Message mensagem(UUID eventId, UUID transactionId) {
+        return mensagem(eventId, transactionId, "10.25");
+    }
+
+    private Message mensagem(UUID eventId, UUID transactionId, String valor) {
         var payload = """
                 {"eventId":"%s","eventType":"TransacaoCriada","eventVersion":1,
                  "occurredAt":"%s","correlationId":"%s",
-                 "data":{"transactionId":"%s","amount":"10.25","currency":"BRL","status":"PENDENTE"}}
+                 "data":{"transactionId":"%s","amount":"%s","currency":"BRL","status":"PENDENTE"}}
                 """.formatted(eventId, Instant.parse("2026-10-02T12:00:00Z"),
-                transactionId, transactionId);
+                transactionId, transactionId, valor);
         var propriedades = new MessageProperties();
         propriedades.setMessageId(eventId.toString());
         propriedades.setType("TransacaoCriada");

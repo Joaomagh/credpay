@@ -1,5 +1,6 @@
 package br.com.credpay.processamento.infrastructure.messaging;
 
+import br.com.credpay.processamento.application.ConflitoProcessamentoException;
 import br.com.credpay.processamento.application.RegistrarProcessamentoService;
 import br.com.credpay.processamento.application.TransacaoCriadaRecebida;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -30,6 +31,10 @@ final class TransacaoCriadaListener {
         } catch (IllegalArgumentException exception) {
             throw new AmqpRejectAndDontRequeueException("TransacaoCriada invalida: " + exception.getMessage());
         }
-        registrar.executar(entrada);
+        try {
+            registrar.executar(entrada);
+        } catch (ConflitoProcessamentoException exception) {
+            throw new AmqpRejectAndDontRequeueException("TransacaoCriada com conflito de identidade");
+        }
     }
 }
