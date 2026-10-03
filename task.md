@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B05.5a integrado na PR #100, commit afa8fb3: CI #134/Secret Scan #41 verdes no último SHA; parser validado e revisão tratada. Spec 9.46.
+- B05.5b validado no CI transações #136 (257 testes)/Secret Scan #43, PR #101; integração ainda depende do CI processador aplicável e checks finais. Spec 9.47.
 
 ## Próximo
 
-- [ ] B05.5b em execução — Configuração opt-in e testes locais verdes; revisão/CI real pendentes para políticas efetivas, flag, escopo, roteamento e reaplicação preservando sentinelas. Sem listener/dependência nova; spec 9.47.
+- [ ] B05.5c — Após integrar topologia/políticas, implementar listener seguro do retorno: commit antes de ack, replay, rejeições permanentes e retry operacional limitado. Refinar menor slice sem anunciar consumo seguro antes de comprovar classificação/limites.

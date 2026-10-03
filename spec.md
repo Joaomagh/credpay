@@ -1922,6 +1922,8 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Limites:** conferência manual não bloqueia startup nem detecta alteração posterior. Nó único descartável não prova HA, tuning, teto estrito de capacidade ou recusa da DLQ de retorno. Artefato separado mantém políticas do processador intactas; não eliminar recursos para ajustar divergência. Logs locais ignorados .local/b05-5b-*.log; warnings Mockito conhecidos permanecem. Próximo listener depende deste aceite.
 
+**Evidência real:** [CI transações #136](https://github.com/Joaomagh/credpay/actions/runs/37153259722), SHA 7538500, passou 257 testes sem falhas/erros/skips em 80 s; os dois novos de políticas/roteamento passaram em RabbitMQ real. Escopo protege inclusive fila de nome próximo v2. Secret Scan #43 verde; revisão assistida sem bloqueante. CI processador #149 também foi disparado pelo filtro compartilhado infra/rabbitmq/** e precisa terminar verde, além dos checks no último SHA documental antes de integrar a PR #101. Nenhuma prova de listener/ack/dead-lettering por rejeição foi inferida destas sentinelas.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
