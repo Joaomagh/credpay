@@ -73,7 +73,7 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 **B04.9 — Retry operacional limitado — concluído.** Red observado, 75 testes sem infraestrutura verdes e [CI #136](https://github.com/Joaomagh/credpay/actions/runs/37096399603) verde com 112 testes. Factory opt-in, três tentativas totais, esperas configuradas de 1 e 2 segundos e recoverer seguro sem dependência nova. PostgreSQL/RabbitMQ reais provaram rollback/recuperação e esgotamento. Exceções desconhecidas também recebem retry limitado; não é uma allowlist só de falhas transitórias.
 
-**B04.10 — Perda de conexão depois do commit — próximo.** Pausar a entrega depois de confirmar resultado/outbox e antes de retornar ao container; comprovar banco durável e mensagem sem ack, fechar a conexão real e liberar. Exigir reentrega pelo broker (`redelivered=true`), corpo/identidade iguais, snapshot/outbox completos intactos e ack final. Advice exclusivo da fixture preserva a fronteira transacional; não simular a janela com transação externa ou somente retry do processo. Política operacional e fechamento do fluxo com o primeiro serviço continuam pendentes.
+**B04.10 — Perda de conexão depois do commit — em validação.** Pausar a entrega depois de confirmar resultado/outbox e antes de retornar ao container; comprovar banco durável e mensagem sem ack, fechar a conexão real e liberar. Exigir reentrega pelo broker (`redelivered=true`), corpo/identidade iguais, snapshot/outbox completos intactos e ack final. Advice exclusivo da fixture preserva a fronteira transacional; não simular a janela com transação externa ou somente retry do processo. Política operacional e fechamento do fluxo com o primeiro serviço continuam pendentes.
 
 ## Incrementos de B08
 

@@ -11,15 +11,21 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Optional;
+import org.aopalliance.intercept.MethodInterceptor;
+import org.aopalliance.intercept.MethodInvocation;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
+import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -28,6 +34,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -76,6 +83,11 @@ class TransacaoCriadaListenerIntegrationTest {
     @Autowired private JdbcTemplate jdbc;
     @Autowired private PausaAntesDoCommit pausa;
     @Autowired private ObservadorDeBusca observador;
+    @Autowired private RabbitListenerEndpointRegistry listeners;
+    @Autowired private CachingConnectionFactory connectionFactory;
+    @Autowired
+    @Qualifier("transacaoCriadaRetryInterceptor")
+    private RetryOperationsInterceptor retry;
 
     @Test
     void deveManterEntregaSemAckAteResultadoEOutboxConfirmarem() throws Exception {
@@ -251,6 +263,58 @@ class TransacaoCriadaListenerIntegrationTest {
         aguardarEstadoFila("messages", 0, 10);
     }
 
+    @Test
+    void devePreservarResultadoEOutboxQuandoConexaoCaiEntreCommitEAck() throws Exception {
+        pausa.desarmar();
+        var eventId = UUID.randomUUID();
+        var transactionId = UUID.randomUUID();
+        var entrada = mensagem(eventId, transactionId);
+        var janela = new PausaAposCommit(eventId);
+        assertThat(listeners.getListenerContainers()).hasSize(1);
+        var container = (SimpleMessageListenerContainer) listeners.getListenerContainers().iterator().next();
+
+        assertThat(container.getQueueNames()).containsExactly("credpay.processamento.transacao-criada.v1");
+        try {
+            // shutdown resets initialization, so start rebuilds the advice proxy.
+            container.shutdown();
+            container.setAdviceChain(janela, retry);
+            container.start();
+            rabbitTemplate.send("credpay.transacoes.v1", "transacao.criada.v1", entrada);
+            assertThat(janela.aguardarPrimeiroCommit()).isTrue();
+            assertThat(janela.primeira.getMessageProperties().isRedelivered()).isFalse();
+            assertThat(quantidadeNoBanco("processamentos", "event_id", eventId)).isEqualTo(1);
+            assertThat(quantidadeNoBanco("outbox_eventos", "aggregate_id", transactionId)).isEqualTo(1);
+            var resultadoOriginal = jdbc.queryForMap(
+                    "select * from processamentos where event_id = ?", eventId);
+            var outboxOriginal = jdbc.queryForMap(
+                    "select * from outbox_eventos where aggregate_id = ?", transactionId);
+            aguardarEstadoFila("messages_unacknowledged", 1, 20);
+
+            connectionFactory.resetConnection();
+            janela.liberar();
+
+            assertThat(janela.aguardarReentrega()).isTrue();
+            assertThat(janela.reentrega.getMessageProperties().isRedelivered()).isTrue();
+            assertThat(janela.reentrega.getMessageProperties().getMessageId()).isEqualTo(eventId.toString());
+            assertThat(Arrays.equals(janela.reentrega.getBody(), entrada.getBody()))
+                    .as("corpo preservado na reentrega real").isTrue();
+            assertThat(jdbc.queryForMap("select * from processamentos where event_id = ?", eventId))
+                    .isEqualTo(resultadoOriginal);
+            assertThat(jdbc.queryForMap("select * from outbox_eventos where aggregate_id = ?", transactionId))
+                    .isEqualTo(outboxOriginal);
+            assertThat(quantidadeNoBanco("processamentos", "event_id", eventId)).isEqualTo(1);
+            assertThat(quantidadeNoBanco("outbox_eventos", "aggregate_id", transactionId)).isEqualTo(1);
+            aguardarEstadoFila("messages", 0, 15);
+            assertThat(janela.entregas.get()).isEqualTo(2);
+            assertThat(rabbitTemplate.receive("credpay.processamento.transacao-criada.dlq.v1", 500)).isNull();
+        } finally {
+            janela.liberar();
+            container.shutdown();
+            container.setAdviceChain(retry);
+            container.start();
+        }
+    }
+
     private void configurarDeadLetteringConfiavel() throws Exception {
         var politica = "{\"dead-letter-strategy\":\"at-least-once\","
                 + "\"overflow\":\"reject-publish\",\"max-length\":10000,"
@@ -326,6 +390,54 @@ class TransacaoCriadaListenerIntegrationTest {
         ObservadorDeBusca processamentoComObservador(
                 @Qualifier("processamentoJpaRepository") ProcessamentoRepository delegate) {
             return new ObservadorDeBusca(delegate);
+        }
+    }
+
+    static class PausaAposCommit implements MethodInterceptor {
+        private final UUID eventId;
+        private final AtomicInteger entregas = new AtomicInteger();
+        private final CountDownLatch primeiroCommit = new CountDownLatch(1);
+        private final CountDownLatch liberada = new CountDownLatch(1);
+        private final CountDownLatch segundoCommit = new CountDownLatch(1);
+        private volatile Message primeira;
+        private volatile Message reentrega;
+
+        PausaAposCommit(UUID eventId) {
+            this.eventId = eventId;
+        }
+
+        @Override
+        public Object invoke(MethodInvocation invocation) throws Throwable {
+            var mensagem = (Message) invocation.getArguments()[1];
+            if (!eventId.toString().equals(mensagem.getMessageProperties().getMessageId())) {
+                return invocation.proceed();
+            }
+            var entrega = entregas.incrementAndGet();
+            // Outside retry and the service transaction: proceed returns after DB commit, before AUTO ack.
+            var resultado = invocation.proceed();
+            if (entrega == 1) {
+                primeira = mensagem;
+                primeiroCommit.countDown();
+                if (!liberada.await(45, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("espera apos commit excedida");
+                }
+            } else {
+                reentrega = mensagem;
+                segundoCommit.countDown();
+            }
+            return resultado;
+        }
+
+        boolean aguardarPrimeiroCommit() throws InterruptedException {
+            return primeiroCommit.await(15, TimeUnit.SECONDS);
+        }
+
+        boolean aguardarReentrega() throws InterruptedException {
+            return segundoCommit.await(20, TimeUnit.SECONDS);
+        }
+
+        void liberar() {
+            liberada.countDown();
         }
     }
 

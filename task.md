@@ -8,4 +8,4 @@
 
 ## Próximo
 
-- [ ] B04.10 — Comprovar reentrega real após commit e antes do ACK, preservando resultado e outbox; manter consumo operacional desativado.
+- [ ] B04.10 em validação — Comprovar no CI a reentrega real após commit e antes do ACK, preservando resultado e outbox; manter consumo operacional desativado.

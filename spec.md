@@ -1764,6 +1764,14 @@ O recoverer preserva a rejeição permanente segura encontrada na cadeia; no esg
 
 **Próximo:** B04.10, fechar deliberadamente a conexão depois do commit e antes do ack; exigir `redelivered=true`, mesmo corpo/identidade e snapshot/outbox intactos na reentrega real. Não confundir retry in-process com reentrega pelo broker nem alegar process kill.
 
+### 9.37 Reentrega real na janela commit/ack — B04.10
+
+**Experimento em validação:** teste exclusivo da fixture instala advice externo ao retry real. Ele chama o listener, espera o retorno normal do caso de uso (commit concluído) e pausa antes de devolver ao container AUTO. Outra conexão lê resultado/outbox completos e o broker deve mostrar uma mensagem sem ack. `CachingConnectionFactory.resetConnection()` fecha a conexão AMQP compartilhada; a barreira é liberada e o teste exige segunda entrega concluída normalmente, `redelivered=true`, mesmo corpo/messageId, todas as colunas preservadas, uma linha de cada tabela, fila vazia e nenhuma mensagem na DLQ.
+
+O teste confirma o container/fila-alvo, usa `shutdown()` para reconstruir o proxy de advice no `start()` e restaura o retry original em `finally`, liberando a barreira antes da limpeza. APIs conferidas no código oficial [container](https://github.com/spring-projects/spring-amqp/blob/v3.2.12/spring-rabbit/src/main/java/org/springframework/amqp/rabbit/listener/AbstractMessageListenerContainer.java) e [connection factory](https://github.com/spring-projects/spring-amqp/blob/v3.2.12/spring-rabbit/src/main/java/org/springframework/amqp/rabbit/connection/CachingConnectionFactory.java), versão 3.2.12 do projeto. Não envolve a execução em transação externa nem republica o evento para imitar reentrega.
+
+**Limites/evidência:** somente código de teste, nenhuma mudança de produção/POM/dependência. É caracterização da idempotência existente, sem red artificial; eventual falha será investigada antes de qualquer correção. `test-compile` local passou; `mvnw.cmd --batch-mode --no-transfer-progress '-Dtest=!**/*IntegrationTest,!ProcessamentoServiceApplicationTest' verify` passou com 75 testes, zero falhas/erros/skips e JAR. Warnings conhecidos de Mockito/Byte Buddy permanecem. Docker Desktop local segue sem pipe do engine; não há integração local executada ou alegada. CI com PostgreSQL/RabbitMQ reais ainda em validação. Fechamento de conexão não é process kill, falha de nó ou prova de HA. Consumidor operacional continua desativado.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
