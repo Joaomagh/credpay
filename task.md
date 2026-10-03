@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B05.4a integrado na PR #97, commit acf6517: CI #122/Secret Scan #29 verdes no último SHA. Aplicação sequencial/replay/causa comprovados; evidências/limites na spec 9.43.
+- B05.4b validado na PR #98: CI #126 verde com 170 testes e Secret Scan #33 verde. Disputas reais, conflitos e liberação após rollback comprovados; spec 9.44. Refatoração local verde; checks do SHA final obrigatórios antes de integrar.
 
 ## Próximo
 
-- [ ] B05.4b em execução — Teste de disputa equivalente compilado; observar red PostgreSQL no CI antes de implementar locks. Depois provar conflitos, liberação após rollback e ordem das chaves efetivas; sem listener.
+- [ ] B05.4c — Em TDD, preservar representação original PENDENTE no replay do POST, mesmo após resultado aplicado, enquanto GET continua final. Teste HTTP/PostgreSQL exige dados originais/escala, histórico único e outbox intacta; nunca atualizar estado de volta para PENDENTE.
