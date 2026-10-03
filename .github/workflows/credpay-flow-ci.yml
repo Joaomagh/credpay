@@ -1,0 +1,55 @@
+name: CredPay Application Flow CI
+
+on:
+  pull_request:
+    paths:
+      - "transacoes-service/**"
+      - "processamento-service/**"
+      - "infra/rabbitmq/**"
+      - "infra/e2e/**"
+      - ".github/workflows/credpay-flow-ci.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "transacoes-service/**"
+      - "processamento-service/**"
+      - "infra/rabbitmq/**"
+      - "infra/e2e/**"
+      - ".github/workflows/credpay-flow-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: credpay-flow-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  application-flow:
+    name: Real application flow
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Java 21
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: |
+            transacoes-service/pom.xml
+            processamento-service/pom.xml
+      - name: Make Maven Wrappers executable
+        run: chmod +x transacoes-service/mvnw processamento-service/mvnw
+      - name: Package transaction application
+        working-directory: transacoes-service
+        run: ./mvnw --batch-mode --no-transfer-progress -DskipTests package
+      - name: Package processing application
+        working-directory: processamento-service
+        run: ./mvnw --batch-mode --no-transfer-progress -DskipTests package
+      - name: Verify both real applications
+        working-directory: transacoes-service
+        run: ./mvnw --batch-mode --no-transfer-progress -Dtest=FluxoCredPayE2E test

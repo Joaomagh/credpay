@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B05.5c3 validado na PR #104: CI #148/Secret Scan #55 verdes, 279 testes com retry/rollback/DLQ reais. Runbook atualizado para ativação manual conferida; integração exige CIs aplicáveis no SHA final. Spec 9.50.
+- B05.5c3 integrado na PR #104 (c0237e3), após CI transações #150/processador #156 e Secret Scan #57 verdes no SHA final. Retry/rollback/DLQ reais e ativação manual conferida; spec 9.50.
 
 ## Próximo
 
-- [ ] B05.5d1 — Após integrar c3, executar dois JARs reais com bancos próprios/broker no CI e comprovar POST → duas outboxes → GET APROVADA/REJEITADA. Sem saída fabricada; B05 só termina após duplicata/replay em d2.
+- [ ] B05.5d1 — Em execução: compilar/revisar orquestração e comprovar dois JARs reais/bancos próprios, POST → duas outboxes → GET APROVADA/REJEITADA no CI. Sem saída fabricada; B05 só termina após duplicata/replay em d2.
