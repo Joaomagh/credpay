@@ -12,7 +12,7 @@ Cada capacidade entra em um incremento pequeno, testado e documentado. Assim, o 
 
 ## Status atual
 
-O projeto está na fase de fluxo assíncrono confiável: ambos os serviços persistem suas próprias decisões e publicam eventos por outbox. O `processamento-service` tem um listener opt-in com ack após commit, replay equivalente, rejeição de JSON inválido/conflito e retry limitado testados em PostgreSQL/RabbitMQ reais. Ele permanece desligado por padrão até concluir as provas de falha restantes e a configuração operacional. A integração ponta a ponta ainda não está pronta.
+O projeto está na fase de fluxo assíncrono confiável: ambos os serviços persistem suas próprias decisões e publicam eventos por outbox. O `processamento-service` tem um listener opt-in com ack após commit, replay equivalente, rejeição de JSON inválido/conflito e retry limitado testados em PostgreSQL/RabbitMQ reais. Reentrega pós-commit e retenção/recuperação sob recusa da DLQ também foram comprovadas. O provisionamento mínimo foi validado; o listener permanece desligado por padrão e sua ativação manual exige a [conferência operacional](infra/rabbitmq/README.md). A integração ponta a ponta ainda não está pronta.
 
 | Estado | Entrega |
 |---|---|
