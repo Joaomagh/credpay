@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B05.4a validado na PR #97: CI #121 verde com 162 testes e Secret Scan #28 verde. Aplicação sequencial, replay semântico e causalidade comprovados; evidências/limites na spec 9.43. Checks do último SHA obrigatórios antes do merge.
+- B05.4a integrado na PR #97, commit acf6517: CI #122/Secret Scan #29 verdes no último SHA. Aplicação sequencial/replay/causa comprovados; evidências/limites na spec 9.43.
 
 ## Próximo
 
-- [ ] B05.4b — Implementar em TDD serialização por eventId/transactionId em READ_COMMITTED. Provar convergência equivalente, conflito sem sobrescrita, recuperação após rollback e ordem das chaves efetivas de advisory lock com PostgreSQL real; sem listener.
+- [ ] B05.4b em execução — Teste de disputa equivalente compilado; observar red PostgreSQL no CI antes de implementar locks. Depois provar conflitos, liberação após rollback e ordem das chaves efetivas; sem listener.

@@ -1876,6 +1876,14 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Aceite remoto:** [CI #121](https://github.com/Joaomagh/credpay/actions/runs/37149818123), SHA `43ec01b`, passou com 162 testes, zero falhas/erros/skips, em 1 min 5 s. Os 13 cenários PostgreSQL, 12 do caso de uso e oito da entrada passaram. Secret Scan #28 verde. Revisão assistida sem bloqueante; diff/UTF-8 conferidos antes da integração. Log do job sem warnings Hikari de conexão fechada e sem candidatos às formas limitadas de payload bruto pesquisadas; B08.1/B08.2 não estão globalmente resolvidos. [PR #97](https://github.com/Joaomagh/credpay/pull/97) exige checks do SHA final antes do merge. Próximo: serialização concorrente em B05.4b, mantendo a mesma aplicação e sem listener.
 
+### 9.44 Serialização concorrente da aplicação do resultado — B05.4b
+
+**Desenho em execução:** adquirir pg_advisory_xact_lock para eventId/transactionId antes de qualquer leitura, na transação READ_COMMITTED existente. Derivar hashtextextended(UUID como texto, 0) no banco, deduplicar/ordenar chaves Long efetivas antes da aquisição; reutilizar algoritmo do processador sem biblioteca compartilhada. Constraints seguem defesa final. Uma colisão de hash reduz paralelismo, não altera a decisão. Locks liberam no commit/rollback.
+
+**Primeiro teste:** Clock controlado pausa a primeira aplicação antes do UPDATE; segunda chamada usa transação real e captura seu pg_backend_pid na mesma conexão. Exige advisory lock não concedido para esse PID antes de liberar primeira; depois compara resultados e histórico completo, contagem única, dinheiro preservado e uma leitura do Clock. Barreiras/executor têm finally e waits limitados. Código de serialização ainda ausente; red real aguardará CI, compilação e ausência de Docker não o substituem. Após green, incluir conflitos e liberação após rollback; falha controlada no Clock ocorrerá antes do SQL e não será apresentada como falha após escrita.
+
+**Integração anterior:** PR #97 integrada em `acf6517` após CI #122/Secret Scan #29 verdes no último SHA `87926f9`. Sem listener ou nova dependência em B05.4b; revisão de desenho confirmou observação do PID específico e ordem das chaves efetivas.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
