@@ -1986,6 +1986,16 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Revisão de produto próxima:** P.O./dev sênior refinaram B06.1 (processador parado/reinício, fila durável/PENDENTE e recuperação causal) e B06.2 (mensagem real na DLQ após moeda sem limite, corrigir configuração e republicar antes de ack da remoção). Sem implantação ou dependência nova. FALHOU segue sem gatilho definido: questão enviada ao Navigator, sem converter esgotamento/DLQ em resultado financeiro. B08.2 fica frente separada, com diagnóstico causal pendente.
 
+### 9.53 Processador parado e recuperação real — B06.1
+
+**Objetivo/decisão:** caracterizar a durabilidade existente com parada controlada somente do JAR do processador. Dois bancos/broker e aplicativo de transações permanecem ativos. Sem comportamento de produção, biblioteca ou dependência nova; não exige red artificial.
+
+**Experimento:** exigir ausência do consumidor de entrada e presença do consumidor de resultado antes do POST; conferir PENDENTE, outbox original publicada, exatamente uma mensagem pronta/zero unacked e nenhuma decisão/saída/histórico. Reiniciar o processador no mesmo banco/broker; exigir GET APROVADA, cadeia de IDs original, cinco registros únicos, dados da transação preservados além do status, outbox original intacta e quatro filas vazias. Cleanup seleciona somente processos filhos alvo e mantém referências de sobreviventes. Replay precede reinício para conservar suas baselines AMQP; recuperação funciona isoladamente.
+
+**Validação:** `.\mvnw.cmd --batch-mode --no-transfer-progress -o -DskipTests test-compile`, no módulo de transações, passou (31 fontes de teste, Java 21). [Flow CI #7](https://github.com/Joaomagh/credpay/actions/runs/37161171631) executou três cenários reais sem falhas/erros/skips, 109,2 s; [transações #158](https://github.com/Joaomagh/credpay/actions/runs/37161171462) passou 279 testes e gerou JAR, 2m57s; [Secret Scan #65](https://github.com/Joaomagh/credpay/actions/runs/37161171469) verde em `5f07590`. Revisão assistida sem bloqueante; mensagem de falha do snapshot HTTP foi fixada para não imprimir JSON. Busca limitada no log do Flow encontrou zero candidatos de JSON financeiro integral; não substitui B08.1. Transações registrou 29 warnings Hikari de conexão fechada, mantidos em B08.2 sem supressão. Docker Linux local segue indisponível. `git diff --check`, UTF-8 estrito e hook de segredos passaram. A integração exige repetir checks no SHA final.
+
+**Limites/próximo:** encerramento controlado não comprova crash abrupto, HA ou queda de broker. B06.2 provará correção de configuração e replay de DLQ preservando mensagem até confirmação; definição de FALHOU continua aguardando direção de produto do Navigator.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.

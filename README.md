@@ -13,7 +13,7 @@ Cada capacidade entra em um incremento pequeno, testado e documentado. Assim, o 
 
 ## Status atual
 
-O projeto está na fase de fluxo assíncrono confiável: os dois aplicativos reais já comprovaram POST → duas outboxes → GET APROVADA/REJEITADA, com bancos próprios e histórico causal único. Duplicatas dos dois eventos e replay do POST preservam registros completos, resposta original e GET final no fluxo real. Ambos os listeners opt-in têm ack após commit, rejeições permanentes e retry limitado testados em PostgreSQL/RabbitMQ reais. Reentrega pós-commit e retenção/recuperação sob recusa da DLQ foram comprovadas no processador. Flags permanecem desligadas por padrão e ativação manual exige conferência operacional pelos runbooks. Recuperação operacional, definição de FALHOU, ambiente local e observabilidade continuam no backlog.
+O projeto está na fase de fluxo assíncrono confiável: os dois aplicativos reais já comprovaram POST → duas outboxes → GET APROVADA/REJEITADA, com bancos próprios e histórico causal único. Duplicatas dos dois eventos e replay do POST preservam registros completos, resposta original e GET final no fluxo real. Parada controlada do processador mantém PENDENTE e mensagem pronta; reinício no mesmo banco/broker recupera a transação pela causa original. Ambos os listeners opt-in têm ack após commit, rejeições permanentes e retry limitado testados em PostgreSQL/RabbitMQ reais. Reentrega pós-commit e retenção/recuperação sob recusa da DLQ foram comprovadas no processador. Flags permanecem desligadas por padrão e ativação manual exige conferência operacional pelos runbooks. Replay operacional após correção de configuração, definição de FALHOU, ambiente local e observabilidade continuam no backlog.
 
 | Estado | Entrega |
 |---|---|
@@ -73,7 +73,7 @@ O projeto está na fase de fluxo assíncrono confiável: os dois aplicativos rea
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
 | Documentado | contrato `TransacaoCriada` v1 e garantia de entrega pelo menos uma vez via outbox |
 | Documentado | baseline RabbitMQ com propriedade da topologia, confirms/returns, retry e DLQ |
-| Ainda não implementado | coordenação entre réplicas publicadoras, consumo seguro completo, fluxo ponta a ponta, imagem da aplicação, Kubernetes e CD |
+| Ainda não implementado | coordenação entre réplicas publicadoras, imagem da aplicação, Kubernetes e CD |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 
@@ -155,7 +155,7 @@ Regras comprovadas até aqui:
 13. o `GET /transacoes/{id}` devolve os dados persistidos e diferencia UUID válido ausente com `404 Problem Details`.
 14. UUID malformado recebe `400 Problem Details` antes de alcançar o caso de uso, sem vazar a mensagem interna do conversor.
 
-Os endpoints de criação e consulta, os casos de uso transacionais e o adapter JPA formam um fluxo persistente. O UUID pertence ao domínio e é o mesmo na resposta, no `Location`, no PostgreSQL e na consulta posterior. A primeira criação também grava `TransacaoCriada` na outbox, com instante do evento e marcação posterior de publicação; auditoria das mudanças de estado continua planejada.
+Os endpoints de criação e consulta, os casos de uso transacionais e o adapter JPA formam um fluxo persistente. O UUID pertence ao domínio e é o mesmo na resposta, no `Location`, no PostgreSQL e na consulta posterior. A primeira criação também grava `TransacaoCriada` na outbox, com instante do evento e marcação posterior de publicação; a aplicação de `TransacaoProcessada` grava status final e histórico causal na mesma transação local.
 
 O teste de repository comprova duas operações separadas: gravação com commit e leitura em outro contexto, preservando UUID, valor, escala, moeda e `PENDENTE`. A constraint monetária também é exercitada por SQL direto; constraints de moeda/status e outros cenários de falha continuam em desenvolvimento.
 

@@ -4,8 +4,12 @@
 
 ## Último incremento
 
-- B05.5d2 validado na PR #106: Flow CI #4/transações #155/Secret Scan #62 verdes, duplicatas/ack/replay e cinco tabelas intactas nos dois finais reais. Integrar após checks no SHA final para encerrar B05; spec 9.52.
+- B05 concluído e integrado na PR #106 (`2b85d99`): Flow #5/transações #156/Secret Scan #63 verdes no SHA final; duplicatas/replay preservam cinco tabelas e resposta original.
+
+## Agora
+
+- [ ] B06.1 — PR #107 validada: Flow #7 (3 cenários), transações #158 (279 testes) e Scan #65 verdes. Integrar após checks no SHA final; spec 9.53.
 
 ## Próximo
 
-- [ ] B06.1 — Após integrar d2, parar somente o processador, comprovar POST PENDENTE/outbox publicada/fila pronta sem decisão/histórico e recuperar após reinício real com causalidade original. FALHOU aguarda definição de produto; não bloqueia este experimento.
+- [ ] B06.2 — Após integrar B06.1, provar replay de DLQ depois de corrigir limite ausente, com confirmação antes de remover a mensagem original. FALHOU aguarda decisão do Navigator.
