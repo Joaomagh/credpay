@@ -65,4 +65,15 @@ class TransicaoJdbcRepository implements TransicaoRepository {
                 Instant.ofEpochSecond(rs.getLong("occurred_at_epoch_second"), rs.getInt("occurred_at_nano")),
                 rs.getTimestamp("aplicado_em").toInstant()), eventId).stream().findFirst();
     }
+
+    @Override
+    public boolean existeCriacao(UUID causationId, UUID transactionId) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT EXISTS (
+                    SELECT 1 FROM outbox_eventos
+                    WHERE event_id = ? AND aggregate_id = ?
+                    AND event_type = 'TransacaoCriada' AND event_version = 1
+                )
+                """, Boolean.class, causationId, transactionId));
+    }
 }

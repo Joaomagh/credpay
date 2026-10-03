@@ -17,4 +17,11 @@ public record TransicaoRecebida(
         String origem,
         Instant occurredAt,
         Instant aplicadoEm) {
+
+    public boolean correspondeA(TransacaoProcessadaRecebida entrada) {
+        return eventId.equals(entrada.eventId()) && transactionId.equals(entrada.transactionId())
+                && eventType.equals("TransacaoProcessada") && eventVersion == 1
+                && correlationId.equals(entrada.correlationId()) && causationId.equals(entrada.causationId())
+                && occurredAt.equals(entrada.occurredAt()) && estadoFinal == entrada.status();
+    }
 }

@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B05.3 validado na PR #96: estado/histórico atômicos, precisão, integridade e rollback real; CI #118 verde com 129 testes e Secret Scan #25 verde. Recusa tipada corrigida após falha do CI #117; evidências na spec 9.42. Checks do SHA final obrigatórios antes de integrar.
+- B05.4a validado na PR #97: CI #121 verde com 162 testes e Secret Scan #28 verde. Aplicação sequencial, replay semântico e causalidade comprovados; evidências/limites na spec 9.43. Checks do último SHA obrigatórios antes do merge.
 
 ## Próximo
 
-- [ ] B05.4a — Implementar em TDD aplicação sequencial idempotente do resultado e validação causal: primeiro evento, replay sem relógio/escrita, conflitos e desconhecidos com estado preservado. PostgreSQL real deve comprovar uma transição e causa local sem published_at; sem listener/concorrência neste slice.
+- [ ] B05.4b — Implementar em TDD serialização por eventId/transactionId em READ_COMMITTED. Provar convergência equivalente, conflito sem sobrescrita, recuperação após rollback e ordem das chaves efetivas de advisory lock com PostgreSQL real; sem listener.
