@@ -11,7 +11,7 @@ Cada capacidade entra em um incremento pequeno, testado e documentado. Assim, o 
 
 ## Status atual
 
-O projeto está na fase de fluxo assíncrono confiável: ambos os serviços persistem suas próprias decisões e publicam eventos por outbox. O `processamento-service` tem um listener de entrada opt-in validado no caminho positivo, no replay equivalente e na rejeição de JSON inválido; ele permanece desligado por padrão até cobrir as demais falhas e a configuração operacional. A integração ponta a ponta ainda não está pronta.
+O projeto está na fase de fluxo assíncrono confiável: ambos os serviços persistem suas próprias decisões e publicam eventos por outbox. O `processamento-service` tem um listener opt-in com ack após commit, replay equivalente, rejeição de JSON inválido/conflito e retry limitado testados em PostgreSQL/RabbitMQ reais. Ele permanece desligado por padrão até concluir as provas de falha restantes e a configuração operacional. A integração ponta a ponta ainda não está pronta.
 
 | Estado | Entrega |
 |---|---|
@@ -34,6 +34,7 @@ O projeto está na fase de fluxo assíncrono confiável: ambos os serviços pers
 | Implementado | scheduler opt-in de uma réplica para a saída do processador; RabbitMQ participa do health quando a publicação é habilitada |
 | Comprovado | listener de `TransacaoCriada` opt-in mantém a entrega sem ack enquanto resultado e outbox aguardam commit, em PostgreSQL e RabbitMQ reais |
 | Comprovado | replay equivalente pelo listener não duplica resultado/outbox; JSON inválido vai direto à DLQ no teste com broker real |
+| Comprovado | conflito de identidade vai à DLQ preservando o resultado; falhas controladas têm até três tentativas, com rollback e recuperação ou DLQ ao esgotar |
 | Implementado | health check do Spring Boot Actuator |
 | Implementado | transação válida nasce `PENDENTE` |
 | Implementado | valor ausente ou não positivo e moeda ausente são rejeitados pelo domínio |
@@ -222,7 +223,7 @@ O scheduler da outbox vem desligado. Para ativá-lo em uma única réplica, conf
 
 ## Arquitetura planejada
 
-O monorepo possui dois aplicativos Spring Boot independentes, cada um responsável por seu build, configuração e banco. O `processamento-service` já possui resultado idempotente, schema e outbox próprios, publicação opt-in e listener de entrada testado somente no caminho positivo; consumo seguro completo e integração ponta a ponta ainda não existem.
+O monorepo possui dois aplicativos Spring Boot independentes, cada um responsável por seu build, configuração e banco. O `processamento-service` já possui resultado idempotente, schema e outbox próprios, publicação opt-in e listener testado em sucesso, replay, erros permanentes e retry limitado. A perda de conexão entre commit/ack, a configuração operacional e a integração ponta a ponta ainda estão pendentes.
 
 ```text
 Cliente

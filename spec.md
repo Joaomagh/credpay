@@ -6,7 +6,7 @@
 
 **Fase atual:** 4 — Fluxo assíncrono confiável
 
-**Estado:** criação e consulta HTTP persistentes; processamento idempotente e duas outboxes transacionais comprovados; publicadores RabbitMQ com scheduler opt-in de réplica única em cada serviço; listener de entrada opt-in validado no caminho positivo, replay equivalente e rejeição de JSON inválido/conflito de identidade, ainda sem retry transitório ou fluxo ponta a ponta
+**Estado:** criação e consulta HTTP persistentes; processamento idempotente e duas outboxes transacionais comprovados; publicadores RabbitMQ com scheduler opt-in de réplica única em cada serviço; listener de entrada opt-in com ack após commit, replay equivalente, rejeição permanente e retry limitado comprovados; ainda sem política operacional, prova de perda de conexão após commit ou fluxo ponta a ponta
 
 ## 1. Contexto e limites atuais
 
@@ -17,7 +17,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno. O `processamento-service` possui scaffolding independente, build reproduzível, health check HTTP, decisão `APROVADA`/`REJEITADA`, adapter JPA/Flyway para o snapshot e adapter JDBC para gravar a intenção `TransacaoProcessada` v1 atomicamente em PostgreSQL.
 
-**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras e consumo operacional completo de `TransacaoCriada`. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda; o caso de uso transacional grava decisão e intenção de saída atomicamente, reutiliza o registro no replay equivalente e serializa entradas concorrentes que compartilham `eventId` ou `transactionId`. A migration V2 cria a outbox própria com backfill dos resultados V1; o caso de uso de publicação lê uma pendência e a marca após `ack` sem return. Um scheduler opt-in de réplica única pode chamar esse caso de uso. O listener experimental chama o registro somente quando topologia e listener são habilitados explicitamente; falhas, retries, política operacional do broker e fluxo ponta a ponta ainda não estão prontos. O adapter PostgreSQL do primeiro serviço é validado isoladamente e pelo fluxo HTTP completo; sua constraint monetária foi testada por SQL direto.
+**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras e consumo operacional completo de `TransacaoCriada`. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda; o caso de uso transacional grava decisão e intenção de saída atomicamente, reutiliza o registro no replay equivalente e serializa entradas concorrentes que compartilham `eventId` ou `transactionId`. A migration V2 cria a outbox própria com backfill dos resultados V1; o caso de uso de publicação lê uma pendência e a marca após `ack` sem return. Um scheduler opt-in de réplica única pode chamar esse caso de uso. O listener chama o registro somente quando topologia e listener são habilitados explicitamente; rejeição permanente e retry limitado estão testados, mas perda de conexão entre commit/ack, política operacional e fluxo ponta a ponta seguem pendentes. O adapter PostgreSQL do primeiro serviço é validado isoladamente e pelo fluxo HTTP completo; sua constraint monetária foi testada por SQL direto.
 
 ## 2. Arquitetura vigente
 
@@ -29,14 +29,14 @@ Cliente → transacoes-service ⇄ PostgreSQL
           processamento-service ⇄ PostgreSQL
 ```
 
-A mensageria é assíncrona, com consistência eventual e entrega pelo menos uma vez. O produtor usa idempotência na entrada HTTP, outbox transacional e confirms/returns no RabbitMQ. Consumo idempotente e retorno do resultado ainda serão implementados.
+A mensageria é assíncrona, com consistência eventual e entrega pelo menos uma vez. O produtor usa idempotência na entrada HTTP, outbox transacional e confirms/returns no RabbitMQ. O consumo idempotente opt-in do processador já foi testado; o retorno do resultado ao primeiro serviço e a operação completa permanecem pendentes.
 
 ### Responsabilidades e propriedade dos dados
 
 | Componente | Responsabilidade | Dados próprios |
 |---|---|---|
 | transacoes-service | entrada, visão consultável e publicação confiável | transações, chaves idempotentes e outbox |
-| processamento-service | decisão de processamento | a definir |
+| processamento-service | decisão idempotente e publicação do resultado | snapshots de processamento e outbox próprios |
 | RabbitMQ | transporte, retry/DLQ conforme configuração futura | mensagens, não fonte de verdade |
 
 ## 3. Stack e versões verificadas
@@ -1747,6 +1747,22 @@ O listener captura somente `ConflitoProcessamentoException` da chamada transacio
 **Revisão:** outro agente fez revisão somente leitura, sem achado bloqueante; destacou a semântica limitada de `x-death.count`. Nenhuma dependência, POM, endpoint ou contrato de evento alterado. Retry transitório, crash entre commit/ack e política operacional permanecem fora deste slice.
 
 **Próximo:** B04.9, provar retry operacional com no máximo três tentativas totais e intervalos de 1 e 2 segundos, recuperação ou DLQ ao esgotar, sem repetir erros permanentes. `dependency:tree` offline confirmou Spring Retry 2.0.13 já transitivo de Spring AMQP 3.2.12; não há necessidade identificada de dependência nova.
+
+### 9.36 Retry limitado no consumidor opt-in — B04.9
+
+**Baseline:** Spring Retry 2.0.13 já transitivo de Spring AMQP 3.2.12, confirmado por `dependency:tree` offline. A factory nomeada usa primeiro `SimpleRabbitListenerContainerFactoryConfigurer` do Boot e depois adiciona advice stateless; preserva prefetch e configuração do container. Factory/interceptor só existem com ambas as flags de topologia/listener habilitadas. Nenhuma dependência ou POM novo.
+
+`SimpleRetryPolicy` limita a três tentativas totais e percorre causas para não repetir `AmqpRejectAndDontRequeueException`. Todas as outras exceções, inclusive desconhecidas ou ausência de política por moeda, são retryáveis até esse limite; não é uma allowlist que prove que toda falha é transitória. `ExponentialBackOffPolicy` configura intervalo inicial de 1000 ms, multiplicador 2 e máximo de 2000 ms. O advice envolve o listener; cada chamada ao serviço abre sua própria transação, sem transação externa que englobe todas as tentativas.
+
+O recoverer preserva a rejeição permanente segura encontrada na cadeia; no esgotamento lança rejeição sem requeue, mensagem fixa `TransacaoCriada com falha operacional apos 3 tentativas`, sem causa nem logging do `Message`. Isso não converte falha operacional em resultado financeiro `REJEITADA`/`FALHOU`, nem garante sanitização de todos os logs da infraestrutura.
+
+**TDD:** antes da implementação, quatro testes executaram com três falhas esperadas: não recuperou após falha inicial, não rejeitou seguramente ao esgotar e não desembrulhou a rejeição permanente. O cenário default-off já passava e é caracterização. Após a implementação, a fixture com um único argumento falhou no recoverer AMQP; foi corrigida para a assinatura canal/mensagem do container, sem alterar a produção para acomodá-la. Quatro testes verdes e `verify` sem classes de infraestrutura com 75 testes/JAR. A duração observada de pelo menos três segundos prova espera total mínima; os intervalos individuais são configuração inspecionada, não medidos separadamente. Mockito/Byte Buddy continua com warning conhecido.
+
+**Integração comprovada:** o [CI #136](https://github.com/Joaomagh/credpay/actions/runs/37096399603) executou 112 testes, zero falhas/erros/skips, em 4 min 57 s; os seis cenários do listener passaram. Decorator da outbox faz INSERT real e lança falha controlada após ele. Na recuperação, pausa a segunda tentativa antes do INSERT, lê resultado/outbox por outra conexão e exige ausência; depois libera, exige exatamente duas chamadas e um único commit. No esgotamento, exige três chamadas, nenhuma linha das novas identidades e mensagem original na DLQ com `rejected`. São falhas controladas na aplicação com banco real, não queda real de PostgreSQL. Docker local indisponível; não há green local de integração alegado. A busca limitada de formatos comuns de segredo/payload bruto no log não encontrou candidatos; o diagnóstico observado no esgotamento foi fixo e sem causa interna.
+
+**Revisão:** agente revisor não encontrou bloqueante; foram reforçadas as verificações de ausência da factory nas combinações incompletas de flags. Crash entre commit/ack, provisionamento de política operacional e ativação normal seguem pendentes.
+
+**Próximo:** B04.10, fechar deliberadamente a conexão depois do commit e antes do ack; exigir `redelivered=true`, mesmo corpo/identidade e snapshot/outbox intactos na reentrega real. Não confundir retry in-process com reentrega pelo broker nem alegar process kill.
 
 ## 10. Observabilidade e SLOs de aprendizado
 

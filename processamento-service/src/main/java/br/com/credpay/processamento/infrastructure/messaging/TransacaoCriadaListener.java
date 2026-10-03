@@ -23,7 +23,8 @@ final class TransacaoCriadaListener {
         this.registrar = registrar;
     }
 
-    @RabbitListener(queues = RabbitMqEntradaConfiguration.ENTRADA, ackMode = "AUTO", concurrency = "1")
+    @RabbitListener(queues = RabbitMqEntradaConfiguration.ENTRADA, ackMode = "AUTO", concurrency = "1",
+            containerFactory = "transacaoCriadaListenerContainerFactory")
     void receber(Message message) {
         TransacaoCriadaRecebida entrada;
         try {

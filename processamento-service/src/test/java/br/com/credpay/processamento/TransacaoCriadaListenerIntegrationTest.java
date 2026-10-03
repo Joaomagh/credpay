@@ -28,6 +28,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.annotation.DirtiesContext;
@@ -198,6 +199,58 @@ class TransacaoCriadaListenerIntegrationTest {
         aguardarEstadoFila("messages", 0, 10);
     }
 
+    @Test
+    void deveRecuperarNaSegundaTentativaAposRollbackDaPrimeira() throws Exception {
+        configurarDeadLetteringConfiavel();
+        var eventId = UUID.randomUUID();
+        var transactionId = UUID.randomUUID();
+        pausa.falharAposInsercao(transactionId, 1, true);
+        rabbitTemplate.send("credpay.transacoes.v1", "transacao.criada.v1",
+                mensagem(eventId, transactionId));
+
+        try {
+            assertThat(pausa.aguardarSegundaTentativa(15, TimeUnit.SECONDS)).isTrue();
+            assertThat(pausa.tentativas()).isEqualTo(2);
+            assertThat(quantidadeNoBanco("processamentos", "event_id", eventId)).isZero();
+            assertThat(quantidadeNoBanco("outbox_eventos", "aggregate_id", transactionId)).isZero();
+        } finally {
+            pausa.liberarRetry();
+        }
+
+        var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        while (quantidadeNoBanco("outbox_eventos", "aggregate_id", transactionId) == 0
+                && System.nanoTime() < prazo) {
+            TimeUnit.MILLISECONDS.sleep(50);
+        }
+        assertThat(pausa.tentativas()).isEqualTo(2);
+        assertThat(quantidadeNoBanco("processamentos", "event_id", eventId)).isEqualTo(1);
+        assertThat(quantidadeNoBanco("outbox_eventos", "aggregate_id", transactionId)).isEqualTo(1);
+        aguardarEstadoFila("messages", 0, 10);
+        assertThat(rabbitTemplate.receive("credpay.processamento.transacao-criada.dlq.v1", 500)).isNull();
+    }
+
+    @Test
+    void deveRejeitarParaDlqAposTresTentativasRevertidas() throws Exception {
+        configurarDeadLetteringConfiavel();
+        var eventId = UUID.randomUUID();
+        var transactionId = UUID.randomUUID();
+        pausa.falharAposInsercao(transactionId, 3, false);
+        var entrada = mensagem(eventId, transactionId);
+        rabbitTemplate.send("credpay.transacoes.v1", "transacao.criada.v1", entrada);
+
+        var morta = rabbitTemplate.receive("credpay.processamento.transacao-criada.dlq.v1", 15_000);
+
+        assertThat(morta).isNotNull();
+        assertThat(morta.getBody()).isEqualTo(entrada.getBody());
+        assertThat(morta.getMessageProperties().getMessageId()).isEqualTo(eventId.toString());
+        assertThat(morta.getMessageProperties().getHeaders())
+                .containsEntry("x-first-death-reason", "rejected");
+        assertThat(pausa.tentativas()).isEqualTo(3);
+        assertThat(quantidadeNoBanco("processamentos", "event_id", eventId)).isZero();
+        assertThat(quantidadeNoBanco("outbox_eventos", "aggregate_id", transactionId)).isZero();
+        aguardarEstadoFila("messages", 0, 10);
+    }
+
     private void configurarDeadLetteringConfiavel() throws Exception {
         var politica = "{\"dead-letter-strategy\":\"at-least-once\","
                 + "\"overflow\":\"reject-publish\",\"max-length\":10000,"
@@ -281,16 +334,24 @@ class TransacaoCriadaListenerIntegrationTest {
         private volatile CountDownLatch inserida;
         private volatile CountDownLatch liberada;
 
+        private volatile UUID transacaoComFalha;
+        private int numeroFalhas;
+        private final AtomicInteger tentativas = new AtomicInteger();
+        private CountDownLatch segundaTentativa;
+        private CountDownLatch retryLiberado;
+
         PausaAntesDoCommit(OutboxProcessamentoRepository delegate) {
             this.delegate = delegate;
         }
 
         void armar() {
+            transacaoComFalha = null;
             inserida = new CountDownLatch(1);
             liberada = new CountDownLatch(1);
         }
 
         void desarmar() {
+            transacaoComFalha = null;
             inserida = null;
             liberada = null;
         }
@@ -303,8 +364,48 @@ class TransacaoCriadaListenerIntegrationTest {
             liberada.countDown();
         }
 
+        void falharAposInsercao(UUID transactionId, int falhas, boolean pausarSegunda) {
+            desarmar();
+            numeroFalhas = falhas;
+            tentativas.set(0);
+            segundaTentativa = pausarSegunda ? new CountDownLatch(1) : null;
+            retryLiberado = pausarSegunda ? new CountDownLatch(1) : null;
+            transacaoComFalha = transactionId;
+        }
+
+        boolean aguardarSegundaTentativa(long tempo, TimeUnit unidade) throws InterruptedException {
+            return segundaTentativa.await(tempo, unidade);
+        }
+
+        void liberarRetry() {
+            retryLiberado.countDown();
+        }
+
+        int tentativas() {
+            return tentativas.get();
+        }
+
         @Override
         public void adicionar(EventoSaidaPendente evento) {
+            if (evento.aggregateId().equals(transacaoComFalha)) {
+                var tentativa = tentativas.incrementAndGet();
+                if (tentativa == 2 && segundaTentativa != null) {
+                    segundaTentativa.countDown();
+                    try {
+                        if (!retryLiberado.await(30, TimeUnit.SECONDS)) {
+                            throw new IllegalStateException("espera de retry excedida");
+                        }
+                    } catch (InterruptedException exception) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException("espera de retry interrompida", exception);
+                    }
+                }
+                delegate.adicionar(evento);
+                if (tentativa <= numeroFalhas) {
+                    throw new DataAccessResourceFailureException("falha operacional controlada de teste");
+                }
+                return;
+            }
             delegate.adicionar(evento);
             var sinal = inserida;
             if (sinal == null) {
