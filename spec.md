@@ -17,7 +17,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno. O `processamento-service` possui scaffolding independente, build reproduzível, health check HTTP, decisão `APROVADA`/`REJEITADA`, adapter JPA/Flyway para o snapshot e adapter JDBC para gravar a intenção `TransacaoProcessada` v1 atomicamente em PostgreSQL.
 
-**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras e consumo operacional completo de `TransacaoCriada`. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda; o caso de uso transacional grava decisão e intenção de saída atomicamente, reutiliza o registro no replay equivalente e serializa entradas concorrentes que compartilham `eventId` ou `transactionId`. A migration V2 cria a outbox própria com backfill dos resultados V1; o caso de uso de publicação lê uma pendência e a marca após `ack` sem return. Um scheduler opt-in de réplica única pode chamar esse caso de uso. O listener experimental chama o registro somente quando topologia e listener são habilitados explicitamente; falhas, retries, política operacional do broker e fluxo ponta a ponta ainda não estão prontos. O adapter PostgreSQL do primeiro serviço é validado isoladamente e pelo fluxo HTTP completo; sua constraint monetária foi testada por SQL direto.
+**Ainda não implementado:** coordenação entre múltiplas réplicas publicadoras e consumo operacional completo de `TransacaoCriada`. O processador já exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda; o caso de uso transacional grava decisão e intenção de saída atomicamente, reutiliza o registro no replay equivalente e serializa entradas concorrentes que compartilham `eventId` ou `transactionId`. A migration V2 cria a outbox própria com backfill dos resultados V1; o caso de uso de publicação lê uma pendência e a marca após `ack` sem return. Um scheduler opt-in de réplica única pode chamar esse caso de uso. O listener chama o registro somente quando topologia e listener são habilitados explicitamente; rejeição permanente e retry limitado estão testados, mas perda de conexão entre commit/ack, política operacional e fluxo ponta a ponta seguem pendentes. O adapter PostgreSQL do primeiro serviço é validado isoladamente e pelo fluxo HTTP completo; sua constraint monetária foi testada por SQL direto.
 
 ## 2. Arquitetura vigente
 
@@ -29,14 +29,14 @@ Cliente → transacoes-service ⇄ PostgreSQL
           processamento-service ⇄ PostgreSQL
 ```
 
-A mensageria é assíncrona, com consistência eventual e entrega pelo menos uma vez. O produtor usa idempotência na entrada HTTP, outbox transacional e confirms/returns no RabbitMQ. Consumo idempotente e retorno do resultado ainda serão implementados.
+A mensageria é assíncrona, com consistência eventual e entrega pelo menos uma vez. O produtor usa idempotência na entrada HTTP, outbox transacional e confirms/returns no RabbitMQ. O consumo idempotente opt-in do processador já foi testado; o retorno do resultado ao primeiro serviço e a operação completa permanecem pendentes.
 
 ### Responsabilidades e propriedade dos dados
 
 | Componente | Responsabilidade | Dados próprios |
 |---|---|---|
 | transacoes-service | entrada, visão consultável e publicação confiável | transações, chaves idempotentes e outbox |
-| processamento-service | decisão de processamento | a definir |
+| processamento-service | decisão idempotente e publicação do resultado | snapshots de processamento e outbox próprios |
 | RabbitMQ | transporte, retry/DLQ conforme configuração futura | mensagens, não fonte de verdade |
 
 ## 3. Stack e versões verificadas
