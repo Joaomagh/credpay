@@ -83,7 +83,7 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 **B05.1 — Contrato de aplicação do resultado — definido documentalmente.** Seção 9.40 de spec: causa corresponde ao evento de criação local sem exigir published_at; primeira transição e recebimento/histórico atômicos; replay equivalente não escreve; conflito/transação desconhecida preservam estado. GET final e POST replay original PENDENTE devem coexistir sob teste HTTP. Precisão do instante recebido preservada, sem inbox redundante ou histórico inicial inventado. Revisão P.O./sênior, diff/UTF-8/links; nenhuma capacidade de runtime nova.
 
-**B05.2 — Domínio final e reconstrução — próximo.** TDD para PENDENTE → APROVADA/REJEITADA, preservação imutável de dados e proibição de nova transição após estado final. Reconstrução de registro final não pode voltar a PENDENTE. Sem listener, migration ou atualização de banco neste slice; os estados ainda precisam de persistência/aplicação nos próximos itens.
+**B05.2 — Domínio final e reconstrução — em validação.** TDD para PENDENTE → APROVADA/REJEITADA, preservação imutável de dados e proibição de nova transição após estado final. Reconstrução de registro final não pode voltar a PENDENTE. Sem listener, migration ou atualização de banco neste slice; os estados ainda precisam de persistência/aplicação nos próximos itens.
 
 **Depois:** B05.3 persistência de histórico/recebimento, unicidade e rollback; B05.4 aplicação idempotente/causa/concorrência e compatibilidade de replay HTTP; B05.5 parser/entrada opt-in e fluxo POST → eventos → GET. Critérios na seção 9.40, refinamento detalhado apenas quando cada item ficar próximo.
 

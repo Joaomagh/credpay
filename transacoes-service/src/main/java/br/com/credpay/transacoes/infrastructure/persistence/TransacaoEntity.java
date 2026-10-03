@@ -41,8 +41,10 @@ class TransacaoEntity {
     }
 
     Transacao paraDominio() {
+        var transacao = Transacao.criar(id, valor, Currency.getInstance(moeda));
         return switch (status) {
-            case PENDENTE -> Transacao.criar(id, valor, Currency.getInstance(moeda));
+            case PENDENTE -> transacao;
+            case APROVADA, REJEITADA -> transacao.concluir(status);
         };
     }
 }

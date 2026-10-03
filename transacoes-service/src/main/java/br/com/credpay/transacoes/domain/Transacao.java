@@ -38,6 +38,16 @@ public final class Transacao {
         return new Transacao(id, valor, moeda, StatusTransacao.PENDENTE);
     }
 
+    public Transacao concluir(StatusTransacao resultado) {
+        if (status != StatusTransacao.PENDENTE) {
+            throw new IllegalStateException("transação já concluída");
+        }
+        if (resultado != StatusTransacao.APROVADA && resultado != StatusTransacao.REJEITADA) {
+            throw new IllegalArgumentException("resultado deve ser APROVADA ou REJEITADA");
+        }
+        return new Transacao(id, valor, moeda, resultado);
+    }
+
     public UUID id() {
         return id;
     }
