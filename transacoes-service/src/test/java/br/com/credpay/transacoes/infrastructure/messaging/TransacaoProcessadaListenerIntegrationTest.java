@@ -28,11 +28,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.amqp.core.AmqpAdmin;
+import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.listener.RabbitListenerEndpointRegistry;
+import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -52,7 +54,9 @@ import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 
 @SpringBootTest(classes = TransacoesServiceApplication.class, properties = {"credpay.transacoes.consumer.topology.enabled=true",
-        "credpay.transacoes.consumer.listener.enabled=true", "spring.rabbitmq.listener.simple.auto-startup=false"})
+        "credpay.transacoes.consumer.listener.enabled=true", "spring.rabbitmq.listener.simple.auto-startup=false",
+        "spring.rabbitmq.listener.simple.acknowledge-mode=NONE", "spring.rabbitmq.listener.simple.concurrency=2",
+        "spring.rabbitmq.listener.simple.max-concurrency=3", "spring.rabbitmq.listener.simple.prefetch=3"})
 @Import(TransacaoProcessadaListenerIntegrationTest.Fixture.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @Testcontainers
@@ -97,7 +101,13 @@ class TransacaoProcessadaListenerIntegrationTest {
     @BeforeEach
     void prepararAntesDeConsumir() throws Exception {
         assertThat(listeners.getListenerContainers()).as("listener de retorno registrado").hasSize(1);
-        assertThat(listeners.getListenerContainers()).allSatisfy(container -> assertThat(container.isRunning()).isFalse());
+        assertThat(listeners.getListenerContainers()).allSatisfy(container -> {
+            assertThat(container.isRunning()).isFalse();
+            assertThat(container).isInstanceOf(SimpleMessageListenerContainer.class);
+            var simple = (SimpleMessageListenerContainer) container;
+            assertThat(simple.getQueueNames()).containsExactly(ENTRADA);
+            assertThat(simple.getAcknowledgeMode()).isEqualTo(AcknowledgeMode.AUTO);
+        });
         assertThat(admin.getQueueProperties(ENTRADA)).isNotNull();
         var importacao = RABBITMQ.execInContainer("rabbitmqctl", "import_definitions", "/tmp/transacoes-policies.json");
         assertThat(importacao.getExitCode()).isZero();
@@ -108,6 +118,7 @@ class TransacaoProcessadaListenerIntegrationTest {
                  "dead-letter-exchange":"credpay.transacoes.dlx.v1","dead-letter-routing-key":"transacao.processada.dlq.v1"}
                 """));
         listeners.start();
+        aguardarConsumidorExato();
     }
 
     @AfterEach
@@ -144,6 +155,7 @@ class TransacaoProcessadaListenerIntegrationTest {
                 Integer.class, original.id())).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT scale(valor) FROM transacoes WHERE id = ?", Integer.class, original.id())).isEqualTo(3);
         aguardarFila("messages", 0, 10);
+        assertThat(rabbit.receive(RabbitMqResultadoConfiguration.DLQ, 200)).isNull();
     }
 
     private String estado(UUID id) {
@@ -154,6 +166,26 @@ class TransacaoProcessadaListenerIntegrationTest {
         var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
         while (historico.buscarPorEvento(evento).isEmpty() && System.nanoTime() < prazo) TimeUnit.MILLISECONDS.sleep(50);
         assertThat(historico.buscarPorEvento(evento)).isPresent();
+    }
+
+    private void aguardarConsumidorExato() throws Exception {
+        var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        do {
+            var resultado = RABBITMQ.execInContainer("rabbitmqctl", "--timeout", "5", "--quiet", "--formatter=json",
+                    "list_consumers", "-p", "/");
+            assertThat(resultado.getExitCode()).isZero();
+            var consumidores = JSON.readTree(resultado.getStdout());
+            var encontrados = StreamSupport.stream(consumidores.spliterator(), false)
+                    .filter(linha -> ENTRADA.equals(linha.path("queue_name").asText())).toList();
+            if (!encontrados.isEmpty()) {
+                assertThat(encontrados).hasSize(1);
+                assertThat(encontrados.getFirst().path("ack_required").asBoolean()).isTrue();
+                assertThat(encontrados.getFirst().path("prefetch_count").asInt()).isEqualTo(1);
+                return;
+            }
+            TimeUnit.MILLISECONDS.sleep(200);
+        } while (System.nanoTime() < prazo);
+        throw new AssertionError("consumidor exato de retorno não registrado no broker");
     }
 
     private JsonNode fila() throws Exception {

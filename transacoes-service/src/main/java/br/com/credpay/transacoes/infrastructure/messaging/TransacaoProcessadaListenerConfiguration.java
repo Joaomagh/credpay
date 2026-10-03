@@ -1,5 +1,6 @@
 package br.com.credpay.transacoes.infrastructure.messaging;
 
+import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.boot.autoconfigure.amqp.SimpleRabbitListenerContainerFactoryConfigurer;
@@ -18,6 +19,9 @@ class TransacaoProcessadaListenerConfiguration {
         var factory = new SimpleRabbitListenerContainerFactory();
         configurer.configure(factory, connectionFactory);
         factory.setPrefetchCount(1);
+        factory.setAcknowledgeMode(AcknowledgeMode.AUTO);
+        factory.setConcurrentConsumers(1);
+        factory.setMaxConcurrentConsumers(1);
         return factory;
     }
 }
