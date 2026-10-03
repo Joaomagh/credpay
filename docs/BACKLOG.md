@@ -1,12 +1,12 @@
 # CredPay — Backlog do MVP
 
-Atualizado em 2026-10-02. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos e evidências: [spec](../spec.md). Uma única ação executável: [task](../task.md). Papéis: [P.O.](roles/product-owner.md), [dev sênior](roles/senior-developer.md) e [Scrum Master](roles/scrum-master.md).
+Atualizado em 2026-10-03. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos e evidências: [spec](../spec.md). Uma única ação executável: [task](../task.md). Papéis: [P.O.](roles/product-owner.md), [dev sênior](roles/senior-developer.md) e [Scrum Master](roles/scrum-master.md).
 
 ## Prioridades
 
 | ID | Resultado | Aceite de saída | Dependências | Estado |
 |---|---|---|---|---|
-| B01 | Contrato de processamento idempotente | identidade, equivalência/conflito, resultado, atomicidade e ack documentados; matriz de falhas revisada | contratos atuais | Contrato definido; resultado/outbox implementados, listener/ack pendentes |
+| B01 | Contrato de processamento idempotente | identidade, equivalência/conflito, resultado, atomicidade e ack documentados; matriz de falhas revisada | contratos atuais | Contrato definido; resultado/outbox e ack após commit implementados; falhas operacionais em B04 |
 | B02 | Resultado durável e processamento idempotente | PostgreSQL comprova resultado único, replay estável, conflito sem sobrescrita, rollback e concorrência | B01 e baseline própria de persistência | Concluído; B02.1–B02.6 comprovados no CI |
 | B03 | Saída `TransacaoProcessada` confiável | contrato versionado, resultado + outbox atômicos, publicação confirmada e reenvio com a mesma identidade | B02 | Concluído; B03.1–B03.10 comprovados |
 | B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | B04.1–B04.7 concluídos; B04.8 conflito permanente para DLQ próximo |
@@ -70,6 +70,10 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 **B04.7 — JSON inválido para DLQ — concluído.** O [CI #128](https://github.com/Joaomagh/credpay/actions/runs/37072605070) comprovou rejeição sem requeue (`x-first-death-reason=rejected`) e nenhum resultado/outbox novo. O red #127 gerou logs excessivos; detalhes e limite de evidência em `spec.md`. Conflito de aplicação e falhas transitórias ainda não são classificados.
 
 **B04.8 — Conflito de identidade para DLQ — próximo.** Processar uma entrada válida, enviar outra com a mesma identidade e dados divergentes, e exigir que o registro original permaneça intacto e a segunda mensagem seja rejeitada diretamente para DLQ com motivo `rejected`. O teste red deve ser limitado para não inundar logs. Retry transitório, crash pós-commit e política operacional ficam em slices posteriores.
+
+## Incrementos de B08
+
+**B08.1 — Revisão de publicação segura — refinamento, obrigatória antes da entrega.** A ausência de `.gitignore` na raiz foi corrigida em 2026-10-03; a inspeção limitada do snapshot atual não encontrou formatos comuns de segredo. Aceite restante: revisar histórico rastreado e logs/artefatos de CI sem divulgar valores, definir detecção automatizada de segredos e comprovar que exemplos usam dados fictícios. Uma descoberta real antecipa este item e exige revogação/rotação; reescrever histórico exige autorização específica. Não inclui tornar o repositório privado nem apagar documentação pública.
 
 ## Revisão e riscos
 

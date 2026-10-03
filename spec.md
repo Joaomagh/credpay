@@ -2,7 +2,7 @@
 
 > Fonte de verdade do sistema que existe hoje. Preencher somente com decisão tomada, contrato aceito ou comportamento comprovado. Planos futuros ficam em `CREDPAY_PLAN.md`; próximas ações ficam em `task.md`.
 
-**Última atualização:** 2026-10-02
+**Última atualização:** 2026-10-03
 
 **Fase atual:** 4 — Fluxo assíncrono confiável
 
@@ -1903,7 +1903,17 @@ Cobertura, scanners e outras ferramentas serão sinais auxiliares, não metas is
 | 2026-09-14 | `GET /transacoes/{id}` deve retornar o registro ou `404` para UUID válido ausente | red unitário dos tipos de aplicação; red MVC sem rota; consulta ponta a ponta após POST em PostgreSQL real | 2 testes de aplicação, 3 MVC, 27 HTTP e `verify` com 56 testes verdes | definir contrato de UUID malformado |
 | 2026-09-14 | UUID malformado deve falhar antes da consulta sem expor detalhes internos | adicionar cenário MVC, observar handler genérico inadequado, implementar handler específico e validar aplicação completa | red com `422` e mensagem interna; green com 4 MVC, 28 HTTP e `verify` com 58 testes | definir contrato de idempotência da criação |
 
-## 16. Checklist por incremento
+## 16. Higiene de publicação e dados locais
+
+O repositório permanece público como portfólio educacional, sem autorização para publicar dados reais de clientes, credenciais ou material privado. Código, migrations SQL e documentos de engenharia são publicáveis quando não contiverem informação sensível; ignorar todos os arquivos Markdown não substitui revisão de conteúdo.
+
+Em 2026-10-03, a revisão encontrou apenas `target/` nos dois `.gitignore` dos módulos e nenhum `.gitignore` na raiz. Foi adicionada uma política comum para `.env` e variantes, configuração local, diretórios `secrets/` e `.local/`, chaves/keystores, logs e dumps. `.env.example` permanece permitido somente com valores fictícios. `git check-ignore --no-index` validou 26 caminhos bloqueados e 13 permitidos, sem criar arquivos de teste, preservando README, spec, Maven Wrapper e migrations. A validação estrita de UTF-8 dos quatro arquivos e `git diff --check` passaram; o aviso LF/CRLF corresponde à normalização configurada no Git local.
+
+A inspeção dos nomes rastreados e a busca por formatos comuns de chave privada, token GitHub e chave AWS não encontraram correspondências no snapshot atual. As referências a senha encontradas estão nas fixtures de Testcontainers. Os `application.yml` não possuem credenciais embutidas; os workflows usam `contents: read` e Actions fixadas por SHA. Esta verificação limitada não é auditoria completa de histórico, logs remotos ou todos os formatos de segredo.
+
+**Limites:** `.gitignore` impede inclusão acidental de arquivos não rastreados; não remove arquivos já versionados, não apaga histórico e não impede `git add -f`. Se houver vazamento, revogar/rotacionar primeiro e tratar o histórico mediante autorização específica. Não publicar payload financeiro em logs. A revisão de histórico/logs e a verificação automatizada de segredos permanecem como B08.1 antes da entrega; sandbox AI-Jail continua apenas documentado.
+
+## 17. Checklist por incremento
 
 - [ ] critério de aceitação entendido e escopo mantido;
 - [ ] teste falhou pelo motivo esperado antes da implementação, quando aplicável;
