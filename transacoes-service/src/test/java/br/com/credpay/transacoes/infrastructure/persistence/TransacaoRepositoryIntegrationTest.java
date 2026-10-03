@@ -16,6 +16,7 @@ import jakarta.persistence.PersistenceContext;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -94,6 +95,28 @@ class TransacaoRepositoryIntegrationTest {
         assertThat(persistida.valor().scale()).isEqualTo(valor.scale());
         assertThat(persistida.moeda()).isEqualTo(moeda);
         assertThat(persistida.status()).isEqualTo(StatusTransacao.PENDENTE);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = StatusTransacao.class, names = {"APROVADA", "REJEITADA"})
+    void buscarPorId_deveReconstruirEstadoFinalAposCommit(StatusTransacao resultado) {
+        var id = UUID.randomUUID();
+        var valor = new BigDecimal("123.450");
+        var moeda = Currency.getInstance("BRL");
+        var finalizada = Transacao.criar(id, valor, moeda).concluir(resultado);
+        var transacoes = new TransactionTemplate(transactionManager);
+
+        // A fixture writes a final snapshot; production creation still always writes PENDENTE.
+        transacoes.executeWithoutResult(status -> repository.inserir(finalizada));
+        var encontrada = transacoes.execute(status -> repository.buscarPorId(id));
+
+        assertThat(encontrada).isPresent();
+        var persistida = encontrada.orElseThrow();
+        assertThat(persistida.id()).isEqualTo(id);
+        assertThat(persistida.valor()).isEqualTo(valor);
+        assertThat(persistida.valor().scale()).isEqualTo(3);
+        assertThat(persistida.moeda()).isEqualTo(moeda);
+        assertThat(persistida.status()).isEqualTo(resultado);
     }
 
     @ParameterizedTest

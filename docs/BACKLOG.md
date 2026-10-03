@@ -10,7 +10,7 @@ Atualizado em 2026-10-03. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos
 | B02 | Resultado durável e processamento idempotente | PostgreSQL comprova resultado único, replay estável, conflito sem sobrescrita, rollback e concorrência | B01 e baseline própria de persistência | Concluído; B02.1–B02.6 comprovados no CI |
 | B03 | Saída `TransacaoProcessada` confiável | contrato versionado, resultado + outbox atômicos, publicação confirmada e reenvio com a mesma identidade | B02 | Concluído; B03.1–B03.10 comprovados |
 | B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | Concluído; B04.1–B04.12 comprovados, ativação manual exige conferência |
-| B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | Contrato B05.1 definido; domínio B05.2 próximo |
+| B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | Contrato B05.1 e domínio B05.2 validados; persistência B05.3 próxima |
 | B06 | Recuperação e diagnóstico demonstráveis | queda, atraso e duplicação testados; correlação, retry/DLQ e replay operacional observáveis | B05; refinar política de `FALHOU` | Refinamento |
 | B07 | Ambiente local reproduzível | imagens/Compose e depois Kubernetes local com probes e recursos; roteiro demonstra fluxo e falha | B05 e B06 | Refinamento |
 | B08 | Entrega e portfólio verificáveis | CI cobre riscos e imagens; CD só com destino/rollback definidos; README e demo coerentes | B07 e critérios do plano | Refinamento |
@@ -83,9 +83,11 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 **B05.1 — Contrato de aplicação do resultado — definido documentalmente.** Seção 9.40 de spec: causa corresponde ao evento de criação local sem exigir published_at; primeira transição e recebimento/histórico atômicos; replay equivalente não escreve; conflito/transação desconhecida preservam estado. GET final e POST replay original PENDENTE devem coexistir sob teste HTTP. Precisão do instante recebido preservada, sem inbox redundante ou histórico inicial inventado. Revisão P.O./sênior, diff/UTF-8/links; nenhuma capacidade de runtime nova.
 
-**B05.2 — Domínio final e reconstrução — próximo.** TDD para PENDENTE → APROVADA/REJEITADA, preservação imutável de dados e proibição de nova transição após estado final. Reconstrução de registro final não pode voltar a PENDENTE. Sem listener, migration ou atualização de banco neste slice; os estados ainda precisam de persistência/aplicação nos próximos itens.
+**B05.2 — Domínio final e reconstrução — validado.** TDD com reds observados para conclusão ausente, nova transição final e resultado inválido. CI #110 verde com 108 testes; Secret Scan #17 verde. Domínio preserva dados/original, recusa nova transição final e mapper não reinicia o estado. PostgreSQL real releu os dois snapshots finais após commit; não prova atualização de transação pendente. Sem listener, migration ou atualização de banco neste slice. PR #95 exige checks verdes no SHA final antes da integração.
 
-**Depois:** B05.3 persistência de histórico/recebimento, unicidade e rollback; B05.4 aplicação idempotente/causa/concorrência e compatibilidade de replay HTTP; B05.5 parser/entrada opt-in e fluxo POST → eventos → GET. Critérios na seção 9.40, refinamento detalhado apenas quando cada item ficar próximo.
+**B05.3 — Persistência da transição e recebimento — próximo.** Migration e adapters devem gravar atualização de status e histórico/recebimento numa transação PostgreSQL própria. Aceite: commit/releitura em contexto separado preserva evento, causa, estado anterior/final, origem e instantes; constraints protegem unicidade por evento/transação e vínculos locais; falha na segunda escrita reverte ambas, sem nova dependência ou listener. Precisão do evento é epoch second/nano; instante local usa java.time e precisão documentada. Refinar o schema mínimo antes do primeiro teste; não alterar dados monetários ou backfill de histórico inexistente.
+
+**Depois:** B05.4 aplicação idempotente/causa/concorrência e compatibilidade de replay HTTP; B05.5 parser/entrada opt-in e fluxo POST → eventos → GET. Critérios na seção 9.40, refinamento detalhado apenas quando cada item ficar próximo.
 
 ## Incrementos de B08
 
