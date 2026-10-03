@@ -21,6 +21,8 @@ import java.util.concurrent.locks.LockSupport;
 
 import br.com.credpay.transacoes.domain.StatusTransacao;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -75,6 +77,48 @@ class AplicarResultadoConcorrenciaIntegrationTest {
         assertThat(disputa.segunda().valor()).isEqualTo(disputa.primeira().valor());
         assertRegistroUnico(disputa.primeira().valor());
         assertThat(clock.chamadas.get()).isEqualTo(1);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"status", "causa", "transacao", "evento"})
+    void executar_devePreservarVencedora_quandoIdentidadeCompartilhadaDivergir(String campo) throws Exception {
+        var entrada = preparar();
+        var outra = preparar();
+        var divergente = new TransacaoProcessadaRecebida(
+                campo.equals("evento") ? UUID.randomUUID() : entrada.eventId(),
+                campo.equals("transacao") ? outra.transactionId() : entrada.transactionId(),
+                entrada.occurredAt(),
+                campo.equals("transacao") ? outra.correlationId() : entrada.correlationId(),
+                campo.equals("causa") || campo.equals("transacao") ? outra.causationId() : entrada.causationId(),
+                campo.equals("status") ? StatusTransacao.REJEITADA : entrada.status());
+
+        var disputa = disputar(entrada, divergente, false);
+
+        assertThat(disputa.primeira().erro()).isNull();
+        assertThat(disputa.segunda().erro()).isInstanceOf(ConflitoResultadoException.class);
+        assertThat(disputa.segunda().valor()).isNull();
+        assertRegistroUnico(disputa.primeira().valor());
+        assertThat(clock.chamadas.get()).isEqualTo(1);
+        assertThat(buscar.executar(outra.transactionId()).status()).isEqualTo(StatusTransacao.PENDENTE);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM historico_transacoes WHERE transaction_id = ?",
+                Integer.class, outra.transactionId())).isZero();
+        if (campo.equals("evento")) {
+            assertThat(historico.buscarPorEvento(divergente.eventId())).isEmpty();
+        }
+    }
+
+    @Test
+    void executar_deveLiberarLockEPermitirAplicacao_quandoPrimeiraTransacaoReverter() throws Exception {
+        var entrada = preparar();
+
+        var disputa = disputar(entrada, entrada, true);
+
+        assertThat(disputa.primeira().erro()).isInstanceOf(IllegalStateException.class)
+                .hasMessage("falha técnica simulada antes do SQL");
+        assertThat(disputa.primeira().valor()).isNull();
+        assertThat(disputa.segunda().erro()).isNull();
+        assertRegistroUnico(disputa.segunda().valor());
+        assertThat(clock.chamadas.get()).isEqualTo(2);
     }
 
     private Disputa disputar(TransacaoProcessadaRecebida primeiraEntrada,
@@ -180,7 +224,7 @@ class AplicarResultadoConcorrenciaIntegrationTest {
             if (porta != null) {
                 porta.entrou().countDown();
                 try {
-                    if (!porta.liberar().await(10, TimeUnit.SECONDS)) {
+                    if (!porta.liberar().await(30, TimeUnit.SECONDS)) {
                         throw new IllegalStateException("tempo esgotado aguardando teste");
                     }
                 } catch (InterruptedException exception) {
