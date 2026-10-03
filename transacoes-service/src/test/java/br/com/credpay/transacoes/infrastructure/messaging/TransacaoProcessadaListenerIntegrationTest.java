@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.amqp.core.AmqpAdmin;
@@ -111,12 +112,21 @@ class TransacaoProcessadaListenerIntegrationTest {
         assertThat(admin.getQueueProperties(ENTRADA)).isNotNull();
         var importacao = RABBITMQ.execInContainer("rabbitmqctl", "import_definitions", "/tmp/transacoes-policies.json");
         assertThat(importacao.getExitCode()).isZero();
-        var fila = fila();
+        var filas = consultarFilas();
+        var fila = porNome(filas, ENTRADA);
         assertThat(fila.path("policy").asText()).isEqualTo("credpay-transactions-input");
         assertThat(fila.path("effective_policy_definition")).isEqualTo(JSON.readTree("""
                 {"dead-letter-strategy":"at-least-once","overflow":"reject-publish","max-length":10000,
                  "dead-letter-exchange":"credpay.transacoes.dlx.v1","dead-letter-routing-key":"transacao.processada.dlq.v1"}
                 """));
+        var dlq = porNome(filas, RabbitMqResultadoConfiguration.DLQ);
+        assertThat(dlq.path("policy").asText()).isEqualTo("credpay-transactions-dlq-limit");
+        assertThat(dlq.path("effective_policy_definition")).isEqualTo(JSON.readTree(
+                "{\"max-length\":1000,\"overflow\":\"reject-publish\"}"));
+        var flags = RABBITMQ.execInContainer("rabbitmqctl", "--timeout", "5", "--quiet", "--formatter=json",
+                "list_feature_flags", "name", "state");
+        assertThat(flags.getExitCode()).isZero();
+        assertThat(porNome(JSON.readTree(flags.getStdout()), "stream_queue").path("state").asText()).isEqualTo("enabled");
         listeners.start();
         aguardarConsumidorExato();
     }
@@ -162,6 +172,42 @@ class TransacaoProcessadaListenerIntegrationTest {
         return jdbc.queryForObject("SELECT status FROM transacoes WHERE id = ?", String.class, id);
     }
 
+    @Test
+    void receber_deveConfirmarReplaySemNovaTransicaoOuConsultaAoRelogio() throws Exception {
+        var original = criar.executar(UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"));
+        var causa = jdbc.queryForObject("SELECT event_id FROM outbox_eventos WHERE aggregate_id = ?", UUID.class, original.id());
+        var evento = UUID.randomUUID();
+        var message = mensagem(evento, original.id(), causa, StatusTransacao.REJEITADA);
+        var outboxOriginal = jdbc.queryForMap("SELECT * FROM outbox_eventos WHERE event_id = ?", causa);
+        clock.resetar();
+        pausa.armarReplay(evento);
+        rabbit.send("credpay.processamento.v1", "transacao.processada.v1", message);
+        aguardarHistorico(evento);
+        aguardarFila("messages", 0, 10);
+        var transicaoOriginal = historico.buscarPorEvento(evento).orElseThrow();
+
+        rabbit.send("credpay.processamento.v1", "transacao.processada.v1", message);
+        try {
+            assertThat(pausa.segundaBusca.await(10, TimeUnit.SECONDS)).as("segunda entrega equivalente observada").isTrue();
+            aguardarFila("messages_unacknowledged", 1, 15);
+            assertThat(historico.buscarPorEvento(evento)).contains(transicaoOriginal);
+            assertThat(estado(original.id())).isEqualTo("REJEITADA");
+            assertThat(clock.chamadas.get()).isEqualTo(1);
+        } finally {
+            pausa.liberar();
+        }
+        aguardarFila("messages", 0, 10);
+        assertThat(pausa.buscas.get()).isEqualTo(2);
+        assertThat(pausa.escritas.get()).isEqualTo(1);
+        assertThat(clock.chamadas.get()).isEqualTo(1);
+        assertThat(historico.buscarPorEvento(evento)).contains(transicaoOriginal);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM historico_transacoes WHERE transaction_id = ?",
+                Integer.class, original.id())).isEqualTo(1);
+        assertThat(jdbc.queryForMap("SELECT * FROM outbox_eventos WHERE event_id = ?", causa))
+                .withFailMessage("outbox original alterada pelo replay de resultado").isEqualTo(outboxOriginal);
+        assertThat(rabbit.receive(RabbitMqResultadoConfiguration.DLQ, 200)).isNull();
+    }
+
     private void aguardarHistorico(UUID evento) throws InterruptedException {
         var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
         while (historico.buscarPorEvento(evento).isEmpty() && System.nanoTime() < prazo) TimeUnit.MILLISECONDS.sleep(50);
@@ -189,12 +235,19 @@ class TransacaoProcessadaListenerIntegrationTest {
     }
 
     private JsonNode fila() throws Exception {
+        return porNome(consultarFilas(), ENTRADA);
+    }
+
+    private JsonNode consultarFilas() throws Exception {
         var resultado = RABBITMQ.execInContainer("rabbitmqctl", "--timeout", "5", "--quiet", "--formatter=json",
                 "list_queues", "-p", "/", "name", "policy", "effective_policy_definition", "messages", "messages_unacknowledged");
         assertThat(resultado.getExitCode()).as("consulta de estado do broker").isZero();
-        var filas = JSON.readTree(resultado.getStdout());
+        return JSON.readTree(resultado.getStdout());
+    }
+
+    private JsonNode porNome(JsonNode filas, String nome) {
         var encontradas = StreamSupport.stream(filas.spliterator(), false)
-                .filter(linha -> ENTRADA.equals(linha.path("name").asText())).toList();
+                .filter(linha -> nome.equals(linha.path("name").asText())).toList();
         assertThat(encontradas).hasSize(1);
         return encontradas.getFirst();
     }
@@ -235,24 +288,47 @@ class TransacaoProcessadaListenerIntegrationTest {
         private volatile CountDownLatch inserida = new CountDownLatch(0);
         private volatile CountDownLatch liberada = new CountDownLatch(0);
         private volatile TransicaoRecebida registrada;
+        private volatile boolean replay;
+        private volatile CountDownLatch segundaBusca = new CountDownLatch(0);
+        private final AtomicInteger buscas = new AtomicInteger();
+        private final AtomicInteger escritas = new AtomicInteger();
 
         HistoricoComPausa(TransicaoRepository delegate) { this.delegate = delegate; }
-        void armar(UUID evento) { alvo = evento; inserida = new CountDownLatch(1); liberada = new CountDownLatch(1); }
+        void armar(UUID evento) {
+            alvo = evento; replay = false; inserida = new CountDownLatch(1); liberada = new CountDownLatch(1);
+            buscas.set(0); escritas.set(0);
+        }
+        void armarReplay(UUID evento) {
+            armar(evento); replay = true; segundaBusca = new CountDownLatch(1);
+        }
         void liberar() { liberada.countDown(); }
         @Override public void bloquearIdentidades(UUID evento, UUID transacao) { delegate.bloquearIdentidades(evento, transacao); }
-        @Override public Optional<TransicaoRecebida> buscarPorEvento(UUID evento) { return delegate.buscarPorEvento(evento); }
+        @Override public Optional<TransicaoRecebida> buscarPorEvento(UUID evento) {
+            var transicao = delegate.buscarPorEvento(evento);
+            if (evento.equals(alvo) && buscas.incrementAndGet() == 2 && replay) {
+                segundaBusca.countDown();
+                aguardarLiberacao();
+            }
+            return transicao;
+        }
         @Override public boolean existeCriacao(UUID causa, UUID transacao) { return delegate.existeCriacao(causa, transacao); }
         @Override public void registrar(TransicaoRecebida transicao) {
             delegate.registrar(transicao);
             if (transicao.eventId().equals(alvo)) {
+                escritas.incrementAndGet();
                 registrada = transicao;
-                inserida.countDown();
-                try {
-                    if (!liberada.await(45, TimeUnit.SECONDS)) throw new IllegalStateException("pausa antes do commit excedida");
-                } catch (InterruptedException exception) {
-                    Thread.currentThread().interrupt();
-                    throw new IllegalStateException("pausa antes do commit interrompida");
+                if (!replay) {
+                    inserida.countDown();
+                    aguardarLiberacao();
                 }
+            }
+        }
+        private void aguardarLiberacao() {
+            try {
+                if (!liberada.await(45, TimeUnit.SECONDS)) throw new IllegalStateException("pausa transacional excedida");
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("pausa transacional interrompida");
             }
         }
     }

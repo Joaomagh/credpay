@@ -1936,6 +1936,8 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Red remoto correto:** [CI #140](https://github.com/Joaomagh/credpay/actions/runs/37154677037), SHA 8c28ff7, executou 264 testes, duas falhas esperadas, zero erros/skips: registry exigia um endpoint e tinha zero. Isolamento anterior corrigido; isto prova ausência do endpoint, ainda não a janela de commit. Depois deste red foi registrada a rota do listener, parser e chamada ao caso de uso transacional. AUTO/concorrência 1/prefetch 1 definidos explicitamente; fixture acrescenta configuração global conflitante, inspeção do container/consumidor exatos e DLQ vazia após conclusão. Green real ainda pendente.
 
+**Primeiro green real:** [CI #141](https://github.com/Joaomagh/credpay/actions/runs/37154898821), SHA 8a11f6b, passou 264 testes sem falhas/erros/skips em 1m46s, inclusive duas janelas reais de commit/ack e configuração efetiva independente dos valores globais conflitantes. Verify offline passou 160/JAR. Replay equivalente foi então acrescentado como caracterização: observar segunda busca alvo ainda sem ack, conservar histórico inteiro/estado/outbox, uma escrita e uma consulta ao Clock; liberar e exigir origem/DLQ vazias. Preparação agora confere ambas políticas e flag no mesmo broker antes do start. Compilação e novo CI/revisão ainda pendentes.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.

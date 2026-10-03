@@ -13,7 +13,7 @@ Capacidades didáticas, em mensagens, sem teto de bytes/TTL/outboxes. Quorum adm
 
 1. Configurar PostgreSQL próprio de cada serviço e conexões ao mesmo broker/vhost por ambiente, sem versionar valores reais. `SPRING_RABBITMQ_VIRTUAL_HOST=/` nos dois serviços.
 2. Iniciar processador com limites por moeda e publicador desligado (`CREDPAY_OUTBOX_PUBLISHER_ENABLED=false`) para declarar sua exchange `credpay.processamento.v1`. O primeiro serviço apenas referencia esta exchange no binding.
-3. Iniciar primeiro serviço com `CREDPAY_TRANSACOES_CONSUMER_TOPOLOGY_ENABLED=true` e publicador desligado. Este incremento ainda não possui listener de retorno; não adicionar flag de ativação fictícia. Aguardar filas/DLX/bindings; falha de declaração impede continuar.
+3. Iniciar primeiro serviço com `CREDPAY_TRANSACOES_CONSUMER_TOPOLOGY_ENABLED=true`, `CREDPAY_TRANSACOES_CONSUMER_LISTENER_ENABLED=false` e publicador desligado. O listener experimental de B05.5c1 comprova somente caminho válido/replay; ativação operacional permanece proibida até rejeições permanentes e retry limitado de c2/c3, pois falhas ainda podem causar reentrega ilimitada. Aguardar filas/DLX/bindings; falha de declaração impede continuar.
 4. Na raiz, copiar/importar o artefato no container local escolhido:
 
 ```powershell
@@ -47,7 +47,7 @@ docker exec $rabbitContainer rabbitmqctl --quiet --formatter=json list_consumers
 - Exchanges `credpay.processamento.v1` e `credpay.transacoes.dlx.v1`: direct, duráveis. Bindings com destino fila: primeira → entrada por `transacao.processada.v1`; segunda → DLQ por `transacao.processada.dlq.v1`.
 - Nenhum consumidor da aplicação nas duas filas durante preparação. Worker interno de dead-lettering não é listener da aplicação.
 
-Guardar commit/hash do artefato/versão/conferência no registro local. Não exportar definições completas, pois podem conter hashes de senha. Inspeção não bloqueia startup automaticamente nem detecta mudanças posteriores. **B05.5c implementará listener opt-in; este roteiro não autoriza sua ativação antes do aceite correspondente.** Publicadores continuam exigindo uma réplica por serviço. Preparação de TransacaoCriada está em [README.md](README.md).
+Guardar commit/hash do artefato/versão/conferência no registro local. Não exportar definições completas, pois podem conter hashes de senha. Inspeção não bloqueia startup automaticamente nem detecta mudanças posteriores. **Não habilitar listener experimental: aguardar os três aceites de B05.5c e a atualização deste roteiro.** Publicadores continuam exigindo uma réplica por serviço. Preparação de TransacaoCriada está em [README.md](README.md).
 
 ## Verificar em broker descartável
 
