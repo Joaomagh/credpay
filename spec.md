@@ -1776,6 +1776,16 @@ O teste confirma o container/fila-alvo, usa `shutdown()` para reconstruir o prox
 
 **Próximo:** B04.11, comprovar a tentativa de dead-lettering efetivamente recusada pela DLQ cheia, retenção e recuperação depois de liberar capacidade. Depois, provisionamento mínimo da política e avanço a B05; falha de nó/carga ficam em B06, não expandem indefinidamente B04.
 
+### 9.38 Recusa efetiva da DLQ cheia — B04.11
+
+**Experimento em validação:** o cenário antigo liberava capacidade imediatamente após rejeitar a entrada, antes de provar tentativa de publicação do worker. Foi fortalecido para manter dois ocupantes na DLQ de `max-length=1`: o [FIFO da versão 4.3.5](https://github.com/rabbitmq/rabbitmq-server/blob/v4.3.5/deps/rabbit/src/rabbit_fifo.erl) considera excesso com `>`, permitindo overshoot; a contagem não é um limite estrito nem prova isolada de recusa.
+
+Depois de rejeitar um único evento com `messageId`, o teste usa `rabbitmqctl eval` somente de leitura no broker descartável. Consulta `sys:get_status` dos workers do [supervisor](https://github.com/rabbitmq/rabbitmq-server/blob/v4.3.5/deps/rabbit/src/rabbit_fifo_dlx_sup.erl), seleciona a fila de origem e exige `publish_count >= 1` com a DLQ em `rejected`, conforme o [worker](https://github.com/rabbitmq/rabbitmq-server/blob/v4.3.5/deps/rabbit/src/rabbit_fifo_dlx_worker.erl). A [fila quorum](https://github.com/rabbitmq/rabbitmq-server/blob/v4.3.5/deps/rabbit/src/rabbit_quorum_queue.erl) produz a rejeição por limite; não é um nack de publicação diagnóstica separada.
+
+Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ, o teste drena os ocupantes e espera o mesmo corpo/messageId, motivo `rejected` e origem vazia. Timeout de até 210 segundos respeita a recuperação do broker, sem espera fixa apresentada como evidência. `format_status` omite o corpo das entregas; a expressão projeta apenas booleano/estados fixos. Não imprimir estado completo, stderr diagnóstico ou conteúdo inesperado em asserções. Esquema incompatível falha explicitamente.
+
+**Limites/validação:** diagnóstico interno acoplado à versão/digest fixados, exclusivo da fixture, não API operacional da aplicação. Um único evento permite atribuir a pendência observada; não prova HA, ausência de duplicatas ou throughput. Cleanup remove somente as duas filas do broker descartável, incluindo o worker/pendências da origem, e o próximo `BeforeEach` as recria. `test-compile` local passou; Docker local indisponível, integração real ainda aguardando CI. Nenhuma produção/POM/dependência alterada, teste de caracterização sem red artificial.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.

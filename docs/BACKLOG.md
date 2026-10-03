@@ -75,7 +75,7 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 **B04.10 — Perda de conexão depois do commit — concluído.** [CI #140](https://github.com/Joaomagh/credpay/actions/runs/37098555364), 113 testes verdes, comprovou banco durável/mensagem sem ack antes do fechamento real, reentrega pelo broker (`redelivered=true`), corpo/identidade iguais, snapshot/outbox completos intactos, uma linha de cada tabela e ack final sem DLQ. Advice da fixture fora da transação/retry; sem alteração de produção, process kill ou prova de HA.
 
-**B04.11 — Recusa efetiva da DLQ cheia — próximo.** Manter capacidade esgotada até observar a tentativa recusada do próprio worker de dead-lettering, não apenas um publish diagnóstico com nack ou espera fixa. Comprovar retenção na origem, liberar capacidade somente depois, receber o mesmo corpo/identidade e exigir origem vazia. Broker real, timeout e limpeza seguros; nenhuma dependência/produção nova salvo defeito real. Depois deste cenário, provisionamento mínimo verificável da política e retorno imediato a B05; não abrir experimentos de nó/quorum/carga antes do fluxo vertical.
+**B04.11 — Recusa efetiva da DLQ cheia — em validação.** Manter capacidade esgotada até observar a tentativa recusada do próprio worker de dead-lettering, não apenas um publish diagnóstico com nack ou espera fixa. Comprovar retenção na origem, liberar capacidade somente depois, receber o mesmo corpo/identidade e exigir origem vazia. Broker real, timeout e limpeza seguros; nenhuma dependência/produção nova salvo defeito real. Depois deste cenário, provisionamento mínimo verificável da política e retorno imediato a B05; não abrir experimentos de nó/quorum/carga antes do fluxo vertical.
 
 ## Incrementos de B08
 

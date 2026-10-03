@@ -8,4 +8,4 @@
 
 ## Próximo
 
-- [ ] B04.11 — Comprovar recusa efetiva do dead-lettering com DLQ cheia, retenção na origem e recuperação após liberar capacidade, sem ativar consumo operacional.
+- [ ] B04.11 em validação — Comprovar no CI recusa efetiva do dead-lettering com DLQ cheia, retenção na origem e recuperação após liberar capacidade, sem ativar consumo operacional.
