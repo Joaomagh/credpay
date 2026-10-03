@@ -10,10 +10,13 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
@@ -23,9 +26,17 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageDeliveryMode;
+import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
@@ -36,6 +47,7 @@ import org.testcontainers.utility.MountableFile;
 
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Execution(ExecutionMode.SAME_THREAD)
 class FluxoCredPayE2E {
 
     private static final String POSTGRES_IMAGE = "postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0";
@@ -64,6 +76,10 @@ class FluxoCredPayE2E {
     private JdbcTemplate processamento;
     private int portaTransacoes;
     private int fase;
+    private CachingConnectionFactory republicacao;
+    private RabbitTemplate rabbit;
+    private int duplicatasEntrada;
+    private int duplicatasSaida;
 
     @BeforeAll
     @Timeout(value = 5, unit = TimeUnit.MINUTES)
@@ -88,6 +104,14 @@ class FluxoCredPayE2E {
             conferirConsumidores();
             assertThat(transacoes.queryForObject("SELECT to_regclass('public.processamentos')", String.class)).isNull();
             assertThat(processamento.queryForObject("SELECT to_regclass('public.transacoes')", String.class)).isNull();
+            republicacao = new CachingConnectionFactory(RABBIT.getHost(), RABBIT.getAmqpPort());
+            republicacao.setUsername(RABBIT.getAdminUsername());
+            republicacao.setPassword(RABBIT.getAdminPassword());
+            republicacao.setVirtualHost("/");
+            republicacao.setPublisherConfirmType(CachingConnectionFactory.ConfirmType.CORRELATED);
+            republicacao.setPublisherReturns(true);
+            rabbit = new RabbitTemplate(republicacao);
+            rabbit.setMandatory(true);
         } catch (Exception | AssertionError falha) {
             encerrarAplicativos();
             throw falha;
@@ -95,14 +119,18 @@ class FluxoCredPayE2E {
     }
 
     @AfterAll
-    void encerrar() throws InterruptedException { encerrarAplicativos(); }
+    void encerrar() throws InterruptedException {
+        try { encerrarAplicativos(); }
+        finally { if (republicacao != null) republicacao.destroy(); }
+    }
 
     @ParameterizedTest
     @CsvSource({"50.000,APROVADA", "150.000,REJEITADA"})
     @Timeout(value = 2, unit = TimeUnit.MINUTES)
-    void post_deveConcluirPelosDoisAplicativosComCausalidadeEDadosPreservados(String valor, String status) throws Exception {
+    void post_deveConcluirEConservarResultadoNoReplayDosEventosEDoPost(String valor, String status) throws Exception {
+        var chave = UUID.randomUUID();
         var resposta = enviar(HttpRequest.newBuilder(uri("/transacoes"))
-                .header("Content-Type", "application/json").header("Idempotency-Key", UUID.randomUUID().toString())
+                .header("Content-Type", "application/json").header("Idempotency-Key", chave.toString())
                 .POST(HttpRequest.BodyPublishers.ofString("{\"valor\":" + valor + ",\"moeda\":\"BRL\"}")));
         assertThat(resposta.statusCode()).isEqualTo(201);
         var original = JSON.readTree(resposta.body());
@@ -147,6 +175,66 @@ class FluxoCredPayE2E {
         conferirUnicidade(processamento, "processamentos", "transaction_id", id);
         conferirUnicidade(processamento, "outbox_eventos", "aggregate_id", id);
         aguardarFilasVazias();
+
+        var antes = bancoInteiro();
+        var originais = transacoes.queryForObject("SELECT COUNT(*) FROM transacoes", Integer.class);
+        var ackEntrada = aguardarAck(FILAS.get(0), originais + duplicatasEntrada);
+        var ackSaida = aguardarAck(FILAS.get(2), originais + duplicatasSaida);
+        republicar(entrada, "credpay.transacoes.v1", "transacao.criada.v1");
+        aguardarAck(FILAS.get(0), ackEntrada + 1);
+        duplicatasEntrada++;
+        republicar(saida, "credpay.processamento.v1", "transacao.processada.v1");
+        aguardarAck(FILAS.get(2), ackSaida + 1);
+        duplicatasSaida++;
+        aguardarFilasVazias();
+        assertThat(bancoInteiro()).withFailMessage("replay de evento alterou registros completos dos dois bancos").isEqualTo(antes);
+
+        var replay = enviar(HttpRequest.newBuilder(uri("/transacoes"))
+                .header("Content-Type", "application/json").header("Idempotency-Key", chave.toString())
+                .POST(HttpRequest.BodyPublishers.ofString("{\"valor\":" + new BigDecimal(valor).stripTrailingZeros().toPlainString()
+                        + ",\"moeda\":\"BRL\"}")));
+        assertThat(replay.statusCode()).isEqualTo(201);
+        assertThat(replay.headers().firstValue("Location")).contains(location);
+        assertThat(replay.body()).withFailMessage("POST equivalente não preservou resposta original PENDENTE").isEqualTo(resposta.body());
+        assertThat(aguardarFinal(location, status)).withFailMessage("replay alterou GET final").isEqualTo(finalizada);
+        assertThat(bancoInteiro()).withFailMessage("replay de POST alterou registros completos dos dois bancos").isEqualTo(antes);
+        aguardarFilasVazias();
+    }
+
+    private List<List<Map<String, Object>>> bancoInteiro() {
+        return List.of(transacoes.queryForList("SELECT * FROM transacoes ORDER BY id"),
+                transacoes.queryForList("SELECT * FROM historico_transacoes ORDER BY event_id"),
+                transacoes.queryForList("SELECT * FROM outbox_eventos ORDER BY event_id"),
+                processamento.queryForList("SELECT * FROM processamentos ORDER BY event_id"),
+                processamento.queryForList("SELECT * FROM outbox_eventos ORDER BY event_id"));
+    }
+
+    private void republicar(Map<String, Object> evento, String exchange, String rota) throws Exception {
+        var properties = new MessageProperties();
+        properties.setContentType(MessageProperties.CONTENT_TYPE_JSON);
+        properties.setContentEncoding(StandardCharsets.UTF_8.name());
+        properties.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
+        properties.setMessageId(evento.get("event_id").toString());
+        properties.setType(evento.get("event_type").toString());
+        properties.setCorrelationId(evento.get("aggregate_id").toString());
+        var correlacao = new CorrelationData(evento.get("event_id").toString());
+        rabbit.send(exchange, rota, new Message(evento.get("payload").toString().getBytes(StandardCharsets.UTF_8), properties), correlacao);
+        assertThat(correlacao.getFuture().get(10, TimeUnit.SECONDS).isAck()).as("duplicata confirmada pelo broker").isTrue();
+        assertThat(correlacao.getReturned()).withFailMessage("duplicata retornada por ausência de rota").isNull();
+    }
+
+    private long aguardarAck(String fila, long minimo) throws Exception {
+        var auth = Base64.getEncoder().encodeToString((RABBIT.getAdminUsername() + ":" + RABBIT.getAdminPassword()).getBytes(StandardCharsets.UTF_8));
+        var endereco = URI.create("http://" + RABBIT.getHost() + ":" + RABBIT.getMappedPort(15672) + "/api/queues/%2F/" + fila);
+        var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(20);
+        do {
+            var resposta = enviar(HttpRequest.newBuilder(endereco).header("Authorization", "Basic " + auth).GET());
+            assertThat(resposta.statusCode()).as("consulta de contagem de ack do broker descartável").isEqualTo(200);
+            var ack = JSON.readTree(resposta.body()).path("message_stats").path("ack");
+            if (ack.isIntegralNumber() && ack.longValue() >= minimo) return ack.longValue();
+            TimeUnit.MILLISECONDS.sleep(200);
+        } while (System.nanoTime() < prazo);
+        throw new AssertionError("contador de ack não alcançou valor mínimo para fila " + fila);
     }
 
     private void iniciar(boolean topologia, boolean consumirEPublicar) throws Exception {

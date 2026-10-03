@@ -1974,6 +1974,14 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Regressão de d1:** [CI transações #152](https://github.com/Joaomagh/credpay/actions/runs/37159251349), mesmo SHA f5d5795, passou 279 testes sem falhas/erros/skips. Teste vertical é selecionado somente no workflow dedicado; não substitui nem altera a suíte do módulo. Reinspeção assistida confirmou tratamento dos dois achados, sem novo bloqueante. PR #105 requer repetição dos checks no SHA documental final antes do merge.
 
+### 9.52 Duplicata e replay no fluxo real — B05.5d2
+
+**Objetivo e decisão:** estender os mesmos cenários APP/REJ dos dois JARs reais. Republicar entrada e saída a partir das linhas reais das outboxes: mesmo payload, eventId, type/correlationId e propriedades JSON/UTF-8/persistência dos publicadores existentes. Harness usa confirms correlacionados/mandatory e rejeita returns; não fabrica nova decisão/resultado. Cinco tabelas dos dois bancos são comparadas inteiramente após duplicatas e replay HTTP, com mensagens de falha fixas sem dump financeiro. POST mesma chave com escala equivalente deve conservar corpo/Location original PENDENTE; GET conserva o resultado final.
+
+**Observabilidade do teste:** API HTTP de [RabbitMQ 4.3](https://www.rabbitmq.com/docs/http-api-reference), no broker descartável com credenciais de teste, observa contagem ack por fila; primeiro aguardar originais mais duplicatas anteriores, depois exigir avanço após republicação confirmada. Prazos limitados e nenhuma resposta/credencial integral publicada. Filas vazias sozinhas não comprovam que a duplicata foi processada. Mesmo thread explicita ordem dos cenários/contadores; factory da republicação é fechada no cleanup. Campo ack na versão/digest fixados ainda exige prova real; sem alegar sucesso por compilação ou documentação.
+
+**Estado:** compilação inicial passou, revisão e CI real pendentes. Caracterização de idempotência já implementada, sem mudança de produção/dependência ou red artificial. Falha de comportamento descoberta exigirá red legítimo antes de correção. D1 integrado na PR #105 em 1e5e3d3 após Application Flow #2/CI transações #153/Secret Scan #60 verdes no SHA final 1c6c94f.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.

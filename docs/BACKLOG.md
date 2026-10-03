@@ -10,7 +10,7 @@ Atualizado em 2026-10-03. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos
 | B02 | Resultado durável e processamento idempotente | PostgreSQL comprova resultado único, replay estável, conflito sem sobrescrita, rollback e concorrência | B01 e baseline própria de persistência | Concluído; B02.1–B02.6 comprovados no CI |
 | B03 | Saída `TransacaoProcessada` confiável | contrato versionado, resultado + outbox atômicos, publicação confirmada e reenvio com a mesma identidade | B02 | Concluído; B03.1–B03.10 comprovados |
 | B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | Concluído; B04.1–B04.12 comprovados, ativação manual exige conferência |
-| B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | B05.1–B05.5c integrados; d1 validado no fluxo, d2 próximo |
+| B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | B05.1–B05.5d1 integrados; d2 em execução |
 | B06 | Recuperação e diagnóstico demonstráveis | queda, atraso e duplicação testados; correlação, retry/DLQ e replay operacional observáveis | B05; refinar política de `FALHOU` | Refinamento |
 | B07 | Ambiente local reproduzível | imagens/Compose e depois Kubernetes local com probes e recursos; roteiro demonstra fluxo e falha | B05 e B06 | Refinamento |
 | B08 | Entrega e portfólio verificáveis | CI cobre riscos e imagens; CD só com destino/rollback definidos; README e demo coerentes | B07 e critérios do plano | Refinamento |
@@ -109,7 +109,7 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 **B05.5d1 — Fluxo final dos dois JARs reais — validado no Application Flow CI #1 da PR #105.** Dois cenários reais APP/REJ verdes, duas outboxes publicadas, causalidade/histórico único/dados/escala e bancos próprios comprovados. Preparação conferiu políticas/recursos sem consumidores antes da ativação; revisão corrigiu cleanup e espera por consumidores, compilação local verde. Sem saída fabricada/dependência nova/Compose/deploy. Secret Scan #59 verde; suíte afetada/checks do SHA final exigidos para integração, spec 9.51. Caracterização sem red artificial; d2 ainda necessário.
 
-**B05.5d2 — Duplicata e replay no fluxo completo — refinado, depende de d1.** Republicar evento real capturado da outbox com corpo/propriedades/identidade originais; exigir registros completos e histórico único preservados. POST equivalente deve devolver resposta/Location original PENDENTE enquanto GET permanece final. Execução dos dois aplicativos reais, sem saída fabricada para substituir processamento. d1 isoladamente não encerra B05.
+**B05.5d2 — Duplicata e replay no fluxo completo — em execução.** D1 integrado na PR #105 (1e5e3d3; Flow #2/transações #153/Secret Scan #60 finais). Republicar ambos eventos reais das outboxes com corpo/propriedades/identidade originais; exigir consumo observado, registros completos/histórico único preservados e POST original PENDENTE/Location enquanto GET permanece final. Sem saída fabricada; compilação inicial verde, revisão/CI real pendentes, spec 9.52. d1 isoladamente não encerra B05.
 
 ## Incrementos de B08
 
