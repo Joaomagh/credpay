@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B05.5c3 integrado na PR #104 (c0237e3), após CI transações #150/processador #156 e Secret Scan #57 verdes no SHA final. Retry/rollback/DLQ reais e ativação manual conferida; spec 9.50.
+- B05.5d1 validado no Application Flow CI #1 da PR #105: dois estados finais pelos dois JARs reais, duas outboxes publicadas e causalidade/bancos próprios comprovados. Integração depende de suíte afetada/checks finais; spec 9.51.
 
 ## Próximo
 
-- [ ] B05.5d1 — Em execução: compilar/revisar orquestração e comprovar dois JARs reais/bancos próprios, POST → duas outboxes → GET APROVADA/REJEITADA no CI. Sem saída fabricada; B05 só termina após duplicata/replay em d2.
+- [ ] B05.5d2 — Após integrar d1, republicar eventos reais da outbox e comprovar ack/replay, registros completos intactos/histórico único e POST original PENDENTE enquanto GET permanece final.

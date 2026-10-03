@@ -29,4 +29,4 @@ Depois, em `transacoes-service`:
 .\mvnw.cmd --batch-mode --no-transfer-progress -Dtest=FluxoCredPayE2E test
 ```
 
-Linux usa `./mvnw`. O teste resolve os dois JARs em seus diretórios `target` dentro do workspace. A prova real está pendente no início deste incremento; compilação local não substitui execução com containers.
+Linux usa `./mvnw`. O teste resolve os dois JARs em seus diretórios `target` dentro do workspace. O [primeiro CI vertical](https://github.com/Joaomagh/credpay/actions/runs/37159251469) passou os dois estados finais pelos aplicativos reais, com preparação conferida. Compilação local não substitui execução com containers; duplicata/replay completo ainda depende de B05.5d2.
