@@ -23,6 +23,7 @@ import br.com.credpay.transacoes.domain.Transacao;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 
 class CriarTransacaoServiceTest {
@@ -130,6 +131,27 @@ class CriarTransacaoServiceTest {
                 .hasMessage("chave de idempotência já utilizada com outro payload");
         verify(repository, never()).inserir(eq(CHAVE_IDEMPOTENCIA), any(Transacao.class));
         verifyNoInteractions(outboxRepository);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = StatusTransacao.class, names = {"APROVADA", "REJEITADA"})
+    void executar_deveRepetirRespostaPendenteSemReiniciarTransacao_quandoResultadoJaForFinal(StatusTransacao estado) {
+        var repository = mock(TransacaoRepository.class);
+        var outbox = mock(OutboxRepository.class);
+        var original = Transacao.criar(UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"))
+                .concluir(estado);
+        when(repository.buscarPorChaveIdempotencia(CHAVE_IDEMPOTENCIA)).thenReturn(Optional.of(original));
+        var service = novoService(repository, outbox);
+
+        var resultado = service.executar(CHAVE_IDEMPOTENCIA, new BigDecimal("123.45"), Currency.getInstance("BRL"));
+
+        assertThat(resultado.id()).isEqualTo(original.id());
+        assertThat(resultado.valor()).isEqualTo(new BigDecimal("123.450"));
+        assertThat(resultado.moeda()).isEqualTo(original.moeda());
+        assertThat(resultado.status()).isEqualTo(StatusTransacao.PENDENTE);
+        assertThat(original.status()).isEqualTo(estado);
+        verify(repository, never()).inserir(eq(CHAVE_IDEMPOTENCIA), any(Transacao.class));
+        verifyNoInteractions(outbox);
     }
 
     private CriarTransacaoService novoService(

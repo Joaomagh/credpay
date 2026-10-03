@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B05.4b validado na PR #98: CI #126 verde com 170 testes e Secret Scan #33 verde. Disputas reais, conflitos e liberação após rollback comprovados; spec 9.44. Refatoração local verde; checks do SHA final obrigatórios antes de integrar.
+- B05.4b integrado na PR #98, commit 290f77f: CI #127/Secret Scan #34 verdes no último SHA. Disputas e liberação após rollback comprovados; spec 9.44.
 
 ## Próximo
 
-- [ ] B05.4c — Em TDD, preservar representação original PENDENTE no replay do POST, mesmo após resultado aplicado, enquanto GET continua final. Teste HTTP/PostgreSQL exige dados originais/escala, histórico único e outbox intacta; nunca atualizar estado de volta para PENDENTE.
+- [ ] B05.4c em execução — Red unitário observado e testes HTTP compilados; observar red HTTP no CI antes de alterar mapper da resposta. Depois exigir POST original PENDENTE/GET final, dados/escala, histórico/outbox intactos, sem UPDATE de retorno a PENDENTE.
