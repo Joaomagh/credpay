@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B05.2 validado na PR #95: TDD de estados finais imutáveis e reconstrução; CI #110 verde com 108 testes e Secret Scan #17 verde. B04.12 e contrato B05.1 integrados nas PRs #93/#94. Evidências e limites na spec 9.39–9.41; warnings das fixtures do processador continuam em B08.2.
+- B05.3 validado na PR #96: estado/histórico atômicos, precisão, integridade e rollback real; CI #118 verde com 129 testes e Secret Scan #25 verde. Recusa tipada corrigida após falha do CI #117; evidências na spec 9.42. Checks do SHA final obrigatórios antes de integrar.
 
 ## Próximo
 
-- [ ] B05.3 em execução — Teste de commit/releitura escrito; porta e record mínimos compilam após red de API ausente. Observar red de integração no CI antes do adapter/migration, pois Docker local está indisponível. Depois provar constraints e rollback real da segunda escrita; sem listener.
+- [ ] B05.4a — Implementar em TDD aplicação sequencial idempotente do resultado e validação causal: primeiro evento, replay sem relógio/escrita, conflitos e desconhecidos com estado preservado. PostgreSQL real deve comprovar uma transição e causa local sem published_at; sem listener/concorrência neste slice.
