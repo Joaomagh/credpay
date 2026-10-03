@@ -10,10 +10,11 @@ As suítes completas dos módulos continuam em seus workflows. O nome `FluxoCred
 2. Encerrar processos, reiniciar com topologias ligadas e consumo/publicação desligados. Importar os dois artefatos de políticas e conferir filas quorum/argumentos/políticas efetivas/flag/exchanges/bindings e nenhum consumidor.
 3. Encerrar processos e reiniciar com consumidores/publicadores habilitados. Aguardar consumidores exatos, ack e prefetch; conferir bancos separados sem tabela do outro agregado.
 4. POST de 50.000 BRL e 150.000 BRL com limite real de 100.00 BRL deve devolver PENDENTE e alcançar GET APROVADA/REJEITADA. Conferir registro do processador, ambas outboxes publicadas, causa/correlação/histórico único, instante do resultado e dados/escala preservados; quatro filas vazias.
+5. Republicar entrada e saída reais das outboxes, preservando corpo/identidade/propriedades. Confirmar mandatory sem returns e observar avanço de ack por fila depois que a baseline de originais/duplicatas anteriores foi coletada. Snapshot completo das cinco tabelas permanece intacto; repetir POST com mesma chave/escala equivalente preserva corpo/Location original PENDENTE e GET final.
 
 Health sozinho não prova declaração AMQP; a conferência do broker é obrigatória. As portas são alocadas dinamicamente e os prazos são limitados; falha de bind/startup/health impede o aceite. Cleanup encerra somente processos filhos criados pelo teste, força término se necessário e preserva referências de sobreviventes para nova tentativa de cleanup.
 
-Logs dos subprocessos ficam em `.local/e2e/<UUID>/`, ignorados pelo Git. Não imprimir/publicar arquivos integrais: inspecionar somente diagnóstico seguro da falha. O workflow não publica logs como artefatos. Ambiente é descartável, sem deployment externo, segredo real, HA ou benchmark. Duplicata/replay do fluxo completo serão comprovados em B05.5d2.
+Logs dos subprocessos ficam em `.local/e2e/<UUID>/`, ignorados pelo Git. Não imprimir/publicar arquivos integrais: inspecionar somente diagnóstico seguro da falha. O workflow não publica logs como artefatos. API management lê contadores agregados apenas no broker isolado, sem outros produtores; não identifica individualmente entregas nem promete ausência geral de duplicatas. Ambiente é descartável, sem deployment externo, segredo real, HA ou benchmark. Recuperação operacional continua em B06.
 
 ## Executar
 
@@ -29,4 +30,4 @@ Depois, em `transacoes-service`:
 .\mvnw.cmd --batch-mode --no-transfer-progress -Dtest=FluxoCredPayE2E test
 ```
 
-Linux usa `./mvnw`. O teste resolve os dois JARs em seus diretórios `target` dentro do workspace. O [primeiro CI vertical](https://github.com/Joaomagh/credpay/actions/runs/37159251469) passou os dois estados finais pelos aplicativos reais, com preparação conferida. Compilação local não substitui execução com containers; duplicata/replay completo ainda depende de B05.5d2.
+Linux usa `./mvnw`. O teste resolve os dois JARs em seus diretórios `target` dentro do workspace. O [CI vertical #4](https://github.com/Joaomagh/credpay/actions/runs/37160110175) passou os dois estados finais, duplicatas e replay pelos aplicativos reais, com preparação conferida e snapshots preservados. Compilação local não substitui execução com containers.

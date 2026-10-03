@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B05.5d1 integrado na PR #105 (1e5e3d3), após Flow CI #2/transações #153/Secret Scan #60 no SHA final. Dois estados finais reais, duas outboxes publicadas e causalidade/bancos próprios comprovados; spec 9.51.
+- B05.5d2 validado na PR #106: Flow CI #4/transações #155/Secret Scan #62 verdes, duplicatas/ack/replay e cinco tabelas intactas nos dois finais reais. Integrar após checks no SHA final para encerrar B05; spec 9.52.
 
 ## Próximo
 
-- [ ] B05.5d2 — Em execução: republicar eventos reais das duas outboxes, observar ack/replay e snapshots completos intactos; POST original PENDENTE/Location e GET final. Compilar, revisar e exigir CI real antes de concluir B05.
+- [ ] B06.1 — Após integrar d2, parar somente o processador, comprovar POST PENDENTE/outbox publicada/fila pronta sem decisão/histórico e recuperar após reinício real com causalidade original. FALHOU aguarda definição de produto; não bloqueia este experimento.
