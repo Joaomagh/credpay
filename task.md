@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B06.2 — Harness de DLQ/replay após correção de limite compilado offline e revisado sem bloqueante; CI real pendente, spec 9.54. Confirm/return precedem ack da original.
+- [ ] B06.2 — PR #108 validada: Flow #10 (4 cenários), transações #161 (279 testes) e Scan #68 verdes. Integrar após checks do SHA final; spec 9.54.
 
 ## Próximo
 
