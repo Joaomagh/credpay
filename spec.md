@@ -1912,6 +1912,8 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Achado tratado na revisão:** leitura padrão aceitava objeto seguido de outro objeto ou lixo textual. Dois testes novos deram red: 79 executados, duas falhas por nenhuma exceção. ObjectReader local com FAIL_ON_TRAILING_TOKENS corrigiu o corpo inteiro sem mutar ObjectMapper compartilhado; 79 focados e verify offline com 153 testes/JAR verdes. A rejeição mantém JSON inválido sem causa. Sem ampliar para limites de payload ou política de campos duplicados; não há contrato específico desses itens neste slice.
 
+**Aceite:** [CI #133](https://github.com/Joaomagh/credpay/actions/runs/37152699748), SHA a74ee1d, e [Secret Scan #40](https://github.com/Joaomagh/credpay/actions/runs/37152699539) verdes. Suíte completa inclui todos os 79 testes do parser e fixtures reais anteriores; reinspeção assistida sem bloqueante. Nenhum consumo ativado ou dependência adicionada. PR #100 exige checks do SHA documental final antes do merge. Próximo B05.5b usa políticas próprias e referência à exchange do produtor, sem declará-la na aplicação consumidora.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
