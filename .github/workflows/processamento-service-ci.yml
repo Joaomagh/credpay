@@ -4,12 +4,14 @@ on:
   pull_request:
     paths:
       - "processamento-service/**"
+      - "infra/rabbitmq/**"
       - ".github/workflows/processamento-service-ci.yml"
   push:
     branches:
       - main
     paths:
       - "processamento-service/**"
+      - "infra/rabbitmq/**"
       - ".github/workflows/processamento-service-ci.yml"
 
 permissions:
