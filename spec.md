@@ -1858,6 +1858,8 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Red remoto observado:** [CI #113](https://github.com/Joaomagh/credpay/actions/runs/37147563843), SHA `30f851f`, executou 109 testes: 108 anteriores passaram, novo cenário teve um erro pela ausência de bean `TransicaoRepository`. PostgreSQL/Flyway reais estavam disponíveis. Secret Scan #20 passou. Depois deste red, adapter transacional e primeira V5 foram escritos para o round-trip; constraints adicionais serão testadas no próximo ciclo antes de completar esta migration ainda não integrada.
 
+**Primeiro green e red estrutural:** [CI #114](https://github.com/Joaomagh/credpay/actions/runs/37147748585), SHA `35a3118`, passou com 109 testes, sem falha/erro/skip. Novos testes diretos do banco exigiram unicidade, FKs e checks. [CI #115](https://github.com/Joaomagh/credpay/actions/runs/37147937667), SHA `6678a5f`, executou 123 testes com 12 falhas esperadas: operações inválidas não lançavam exceção. Os dois estados finais e a colisão de PK na segunda escrita passaram; esta última já comprovou rollback real do UPDATE, preservando histórico original e transação alvo PENDENTE. V5 foi então completada com as constraints; ela ainda não foi integrada/aplicada em ambiente permanente, portanto não houve edição de migration já entregue.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
