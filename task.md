@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B05.5b integrado na PR #101, commit 9a4d62d: CI transações #137/processador #150/Secret Scan #44 verdes no último SHA. Spec 9.47/9.48.
+- B05.5c1 validado na PR #102: CI #142/Secret Scan #49 verdes, commit/ack nos dois finais e replay comprovados. Integração depende dos CIs aplicáveis no SHA final. Ativação operacional proibida; spec 9.48.
 
 ## Próximo
 
-- [ ] B05.5c1 em execução — Flags/scaffolding verdes; observar red remoto de endpoint ausente antes de ligar consumo válido. Exigir commit antes de ack e replay real sem nova escrita/Clock. Ativação operacional proibida até c2/c3; spec 9.48.
+- [ ] B05.5c2 — Após integrar c1, rejeitar contrato inválido/conflito/recusa permanente para DLQ sem requeue e sem alterar banco, com diagnóstico seguro. TDD antes da classificação; retry operacional fica em c3.
