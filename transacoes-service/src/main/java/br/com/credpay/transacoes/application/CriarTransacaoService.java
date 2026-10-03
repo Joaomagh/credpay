@@ -6,6 +6,7 @@ import java.util.Currency;
 import java.util.UUID;
 
 import br.com.credpay.transacoes.domain.Transacao;
+import br.com.credpay.transacoes.domain.StatusTransacao;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
@@ -84,7 +85,7 @@ class CriarTransacaoService implements CriarTransacao {
                 transacao.id(),
                 transacao.valor(),
                 transacao.moeda(),
-                transacao.status());
+                StatusTransacao.PENDENTE);
     }
 
     private record TransacaoCriadaPayload(

@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B05.4b validado na PR #98: CI #126 verde com 170 testes e Secret Scan #33 verde. Disputas reais, conflitos e liberação após rollback comprovados; spec 9.44. Refatoração local verde; checks do SHA final obrigatórios antes de integrar.
+- B05.4c validado na PR #99: CI #130/Secret Scan #37 verdes; 174 testes, POST original PENDENTE e GET final com histórico/outbox intactos. Integração aguarda checks no SHA documental final; spec 9.45.
 
 ## Próximo
 
-- [ ] B05.4c — Em TDD, preservar representação original PENDENTE no replay do POST, mesmo após resultado aplicado, enquanto GET continua final. Teste HTTP/PostgreSQL exige dados originais/escala, histórico único e outbox intacta; nunca atualizar estado de volta para PENDENTE.
+- [ ] B05.5a — Após integrar B05.4c, parser isolado de TransacaoProcessada.v1: envelope/propriedades AMQP, dois finais, precisão de nanos, campos extras compatíveis e rejeição segura. Sem listener/banco/dependência nova.
