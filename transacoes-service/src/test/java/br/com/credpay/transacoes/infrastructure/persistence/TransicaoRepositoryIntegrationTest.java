@@ -11,6 +11,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import br.com.credpay.transacoes.application.TransicaoRecebida;
+import br.com.credpay.transacoes.application.TransicaoRecusadaException;
 import br.com.credpay.transacoes.application.TransicaoRepository;
 import br.com.credpay.transacoes.domain.StatusTransacao;
 import org.junit.jupiter.api.Test;
@@ -164,7 +165,7 @@ class TransicaoRepositoryIntegrationTest {
         jdbc.update("DELETE FROM transacoes WHERE id = ?", transicao.transactionId());
 
         assertThatThrownBy(() -> repository.registrar(transicao))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(TransicaoRecusadaException.class)
                 .hasMessage("transição exige transação pendente e causa de criação local");
 
         assertThat(repository.buscarPorEvento(transicao.eventId())).isEmpty();
@@ -179,7 +180,7 @@ class TransicaoRepositoryIntegrationTest {
         jdbc.update("UPDATE transacoes SET status = ? WHERE id = ?", estado.name(), transicao.transactionId());
 
         assertThatThrownBy(() -> repository.registrar(transicao))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(TransicaoRecusadaException.class)
                 .hasMessage("transição exige transação pendente e causa de criação local");
 
         assertThat(repository.buscarPorEvento(transicao.eventId())).isEmpty();
@@ -195,7 +196,7 @@ class TransicaoRepositoryIntegrationTest {
                 tipo, versao, transicao.causationId());
 
         assertThatThrownBy(() -> repository.registrar(transicao))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(TransicaoRecusadaException.class)
                 .hasMessage("transição exige transação pendente e causa de criação local");
 
         assertThat(repository.buscarPorEvento(transicao.eventId())).isEmpty();

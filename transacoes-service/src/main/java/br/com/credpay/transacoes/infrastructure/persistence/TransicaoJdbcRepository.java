@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import br.com.credpay.transacoes.application.TransicaoRecebida;
+import br.com.credpay.transacoes.application.TransicaoRecusadaException;
 import br.com.credpay.transacoes.application.TransicaoRepository;
 import br.com.credpay.transacoes.domain.StatusTransacao;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -35,7 +36,7 @@ class TransicaoJdbcRepository implements TransicaoRepository {
                 )
                 """, transicao.estadoFinal().name(), transicao.transactionId(), transicao.causationId());
         if (atualizadas != 1) {
-            throw new IllegalStateException("transição exige transação pendente e causa de criação local");
+            throw new TransicaoRecusadaException();
         }
         jdbc.update("""
                 INSERT INTO historico_transacoes (
