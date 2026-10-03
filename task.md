@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B05.5c2 validado na PR #103: CI #145/Secret Scan #52 verdes, 273 testes com rejeições reais para DLQ e banco intacto. Revisão sem bloqueante; integração depende de checks no SHA final. Ativação operacional proibida até c3; spec 9.49.
+- B05.5c2 integrado na PR #103 (34ba238), após CI #146/Secret Scan #53 verdes no SHA final. Rejeições reais para DLQ e banco intacto comprovados; spec 9.49.
 
 ## Próximo
 
-- [ ] B05.5c3 — Após integrar c2, limitar falhas operacionais a três tentativas com esperas 1/2 s; provar rollback/recuperação, esgotamento para DLQ e permanentes sem retry. Atualizar runbook somente após aceite real.
+- [ ] B05.5c3 — Em execução: red/green de três tentativas com esperas 1/2 s e permanentes sem retry observado. Provar rollback/recuperação e esgotamento para DLQ no CI, revisar e atualizar runbook somente após aceite real.

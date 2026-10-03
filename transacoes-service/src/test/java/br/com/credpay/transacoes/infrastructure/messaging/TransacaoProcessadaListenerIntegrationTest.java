@@ -44,6 +44,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -234,6 +235,7 @@ class TransacaoProcessadaListenerIntegrationTest {
         aguardarFila("messages", 0, 10);
         var antes = banco();
         var conflitante = mensagem(evento, original.id(), causa, StatusTransacao.REJEITADA);
+        pausa.armarObservacao(evento);
 
         rabbit.send("credpay.processamento.v1", "transacao.processada.v1", conflitante);
 
@@ -241,6 +243,8 @@ class TransacaoProcessadaListenerIntegrationTest {
         assertThat(banco()).withFailMessage("conflito alterou resultado, histórico ou outbox").isEqualTo(antes);
         assertThat(estado(original.id())).isEqualTo("APROVADA");
         assertThat(clock.chamadas.get()).isEqualTo(1);
+        assertThat(pausa.buscas.get()).isEqualTo(1);
+        assertThat(pausa.escritas.get()).isZero();
     }
 
     @ParameterizedTest
@@ -252,6 +256,7 @@ class TransacaoProcessadaListenerIntegrationTest {
         var antes = banco();
         clock.resetar();
         var message = mensagem(UUID.randomUUID(), id, UUID.randomUUID(), StatusTransacao.APROVADA);
+        pausa.armarObservacao(UUID.fromString(message.getMessageProperties().getMessageId()));
 
         rabbit.send("credpay.processamento.v1", "transacao.processada.v1", message);
 
@@ -260,6 +265,61 @@ class TransacaoProcessadaListenerIntegrationTest {
         if (transacaoExiste) assertThat(estado(id)).isEqualTo("PENDENTE");
         else assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM transacoes WHERE id = ?", Integer.class, id)).isZero();
         assertThat(clock.chamadas.get()).isZero();
+        assertThat(pausa.buscas.get()).isEqualTo(1);
+        assertThat(pausa.escritas.get()).isZero();
+    }
+
+    @Test
+    void receber_deveReverterDuasTentativasEConfirmarSomenteTerceiroCommit() throws Exception {
+        var original = criar.executar(UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"));
+        var causa = jdbc.queryForObject("SELECT event_id FROM outbox_eventos WHERE aggregate_id = ?", UUID.class, original.id());
+        var evento = UUID.randomUUID();
+        var antes = banco();
+        var outboxOriginal = jdbc.queryForMap("SELECT * FROM outbox_eventos WHERE event_id = ?", causa);
+        clock.resetar();
+        pausa.armarFalhas(evento, 2, true);
+
+        rabbit.send("credpay.processamento.v1", "transacao.processada.v1",
+                mensagem(evento, original.id(), causa, StatusTransacao.APROVADA));
+        try {
+            assertThat(pausa.falhaInserida.await(10, TimeUnit.SECONDS)).as("segunda tentativa escreveu antes da falha").isTrue();
+            assertThat(banco()).withFailMessage("tentativa falha ou ainda não confirmada ficou visível").isEqualTo(antes);
+            aguardarFila("messages_unacknowledged", 1, 15);
+            assertThat(pausa.escritas.get()).isEqualTo(2);
+            assertThat(clock.chamadas.get()).isEqualTo(2);
+        } finally {
+            pausa.liberar();
+        }
+        aguardarHistorico(evento);
+        aguardarFila("messages", 0, 10);
+        assertThat(estado(original.id())).isEqualTo("APROVADA");
+        assertThat(historico.buscarPorEvento(evento)).contains(pausa.registrada);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM historico_transacoes WHERE transaction_id = ?",
+                Integer.class, original.id())).isEqualTo(1);
+        assertThat(jdbc.queryForMap("SELECT * FROM outbox_eventos WHERE event_id = ?", causa))
+                .withFailMessage("retry de resultado alterou outbox original").isEqualTo(outboxOriginal);
+        assertThat(pausa.escritas.get()).isEqualTo(3);
+        assertThat(clock.chamadas.get()).isEqualTo(3);
+        assertThat(rabbit.receive(RabbitMqResultadoConfiguration.DLQ, 200)).isNull();
+    }
+
+    @Test
+    void receber_deveEnviarParaDlqAposTresRollbacksSemAlterarBanco() throws Exception {
+        var original = criar.executar(UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"));
+        var causa = jdbc.queryForObject("SELECT event_id FROM outbox_eventos WHERE aggregate_id = ?", UUID.class, original.id());
+        var evento = UUID.randomUUID();
+        var antes = banco();
+        clock.resetar();
+        pausa.armarFalhas(evento, 3, false);
+        var message = mensagem(evento, original.id(), causa, StatusTransacao.REJEITADA);
+
+        rabbit.send("credpay.processamento.v1", "transacao.processada.v1", message);
+
+        conferirRejeicao(message);
+        assertThat(banco()).withFailMessage("esgotamento de retry deixou alteração parcial").isEqualTo(antes);
+        assertThat(estado(original.id())).isEqualTo("PENDENTE");
+        assertThat(pausa.escritas.get()).isEqualTo(3);
+        assertThat(clock.chamadas.get()).isEqualTo(3);
     }
 
     private java.util.List<java.util.List<java.util.Map<String, Object>>> banco() {
@@ -366,14 +426,23 @@ class TransacaoProcessadaListenerIntegrationTest {
         private volatile CountDownLatch segundaBusca = new CountDownLatch(0);
         private final AtomicInteger buscas = new AtomicInteger();
         private final AtomicInteger escritas = new AtomicInteger();
+        private volatile int falhas;
+        private volatile boolean pausarSegundaFalha;
+        private volatile CountDownLatch falhaInserida = new CountDownLatch(0);
 
         HistoricoComPausa(TransicaoRepository delegate) { this.delegate = delegate; }
         void armar(UUID evento) {
             alvo = evento; replay = false; inserida = new CountDownLatch(1); liberada = new CountDownLatch(1);
+            falhas = 0; pausarSegundaFalha = false;
             buscas.set(0); escritas.set(0);
         }
         void armarReplay(UUID evento) {
             armar(evento); replay = true; segundaBusca = new CountDownLatch(1);
+        }
+        void armarObservacao(UUID evento) { armarReplay(evento); liberar(); }
+        void armarFalhas(UUID evento, int quantidade, boolean pausarSegunda) {
+            armar(evento); falhas = quantidade; pausarSegundaFalha = pausarSegunda;
+            falhaInserida = new CountDownLatch(1);
         }
         void liberar() { liberada.countDown(); }
         @Override public void bloquearIdentidades(UUID evento, UUID transacao) { delegate.bloquearIdentidades(evento, transacao); }
@@ -389,9 +458,15 @@ class TransacaoProcessadaListenerIntegrationTest {
         @Override public void registrar(TransicaoRecebida transicao) {
             delegate.registrar(transicao);
             if (transicao.eventId().equals(alvo)) {
-                escritas.incrementAndGet();
+                var tentativa = escritas.incrementAndGet();
                 registrada = transicao;
-                if (!replay) {
+                if (falhas > 0) {
+                    if (pausarSegundaFalha && tentativa == 2) {
+                        falhaInserida.countDown();
+                        aguardarLiberacao();
+                    }
+                    if (tentativa <= falhas) throw new DataAccessResourceFailureException("falha controlada após escritas JDBC");
+                } else if (!replay) {
                     inserida.countDown();
                     aguardarLiberacao();
                 }
