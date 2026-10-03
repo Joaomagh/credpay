@@ -10,7 +10,7 @@ Atualizado em 2026-10-03. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos
 | B02 | Resultado durável e processamento idempotente | PostgreSQL comprova resultado único, replay estável, conflito sem sobrescrita, rollback e concorrência | B01 e baseline própria de persistência | Concluído; B02.1–B02.6 comprovados no CI |
 | B03 | Saída `TransacaoProcessada` confiável | contrato versionado, resultado + outbox atômicos, publicação confirmada e reenvio com a mesma identidade | B02 | Concluído; B03.1–B03.10 comprovados |
 | B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | Concluído; B04.1–B04.12 comprovados, ativação manual exige conferência |
-| B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | B05.1–B05.4b validados; replay HTTP B05.4c próximo |
+| B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | B05.1–B05.4c validados; parser B05.5a próximo |
 | B06 | Recuperação e diagnóstico demonstráveis | queda, atraso e duplicação testados; correlação, retry/DLQ e replay operacional observáveis | B05; refinar política de `FALHOU` | Refinamento |
 | B07 | Ambiente local reproduzível | imagens/Compose e depois Kubernetes local com probes e recursos; roteiro demonstra fluxo e falha | B05 e B06 | Refinamento |
 | B08 | Entrega e portfólio verificáveis | CI cobre riscos e imagens; CD só com destino/rollback definidos; README e demo coerentes | B07 e critérios do plano | Refinamento |
@@ -91,9 +91,15 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 **B05.4b — Concorrência real — validado na PR #98.** CI #126 passou 170 testes, incluindo seis disputas reais com advisory lock em espera por PID específico; equivalentes convergem, quatro conflitos preservam vencedora e rollback libera locks. Ordem/deduplicação das chaves efetivas protegidas por dois testes de regressão; 72 sem infraestrutura verdes pós-refatoração. Sem migration/dependência/listener; spec 9.44 e CI/scanner no último SHA exigidos antes do merge.
 
-**B05.4c — Replay HTTP original — refinado.** POST equivalente continua respondendo PENDENTE com dados originais; GET retorna final e histórico/outbox não mudam. Ajustar representação, nunca reiniciar banco. Teste HTTP inclui escala equivalente diferente.
+**B05.4c — Replay HTTP original — validado na PR #99.** Red CI #129 com quatro falhas esperadas; CI #130 verde com 174 testes e Secret Scan #37. POST equivalente conserva resposta/Location PENDENTE, GET final e dados/escala/histórico/outbox intactos nos dois finais. Mapper somente de resposta; sem UPDATE. Integração exige checks do SHA documental final; spec 9.45.
 
-**Depois:** B05.5 parser/entrada opt-in e fluxo POST → eventos → GET; refinar somente quando aplicação/concorrência/HTTP estiverem comprovados. Critérios na seção 9.40.
+**B05.5a — Parser do resultado — pronto após integração de B05.4c.** Problema: envelope AMQP ainda não pode ser convertido com segurança em entrada tipada. Aceite: TransacaoProcessada v1 válido nos dois finais, instante recebido exato, campos extras compatíveis; rejeitar JSON/estrutura/tipos/UUIDs/versão/status/correlação/propriedades inconsistentes sem ecoar payload. Parser isolado, sem banco/listener/dependência nova; contrato 9.40.
+
+**B05.5b — Topologia e provisionamento do retorno — refinado, depende de a.** Fila quorum e DLQ próprias do primeiro serviço, bindings à exchange do processador e ativação opt-in. Aceite real: artefato operacional reaplicável, políticas efetivas escopadas, at-least-once/reject-publish, capacidades finitas e feature flag conferidos. Reutilizar baseline RabbitMQ existente; CI deve incluir o novo artefato. Sem listener neste incremento.
+
+**B05.5c — Listener seguro do resultado — refinado, depende de b.** Aplicar duravelmente antes de ack; replay sem duplicar histórico; contrato/conflito/recusa permanente para DLQ; falha operacional com três tentativas limitadas. Aceite em PostgreSQL/RabbitMQ reais protege commit/ack, rejeição e esgotamento na nova fronteira. Não repetir todos os experimentos internos do broker nem habilitar consumo automaticamente.
+
+**B05.5d — Fluxo vertical dos dois aplicativos — refinado, depende de c.** POST → ambas outboxes/eventos → GET final APROVADA/REJEITADA, com bancos próprios e execução real dos dois aplicativos. Aceite inclui evento duplicado, histórico único e replay POST original; saída fabricada pela fixture não comprova o fluxo. Refinar orquestração próxima da execução, sem dependência Java entre serviços. HA/tuning/dashboard/replay operacional da DLQ ficam fora de B05.
 
 ## Incrementos de B08
 

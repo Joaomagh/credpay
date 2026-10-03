@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B05.4b integrado na PR #98, commit 290f77f: CI #127/Secret Scan #34 verdes no último SHA. Disputas e liberação após rollback comprovados; spec 9.44.
+- B05.4c validado na PR #99: CI #130/Secret Scan #37 verdes; 174 testes, POST original PENDENTE e GET final com histórico/outbox intactos. Integração aguarda checks no SHA documental final; spec 9.45.
 
 ## Próximo
 
-- [ ] B05.4c em execução — Red unitário observado e testes HTTP compilados; observar red HTTP no CI antes de alterar mapper da resposta. Depois exigir POST original PENDENTE/GET final, dados/escala, histórico/outbox intactos, sem UPDATE de retorno a PENDENTE.
+- [ ] B05.5a — Após integrar B05.4c, parser isolado de TransacaoProcessada.v1: envelope/propriedades AMQP, dois finais, precisão de nanos, campos extras compatíveis e rejeição segura. Sem listener/banco/dependência nova.
