@@ -4,12 +4,12 @@
 
 ## Último incremento
 
-- B05 concluído e integrado na PR #106 (`2b85d99`): Flow #5/transações #156/Secret Scan #63 verdes no SHA final; duplicatas/replay preservam cinco tabelas e resposta original.
+- B06.1 integrado na PR #107 (`6665fef`): Flow #8/transações #159/Scan #66 verdes no SHA final `755bbd4`. Parada/reinício recuperam a causa original; spec 9.53.
 
 ## Agora
 
-- [ ] B06.1 — PR #107 validada: Flow #7 (3 cenários), transações #158 (279 testes) e Scan #65 verdes. Integrar após checks no SHA final; spec 9.53.
+- [ ] B06.2 — PR #108 validada: Flow #10 (4 cenários), transações #161 (279 testes) e Scan #68 verdes. Integrar após checks do SHA final; spec 9.54.
 
 ## Próximo
 
-- [ ] B06.2 — Após integrar B06.1, provar replay de DLQ depois de corrigir limite ausente, com confirmação antes de remover a mensagem original. FALHOU aguarda decisão do Navigator.
+- [ ] B08.2a — Após integrar B06.2, comparação causal de uma fixture/pool/container no mesmo par/ordem antes/depois; sem silenciar warnings. FALHOU aguarda decisão do Navigator.

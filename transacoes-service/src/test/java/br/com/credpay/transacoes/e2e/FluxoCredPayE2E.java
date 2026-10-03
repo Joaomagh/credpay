@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.StreamSupport;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -294,6 +295,130 @@ class FluxoCredPayE2E {
         throw new AssertionError("evento original não ficou publicado e pronto enquanto processador estava parado");
     }
 
+    @Test
+    @Order(3)
+    @Timeout(value = 2, unit = TimeUnit.MINUTES)
+    void limiteAusente_deveConservarDlqAteReplayConfirmadoDepoisDaCorrecao() throws Exception {
+        aguardarFilasVazias();
+        var resposta = enviar(HttpRequest.newBuilder(uri("/transacoes"))
+                .header("Content-Type", "application/json").header("Idempotency-Key", UUID.randomUUID().toString())
+                .POST(HttpRequest.BodyPublishers.ofString("{\"valor\":50.000,\"moeda\":\"USD\"}")));
+        assertThat(resposta.statusCode()).isEqualTo(201);
+        var original = JSON.readTree(resposta.body());
+        assertThat(original.path("status").asText()).isEqualTo("PENDENTE");
+        var id = UUID.fromString(original.path("id").asText());
+        var location = resposta.headers().firstValue("Location").orElseThrow();
+        assertThat(location).isEqualTo("/transacoes/" + id);
+        aguardarEntradaNaDlq(id);
+        assertThat(Files.readString(logs.resolve(fase + "-processamento-service.log")))
+                .withFailMessage("DLQ não registrou diagnóstico fixo de esgotamento operacional")
+                .contains("TransacaoCriada com falha operacional apos 3 tentativas");
+        assertThat(aguardarFinal(location, "PENDENTE")).withFailMessage("DLQ alterou GET PENDENTE").isEqualTo(original);
+        assertThat(processamento.queryForObject("SELECT COUNT(*) FROM processamentos WHERE transaction_id = ?", Integer.class, id)).isZero();
+        assertThat(processamento.queryForObject("SELECT COUNT(*) FROM outbox_eventos WHERE aggregate_id = ?", Integer.class, id)).isZero();
+        assertThat(transacoes.queryForObject("SELECT COUNT(*) FROM historico_transacoes WHERE transaction_id = ?", Integer.class, id)).isZero();
+        var entrada = transacoes.queryForMap("SELECT * FROM outbox_eventos WHERE aggregate_id = ?", id);
+        var corpo = entrada.get("payload").toString().getBytes(StandardCharsets.UTF_8);
+        var antes = bancoInteiro();
+
+        var transacaoAntes = new LinkedHashMap<>(transacoes.queryForMap("SELECT * FROM transacoes WHERE id = ?", id));
+
+        // Confirmar recebimento pelo broker não basta: uma publicação retornada conserva a DLQ.
+        assertThat(replayDlq("transacao.criada.replay.sem-rota.v1", id, entrada, corpo)).isFalse();
+        aguardarEntradaNaDlq(id);
+        assertThat(bancoInteiro()).withFailMessage("replay sem rota alterou os bancos").isEqualTo(antes);
+
+        encerrarProcessos(List.of(processoProcessamento));
+        aguardarSomenteConsumidorDeResultado();
+        fase++;
+        var porta = portaLivre();
+        var reiniciado = iniciar("processamento", PROCESSAMENTO, porta, true, true, "--credpay.processamento.limites.USD=100.00");
+        aguardarHealth(reiniciado, porta, "processamento com limite corrigido");
+        conferirConsumidores();
+        assertThat(bancoInteiro()).withFailMessage("reinício sem replay alterou os bancos").isEqualTo(antes);
+        aguardarEntradaNaDlq(id);
+        assertThat(replayDlq("transacao.criada.v1", id, entrada, corpo)).isTrue();
+        var finalizada = aguardarFinal(location, "APROVADA");
+        assertThat(finalizada.path("id").asText()).isEqualTo(id.toString());
+        assertThat(finalizada.path("valor").decimalValue()).isEqualByComparingTo("50.000");
+        assertThat(finalizada.path("moeda").asText()).isEqualTo("USD");
+        aguardarPublicacoes(id);
+        var registro = processamento.queryForMap("SELECT * FROM processamentos WHERE transaction_id = ?", id);
+        var saida = processamento.queryForMap("SELECT * FROM outbox_eventos WHERE aggregate_id = ?", id);
+        var historico = transacoes.queryForMap("SELECT * FROM historico_transacoes WHERE transaction_id = ?", id);
+        assertThat(registro.get("event_id")).isEqualTo(entrada.get("event_id"));
+        assertThat(registro.get("output_event_id")).isEqualTo(saida.get("event_id"));
+        assertThat(registro.get("correlation_id")).isEqualTo(id);
+        assertThat(registro.get("resultado")).isEqualTo("APROVADA");
+        assertThat(registro.get("moeda")).isEqualTo("USD");
+        assertThat((BigDecimal) registro.get("limite_aplicado")).isEqualByComparingTo("100.00");
+        assertThat(historico.get("event_id")).isEqualTo(saida.get("event_id"));
+        assertThat(historico.get("causation_id")).isEqualTo(entrada.get("event_id"));
+        assertThat(historico.get("correlation_id")).isEqualTo(id);
+        assertThat(historico.get("estado_anterior")).isEqualTo("PENDENTE");
+        assertThat(historico.get("estado_final")).isEqualTo("APROVADA");
+        transacaoAntes.put("status", "APROVADA");
+        assertThat(transacoes.queryForMap("SELECT * FROM transacoes WHERE id = ?", id))
+                .withFailMessage("replay operacional alterou dados além do status").isEqualTo(transacaoAntes);
+        assertThat(transacoes.queryForMap("SELECT * FROM outbox_eventos WHERE aggregate_id = ?", id))
+                .withFailMessage("replay operacional alterou outbox original já publicada").isEqualTo(entrada);
+        conferirUnicidade(transacoes, "transacoes", "id", id);
+        conferirUnicidade(transacoes, "outbox_eventos", "aggregate_id", id);
+        conferirUnicidade(transacoes, "historico_transacoes", "transaction_id", id);
+        conferirUnicidade(processamento, "processamentos", "transaction_id", id);
+        conferirUnicidade(processamento, "outbox_eventos", "aggregate_id", id);
+        aguardarFilasVazias();
+    }
+
+    private boolean replayDlq(String rota, UUID id, Map<String, Object> entrada, byte[] corpo) throws Exception {
+        var factory = new com.rabbitmq.client.ConnectionFactory();
+        factory.setHost(RABBIT.getHost());
+        factory.setPort(RABBIT.getAmqpPort());
+        factory.setUsername(RABBIT.getAdminUsername());
+        factory.setPassword(RABBIT.getAdminPassword());
+        factory.setVirtualHost("/");
+        factory.setConnectionTimeout(2_000);
+        factory.setHandshakeTimeout(10_000);
+        factory.setAutomaticRecoveryEnabled(false);
+        try (var conexao = factory.newConnection(); var canal = conexao.createChannel()) {
+            var mensagem = canal.basicGet(FILAS.get(1), false);
+            assertThat(mensagem).withFailMessage("DLQ não entregou a mensagem esperada para replay manual").isNotNull();
+            assertThat(mensagem.getBody()).withFailMessage("corpo original mudou na DLQ").isEqualTo(corpo);
+            var props = mensagem.getProps();
+            assertThat(props.getMessageId()).isEqualTo(entrada.get("event_id").toString());
+            assertThat(props.getCorrelationId()).isEqualTo(id.toString());
+            assertThat(props.getType()).isEqualTo("TransacaoCriada");
+            assertThat(props.getContentType()).isEqualTo("application/json");
+            assertThat(props.getContentEncoding()).isEqualTo("UTF-8");
+            assertThat(props.getDeliveryMode()).isEqualTo(2);
+            assertThat(props.getHeaders().get("x-first-death-reason").toString()).isEqualTo("rejected");
+            assertThat(props.getHeaders().get("x-first-death-queue").toString()).isEqualTo(FILAS.get(0));
+            var retornada = new AtomicBoolean();
+            canal.addReturnListener(retorno -> retornada.set(true));
+            canal.confirmSelect();
+            canal.basicPublish("credpay.transacoes.v1", rota, true, props, mensagem.getBody());
+            canal.waitForConfirmsOrDie(10_000);
+            if (retornada.get()) return false;
+            canal.basicAck(mensagem.getEnvelope().getDeliveryTag(), false);
+            return true;
+        }
+        // Fechar canal/conexão sem ack conserva/reentrega a mensagem em caso de return, timeout ou falha.
+    }
+
+    private void aguardarEntradaNaDlq(UUID id) throws Exception {
+        var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(20);
+        do {
+            var publicada = transacoes.queryForObject("SELECT COUNT(*) FROM outbox_eventos WHERE aggregate_id = ? AND published_at IS NOT NULL", Integer.class, id) == 1;
+            var filas = consultar("list_queues", "name", "messages_ready", "messages_unacknowledged");
+            var dlq = porNome(filas, FILAS.get(1));
+            if (publicada && dlq.path("messages_ready").asInt() == 1 && dlq.path("messages_unacknowledged").asInt() == 0
+                    && List.of(0, 2, 3).stream().allMatch(indice -> porNome(filas, FILAS.get(indice)).path("messages_ready").asInt() == 0
+                            && porNome(filas, FILAS.get(indice)).path("messages_unacknowledged").asInt() == 0)) return;
+            TimeUnit.MILLISECONDS.sleep(200);
+        } while (System.nanoTime() < prazo);
+        throw new AssertionError("evento não ficou publicado e isolado na DLQ de entrada no prazo");
+    }
+
     private List<List<Map<String, Object>>> bancoInteiro() {
         return List.of(transacoes.queryForList("SELECT * FROM transacoes ORDER BY id"),
                 transacoes.queryForList("SELECT * FROM historico_transacoes ORDER BY event_id"),
@@ -342,15 +467,17 @@ class FluxoCredPayE2E {
     }
 
     private Process iniciar(String servico, PostgreSQLContainer<?> banco, int porta, boolean topologia,
-            boolean consumirEPublicar) throws Exception {
+            boolean consumirEPublicar, String... ajustes) throws Exception {
         var modulo = servico + "-service";
         var jar = RAIZ.resolve(modulo + "/target/" + modulo + "-0.0.1-SNAPSHOT.jar").normalize();
         assertThat(jar.startsWith(RAIZ) && Files.isRegularFile(jar)).as("JAR real compilado no workspace: " + modulo).isTrue();
         Files.createDirectories(logs);
-        var processo = new ProcessBuilder("java", "-Xmx256m", "-jar", jar.toString(), "--server.port=" + porta,
+        var argumentos = new ArrayList<>(List.of("java", "-Xmx256m", "-jar", jar.toString(), "--server.port=" + porta,
                 "--management.health.rabbit.enabled=true", "--credpay." + servico + ".consumer.topology.enabled=" + topologia,
                 "--credpay." + servico + ".consumer.listener.enabled=" + consumirEPublicar,
-                "--credpay.outbox.publisher.enabled=" + consumirEPublicar, "--credpay.processamento.limites.BRL=100.00");
+                "--credpay.outbox.publisher.enabled=" + consumirEPublicar, "--credpay.processamento.limites.BRL=100.00"));
+        argumentos.addAll(List.of(ajustes));
+        var processo = new ProcessBuilder(argumentos);
         processo.directory(RAIZ.toFile());
         var ambiente = processo.environment();
         ambiente.put("SPRING_DATASOURCE_URL", banco.getJdbcUrl());

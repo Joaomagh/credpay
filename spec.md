@@ -1996,6 +1996,16 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Limites/próximo:** encerramento controlado não comprova crash abrupto, HA ou queda de broker. B06.2 provará correção de configuração e replay de DLQ preservando mensagem até confirmação; definição de FALHOU continua aguardando direção de produto do Navigator.
 
+### 9.54 Replay após correção de configuração — B06.2
+
+**Objetivo/decisão:** caracterizar falha operacional por moeda válida sem limite (USD) e recuperação depois de reiniciar somente o processador com USD100, no mesmo banco/broker. Sem código de produção ou dependência nova; cliente Java RabbitMQ já transitivo. Valor acima do limite continua decisão REJEITADA normal, sem DLQ.
+
+**Aceite:** POST/GET PENDENTE, outbox original publicada, mensagem isolada na DLQ com diagnóstico fixo de esgotamento e nenhuma decisão/saída/histórico. Replay mandatory sem rota precisa retornar e conservar mensagem/bancos. Após correção, mensagem real é lida por `basicGet(false)`, corpo/propriedades/headers/identidade conferidos, republicada e aguardada por `waitForConfirmsOrDie`; return impede ack. Só confirm sem return permite `basicAck` da DLQ. Recuperação exige APROVADA USD, limite100, causa original, cinco registros únicos, dados/outbox original intactos e filas vazias.
+
+**Fundamento:** [guia do cliente Java](https://www.rabbitmq.com/client-libraries/java-api-guide) descreve leitura com ack manual; [confirms RabbitMQ](https://www.rabbitmq.com/docs/confirms) especifica return antes de ack para publicação mandatory sem rota. Conexão/canal exclusivos por tentativa, recuperação automática do cliente desligada e fechamento sem ack permitem reentrega em falha. Confirmação antes de ack evita retirar a única cópia antes de publicação, mas queda nessa janela pode duplicar; identidade/idempotência permanecem necessárias.
+
+**Estado/evidência:** `.\mvnw.cmd --batch-mode --no-transfer-progress -o -DskipTests test-compile`, no módulo de transações, passou após asserções adicionais (31 fontes, 14,312 s). Revisão assistida sem bloqueante; [Flow CI #10](https://github.com/Joaomagh/credpay/actions/runs/37161905170) passou quatro cenários reais sem falhas/erros/skips, 122,1 s; [transações #161](https://github.com/Joaomagh/credpay/actions/runs/37161905148) passou 279 testes e JAR, 2m44s; [Scan #68](https://github.com/Joaomagh/credpay/actions/runs/37161905123) verde em `2fd5ac7`, PR #108. UTF-8/diff/hook passaram. Busca limitada no log do Flow encontrou zero candidatos de JSON financeiro integral, sem substituir B08.1. Transações registrou 30 warnings Hikari, não suprimidos. Integração aguarda checks do SHA final. Política de três tentativas já tem prova unitária/integrada do listener; este cenário observa esgotamento/diagnóstico e DLQ, sem instrumentar contagem de invocações dentro do JAR. Não é ferramenta operacional genérica nem autorização para replay externo. FALHOU continua aguardando regra de produto. Próximo após integração: B08.2a, comparação causal de lifecycle de fixture.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
