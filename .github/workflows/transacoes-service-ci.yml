@@ -4,12 +4,16 @@ on:
   pull_request:
     paths:
       - "transacoes-service/**"
+      - "infra/rabbitmq/transacoes-policies.json"
+      - "infra/rabbitmq/TRANSACOES.md"
       - ".github/workflows/transacoes-service-ci.yml"
   push:
     branches:
       - main
     paths:
       - "transacoes-service/**"
+      - "infra/rabbitmq/transacoes-policies.json"
+      - "infra/rabbitmq/TRANSACOES.md"
       - ".github/workflows/transacoes-service-ci.yml"
 
 permissions:

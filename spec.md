@@ -1914,6 +1914,14 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Aceite:** [CI #133](https://github.com/Joaomagh/credpay/actions/runs/37152699748), SHA a74ee1d, e [Secret Scan #40](https://github.com/Joaomagh/credpay/actions/runs/37152699539) verdes. Suíte completa inclui todos os 79 testes do parser e fixtures reais anteriores; reinspeção assistida sem bloqueante. Nenhum consumo ativado ou dependência adicionada. PR #100 exige checks do SHA documental final antes do merge. Próximo B05.5b usa políticas próprias e referência à exchange do produtor, sem declará-la na aplicação consumidora.
 
+### 9.47 Topologia e políticas próprias do retorno — B05.5b
+
+**Desenho em validação:** RabbitMqResultadoConfiguration opt-in por credpay.transacoes.consumer.topology.enabled (CREDPAY_TRANSACOES_CONSUMER_TOPOLOGY_ENABLED, padrão false). Duas quorum duráveis, DLX direct própria e bindings exatos; exchange credpay.processamento.v1 apenas referenciada, propriedade do processador. Nenhum listener/bean do parser novo; sem dependência. Políticas próprias em infra/rabbitmq/transacoes-policies.json, vhost /, prioridade 10, regex ancoradas, capacidades didáticas 10000/1000, reject-publish e dead-lettering at-least-once. Runbook TRANSACOES.md prepara/conferirá antes do futuro consumo; sem ativação fictícia ou implantação externa.
+
+**Verificação local:** teste da API ausente deu red deliberado; configuração mínima passou dois cenários de padrão/false e true, incluindo ausência de declaração da exchange do produtor, filas/argumentos, exchanges e bindings. test-compile e verify offline com 155 testes/JAR passaram. Fixture de broker isolada de PostgreSQL/schedulers importa/reimporta o arquivo real, exige sentinelas residentes antes da segunda importação, compara políticas efetivas/argumentos/operator policy/flag por fila e escopo fora dos padrões. Outro cenário prova roteamento de sentinelas pelos dois bindings; isso não é consumo de evento de negócio ou dead-lettering por listener. Configuração operacional/caracterização não exige red de broker prévio; CI real ainda pendente. Filtros do workflow incluem artefato e runbook próprios.
+
+**Limites:** conferência manual não bloqueia startup nem detecta alteração posterior. Nó único descartável não prova HA, tuning, teto estrito de capacidade ou recusa da DLQ de retorno. Artefato separado mantém políticas do processador intactas; não eliminar recursos para ajustar divergência. Logs locais ignorados .local/b05-5b-*.log; warnings Mockito conhecidos permanecem. Próximo listener depende deste aceite.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.

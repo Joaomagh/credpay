@@ -12,6 +12,10 @@ spring:
       ddl-auto: validate
 
 credpay:
+  transacoes:
+    consumer:
+      topology:
+        enabled: ${CREDPAY_TRANSACOES_CONSUMER_TOPOLOGY_ENABLED:false}
   outbox:
     publisher:
       enabled: ${CREDPAY_OUTBOX_PUBLISHER_ENABLED:false}

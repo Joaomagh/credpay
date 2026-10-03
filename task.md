@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B05.5a validado na PR #100: 79 testes do parser, verify local 153, CI #133/Secret Scan #40 verdes. Reinspeção sem bloqueante; integrar após checks no SHA final. Spec 9.46.
+- B05.5a integrado na PR #100, commit afa8fb3: CI #134/Secret Scan #41 verdes no último SHA; parser validado e revisão tratada. Spec 9.46.
 
 ## Próximo
 
-- [ ] B05.5b — Após integrar parser, topologia/políticas próprias do retorno opt-in. Testar declarações, referência à exchange do processador, políticas efetivas/flag/escopo, roteamento e reaplicação preservando sentinelas em broker real. Sem listener/dependência nova.
+- [ ] B05.5b em execução — Configuração opt-in e testes locais verdes; revisão/CI real pendentes para políticas efetivas, flag, escopo, roteamento e reaplicação preservando sentinelas. Sem listener/dependência nova; spec 9.47.
