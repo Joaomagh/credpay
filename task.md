@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B06.1 — Harness de parada/reinício do processador implementado e compilado offline; revisão e CI real pendentes. Sem mudança de produção ou dependência; spec 9.53.
+- [ ] B06.1 — PR #107 validada: Flow #7 (3 cenários), transações #158 (279 testes) e Scan #65 verdes. Integrar após checks no SHA final; spec 9.53.
 
 ## Próximo
 
