@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B04.9 em validação: red observado e retry mínimo implementado; 75 testes sem infraestrutura verdes, prova de rollback/recuperação/esgotamento aguarda CI real. B04.8 integrado no PR #88. B08.1 segue pendente, sem evidência de vazamento na busca limitada realizada.
+- B04.9 validado: 75 testes sem infraestrutura verdes e 112 testes completos no CI #136. Retry limitado comprovou rollback, recuperação e DLQ ao esgotar; sem dependência nova. B08.1 permanece pendente, sem evidência de vazamento nas buscas limitadas realizadas.
 
 ## Próximo
 
-- [ ] B04.9 — Provar retry operacional limitado a três tentativas (esperas de 1 e 2 segundos), com recuperação ou DLQ ao esgotar e sem retry para erros permanentes.
+- [ ] B04.10 — Provar reentrega real após fechamento da conexão entre commit e ack, com `redelivered=true` e sem duplicar/alterar resultado ou outbox.

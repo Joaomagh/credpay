@@ -6,7 +6,7 @@
 
 **Fase atual:** 4 — Fluxo assíncrono confiável
 
-**Estado:** criação e consulta HTTP persistentes; processamento idempotente e duas outboxes transacionais comprovados; publicadores RabbitMQ com scheduler opt-in de réplica única em cada serviço; listener de entrada opt-in validado no caminho positivo, replay equivalente e rejeição de JSON inválido/conflito de identidade, ainda sem retry transitório ou fluxo ponta a ponta
+**Estado:** criação e consulta HTTP persistentes; processamento idempotente e duas outboxes transacionais comprovados; publicadores RabbitMQ com scheduler opt-in de réplica única em cada serviço; listener de entrada opt-in com ack após commit, replay equivalente, rejeição permanente e retry limitado comprovados; ainda sem política operacional, prova de perda de conexão após commit ou fluxo ponta a ponta
 
 ## 1. Contexto e limites atuais
 
@@ -1758,9 +1758,11 @@ O recoverer preserva a rejeição permanente segura encontrada na cadeia; no esg
 
 **TDD:** antes da implementação, quatro testes executaram com três falhas esperadas: não recuperou após falha inicial, não rejeitou seguramente ao esgotar e não desembrulhou a rejeição permanente. O cenário default-off já passava e é caracterização. Após a implementação, a fixture com um único argumento falhou no recoverer AMQP; foi corrigida para a assinatura canal/mensagem do container, sem alterar a produção para acomodá-la. Quatro testes verdes e `verify` sem classes de infraestrutura com 75 testes/JAR. A duração observada de pelo menos três segundos prova espera total mínima; os intervalos individuais são configuração inspecionada, não medidos separadamente. Mockito/Byte Buddy continua com warning conhecido.
 
-**Integração preparada, aguardando CI:** decorator da outbox faz INSERT real e lança falha controlada após ele. Na recuperação, pausa a segunda tentativa antes do INSERT, lê resultado/outbox por outra conexão e exige ausência; depois libera, exige exatamente duas chamadas e um único commit. No esgotamento, exige três chamadas, nenhuma linha das novas identidades e mensagem original na DLQ com `rejected`. São falhas controladas na aplicação com banco real, não queda real de PostgreSQL. Docker local indisponível; não há green local de integração alegado.
+**Integração comprovada:** o [CI #136](https://github.com/Joaomagh/credpay/actions/runs/37096399603) executou 112 testes, zero falhas/erros/skips, em 4 min 57 s; os seis cenários do listener passaram. Decorator da outbox faz INSERT real e lança falha controlada após ele. Na recuperação, pausa a segunda tentativa antes do INSERT, lê resultado/outbox por outra conexão e exige ausência; depois libera, exige exatamente duas chamadas e um único commit. No esgotamento, exige três chamadas, nenhuma linha das novas identidades e mensagem original na DLQ com `rejected`. São falhas controladas na aplicação com banco real, não queda real de PostgreSQL. Docker local indisponível; não há green local de integração alegado. A busca limitada de formatos comuns de segredo/payload bruto no log não encontrou candidatos; o diagnóstico observado no esgotamento foi fixo e sem causa interna.
 
 **Revisão:** agente revisor não encontrou bloqueante; foram reforçadas as verificações de ausência da factory nas combinações incompletas de flags. Crash entre commit/ack, provisionamento de política operacional e ativação normal seguem pendentes.
+
+**Próximo:** B04.10, fechar deliberadamente a conexão depois do commit e antes do ack; exigir `redelivered=true`, mesmo corpo/identidade e snapshot/outbox intactos na reentrega real. Não confundir retry in-process com reentrega pelo broker nem alegar process kill.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
