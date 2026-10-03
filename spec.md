@@ -1764,6 +1764,18 @@ O recoverer preserva a rejeição permanente segura encontrada na cadeia; no esg
 
 **Próximo:** B04.10, fechar deliberadamente a conexão depois do commit e antes do ack; exigir `redelivered=true`, mesmo corpo/identidade e snapshot/outbox intactos na reentrega real. Não confundir retry in-process com reentrega pelo broker nem alegar process kill.
 
+### 9.37 Reentrega real na janela commit/ack — B04.10
+
+**Experimento comprovado:** teste exclusivo da fixture instala advice externo ao retry real. Ele chama o listener, espera o retorno normal do caso de uso (commit concluído) e pausa antes de devolver ao container AUTO. Outra conexão lê resultado/outbox completos e o broker mostra uma mensagem sem ack. `CachingConnectionFactory.resetConnection()` fecha a conexão AMQP compartilhada; a barreira é liberada e o teste exige segunda entrega concluída normalmente, `redelivered=true`, mesmo corpo/messageId, todas as colunas preservadas, uma linha de cada tabela, fila vazia e nenhuma mensagem na DLQ.
+
+O teste confirma o container/fila-alvo, usa `shutdown()` para reconstruir o proxy de advice no `start()` e restaura o retry original em `finally`, liberando a barreira antes da limpeza. APIs conferidas no código oficial [container](https://github.com/spring-projects/spring-amqp/blob/v3.2.12/spring-rabbit/src/main/java/org/springframework/amqp/rabbit/listener/AbstractMessageListenerContainer.java) e [connection factory](https://github.com/spring-projects/spring-amqp/blob/v3.2.12/spring-rabbit/src/main/java/org/springframework/amqp/rabbit/connection/CachingConnectionFactory.java), versão 3.2.12 do projeto. Não envolve a execução em transação externa nem republica o evento para imitar reentrega.
+
+**Evidência/revisão:** [CI #140](https://github.com/Joaomagh/credpay/actions/runs/37098555364) passou com 113 testes, zero falhas/erros/skips, em 5 min 15 s; os sete cenários do listener passaram. [Secret Scan #5](https://github.com/Joaomagh/credpay/actions/runs/37098555357) também verde. A caracterização nasceu verde com produção existente; nenhum red artificial ou alteração de produção/POM/dependência. Outro agente revisou fixture, ordem do advice, reentrega versus retry e cleanup, sem bloqueante. `test-compile` local passou; `mvnw.cmd --batch-mode --no-transfer-progress '-Dtest=!**/*IntegrationTest,!ProcessamentoServiceApplicationTest' verify` passou com 75 testes e JAR. Docker Desktop local segue sem pipe do engine; não há integração local alegada. A busca limitada de formatos comuns de segredo e formas de payload bruto no log do job não encontrou candidatos.
+
+**Limites:** fechamento de conexão não é process kill, falha de nó ou prova de HA. Consumidor operacional continua desativado. Warnings conhecidos de Mockito/Byte Buddy permanecem. O CI registrou 39 warnings Hikari de conexões PostgreSQL já fechadas; diagnóstico do ciclo de vida das fixtures/contextos registrado em B08.2, sem silenciar logs ou afirmar causa não comprovada.
+
+**Próximo:** B04.11, comprovar a tentativa de dead-lettering efetivamente recusada pela DLQ cheia, retenção e recuperação depois de liberar capacidade. Depois, provisionamento mínimo da política e avanço a B05; falha de nó/carga ficam em B06, não expandem indefinidamente B04.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
