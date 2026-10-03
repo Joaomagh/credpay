@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B04.12 integrado na PR #93 (`ef31015`): políticas operacionais e reaplicação comprovadas no CI #147, com 114 testes; Secret Scan #12 verde no SHA final. B05.1 define contrato do retorno, causalidade, histórico atômico, replay e compatibilidade HTTP na spec 9.40. Warnings das fixtures continuam em B08.2.
+- B05.2 validado na PR #95: TDD de estados finais imutáveis e reconstrução; CI #110 verde com 108 testes e Secret Scan #17 verde. B04.12 e contrato B05.1 integrados nas PRs #93/#94. Evidências e limites na spec 9.39–9.41; warnings das fixtures do processador continuam em B08.2.
 
-## Agora
+## Próximo
 
-- [ ] B05.2 — Domínio final e reconstrução implementados em TDD: reds observados, 23 testes focados e 50 sem infraestrutura verdes. Aguardar suíte completa/PostgreSQL real e Secret Scan no CI antes de integrar. Sem listener, migration ou atualização persistente neste incremento; depois B05.3.
+- [ ] B05.3 — Implementar em TDD a persistência atômica de estado final e histórico/recebimento: migration e adapters próprios, identidade/precisão preservadas, unicidade e rollback em PostgreSQL real. Sem listener ou ativação do fluxo neste incremento.

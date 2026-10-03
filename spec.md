@@ -1848,6 +1848,8 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Limites:** domínio final não aplica evento nem habilita listener. A compatibilidade POST replay original versus GET final está definida em B05.1 e será implementada/testada junto da aplicação; os caminhos atuais continuam criando somente PENDENTE. Próximo: persistência atômica de status/histórico/recebimento, unicidade, precisão e rollback em B05.3.
 
+**Aceite remoto:** o [Transaction Service CI #110](https://github.com/Joaomagh/credpay/actions/runs/37137259753), SHA `eadf5ee`, passou com 108 testes, zero falhas/erros/skips, em 1 min 3 s. Os 15 cenários do repository incluíram as duas releituras finais em PostgreSQL; os 20 de domínio e três de mapper também passaram. [Secret Scan #17](https://github.com/Joaomagh/credpay/actions/runs/37137259708) verde. Revisão assistida sem bloqueante, com limite explícito da fixture: prova snapshot inserido, não atualização de transação anteriormente PENDENTE. Log desse job sem warnings Hikari de conexão fechada; isso não resolve o diagnóstico pendente do processador em B08.2. Busca limitada de formas de payload bruto sem candidatos. O SHA documental final da [PR #95](https://github.com/Joaomagh/credpay/pull/95) deve permanecer verde antes do merge.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
