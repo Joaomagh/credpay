@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B05.5d1 validado no Application Flow CI #1 da PR #105: dois estados finais pelos dois JARs reais, duas outboxes publicadas e causalidade/bancos próprios comprovados. Integração depende de suíte afetada/checks finais; spec 9.51.
+- B05.5d2 validado na PR #106: Flow CI #4/transações #155/Secret Scan #62 verdes, duplicatas/ack/replay e cinco tabelas intactas nos dois finais reais. Integrar após checks no SHA final para encerrar B05; spec 9.52.
 
 ## Próximo
 
-- [ ] B05.5d2 — Após integrar d1, republicar eventos reais da outbox e comprovar ack/replay, registros completos intactos/histórico único e POST original PENDENTE enquanto GET permanece final.
+- [ ] B06.1 — Após integrar d2, parar somente o processador, comprovar POST PENDENTE/outbox publicada/fila pronta sem decisão/histórico e recuperar após reinício real com causalidade original. FALHOU aguarda definição de produto; não bloqueia este experimento.

@@ -10,7 +10,7 @@ Atualizado em 2026-10-03. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos
 | B02 | Resultado durável e processamento idempotente | PostgreSQL comprova resultado único, replay estável, conflito sem sobrescrita, rollback e concorrência | B01 e baseline própria de persistência | Concluído; B02.1–B02.6 comprovados no CI |
 | B03 | Saída `TransacaoProcessada` confiável | contrato versionado, resultado + outbox atômicos, publicação confirmada e reenvio com a mesma identidade | B02 | Concluído; B03.1–B03.10 comprovados |
 | B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | Concluído; B04.1–B04.12 comprovados, ativação manual exige conferência |
-| B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | B05.1–B05.5c integrados; d1 validado no fluxo, d2 próximo |
+| B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | Aceite completo validado em d2; integrar PR #106 após checks finais |
 | B06 | Recuperação e diagnóstico demonstráveis | queda, atraso e duplicação testados; correlação, retry/DLQ e replay operacional observáveis | B05; refinar política de `FALHOU` | Refinamento |
 | B07 | Ambiente local reproduzível | imagens/Compose e depois Kubernetes local com probes e recursos; roteiro demonstra fluxo e falha | B05 e B06 | Refinamento |
 | B08 | Entrega e portfólio verificáveis | CI cobre riscos e imagens; CD só com destino/rollback definidos; README e demo coerentes | B07 e critérios do plano | Refinamento |
@@ -109,7 +109,15 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 **B05.5d1 — Fluxo final dos dois JARs reais — validado no Application Flow CI #1 da PR #105.** Dois cenários reais APP/REJ verdes, duas outboxes publicadas, causalidade/histórico único/dados/escala e bancos próprios comprovados. Preparação conferiu políticas/recursos sem consumidores antes da ativação; revisão corrigiu cleanup e espera por consumidores, compilação local verde. Sem saída fabricada/dependência nova/Compose/deploy. Secret Scan #59 verde; suíte afetada/checks do SHA final exigidos para integração, spec 9.51. Caracterização sem red artificial; d2 ainda necessário.
 
-**B05.5d2 — Duplicata e replay no fluxo completo — refinado, depende de d1.** Republicar evento real capturado da outbox com corpo/propriedades/identidade originais; exigir registros completos e histórico único preservados. POST equivalente deve devolver resposta/Location original PENDENTE enquanto GET permanece final. Execução dos dois aplicativos reais, sem saída fabricada para substituir processamento. d1 isoladamente não encerra B05.
+**B05.5d2 — Duplicata e replay no fluxo completo — validado na PR #106.** Flow CI #4 passou dois cenários APP/REJ com duplicatas de ambas outboxes/avanço de ack e cinco tabelas inteiras intactas; POST escala equivalente preserva corpo/Location original PENDENTE e GET final. CI transações #155 passou 279 testes/Secret Scan #62, compilação/revisão sem bloqueante. Sem produção/dependência alterada; caracterização nasceu verde, spec 9.52. Integrar após checks no SHA final para encerrar B05; limites de broker isolado/at-least-once continuam.
+
+## Incrementos de B06
+
+**B06.1 — Processador parado e recuperação real — refinado, depende de B05.** Encerrar somente JAR do processador, manter bancos/broker, exigir consumidor ausente; POST PENDENTE, outbox publicada/fila pronta sem processamento/histórico. Reiniciar aplicativo no mesmo banco e exigir GET final, causa original/registro único/filas vazias. Harness E2E e evidência/runbook; sem dependência nova. Encerramento controlado comprova indisponibilidade/reinício, não crash abrupto ou HA.
+
+**B06.2 — Replay após corrigir configuração operacional — refinado, depende de 1.** Moeda válida sem limite deve esgotar três tentativas para DLQ, sem decisão/histórico e GET PENDENTE. Corrigir limite no reinício do aplicativo; republicar mensagem real preservando corpo/propriedades/identidade e confirmar mandatory sem return antes de ack/remover original da DLQ. Exigir recuperação causal/final e registros únicos. Experimento somente em broker descartável, sem replay automático de permanentes ou operação externa presumida; ferramenta operacional geral será refinada se necessária.
+
+**FALHOU — Definição de produto pendente.** Plano prevê estado final, mas gatilho/autoridade/recuperabilidade ainda não foram decididos. Navigator recebeu opções de abandono definitivo explícito, prazo/política definidos ou adiamento da definição. Nenhuma opção presumida por ausência de resposta. DLQ/esgotamento continuam PENDENTE; experimentos 1/2 avançam independentemente.
 
 ## Incrementos de B08
 
