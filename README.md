@@ -56,7 +56,7 @@ O projeto está na fase de fluxo assíncrono confiável: ambos os serviços pers
 | Implementado | `POST /transacoes` exige `Idempotency-Key`, repete a resposta original para payload equivalente e retorna `409` em conflito |
 | Comprovado | aplicação idempotente do resultado grava estado final e histórico atomicamente, inclusive em concorrência real |
 | Comprovado | replay do POST mantém resposta original `PENDENTE`; GET expõe estado final, com dados/histórico/outbox preservados |
-| Experimental | listener de retorno opt-in comprova commit antes de ack no caminho válido; ativação operacional proibida até rejeições permanentes e retry limitado |
+| Comprovado | listener de retorno opt-in aplica antes de ack; replay preserva histórico, permanentes vão à DLQ e retry operacional limita três tentativas com rollback |
 | Implementado | lock transacional por chave serializa primeiras criações concorrentes; o CI comprovou convergência para uma única transação |
 | Implementado | migration V4 e adapter persistem eventos pendentes na outbox |
 | Implementado | primeira criação gera um `TransacaoCriada` v1; replay e conflito não duplicam evento e falha da outbox causa rollback |
@@ -219,7 +219,7 @@ Invoke-RestMethod `
 Invoke-RestMethod http://localhost:8080/transacoes/<uuid-retornado>
 ```
 
-Em Linux ou macOS, use `./mvnw` no lugar de `.\mvnw.cmd`. O `POST /transacoes` retorna `201 Created`, `Location` e a representação original `PENDENTE`, inclusive no replay após conclusão; o `GET` pelo UUID retorna o estado atual persistido. O fluxo completo entre os dois serviços ainda está pendente. A preparação do retorno segue [este runbook](infra/rabbitmq/TRANSACOES.md), mantendo o listener experimental desligado.
+Em Linux ou macOS, use `./mvnw` no lugar de `.\mvnw.cmd`. O `POST /transacoes` retorna `201 Created`, `Location` e a representação original `PENDENTE`, inclusive no replay após conclusão; o `GET` pelo UUID retorna o estado atual persistido. O fluxo completo entre os dois serviços ainda está pendente. A preparação e ativação manual do retorno seguem [este runbook](infra/rabbitmq/TRANSACOES.md); flags permanecem desligadas por padrão e a conferência efetiva é obrigatória.
 
 A aplicação não possui fallback volátil: sem DataSource válido ela falha ao iniciar. Flyway aplica as migrations e Hibernate valida o schema; nos testes de integração, o container e as propriedades de conexão são gerenciados automaticamente.
 
