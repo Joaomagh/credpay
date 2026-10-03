@@ -99,6 +99,12 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 **B05.5c — Listener seguro do resultado — refinado, depende de b.** Aplicar duravelmente antes de ack; replay sem duplicar histórico; contrato/conflito/recusa permanente para DLQ; falha operacional com três tentativas limitadas. Aceite em PostgreSQL/RabbitMQ reais protege commit/ack, rejeição e esgotamento na nova fronteira. Não repetir todos os experimentos internos do broker nem habilitar consumo automaticamente.
 
+**B05.5c1 — Caminho válido experimental — em execução.** Listener somente com ambas flags; AUTO/concorrência 1/prefetch 1. Aceite real: política conferida antes do start manual, pausa após escritas ainda antes do commit, outra conexão sem visibilidade e broker sem ack; liberação produz final/histórico duráveis e ack. Replay conserva record inteiro sem nova escrita/Clock. Flags padrão desligadas; consumidor ainda não é operacional seguro.
+
+**B05.5c2 — Rejeições permanentes — refinado, depende de c1.** Contrato inválido, conflito e recusa causal/desconhecido devem ir à DLQ sem requeue, com erro seguro e banco intacto. Red/green e prova real nesta fronteira; sem retry operacional neste slice.
+
+**B05.5c3 — Falhas operacionais limitadas — refinado, depende de c2.** Três tentativas totais com esperas 1/2 s; recoverer seguro e classificação permanente sem retry. Aceite real de rollback/recuperação e esgotamento; somente após c3 atualizar runbook para permitir ativação manual conferida. B05.5c permanece incompleto até os três aceites; ativação prematura proibida pelo risco de reentrega ilimitada.
+
 **B05.5d — Fluxo vertical dos dois aplicativos — refinado, depende de c.** POST → ambas outboxes/eventos → GET final APROVADA/REJEITADA, com bancos próprios e execução real dos dois aplicativos. Aceite inclui evento duplicado, histórico único e replay POST original; saída fabricada pela fixture não comprova o fluxo. Refinar orquestração próxima da execução, sem dependência Java entre serviços. HA/tuning/dashboard/replay operacional da DLQ ficam fora de B05.
 
 ## Incrementos de B08

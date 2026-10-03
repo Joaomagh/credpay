@@ -4,8 +4,8 @@
 
 ## Último incremento
 
-- B05.5b validado no CI transações #136 (257 testes)/Secret Scan #43, PR #101; integração ainda depende do CI processador aplicável e checks finais. Spec 9.47.
+- B05.5b integrado na PR #101, commit 9a4d62d: CI transações #137/processador #150/Secret Scan #44 verdes no último SHA. Spec 9.47/9.48.
 
 ## Próximo
 
-- [ ] B05.5c — Após integrar topologia/políticas, implementar listener seguro do retorno: commit antes de ack, replay, rejeições permanentes e retry operacional limitado. Refinar menor slice sem anunciar consumo seguro antes de comprovar classificação/limites.
+- [ ] B05.5c1 em execução — Flags/scaffolding verdes; observar red remoto de endpoint ausente antes de ligar consumo válido. Exigir commit antes de ack e replay real sem nova escrita/Clock. Ativação operacional proibida até c2/c3; spec 9.48.

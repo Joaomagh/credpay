@@ -16,6 +16,8 @@ credpay:
     consumer:
       topology:
         enabled: ${CREDPAY_TRANSACOES_CONSUMER_TOPOLOGY_ENABLED:false}
+      listener:
+        enabled: ${CREDPAY_TRANSACOES_CONSUMER_LISTENER_ENABLED:false}
   outbox:
     publisher:
       enabled: ${CREDPAY_OUTBOX_PUBLISHER_ENABLED:false}

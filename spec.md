@@ -1924,6 +1924,14 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Evidência real:** [CI transações #136](https://github.com/Joaomagh/credpay/actions/runs/37153259722), SHA 7538500, passou 257 testes sem falhas/erros/skips em 80 s; os dois novos de políticas/roteamento passaram em RabbitMQ real. Escopo protege inclusive fila de nome próximo v2. Secret Scan #43 verde; revisão assistida sem bloqueante. CI processador #149 também foi disparado pelo filtro compartilhado infra/rabbitmq/** e precisa terminar verde, além dos checks no último SHA documental antes de integrar a PR #101. Nenhuma prova de listener/ack/dead-lettering por rejeição foi inferida destas sentinelas.
 
+### 9.48 Commit antes de ack no retorno experimental — B05.5c1
+
+**Recorte em execução:** c1 comprovará caminho válido/replay; c2 classifica rejeições permanentes; c3 limita retry operacional. Só após c2/c3 será permitido anunciar consumidor operacional seguro e ativação manual. Flags de topologia e listener são ambas necessárias, listener padrão false; ativação prematura pode produzir reentrega ilimitada em falhas, portanto é proibida no runbook até os aceites. Sem dependência nova.
+
+**TDD inicial:** teste exigiu classes ausentes, red deliberado; scaffolding opt-in/factory passou cinco casos de flags ausentes/false/combinações. Listener ainda é componente vazio, sem endpoint/comportamento, aguardando red remoto da fixture. Factory fixa prefetch 1; futuro endpoint usará AUTO e concorrência 1. Teste real compilado para dois estados finais: importar políticas antes de iniciar manualmente, pausar depois das escritas JDBC ainda na transação externa, outra conexão enxergar PENDENTE/sem histórico e broker mostrar entrega sem ack, depois exigir commit/histórico completo/dados/escala/outbox/Clock/ack. Pausa 45 s excede await inicial 10 s e observação do broker 15 s (CLI com timeout 5 s); liberação em finally e shutdown após cada caso. Docker local indisponível não é red.
+
+**Integração anterior:** PR #101 integrada em 9a4d62d após CI transações #137 (257 testes), processador #150 (114 testes, 8m34s) e Secret Scan #44 verdes no último SHA d0506b4. Fixtures e políticas próprias comprovadas; não prova listener.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
