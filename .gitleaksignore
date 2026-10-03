@@ -1,0 +1,6 @@
+# Reviewed non-credentials; justification and scope in spec.md section 16.1.
+# Public RabbitMQ dead-letter routing key in topology assertion.
+4d3a42f36b18543b9a62c69372e53aa67242bf72:processamento-service/src/test/java/br/com/credpay/processamento/infrastructure/messaging/RabbitMqEntradaTopologyIntegrationTest.java:generic-api-key:75
+# Fictional Idempotency-Key UUID in local HTTP example, not authentication.
+9a8ef70756383282a2d84d3caa572edae93ce2c8:README.md:generic-api-key:167
+0bc058c2a90bb0e904f86c56e91d0f77ac88bd05:README.md:generic-api-key:167

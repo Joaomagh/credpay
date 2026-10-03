@@ -2,6 +2,7 @@
 
 [![Transaction Service CI](https://github.com/Joaomagh/credpay/actions/workflows/transacoes-service-ci.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/transacoes-service-ci.yml)
 [![Processing Service CI](https://github.com/Joaomagh/credpay/actions/workflows/processamento-service-ci.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/processamento-service-ci.yml)
+[![Secret Scan](https://github.com/Joaomagh/credpay/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/secret-scan.yml)
 
 > Laboratório de engenharia backend para construir e explicar, com evidências, um fluxo assíncrono de transações.
 
@@ -273,6 +274,8 @@ O `verify` inclui PostgreSQL/Testcontainers, aplicação das migrations Flyway, 
 A documentação de processo é pública de propósito. Ela permite avaliar decisões, trade-offs, critérios de aceitação, testes, limitações e correções de percurso. A assistência de IA faz parte do processo, enquanto direção, escopo e decisões estruturais permanecem sob responsabilidade do autor.
 
 ## Segurança e AI-Jail
+
+Gitleaks verifica o histórico Git alcançável em cada PR e na `main`, com versão/checksum fixados e diagnósticos redigidos. Um hook local `pre-push` oferece proteção antes da publicação; sua preparação está em [`spec.md`](spec.md#161-baseline-de-detecção-de-segredos--b081). O hook precisa ser habilitado em cada clone e pode ser contornado. O scanner não substitui revisão de conteúdo nem cobre logs externos; `.gitignore` não apaga histórico. Nenhuma dessas medidas é promessa de ausência de vazamentos.
 
 O projeto documentou um threat model para limitar o alcance de agentes e ferramentas durante o desenvolvimento. A baseline do `sandbox-core` prevê usuário não-root, recursos limitados, filesystem e mounts mínimos, nenhum Docker socket ou segredo do host e rede negada por padrão.
 
