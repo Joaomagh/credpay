@@ -23,6 +23,7 @@ public class AplicarResultadoService {
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public TransicaoRecebida executar(TransacaoProcessadaRecebida entrada) {
+        historico.bloquearIdentidades(entrada.eventId(), entrada.transactionId());
         var existente = historico.buscarPorEvento(entrada.eventId());
         if (existente.isPresent()) {
             var registrada = existente.orElseThrow();

@@ -1884,6 +1884,8 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Integração anterior:** PR #97 integrada em `acf6517` após CI #122/Secret Scan #29 verdes no último SHA `87926f9`. Sem listener ou nova dependência em B05.4b; revisão de desenho confirmou observação do PID específico e ordem das chaves efetivas.
 
+**Red observado:** [CI #124](https://github.com/Joaomagh/credpay/actions/runs/37150409012), SHA `9fc5917`, executou 163 testes: 162 anteriores passaram; o novo falhou com segunda conexão não aguardou advisory lock. Banco/threads executaram o cenário real. Secret Scan #31 verde. Regressão local da ordem falhou na compilação somente porque bloquearIdentidades ainda não existia. Então a porta/adapter adquiriram hashes efetivos deduplicados e ordenados; a aplicação chama antes de ler histórico/transação. Dois cenários unitários verificam inversão das identidades e colisão dos hashes; próxima prova é green PostgreSQL, antes de acrescentar os demais conflitos/rollback.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
