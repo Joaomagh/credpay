@@ -1,0 +1,33 @@
+# Build e arquivos locais do editor
+target/
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Configuração local: exemplos públicos devem conter somente valores fictícios
+.env
+.env.*
+!.env.example
+application-local.yml
+application-local.yaml
+application-local.properties
+settings.local.xml
+.local/
+secrets/
+
+# Material privado de autenticação (exceções exigem revisão explícita)
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+credentials.json
+
+# Logs e exportações podem conter dados operacionais; migrations SQL permanecem públicas
+*.log
+*.dump
+*.sql.gz
+*.hprof
