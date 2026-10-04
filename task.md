@@ -8,8 +8,8 @@
 
 ## Agora
 
-- [ ] B08.2b — Red #170 comprovou pool aberto antes do stop com rollback/listener verdes. Green mínimo compilado/revisado; par/suíte pendentes, spec 9.56.
+- [ ] B08.2b — PR #110 validada: red #170/green #171 (par10/suíte279), pool fechado antes do stop; Flow #20/Scan #78 verdes. Par temporário retirado, checks finais pendentes; spec 9.56.
 
 ## Próximo
 
-- [ ] Após integrar B08.2b, refinar somente a próxima fixture/ação pronta. FALHOU aguarda decisão do Navigator.
+- [ ] B08.2c — PublicarOutbox: red de lifecycle em AfterAll, dois cenários e todos os pools capturados; green por método/duração medida. FALHOU aguarda decisão do Navigator.
