@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.3 — agente Mockito explícito: controles2/5 e verify local75/168/JAR verdes com anexação dinâmica impedida; CDS visível. Revisão/CI completos antes de integrar, spec 9.59.
+- [ ] B08.3 — agente Mockito explícito: controles2/5 e verify local75/168/JAR verdes com anexação dinâmica impedida; CDS visível. CI inicial processador114/transações279/Flow4/Scan verdes; revisão e gates do commit documental final antes de integrar, spec 9.59.
 
 ## Próximo
 
