@@ -8,8 +8,8 @@
 
 ## Agora
 
-- [ ] B08.2c — PR #111: red #174 exclusivo de pool aberto antes do stop, dois cenários/listener verdes. Aplicado AFTER_CLASS; repetir par/suíte antes de integrar, spec 9.57.
+- [ ] B08.2c — PR #111: red #174/green #175 (par11/suíte279), contexto compartilhado fechado antes do stop. Par temporário retirado; checks finais antes de integrar, spec 9.57.
 
 ## Próximo
 
-- [ ] Após integração, selecionar outra fixture com diagnóstico causal de lifecycle. FALHOU aguarda decisão do Navigator.
+- [ ] B08.2d — concorrência do processador: red/green na suíte padrão, cinco cenários preservados e guard antes do stop. FALHOU aguarda decisão do Navigator.
