@@ -25,6 +25,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -38,6 +39,7 @@ import org.testcontainers.utility.DockerImageName;
         properties = "credpay.outbox.publisher.enabled=false")
 @Testcontainers
 @Execution(ExecutionMode.SAME_THREAD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class PublicarOutboxIntegrationTest {
 
     private static final List<HikariDataSource> POOLS_ORIGINAIS = new ArrayList<>();

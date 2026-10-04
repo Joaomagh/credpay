@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.2c — PublicarOutbox: asserção antes do stop real, todos os pools capturados nos dois cenários. Compilação offline verde; obter red no CI antes de corrigir, spec 9.57.
+- [ ] B08.2c — PR #111: red #174 exclusivo de pool aberto antes do stop, dois cenários/listener verdes. Aplicado AFTER_CLASS; repetir par/suíte antes de integrar, spec 9.57.
 
 ## Próximo
 
