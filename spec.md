@@ -2074,6 +2074,22 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Próximo refinado:** B08.3, instrumentação Mockito explícita apenas no fork Surefire. Dependency:tree offline nos dois módulos confirmou Mockito5.17.0/ByteBuddyAgent1.17.8/plugin dependency3.8.1. Controle antes com `-DargLine=-XX:-EnableDynamicAgentLoading` e testes existentes falhou exclusivamente ao inicializar inline mock maker: TransacaoCriadaListenerTest2 erros, PublicarOutboxServiceTest5 erros; logs ignorados em .local/b083-*-before.log. Não é red de negócio e nenhum POM foi alterado neste incremento. Depois, B07.1 refina imagens/startup na v1; o diagnóstico adicional B08.2e fica no backlog.
 
+**Integração B08.2d:** [PR #112](https://github.com/Joaomagh/credpay/pull/112), merge `38cadc2`, após processador #160/Flow #29/Scan #87 verdes em `28333c1`. Final114/8m20s, sem falhas/erros/skips; shutdown antes das cinco capturas fechadas, zero warnings próprios. Outros pools2/3/5 ainda dez cada. Revisão final sem bloqueante/review remoto pendente. Topologia RabbitMQ levou cerca de370s em baseline/red/green; esses tempos são de teste, sem inferência de latência do produto.
+
+### 9.59 Instrumentação Mockito explícita no fork de testes — B08.3
+
+**Problema/baseline:** CI #156 registra self-attach/dynamic-agent warnings; Mockito5.17.0/ByteBuddyAgent1.17.8 já são transitivos de starter-test3.5.16. Dependency:tree offline confirmou ambos módulos e plugin dependency3.8.1; Surefire3.5.6 observado no CI #160. Nenhuma versão ou dependência muda. Configuração operacional não exige red artificial de negócio.
+
+**Decisão/aceite:** [Mockito da versão](https://javadoc.io/static/org.mockito/mockito-core/5.17.0/org.mockito/org/mockito/Mockito.html#0.3) orienta agente no startup da JVM de teste. [dependency:properties3.8.1](https://maven.apache.org/plugins-archives/maven-dependency-plugin-3.8.1/properties-mojo.html) resolve caminho do JAR transitivo na fase initialize. POM de cada serviço usa argLine padrão vazio, substituição tardia `@{argLine}` e caminho do agente entre aspas, preservando argumentos adicionais. CI de cada módulo passa `-DargLine=-XX:-EnableDynamicAgentLoading`: mocks devem funcionar com anexação dinâmica impedida. Sem mudança de cenário/descoberta/timeout; suítes114/279 e Flow exigidos. Agente restrito ao fork Surefire; não configurar JAVA_TOOL_OPTIONS, manifest ou comando dos JARs reais.
+
+**Controle antes/depois:** comandos offline `-Dtest=TransacaoCriadaListenerTest` e `-Dtest=PublicarOutboxServiceTest` com `-DargLine=-XX:-EnableDynamicAgentLoading` falharam antes exclusivamente na inicialização inline/self-attach (2/5 erros, sem skips). Após POM, mesmos comandos passaram2/5 (24,915s/17,476s), sem self-attach/dynamic-agent warnings. Logs .local/b083-*-before/after.log ignorados. São controles de configuração; não reds de negócio, sem novos testes redundantes.
+
+**Verificação local:** verify offline passou75/JAR no processador (24,855s) e168/JAR em transações (22,584s), anexação dinâmica impedida. Zero self-attach/dynamic warnings; aviso CDS permanece (compartilhamento limitado após append no bootstrap classpath), sem supressão. Inspeção dos dois JARs encontrou zero entradas Mockito/byte-buddy-agent. XML/UTF-8/diff passaram; revisão de POMs/workflows sem bloqueante. CI real ainda pendente.
+
+**Falha entendida do seletor local:** primeira seleção de transações sem exclusão E2E executou168 verdes e incluiu FluxoCredPayE2E, cujo startup falhou exclusivamente por Docker indisponível (agregação169/1 erro, 28,326s). Seletor local corrigido exclui explicitamente FluxoCredPayE2E; nenhuma alteração de teste/CI para obter green. Verify padrão continua279 e workflow vertical continua quatro cenários reais. Comando corrigido em11; relatórios antigos em target não contam como falhas dessa execução.
+
+**Limites:** não usar flag que habilite anexação dinâmica ou CDS-off para esconder warnings. IDE/execução Maven sem fork exigem configuração própria, fora deste incremento. Ausência de warning não substitui mocks funcionando e suítes reais; Docker local indisponível, integração pelo CI. Configuração não muda o runtime dos serviços.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
@@ -2097,6 +2113,9 @@ java -version
 # suíte e package
 .\mvnw.cmd package
 
+# verificação local sem infraestrutura, em transacoes-service
+.\mvnw.cmd --batch-mode --no-transfer-progress -o '-Dtest=!**/*IntegrationTest,!**/*ApplicationTest,!**/*HttpTest,!PostgresRuntimeTest,!FluxoCredPayE2E' '-DargLine=-XX:-EnableDynamicAgentLoading' verify
+
 # ambiente local
 .\mvnw.cmd spring-boot:run
 
@@ -2106,6 +2125,8 @@ Invoke-RestMethod http://localhost:8080/actuator/health
 
 ### Integração contínua
 
+Em `processamento-service`, o verify offline sem infraestrutura usa `-Dtest=!**/*IntegrationTest,!**/*ApplicationTest,!**/*HttpTest` e `-DargLine=-XX:-EnableDynamicAgentLoading`; 75 testes/JAR verificados em9.59. Em transações, a seleção apenas por exclusões incluiu o E2E; o comando local acima o exclui explicitamente. CI padrão e Flow dedicado permanecem completos.
+
 Cada serviço possui um workflow mínimo e independente: `.github/workflows/transacoes-service-ci.yml` e `.github/workflows/processamento-service-ci.yml`. Ambos executam a verificação Maven do respectivo módulo em ambiente Linux; filtros de caminho evitam rodar o outro build quando ele não foi afetado.
 
 | Item | Decisão |
@@ -2113,13 +2134,13 @@ Cada serviço possui um workflow mínimo e independente: `.github/workflows/tran
 | Gatilhos | pull requests com mudanças no serviço ou no workflow; pushes relevantes para `main` |
 | Runner | `ubuntu-latest`, com timeout de 10 minutos |
 | Java | Temurin 21 por `actions/setup-java` |
-| Maven | Wrapper do repositório com `--batch-mode --no-transfer-progress verify` |
+| Maven | Wrapper com `--batch-mode --no-transfer-progress -DargLine=-XX:-EnableDynamicAgentLoading verify`; agente explícito no fork Surefire |
 | Cache | dependências Maven, com chave derivada do `pom.xml` do respectivo serviço |
 | Permissões | somente `contents: read` |
 | Concorrência | execução anterior da mesma referência é cancelada quando fica obsoleta |
 | Actions externas | referências fixadas por SHA, com a versão legível em comentário |
 
-A validação local equivalente é `mvnw.cmd --batch-mode --no-transfer-progress verify` no Windows. A [primeira execução do `transacoes-service`](https://github.com/Joaomagh/credpay/actions/runs/34542670040) concluiu o job `Maven verify` com sucesso em 32 segundos no runner Linux. O workflow do `processamento-service` replica deliberadamente as mesmas versões fixadas de Actions, permissões mínimas, cancelamento concorrente, timeout e comando, alterando apenas caminhos, diretório de trabalho, cache e nome. Sua [primeira execução remota](https://github.com/Joaomagh/credpay/actions/runs/35410768584) também ficou verde, com 1 teste e JAR gerado. Não há publicação, segredo, imagem ou deploy; CD permanece fora até existirem artefato e ambiente aprovados.
+A validação local equivalente é `mvnw.cmd --batch-mode --no-transfer-progress -DargLine=-XX:-EnableDynamicAgentLoading verify` no Windows, com Docker Linux para os testes de infraestrutura. A [primeira execução do `transacoes-service`](https://github.com/Joaomagh/credpay/actions/runs/34542670040) concluiu o job `Maven verify` com sucesso em 32 segundos no runner Linux. O workflow do `processamento-service` replica deliberadamente as mesmas versões fixadas de Actions, permissões mínimas, cancelamento concorrente, timeout e comando, alterando apenas caminhos, diretório de trabalho, cache e nome. Sua [primeira execução remota](https://github.com/Joaomagh/credpay/actions/runs/35410768584) também ficou verde, com 1 teste e JAR gerado. Não há publicação, segredo, imagem ou deploy; CD permanece fora até existirem artefato e ambiente aprovados.
 
 #### Evolução planejada do CI/CD
 
@@ -2293,6 +2314,8 @@ O workflow `.github/workflows/secret-scan.yml` usa checkout fixado por SHA, hist
 **Revisão final:** o [Secret Scan #2](https://github.com/Joaomagh/credpay/actions/runs/37098215430), SHA `95658c2`, passou com o canário exigindo 42 e histórico limpo. O [Secret Scan #3](https://github.com/Joaomagh/credpay/actions/runs/37098282309) também passou no SHA final `f819a88` antes da integração da [PR #90](https://github.com/Joaomagh/credpay/pull/90), commit `9ee6cf3`. A revisão assistida confirmou exceções estreitas, flags, permissões e limites; não é certificação externa. A inspeção limitada do log de #1 não encontrou o padrão sintético AWS completo sem redação. As buscas limitadas de logs registradas nos incrementos não equivalem à revisão completa de logs/artefatos ainda pendente em B08.1.
 
 **Revisão de achados B04.12:** o hook bloqueou o primeiro push com três fingerprints `generic-api-key` no commit `7aeb70d`: artefato operacional (linha 14), teste (110) e runbook (50). A inspeção e outro agente confirmaram a mesma routing key pública da DLQ, que seleciona destino e não autentica. Foram adicionadas somente essas três exceções por fingerprint em `.gitleaksignore`, sem excluir arquivo/regra ou contornar o hook. Controle positivo via stdin continuou retornando exatamente `42`; entrada limpa retornou `0`. Nenhuma credencial real foi encontrada ou exibida. Varredura e hook serão repetidos antes do push.
+
+**Revisão limitada de logs, 2026-10-04:** nos logs transações #174/#175/#176 e processador #158/#159, buscas em memória por formatos comuns de chave privada, tokens GitHub/OpenAI, chave AWS, formas pesquisadas de JSON financeiro e dumps AMQP retornaram zero candidatos. Nenhum conteúdo candidato foi impresso. A API de artifacts do processador #160 final retornou total_count0; workflows atuais não têm upload-artifact e usam contents:read. Esses recortes não cobrem todos os formatos, todos os logs históricos ou artefatos de outros runs; B08.1 continua com revisão complementar pendente. Nenhuma exclusão nova no scanner.
 
 ## 17. Checklist por incremento
 

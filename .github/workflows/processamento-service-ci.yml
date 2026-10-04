@@ -47,4 +47,4 @@ jobs:
         run: chmod +x mvnw
 
       - name: Verify processing service
-        run: ./mvnw --batch-mode --no-transfer-progress verify
+        run: ./mvnw --batch-mode --no-transfer-progress -DargLine=-XX:-EnableDynamicAgentLoading verify
