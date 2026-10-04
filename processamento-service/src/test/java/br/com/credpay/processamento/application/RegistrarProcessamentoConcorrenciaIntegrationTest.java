@@ -34,6 +34,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -44,6 +45,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Import(RegistrarProcessamentoConcorrenciaIntegrationTest.ColaboradoresDeTeste.class)
 @Testcontainers
 @Execution(ExecutionMode.SAME_THREAD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class RegistrarProcessamentoConcorrenciaIntegrationTest {
 
     private static final List<HikariDataSource> POOLS_ORIGINAIS = new ArrayList<>();

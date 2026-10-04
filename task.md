@@ -8,8 +8,8 @@
 
 ## Agora
 
-- [ ] B08.2d — concorrência do processador: guard antes do stop/cinco capturas, cenários preservados. Obter red exclusivo de lifecycle na suíte padrão antes de corrigir, spec 9.58.
+- [ ] B08.2d — PR #112: red #158 exclusivo do guard, cinco cenários e demais testes verdes; AFTER_CLASS aplicado. Repetir suíte padrão antes de integrar, spec 9.58.
 
 ## Próximo
 
-- [ ] Após integração, priorizar próximo diagnóstico comprovável. FALHOU aguarda decisão do Navigator.
+- [ ] B08.3 — agente Mockito explícito apenas nos forks de teste, controle antes/depois e suítes intactas. FALHOU aguarda decisão do Navigator.
