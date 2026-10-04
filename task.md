@@ -8,8 +8,8 @@
 
 ## Agora
 
-- [ ] B08.2a — Red observado no CI #164: pool aberto antes do stop, negócios do par verdes. Green mínimo fecha contexto após único método; repetir par/suíte, spec 9.55.
+- [ ] B08.2a — PR #109 validada: red #164, green #165 com par10/suíte279, pool fechado antes do stop e zero warnings próprios; Flow #14/Scan #72 verdes. Integrar após checks finais, spec 9.55.
 
 ## Próximo
 
-- [ ] Após explicar e integrar B08.2a, refinar somente a próxima fixture/ação pronta. FALHOU aguarda decisão do Navigator; nenhuma opção presumida.
+- [ ] B08.2b — Diagnosticar somente fixture Atomicidade, preservar rollback e provar fechamento antes do stop com mesmo par/ordem antes/depois. FALHOU aguarda decisão do Navigator.
