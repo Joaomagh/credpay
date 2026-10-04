@@ -2086,11 +2086,25 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Verificação local:** verify offline passou75/JAR no processador (24,855s) e168/JAR em transações (22,584s), anexação dinâmica impedida. Zero self-attach/dynamic warnings; aviso CDS permanece (compartilhamento limitado após append no bootstrap classpath), sem supressão. Inspeção dos dois JARs encontrou zero entradas Mockito/byte-buddy-agent. XML/UTF-8/diff passaram; revisão de POMs/workflows sem bloqueante. CI real detalhado abaixo.
 
-**CI do código em `75a052a`:** [processador #162](https://github.com/Joaomagh/credpay/actions/runs/37175878486) passou114/8m30s e [transações #178](https://github.com/Joaomagh/credpay/actions/runs/37175878493) passou279/3m00s, ambos com anexação dinâmica desativada, zero self-attach/dynamic-agent warnings e um aviso CDS cada. Processador: pool1 zero warnings, pools2/3/5 dez cada; transações zero warnings de conexão fechada nessa execução. [Flow #31](https://github.com/Joaomagh/credpay/actions/runs/37175878520) passou os quatro cenários reais (101,3s, Maven1m43s), sem esses warnings; [Scan #89](https://github.com/Joaomagh/credpay/actions/runs/37175878479) verde. O agente não entrou nos processos dos JARs. Revisão final sem bloqueantes; commit documental final exige novamente todos os gates antes do merge.
+**CI do código em `75a052a`:** [processador #162](https://github.com/Joaomagh/credpay/actions/runs/37175878486) passou114/8m30s e [transações #178](https://github.com/Joaomagh/credpay/actions/runs/37175878493) passou279/3m00s, ambos com anexação dinâmica desativada, zero self-attach/dynamic-agent warnings e um aviso CDS cada. Processador: pool1 zero warnings, pools2/3/5 dez cada; transações zero warnings de conexão fechada nessa execução. [Flow #31](https://github.com/Joaomagh/credpay/actions/runs/37175878520) passou os quatro cenários reais (101,3s, Maven1m43s), sem esses warnings; [Scan #89](https://github.com/Joaomagh/credpay/actions/runs/37175878479) verde. O agente não entrou nos processos dos JARs. Revisão final sem bloqueantes; gates finais em df41c0c: processador #163/run37176507766 passou114/8m11s, transações #179/run37176507758 passou279/2m43s, Flow #32/run37176507692 passou4/2m02s e Scan #90/run37176507712 verde. Self-attach/dynamic0, CDS1 em cada módulo; pool1processador0 warnings e pools2/3/5 dez cada, transações0. PR #113 integrada em74ba2b2 após gates/revisão; sem reviews/threads pendentes.
 
 **Falha entendida do seletor local:** primeira seleção de transações sem exclusão E2E executou168 verdes e incluiu FluxoCredPayE2E, cujo startup falhou exclusivamente por Docker indisponível (agregação169/1 erro, 28,326s). Seletor local corrigido exclui explicitamente FluxoCredPayE2E; nenhuma alteração de teste/CI para obter green. Verify padrão continua279 e workflow vertical continua quatro cenários reais. Comando corrigido em11; relatórios antigos em target não contam como falhas dessa execução.
 
 **Limites:** não usar flag que habilite anexação dinâmica ou CDS-off para esconder warnings. IDE/execução Maven sem fork exigem configuração própria, fora deste incremento. Ausência de warning não substitui mocks funcionando e suítes reais; Docker local indisponível, integração pelo CI. Configuração não muda o runtime dos serviços.
+
+### 9.60 Imagens executáveis e startup — B07.1
+
+**Objetivo/aceite:** empacotar os dois JARs do mesmo checkout em imagens independentes e observar startup real non-root, HTTP200/status UP com banco e Rabbit, duas exchanges produtoras direct/duráveis e consumidores zero com flags false. Não mudar domínio, contratos ou regra de FALHOU; configuração operacional usa exceção de red do AGENTS.md, com smoke real obrigatório antes de integrar. Docker local indisponível não é red de negócio.
+
+**Baseline/necessidade:** runtime Java21 necessário à plataforma prevista no plano. Eclipse Temurin oficial21.0.12.1_1-jre-jammy, índice f04fb34e053148344e83317976114ec3f37e4b830ec8bdab5a2fe3cecd7d010b e manifestamd64 8c2dddf1bb2a8455160f4e23080059de5003eddc5cb839130b177c6be0c2cfe0 verificados em2026-10-04. Versão/digest e fontes no runbook infra/images; primeira execução/download será pelo CI. Sem dependência Maven ou ferramenta instalada; PostgreSQL/Rabbit/Testcontainers mantêm baselines atuais.
+
+**Decisão mínima:** Dockerfile por serviço copia JAR exato0.0.1-SNAPSHOT, USER10001:10001, ENTRYPOINT exec Java e CMD vazio; sem Maven/RUN/download no build derivado. Dockerignore permite somente Dockerfile/target/JAR exato, sem fontes/configuração local. Atualização da versão exige atualizar ambos caminhos, evitando wildcard que selecione artefato antigo. Workflow novo contents:read/actions fixadas/cache Maven/timeout15, prepara artefatos e constrói imagens locais com SHA do checkout, sem publicação registry. Os verifies completos/Flow permanecem; -DskipTests package apenas prepara o job dedicado.
+
+**Smoke escrito:** ImagensCredPayE2E fora da descoberta padrão e explicitamente selecionado. Rejeita tag inválida e desabilita pull dos apps; bancos próprios/aliases internos/broker, credenciais fictícias explícitas, Rabbit health ligado/flags false. Espera HTTP200/JSON UP, confere id-u/Config.User/mounts efetivos vazios/privilegedfalse, exchanges e consumidores. Network primeiro no try, apps por último/start dentro: cleanup apps antes de infra/rede inclusive falha parcial. Não há mounts ou socket nos apps, imports Java do outro serviço, política consumidora ou transação financeira no smoke. Marcadores de evidência fixos sem dados/credenciais; não publicar inspect/env/logs integrais.
+
+**Verificação local:** compile offline32 fontes de teste passou em11,957s; verify168 de transações/JAR com seletor sem infraestrutura !*E2E passou em37,598s, sem falhas/erros/skips e dinâmica impedida. Após revisão, resposta do broker exige array não nulo e dockerignore exclui filhos de target antes de reincluir JAR exato; recompilação32 passou em24,759s. UTF-8/diff/revisão passaram, sem bloqueantes para primeiro CI. CI real ainda pendente. Seletor local exclui ambos E2E, sem alterar descoberta padrão279/Flow4 ou reduzir gates. Build/run smoke real não foi executado localmente; Docker indisponível.
+
+**Limites/próximo:** esse incremento não prova POST→GET nas imagens nem provisiona políticas/consumidores; não conclui B07/Compose/Kubernetes. Base/daemon/runner permanecem confiados; bridge não é allowlist e não comprova AI-Jail. Atualizações/vulnerabilidades de imagem exigem incremento próprio; nenhum scanner novo ou destino externo presumido. Próximo slice B07.2 deve provar preparação opt-in nas imagens antes do fluxo financeiro.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
@@ -2116,7 +2130,7 @@ java -version
 .\mvnw.cmd package
 
 # verificação local sem infraestrutura, em transacoes-service
-.\mvnw.cmd --batch-mode --no-transfer-progress -o '-Dtest=!**/*IntegrationTest,!**/*ApplicationTest,!**/*HttpTest,!PostgresRuntimeTest,!FluxoCredPayE2E' '-DargLine=-XX:-EnableDynamicAgentLoading' verify
+.\mvnw.cmd --batch-mode --no-transfer-progress -o '-Dtest=!**/*IntegrationTest,!**/*ApplicationTest,!**/*HttpTest,!PostgresRuntimeTest,!*E2E' '-DargLine=-XX:-EnableDynamicAgentLoading' verify
 
 # ambiente local
 .\mvnw.cmd spring-boot:run
@@ -2127,7 +2141,7 @@ Invoke-RestMethod http://localhost:8080/actuator/health
 
 ### Integração contínua
 
-Em `processamento-service`, o verify offline sem infraestrutura usa `-Dtest=!**/*IntegrationTest,!**/*ApplicationTest,!**/*HttpTest` e `-DargLine=-XX:-EnableDynamicAgentLoading`; 75 testes/JAR verificados em9.59. Em transações, a seleção apenas por exclusões incluiu o E2E; o comando local acima o exclui explicitamente. CI padrão e Flow dedicado permanecem completos.
+Em `processamento-service`, o verify offline sem infraestrutura usa `-Dtest=!**/*IntegrationTest,!**/*ApplicationTest,!**/*HttpTest` e `-DargLine=-XX:-EnableDynamicAgentLoading`; 75 testes/JAR verificados em9.59. Em transações, a seleção apenas por exclusões incluiu o E2E; o comando local acima exclui todas as classes terminadas em E2E, incluindo o novo smoke de imagens. CI padrão e Flow dedicado permanecem completos.
 
 Cada serviço possui um workflow mínimo e independente: `.github/workflows/transacoes-service-ci.yml` e `.github/workflows/processamento-service-ci.yml`. Ambos executam a verificação Maven do respectivo módulo em ambiente Linux; filtros de caminho evitam rodar o outro build quando ele não foi afetado.
 

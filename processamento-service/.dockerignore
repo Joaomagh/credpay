@@ -1,0 +1,5 @@
+**
+!Dockerfile
+!target/
+target/**
+!target/processamento-service-0.0.1-SNAPSHOT.jar
