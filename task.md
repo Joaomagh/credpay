@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.2b — Asserção permanente e par temporário Atomicidade → Listener preparados para red; preservar rollback das três tabelas. Compilação offline/revisão sem bloqueante; CI real pendente, spec 9.56.
+- [ ] B08.2b — Red #170 comprovou pool aberto antes do stop com rollback/listener verdes. Green mínimo compilado/revisado; par/suíte pendentes, spec 9.56.
 
 ## Próximo
 
