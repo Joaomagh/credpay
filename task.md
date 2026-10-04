@@ -4,12 +4,12 @@
 
 ## Último incremento
 
-- B06.1 integrado na PR #107 (`6665fef`): Flow #8/transações #159/Scan #66 verdes no SHA final `755bbd4`. Parada/reinício recuperam a causa original; spec 9.53.
+- B06.2 integrado na PR #108 (`f1755be`): Flow #11/transações #162/Scan #69 verdes no SHA final `a50f352`. Replay sem rota conserva DLQ; correção/replay recuperam causa original; spec 9.54.
 
 ## Agora
 
-- [ ] B06.2 — PR #108 validada: Flow #10 (4 cenários), transações #161 (279 testes) e Scan #68 verdes. Integrar após checks do SHA final; spec 9.54.
+- [ ] B08.2a — PR #109 validada: red #164, green #165 com par10/suíte279, pool fechado antes do stop e zero warnings próprios; Flow #14/Scan #72 verdes. Integrar após checks finais, spec 9.55.
 
 ## Próximo
 
-- [ ] B08.2a — Após integrar B06.2, comparação causal de uma fixture/pool/container no mesmo par/ordem antes/depois; sem silenciar warnings. FALHOU aguarda decisão do Navigator.
+- [ ] B08.2b — Diagnosticar somente fixture Atomicidade, preservar rollback e provar fechamento antes do stop com mesmo par/ordem antes/depois. FALHOU aguarda decisão do Navigator.
