@@ -48,5 +48,8 @@ jobs:
       - name: Make Maven Wrapper executable
         run: chmod +x mvnw
 
+      - name: Compare PostgreSQL atomicity fixture lifecycle
+        run: ./mvnw --batch-mode --no-transfer-progress -Dtest=CriarTransacaoAtomicidadeIntegrationTest,TransacaoProcessadaListenerIntegrationTest -Dsurefire.runOrder=alphabetical test
+
       - name: Verify transaction service
         run: ./mvnw --batch-mode --no-transfer-progress verify

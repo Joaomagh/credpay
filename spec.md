@@ -2024,6 +2024,14 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **CI permanente:** após par red/green e suítes completas #165/#166 verdes, revisão retirou somente a etapa temporária que duplicava dez testes. A asserção de teardown permanece na fixture descoberta pelo `verify`; todos os 279 cenários e os checks Flow/Scan continuam exigidos no SHA final. Comando/evidência do par são preservados acima; nenhum cenário foi removido ou falha contornada.
 
+**Integração:** [PR #109](https://github.com/Joaomagh/credpay/pull/109), merge `caf4174`, após transações #168/Flow #17/Scan #75 verdes no SHA final `e6447ff`. Suíte final: 279 testes sem falhas/erros/skips, 2m55s, mesmo shutdown/closed=true antes do stop e zero warnings próprios; Atomicidade/PublicarOutbox ainda dez cada. Revisão final tratou redação obsoleta de preparação; nenhum review remoto pendente.
+
+### 9.56 Ciclo de vida da fixture Atomicidade — B08.2b
+
+**Objetivo/aceite:** repetir diagnóstico somente em CriarTransacaoAtomicidadeIntegrationTest, preservando único cenário de falha simulada na fronteira outbox, exceção esperada e transação/idempotência/outbox vazias após rollback. Datasource original capturado no início; teardown exige pool fechado com PostgreSQL ativo, `finally` garante stop. Sem correção antes de red observado.
+
+**Experimento:** par Atomicidade → TransacaoProcessadaListenerIntegrationTest em ordem alfabética, depois suíte completa. Red precisa ser exclusivo de lifecycle com rollback e listener verdes; startup/compilação não contam. Green mínimo será fechamento após único método. Baseline #168 associa dez warnings à Atomicidade (pool2); número no par será diferente, conferir classe/contexto. Após prova, retirar etapa temporária do par e manter asserção permanente na suíte. Sem produção/dependência/logger alterado; não amplia cobertura do mock para falhas reais de outbox. Compilação offline/revisão sem bloqueante; CI real pendente; Docker local indisponível.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
