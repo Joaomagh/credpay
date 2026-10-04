@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.2a — Asserção de lifecycle e par em ordem explícita preparados; observar red de pool aberto antes de corrigir a fixture. Sem produção/dependência nova; spec 9.55.
+- [ ] B08.2a — Red observado no CI #164: pool aberto antes do stop, negócios do par verdes. Green mínimo fecha contexto após único método; repetir par/suíte, spec 9.55.
 
 ## Próximo
 

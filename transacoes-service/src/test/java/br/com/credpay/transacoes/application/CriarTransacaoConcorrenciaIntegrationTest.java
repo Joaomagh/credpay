@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -71,6 +72,7 @@ class CriarTransacaoConcorrenciaIntegrationTest {
     private HikariDataSource dataSource;
 
     @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void executar_deveConvergirParaMesmaTransacao_quandoPrimeirasCriacoesForemConcorrentes()
             throws Exception {
         POOL_ORIGINAL.set(dataSource);

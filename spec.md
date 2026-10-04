@@ -2014,6 +2014,10 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Preparação:** container anônimo com diamond inicialmente não compilou pelo SELF recursivo do Testcontainers; não foi red de lifecycle. Subclasse local com SELF explícito resolveu. `.\mvnw.cmd --batch-mode --no-transfer-progress -o -DskipTests test-compile` passou (31 fontes, 5,353 s). Nenhuma correção de fechamento aplicada antes da observação real.
 
+**Red observado:** [CI transações #164](https://github.com/Joaomagh/credpay/actions/runs/37170132953), SHA `45e12d5`, PR #109: marcador `HikariPool-1 closed=false postgresRunning=true`; falha exclusiva `pool da fixture de concorrência deve fechar antes do PostgreSQL` no teardown. Concorrência passou; nove cenários do listener passaram (69,15 s). Surefire agregou 11 execuções com um erro de callback; suíte completa não iniciou pois o par falhou. Não houve warnings de conexão fechada nessa janela: não se conclui redução por sua ausência.
+
+**Green mínimo em validação:** `@DirtiesContext(methodMode = AFTER_METHOD)` no único método da primeira fixture fecha/retira contexto do cache após o teste, antes do `afterAll` que para o container estático. Evita depender da ordem relativa dos callbacks `afterAll` de Spring/Testcontainers. Repetir par e suíte completa; B08.2a não declara outras fixtures corrigidas.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
