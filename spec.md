@@ -2006,6 +2006,14 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Estado/evidência:** `.\mvnw.cmd --batch-mode --no-transfer-progress -o -DskipTests test-compile`, no módulo de transações, passou após asserções adicionais (31 fontes, 14,312 s). Revisão assistida sem bloqueante; [Flow CI #10](https://github.com/Joaomagh/credpay/actions/runs/37161905170) passou quatro cenários reais sem falhas/erros/skips, 122,1 s; [transações #161](https://github.com/Joaomagh/credpay/actions/runs/37161905148) passou 279 testes e JAR, 2m44s; [Scan #68](https://github.com/Joaomagh/credpay/actions/runs/37161905123) verde em `2fd5ac7`, PR #108. UTF-8/diff/hook passaram. Busca limitada no log do Flow encontrou zero candidatos de JSON financeiro integral, sem substituir B08.1. Transações registrou 30 warnings Hikari, não suprimidos. Integração aguarda checks do SHA final. Política de três tentativas já tem prova unitária/integrada do listener; este cenário observa esgotamento/diagnóstico e DLQ, sem instrumentar contagem de invocações dentro do JAR. Não é ferramenta operacional genérica nem autorização para replay externo. FALHOU continua aguardando regra de produto. Próximo após integração: B08.2a, comparação causal de lifecycle de fixture.
 
+### 9.55 Ciclo de vida de uma fixture PostgreSQL — B08.2a
+
+**Hipótese/experimento mínimo:** contexto Spring cacheado conserva Hikari depois que Testcontainers para PostgreSQL da classe. Na fixture CriarTransacaoConcorrenciaIntegrationTest, capturar o datasource original no início do único teste e exigir pool fechado/container ainda ativo imediatamente antes de `super.stop()`. Marcador imprime somente nome do pool/booleanos, sem URL/credencial; `finally` mantém encerramento do container mesmo no red. Ausência de referência/container parado não é green.
+
+**Ordem/aceite:** CI executa CriarTransacaoConcorrenciaIntegrationTest → TransacaoProcessadaListenerIntegrationTest com `-Dtest=... -Dsurefire.runOrder=alphabetical test`, depois suíte completa. Red precisa observar pool aberto antes do stop. Só depois corrigir a primeira fixture e repetir o mesmo par/ordem, conferindo fechamento antes do container e warnings atribuídos; outros pools não são presumidos corrigidos. Sem logger suprimido, dependência ou código de produção alterado. Docker local indisponível; red real pendente.
+
+**Preparação:** container anônimo com diamond inicialmente não compilou pelo SELF recursivo do Testcontainers; não foi red de lifecycle. Subclasse local com SELF explícito resolveu. `.\mvnw.cmd --batch-mode --no-transfer-progress -o -DskipTests test-compile` passou (31 fontes, 5,353 s). Nenhuma correção de fechamento aplicada antes da observação real.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
