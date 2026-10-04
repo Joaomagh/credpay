@@ -4,12 +4,12 @@
 
 ## Último incremento
 
-- B08.2c integrado na PR #111 (`b6bf7ae`): transações #176 (279 testes/2m50s), Flow #25 e Scan #83 verdes em `b258b26`. Três fixtures corrigidas fecharam antes do stop, zero warnings de conexão fechada nessa execução, spec 9.57.
+- B08.2d integrado na PR #112 (`38cadc2`): processador #160 (114 testes/8m20s), Flow #29 e Scan #87 verdes em `28333c1`. Cinco capturas fechadas antes do stop/zero warnings próprios; outros pools dez cada, spec 9.58.
 
 ## Agora
 
-- [ ] B08.2d — PR #112: red #158/green #159 (114 testes/8m16s), cinco capturas fechadas antes do stop/zero warnings próprios. Verificar SHA final e integrar, spec 9.58.
+- [ ] B08.3 — agente Mockito explícito: controles2/5 e verify local75/168/JAR verdes com anexação dinâmica impedida; CDS visível. CI inicial processador114/transações279/Flow4/Scan verdes; revisão e gates do commit documental final antes de integrar, spec 9.59.
 
 ## Próximo
 
-- [ ] B08.3 — agente Mockito explícito apenas nos forks de teste, controle antes/depois e suítes intactas. FALHOU aguarda decisão do Navigator.
+- [ ] B07.1 — imagens executáveis/non-root e smoke de startup/health no CI. FALHOU aguarda decisão do Navigator.
