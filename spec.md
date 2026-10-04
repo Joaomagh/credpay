@@ -2056,6 +2056,16 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Entrega/limites:** retirado somente o par temporário após prova; asserção permanece no verify com todos os 279 cenários. Checks do SHA final exigidos antes do merge. Próximo B08.2d: concorrência do processador, cinco execuções/contexto compartilhado e red/green diretamente na suíte padrão114, sem duplicação em job de dez minutos. CI #156 levou 8m21s e registrou dez warnings próprios; timeout/falha de startup não serão red de lifecycle. Sem mudanças nos locks/contadores/cenários nem dependência da definição de FALHOU.
 
+**Integração B08.2c:** [PR #111](https://github.com/Joaomagh/credpay/pull/111), merge `b6bf7ae`, depois de transações #176/Flow #25/Scan #83 verdes em `b258b26`. Suíte final279/2m50s, sem falhas/erros/skips; shutdown antes dos guards Concorrência/Atomicidade e duas referências PublicarOutbox, zero warnings de conexão fechada nessa execução. Revisão final sem bloqueante ou review remoto pendente.
+
+### 9.58 Ciclo de vida da concorrência do processador — B08.2d
+
+**Objetivo/aceite:** diagnosticar somente RegistrarProcessamentoConcorrenciaIntegrationTest. Cinco execuções (equivalentes, três divergências, rollback/recuperação) permanecem com UUIDs distintos, gates/locks reais e contadores originais. Capturar todos os pools no BeforeEach antes do reset; SAME_THREAD protege a lista sem alterar a disputa executada pelos dois workers. Guard antes de super.stop() exige lista presente, PG ativo e todos os pools fechados; finally preserva limpeza, marcador só nome/booleanos.
+
+**Baseline/decisão:** [CI processador #156](https://github.com/Joaomagh/credpay/actions/runs/37158090999), `b95ca5b`, passou114/8m21s; concorrência passou5/14,53s. HikariPool-1 pertence a essa fixture, dez warnings sem shutdown registrado; outros pools2/3/5 dez cada. Red/green usam o mesmo `./mvnw --batch-mode --no-transfer-progress verify`, ordem padrão/workflow/timeout de dez minutos intactos. Sem par extra que duplicaria janela longa. A observação direta no stop prova lifecycle sem depender de warnings ou classe subsequente.
+
+**Protocolo:** primeiro obter red exclusivo de pool aberto/PG ativo com os cinco cenários e demais testes verdes; timeout/startup/compilação não contam. Só então AFTER_CLASS para conservar contexto compartilhado, cinco capturas fechadas antes do stop e suíte114 verde. Sem produção/dependência/logger alterados nem correção automática de outras fixtures. Docker local indisponível; teste real pelo CI. Compilação red offline `-DskipTests test-compile` passou (23 fontes, 33,869s); red real ainda pendente.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
