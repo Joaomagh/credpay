@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.2d — PR #112: red #158 exclusivo do guard, cinco cenários e demais testes verdes; AFTER_CLASS aplicado. Repetir suíte padrão antes de integrar, spec 9.58.
+- [ ] B08.2d — PR #112: red #158/green #159 (114 testes/8m16s), cinco capturas fechadas antes do stop/zero warnings próprios. Verificar SHA final e integrar, spec 9.58.
 
 ## Próximo
 
