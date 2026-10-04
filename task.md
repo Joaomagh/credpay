@@ -4,12 +4,12 @@
 
 ## Último incremento
 
-- B08.2b integrado na PR #110 (`f6e0dcf`): transações #172 (279 testes), Flow #21 e Scan #79 verdes em `0a0725b`. Concorrência/Atomicidade fecham antes do stop; PublicarOutbox ainda dez warnings, spec 9.56.
+- B08.2c integrado na PR #111 (`b6bf7ae`): transações #176 (279 testes/2m50s), Flow #25 e Scan #83 verdes em `b258b26`. Três fixtures corrigidas fecharam antes do stop, zero warnings de conexão fechada nessa execução, spec 9.57.
 
 ## Agora
 
-- [ ] B08.2c — PR #111: red #174/green #175 (par11/suíte279), contexto compartilhado fechado antes do stop. Par temporário retirado; checks finais antes de integrar, spec 9.57.
+- [ ] B08.2d — PR #112: red #158/green #159 (114 testes/8m16s), cinco capturas fechadas antes do stop/zero warnings próprios. Verificar SHA final e integrar, spec 9.58.
 
 ## Próximo
 
-- [ ] B08.2d — concorrência do processador: red/green na suíte padrão, cinco cenários preservados e guard antes do stop. FALHOU aguarda decisão do Navigator.
+- [ ] B08.3 — agente Mockito explícito apenas nos forks de teste, controle antes/depois e suítes intactas. FALHOU aguarda decisão do Navigator.
