@@ -4,12 +4,12 @@
 
 ## Último incremento
 
-- B08.2a integrado na PR #109 (`caf4174`): transações #168 (279 testes), Flow #17 e Scan #75 verdes em `e6447ff`. Pool da concorrência fecha antes do stop/zero warnings próprios; outros dois ainda dez cada, spec 9.55.
+- B08.2b integrado na PR #110 (`f6e0dcf`): transações #172 (279 testes), Flow #21 e Scan #79 verdes em `0a0725b`. Concorrência/Atomicidade fecham antes do stop; PublicarOutbox ainda dez warnings, spec 9.56.
 
 ## Agora
 
-- [ ] B08.2b — PR #110 validada: red #170/green #171 (par10/suíte279), pool fechado antes do stop; Flow #20/Scan #78 verdes. Par temporário retirado, checks finais pendentes; spec 9.56.
+- [ ] B08.2c — PublicarOutbox: asserção antes do stop real, todos os pools capturados nos dois cenários. Compilação offline verde; obter red no CI antes de corrigir, spec 9.57.
 
 ## Próximo
 
-- [ ] B08.2c — PublicarOutbox: red de lifecycle em AfterAll, dois cenários e todos os pools capturados; green por método/duração medida. FALHOU aguarda decisão do Navigator.
+- [ ] Após integração, selecionar outra fixture com diagnóstico causal de lifecycle. FALHOU aguarda decisão do Navigator.
