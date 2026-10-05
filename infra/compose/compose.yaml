@@ -1,0 +1,114 @@
+services:
+  db-transacoes:
+    image: postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
+    environment:
+      POSTGRES_DB: credpay_transacoes
+      POSTGRES_USER: ${TX_DB_USER:?configure TX_DB_USER}
+      POSTGRES_PASSWORD: ${TX_DB_PASSWORD:?configure TX_DB_PASSWORD}
+    volumes:
+      - transacoes-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  db-processamento:
+    image: postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
+    environment:
+      POSTGRES_DB: credpay_processamento
+      POSTGRES_USER: ${PROC_DB_USER:?configure PROC_DB_USER}
+      POSTGRES_PASSWORD: ${PROC_DB_PASSWORD:?configure PROC_DB_PASSWORD}
+    volumes:
+      - processamento-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  rabbit:
+    image: rabbitmq:4.3.5-management-alpine@sha256:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1
+    hostname: rabbit
+    environment:
+      RABBITMQ_NODENAME: rabbit@rabbit
+      RABBITMQ_DEFAULT_USER: ${RABBIT_USER:?configure RABBIT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBIT_PASSWORD:?configure RABBIT_PASSWORD}
+    volumes:
+      - rabbit-data:/var/lib/rabbitmq
+    healthcheck:
+      test: [CMD, rabbitmq-diagnostics, -q, check_running]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  transacoes:
+    image: credpay-transacoes:${CREDPAY_IMAGE_TAG:?configure SHA completo}
+    pull_policy: never
+    build:
+      context: ../../transacoes-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db-transacoes:5432/credpay_transacoes
+      SPRING_DATASOURCE_USERNAME: ${TX_DB_USER:?configure TX_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${TX_DB_PASSWORD:?configure TX_DB_PASSWORD}
+      SPRING_RABBITMQ_HOST: rabbit
+      SPRING_RABBITMQ_USERNAME: ${RABBIT_USER:?configure RABBIT_USER}
+      SPRING_RABBITMQ_PASSWORD: ${RABBIT_PASSWORD:?configure RABBIT_PASSWORD}
+      SPRING_RABBITMQ_VIRTUAL_HOST: /
+    command:
+      - --management.health.rabbit.enabled=true
+      - --credpay.transacoes.consumer.topology.enabled=${CREDPAY_TOPOLOGY_ENABLED:-false}
+      - --credpay.transacoes.consumer.listener.enabled=${CREDPAY_FLOW_ENABLED:-false}
+      - --credpay.outbox.publisher.enabled=${CREDPAY_FLOW_ENABLED:-false}
+    ports:
+      - "127.0.0.1:${TX_HTTP_PORT:-8080}:8080"
+    depends_on:
+      db-transacoes:
+        condition: service_healthy
+      rabbit:
+        condition: service_healthy
+    healthcheck: &app-health
+      test: [CMD, curl, --fail, --silent, --output, /dev/null, http://localhost:8080/actuator/health]
+      interval: 5s
+      timeout: 3s
+      start_period: 30s
+      retries: 20
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 30s
+
+  processamento:
+    image: credpay-processamento:${CREDPAY_IMAGE_TAG:?configure SHA completo}
+    pull_policy: never
+    build:
+      context: ../../processamento-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db-processamento:5432/credpay_processamento
+      SPRING_DATASOURCE_USERNAME: ${PROC_DB_USER:?configure PROC_DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${PROC_DB_PASSWORD:?configure PROC_DB_PASSWORD}
+      SPRING_RABBITMQ_HOST: rabbit
+      SPRING_RABBITMQ_USERNAME: ${RABBIT_USER:?configure RABBIT_USER}
+      SPRING_RABBITMQ_PASSWORD: ${RABBIT_PASSWORD:?configure RABBIT_PASSWORD}
+      SPRING_RABBITMQ_VIRTUAL_HOST: /
+    command:
+      - --management.health.rabbit.enabled=true
+      - --credpay.processamento.consumer.topology.enabled=${CREDPAY_TOPOLOGY_ENABLED:-false}
+      - --credpay.processamento.consumer.listener.enabled=${CREDPAY_FLOW_ENABLED:-false}
+      - --credpay.outbox.publisher.enabled=${CREDPAY_FLOW_ENABLED:-false}
+      - --credpay.processamento.limites.BRL=${BRL_LIMIT:?configure BRL_LIMIT}
+    ports:
+      - "127.0.0.1:${PROC_HTTP_PORT:-8081}:8080"
+    depends_on:
+      db-processamento:
+        condition: service_healthy
+      rabbit:
+        condition: service_healthy
+    healthcheck: *app-health
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 30s
+
+volumes:
+  transacoes-data:
+  processamento-data:
+  rabbit-data:
