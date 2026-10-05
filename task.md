@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B07.4 — Compose cinco serviços/três volumes, preparo/ativação conferidos e persistência down/up. Config/sintaxe locais; revisão/CI real/integração pendentes, spec9.63.
+- [ ] B07.4 — Compose cinco serviços/três volumes, preparo/ativação conferidos e persistência down/up. PR #117: Compose #2/167,92s e Scan #102 verdes em8891d32 após correção JSON comprovada; duas sequências e mesmos registros preservados. Revisão/gates finais/integração pendentes, spec9.63.
 
 ## Próximo
 
