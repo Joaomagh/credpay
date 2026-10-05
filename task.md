@@ -8,8 +8,8 @@
 
 ## Agora
 
-- [ ] B08.2e — PR #119: red real processador #168 mostrou quatro referências ao mesmo pool aberto/PG ativo; 114 cenários verdes e erro exclusivo de teardown. AFTER_CLASS adicionado após a prova; compilação/revisão verdes, exigir green/checks finais. Spec §9.65.
+- [ ] B08.2e — PR #119: red #168 e green #169 comprovados; suíte 114 e quatro capturas fechadas antes do stop, zero warnings próprios. Flow #44/Images #11/Compose #6/Scan #107 verdes em `e39d453`. Revisão passou; exigir checks do SHA final e integrar. Spec §9.65.
 
 ## Próximo
 
-- [ ] B07.5a — Proposta Kubernetes na PR #118, workflow inativo; execução aguarda exceção específica do Navigator para kind/componentes internos somente no CI. Depois ativação/fluxo e observabilidade. FALHOU aguarda regra de produto; sandbox/qualidade/portfólio restantes.
+- [ ] B08.4 — Checkstyle mínimo nos dois módulos enquanto Kubernetes aguarda direção: configuração compartilhada, fontes/testes e controles sintéticos; depois análise de dependências/imagens e demo. B07.5a/PR #118 segue inativa; FALHOU aguarda regra de produto.
