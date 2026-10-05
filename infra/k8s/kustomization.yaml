@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: credpay
+resources:
+  - namespace.yaml
+  - config.yaml
+  - secret.example.yaml
+  - databases.yaml
+  - rabbit.yaml
+  - apps.yaml
+images:
+  - name: credpay-transacoes
+    newTag: __CREDPAY_TAG__
+  - name: credpay-processamento
+    newTag: __CREDPAY_TAG__

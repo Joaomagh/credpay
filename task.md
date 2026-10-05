@@ -1,15 +1,15 @@
 # CredPay — Tarefas
 
-> Um incremento = um resultado pequeno e verificável. Papéis em `docs/roles/`, prioridade/aceite em `docs/BACKLOG.md` e evidências em `spec.md`. Revisão e checks antes de avançar.
+> Um incremento = um resultado pequeno e verificável. Papéis em `docs/roles/`, prioridade/aceite em `docs/BACKLOG.md`, evidências em `spec.md`. Revisão e checks antes de avançar.
 
 ## Último incremento
 
-- B07.3 integrado na PR #116 (`37999c4`): Images #8/smoke1/80,13s, transações #188/279, Flow #41/4 e Scan #99 verdes em92be78a. AP/REJ, duas publicações/histórico únicos e replay POST estável; spec9.62.
+- B07.4 integrado na PR #117 (`3e89218`): Compose #3 em 169,14 s e Scan #103 verdes em `1e681c6`. Preparo, ativação, APROVADA/REJEITADA e replay; mesmos registros e três volumes após down/up. Evidências em spec §9.63.
 
 ## Agora
 
-- [ ] B07.4 — Compose cinco serviços/três volumes, preparo/ativação conferidos e persistência down/up. PR #117: Compose #2/167,92s e Scan #102 verdes em8891d32 após correção JSON comprovada; duas sequências e mesmos registros preservados. Revisão/gates finais/integração pendentes, spec9.63.
+- [ ] B07.5a — Startup Kubernetes e persistência: 13 recursos com renderização e parser estáticos verdes. Proposta de CI fora dos workflows; revisão e exceção específica do Navigator para node/componentes internos padrão do kind somente no CI antes de executar. Smoke e integração pendentes; spec §9.64.
 
 ## Próximo
 
-- [ ] B07.5 — Kubernetes local com configuração, probes e recursos; depois observabilidade útil. FALHOU aguarda regra do Navigator.
+- [ ] B07.5b — Preparar/conferir políticas e ativar fluxo no cluster; depois observabilidade. FALHOU aguarda regra do Navigator; sandbox, qualidade e portfólio ainda restantes.
