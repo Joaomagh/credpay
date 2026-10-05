@@ -2,11 +2,11 @@
 
 > Fonte de verdade do sistema que existe hoje. Preencher somente com decisão tomada, contrato aceito ou comportamento comprovado. Planos futuros ficam em `CREDPAY_PLAN.md`; próximas ações ficam em `task.md`.
 
-**Última atualização:** 2026-10-03
+**Última atualização:** 2026-10-05
 
-**Fase atual:** 4 — Fluxo assíncrono confiável
+**Fase atual:** conclusão da v1 — qualidade, ambiente reproduzível e preparação de Kubernetes; observabilidade e sandbox ainda pendentes.
 
-**Estado:** criação e consulta HTTP persistentes; processamento idempotente e duas outboxes transacionais comprovados; publicadores RabbitMQ com scheduler opt-in de réplica única em cada serviço; listener de entrada opt-in com ack após commit, replay equivalente, rejeição permanente e retry limitado comprovados. Reentrega após perda de conexão na janela commit/ack e retenção/recuperação sob recusa da DLQ cheia também foram comprovadas. Provisionamento mínimo de entrada/DLQ comprovado; fluxo ponta a ponta pendente e consumidor desligado por padrão.
+**Estado:** fluxo POST → duas outboxes → GET APROVADA/REJEITADA comprovado com JARs e imagens; idempotência, concorrência, histórico único, ack após commit, retry/DLQ, reinício e recuperação manual comprovados nos cenários registrados. Compose prepara e confere políticas antes de ativar consumo/publicação e preserva dados no down/up (PR #117). Flags seguem desligados por padrão; ativação exige o roteiro. Kubernetes está somente proposto na PR #118, sem execução. FALHOU aguarda regra de produto; observabilidade, sandbox verificável e fechamento de qualidade/portfólio continuam pendentes.
 
 ## 1. Contexto e limites atuais
 
@@ -2153,6 +2153,14 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 **Primeira execução/diagnóstico:** Compose CI #1/run37254691614, SHA695ce59, registrou PowerShell7.6.6/Compose2.38.2, packages/build verdes e falhou no JSON antes do primeiro marcador de apps; cleanup do projeto passou. Hipótese isolada com HTTP real loopback e mídia application/vnd.spring-boot.actuator.v3+json: Invoke-WebRequest retornou Byte[], conversão implícita string produziu números separados e parser falhou; decodificação UTF-8 conservou statusUP. Helper Json extraído sem alterar comportamento: controle check-json falhou na entrada byte pelo mesmo motivo, após texto válido; correção mínima aceita string ou decodifica bytes com UTF-8 estrito, controle ficou verde e rejeita JSON/UTF-8 inválidos com mensagem fixa. Sem payload de app exposto, sem truncar teste/timeout; prova Compose completa deve ser repetida. Controle passa a rodar no workflow; marca somente tipo CLR do health para confirmar fronteira real.
 
 **Green real:** [Compose #2](https://github.com/Joaomagh/credpay/actions/runs/37255146642), SHA8891d32, executou controle JSON, duas sequências de três fases (12 startups/healthByte[]/UID/mounts), políticas exatas, dois consumidores/ack/prefetch, AP/REJ e replay. Roteiro167,922s até marcador final; down/up conservou três volumes e GET/POST dos mesmos dois registros, cleanup CI passou. Scan #102 verde, nenhum self/dynamic/CDS no job. Sem alteração de código/dependência dos serviços: suites/Images/Flow intactos na baseline PR #116, filtros não disparam aqui. Revisão do fix sem bloqueantes; documentos finais exigem CI/Scan do último SHA antes de integrar. Prova somente CI, sem reduzir limites ou suprimir erros.
+
+### 9.65 Ciclo de vida da fixture de outbox do processador — B08.2e
+
+**Objetivo/aceite:** a fixture PublicarOutboxProcessamento deve fechar todos os pools capturados antes de parar seu PostgreSQL, conservando os quatro cenários existentes de health/publicação/recuperação/duplicata após falha de marcação. Baseline processador #156 registra dez warnings no pool 2; zero warnings isolado não comprova lifecycle correto.
+
+**Red preparado:** captura de HikariDataSource antes do reset/SQL de cada método; SAME_THREAD conserva a lista. Subclasse local do container observa pools no stop real com PostgreSQL ainda ativo, exige fechamento e sempre chama super.stop em finally. Não fechar pools manualmente no guard nem adicionar DirtiesContext antes do red observado. Cenários, payload/eventId, filas em finally, scheduler PT1H, imagens, produção e workflow permanecem intactos. Compilação offline test-compile passou 23 fontes em 21,910 s; revisão assistida sem bloqueantes. Docker Linux local indisponível; executar verify padrão no CI e exigir falha exclusiva do teardown com quatro cenários verdes. Red ainda não observado; não é aceite.
+
+**Frente pausada por autoridade:** proposta Kubernetes permanece na PR #118 em rascunho, workflow fora de .github/workflows e Scan #105 verde em 9a885cb. Exceção específica para node e componentes internos padrão no CI foi solicitada ao Navigator; nenhuma execução privilegiada autorizada. B08.2e é o único incremento de implementação ativo enquanto essa decisão está pendente.
 
 ## 10. Observabilidade e SLOs de aprendizado
 

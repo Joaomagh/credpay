@@ -4,12 +4,12 @@
 
 ## Último incremento
 
-- B07.3 integrado na PR #116 (`37999c4`): Images #8/smoke1/80,13s, transações #188/279, Flow #41/4 e Scan #99 verdes em92be78a. AP/REJ, duas publicações/histórico únicos e replay POST estável; spec9.62.
+- B07.4 integrado na PR #117 (`3e89218`): Compose #3 em 169,14 s e Scan #103 verdes em `1e681c6`. Preparo, ativação, APROVADA/REJEITADA e replay; mesmos registros e três volumes após down/up. Spec §9.63.
 
 ## Agora
 
-- [ ] B07.4 — Compose cinco serviços/três volumes, preparo/ativação conferidos e persistência down/up. PR #117: Compose #2/167,92s e Scan #102 verdes em8891d32 após correção JSON comprovada; duas sequências e mesmos registros preservados. Revisão/gates finais/integração pendentes, spec9.63.
+- [ ] B08.2e — Guard de encerramento da fixture de outbox do processador compilado e revisado. Observar red exclusivo de teardown no verify real antes da correção; quatro cenários existentes preservados. Spec §9.65.
 
 ## Próximo
 
-- [ ] B07.5 — Kubernetes local com configuração, probes e recursos; depois observabilidade útil. FALHOU aguarda regra do Navigator.
+- [ ] B07.5a — Proposta Kubernetes na PR #118, workflow inativo; execução aguarda exceção específica do Navigator para kind/componentes internos somente no CI. Depois ativação/fluxo e observabilidade. FALHOU aguarda regra de produto; sandbox/qualidade/portfólio restantes.
