@@ -1,6 +1,6 @@
 # CredPay — Backlog do MVP
 
-Atualizado em 2026-10-04. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos e evidências: [spec](../spec.md). Uma única ação executável: [task](../task.md). Papéis: [P.O.](roles/product-owner.md), [dev sênior](roles/senior-developer.md) e [Scrum Master](roles/scrum-master.md).
+Atualizado em 2026-10-05. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos e evidências: [spec](../spec.md). Uma única ação executável: [task](../task.md). Papéis: [P.O.](roles/product-owner.md), [dev sênior](roles/senior-developer.md) e [Scrum Master](roles/scrum-master.md).
 
 ## Prioridades
 
@@ -22,6 +22,20 @@ Não é uma promessa de uma PR por linha nem um cronograma. Itens grandes serão
 Em2026-10-04, João pediu o balanço por etapas e prioridade em terminar o projeto. Estimativa de escopo aproximada:65% concluído/35% restante, não medição automática, contagem de PRs/testes ou prazo. Avaliação das sete fases do plano: governança/sandbox30%, fundação90%, primeiro TDD100%, fluxo95%, qualidade/resiliência75%, Kubernetes/observabilidade5%, entrega/portfólio60%; maior peso para fluxo/plataforma. Critérios de saída, não o percentual, autorizam conclusão.
 
 Sequência finita: integrar imagens → preparação/fluxo nos containers → Compose → Kubernetes local/observabilidade útil → sandbox verificável/qualidade/revisão de publicação → demo e explicação de três minutos. Refinar somente o próximo incremento dessa sequência; dívidas são priorizadas quando comprometem reprodução ou diagnóstico. FALHOU continua decisão do Navigator; implementação da transição depende da regra aprovada. CD externo continua condicionado a destino/rollback/autorização, sem requisito automático de deploy para demo local. A v1 mantém as exclusões do plano.
+
+Revisão em 2026-10-05 após integrar Compose: estimativa global permanece **aproximadamente 65% concluído / 35% restante**. Pesos abaixo são julgamento de escopo para explicar o balanço, não medição de esforço, horas, velocidade ou prazo. Preparação sem execução não encerra Kubernetes; apps non-root não encerram sandbox do agente.
+
+| Fase do plano | Peso aproximado | Concluído | Restante | Saída ainda necessária |
+|---|---:|---:|---:|---|
+| 1. Governança e sandbox | 10% | 30% | 70% | Sandbox do agente executável; bloqueios de acesso, privilégios, credenciais e rede comprovados |
+| 2. Fundação reproduzível | 10% | 95% | 5% | Confirmar quickstart no ambiente de João quando o engine Linux estiver disponível |
+| 3. Primeiro incremento TDD | 5% | 100% | 0% | Saída atendida com red/green/refactor e PostgreSQL real |
+| 4. Fluxo assíncrono confiável | 30% | 95% | 5% | Resolver a regra FALHOU e implementar/testar se fizer parte do aceite final |
+| 5. Qualidade e resiliência | 15% | 75% | 25% | Encerrar dívida relevante e consolidar relatório de falhas/recuperação e limites |
+| 6. Kubernetes e observabilidade | 20% | 5% | 95% | Cluster real, preparo/fluxo/persistência, painel e diagnóstico de falha |
+| 7. Entrega e portfólio | 10% | 65% | 35% | Checkstyle e análise de dependências/imagens, revisão de publicação, demo e explicação de três minutos |
+
+Fluxo principal está demonstrado em CI. Execução local ainda depende da infraestrutura; CD externo continua condicionado. João conseguir explicar as decisões exige validação com ele, não pode ser declarado por um teste automatizado.
 
 ## Incrementos de B02
 
@@ -141,7 +155,7 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 **B08.3 — Agente Mockito explícito nos testes — concluído na PR #113, merge74ba2b2, spec 9.59.** Final df41c0c: processador #163/114, transações #179/279, Flow #32/4 e Scan #90 verdes; dinâmica impedida/mocks funcionam/self-attach0/CDS visível, revisão sem bloqueantes. Baseline #156 registra self-attach e carregamento dinâmico; dependency:tree offline confirmou Mockito5.17.0/ByteBuddyAgent1.17.8 e plugin dependency3.8.1 já disponível. [Orientação da versão](https://javadoc.io/static/org.mockito/mockito-core/5.17.0/org.mockito/org/mockito/Mockito.html#0.3): resolver JAR por dependency:properties e agente no fork Surefire. Aceite: mesma baseline, argLine padrão vazio/preservação de argumentos, caminho entre aspas no Windows, mocks existentes passam com carregamento dinâmico desativado, ambos verify114/279 e Flow verdes. Controle local antes falhou na inicialização do mock maker em dois testes do listener do processador/cinco da outbox de transações; logs ignorados, sem red de negócio. Sem upgrade, dependência nova ou flag que apenas esconda warnings; manter aviso CDS se permanecer. Agente só nos forks, sem alterar JARs/processos reais; IDE/execução sem fork fora desse incremento.
 
-**B08.2e — Ciclo de vida da outbox do processador — red preparado.** Baseline #156 atribui dez warnings ao pool 2. Quatro cenários (health Rabbit, envio confirmado, rota ausente/restaurada, reenvio após falha de marcação) compartilham contexto e containers. Guard captura referências antes do reset/SQL, usa SAME_THREAD e observa o stop real com PG ativo/cleanup finally; compilação e revisão passaram. Exigir red exclusivo de lifecycle no verify padrão; só depois AFTER_CLASS, quatro capturas fechadas/contexto compartilhado/suíte 114 verdes. Filas em finally, payload/eventId, duplicata da janela confirm/marcação e scheduler PT1H intactos. Sem par extra, supressão ou correção inferida dos demais pools. Spec §9.65.
+**B08.2e — Ciclo de vida da outbox do processador — red observado, green pendente na PR #119.** Baseline #156 atribui dez warnings ao pool 2. Quatro cenários (health Rabbit, envio confirmado, rota ausente/restaurada, reenvio após falha de marcação) compartilham contexto e containers. Guard captura referências antes do reset/SQL, usa SAME_THREAD e observa o stop real com PG ativo/cleanup finally; compilação e revisão passaram. Processador #168 mostrou quatro capturas abertas/PG ativo e erro exclusivo de teardown, com 114 cenários verdes. AFTER_CLASS adicionado após a prova; exigir quatro capturas fechadas/contexto compartilhado/suíte 114 verdes. Filas em finally, payload/eventId, duplicata da janela confirm/marcação e scheduler PT1H intactos. Sem par extra, supressão ou correção inferida dos demais pools. Spec §9.65.
 
 **B08.2d — Ciclo de vida da concorrência no processador — concluído na PR #112, merge `38cadc2`.** Red #158 mostrou cinco capturas do pool aberto/PG ativo, única falha de teardown com 114 cenários verdes. AFTER_CLASS produziu green #159: 114/8m16s, shutdown antes das cinco capturas fechadas, zero warnings próprios versus dez no red/baseline #156. Outros pools ainda10/8/10, sem correção presumida. Flow #28/Scan #86 verdes em `be099cf`. Locks/gates/contadores/workflow/timeout preservados, sem par duplicado ou logger suprimido. Final processador #160 passou114/8m20s, Flow #29/Scan #87 verdes em `28333c1`; cinco referências fechadas/zero warnings próprios e outros pools dez cada. Revisão sem pendência, spec 9.58.
 

@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.2e — Guard de encerramento da fixture de outbox do processador compilado e revisado. Observar red exclusivo de teardown no verify real antes da correção; quatro cenários existentes preservados. Spec §9.65.
+- [ ] B08.2e — PR #119: red real processador #168 mostrou quatro referências ao mesmo pool aberto/PG ativo; 114 cenários verdes e erro exclusivo de teardown. AFTER_CLASS adicionado após a prova; compilação/revisão verdes, exigir green/checks finais. Spec §9.65.
 
 ## Próximo
 
