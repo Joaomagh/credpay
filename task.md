@@ -4,12 +4,12 @@
 
 ## Último incremento
 
-- B07.1 integrado na PR #114 (`4d967b3`): Images #2/smoke1, processador #166/114, transações #182/279, Flow #35/4 e Scan #93 verdes em `e3fb345`. Startup non-root/mounts0/health/exchanges comprovados; spec 9.60.
+- B07.2 integrado na PR #115 (`e7388be`): Images #5/smoke1/65,38s, transações #185/279, Flow #38/4 e Scan #96 verdes em `3085324`. Três fases, políticas efetivas e consumidores exatos antes do fluxo financeiro; spec 9.61.
 
 ## Agora
 
-- [ ] B07.2 — preparação opt-in/políticas/consumidores nas imagens. Smoke3fases/48,23s verde no Images CI #4, compilação32/revisão verdes; transações279/Flow4/Scan verdes; gates do último SHA antes de integrar, spec 9.61.
+- [ ] B07.3 — POST→GET AP/REJ e replay do POST nas imagens. Prova escrita no smoke existente; compilação32 verde; revisão e CI real antes de integrar, spec 9.62.
 
 ## Próximo
 
-- [ ] B07.3 — POST→GET AP/REJ e replay do POST nas imagens; depois Compose. FALHOU aguarda regra do Navigator; dívidas de fixtures em B08.2e.
+- [ ] B07.4 — Compose reproduzível com preparação e ativação conferidas; depois Kubernetes/observabilidade. FALHOU aguarda regra do Navigator.
