@@ -1,0 +1,129 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-transacoes
+spec:
+  clusterIP: None
+  selector:
+    app: db-transacoes
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db-transacoes
+spec:
+  serviceName: db-transacoes
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db-transacoes
+  template:
+    metadata:
+      labels:
+        app: db-transacoes
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: postgres
+          image: postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
+          securityContext:
+            privileged: false
+            allowPrivilegeEscalation: false
+          env:
+            - name: POSTGRES_DB
+              value: credpay_transacoes
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef: {name: credpay-demo, key: tx-user}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: credpay-demo, key: tx-password}
+          ports:
+            - containerPort: 5432
+          readinessProbe:
+            exec:
+              command: [sh, -c, 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+            periodSeconds: 5
+            timeoutSeconds: 3
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: "1", memory: 512Mi}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-processamento
+spec:
+  clusterIP: None
+  selector:
+    app: db-processamento
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db-processamento
+spec:
+  serviceName: db-processamento
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db-processamento
+  template:
+    metadata:
+      labels:
+        app: db-processamento
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: postgres
+          image: postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
+          securityContext:
+            privileged: false
+            allowPrivilegeEscalation: false
+          env:
+            - name: POSTGRES_DB
+              value: credpay_processamento
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef: {name: credpay-demo, key: proc-user}
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: credpay-demo, key: proc-password}
+          ports:
+            - containerPort: 5432
+          readinessProbe:
+            exec:
+              command: [sh, -c, 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
+            periodSeconds: 5
+            timeoutSeconds: 3
+          resources:
+            requests: {cpu: 100m, memory: 128Mi}
+            limits: {cpu: "1", memory: 512Mi}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 1Gi

@@ -1,0 +1,93 @@
+# Proposta revisável: fora de .github/workflows, sem execução automática.
+# Só mover/ativar após exceção explícita do Navigator para o node e componentes internos padrão do kind no CI.
+name: CredPay Kubernetes CI
+
+on:
+  pull_request:
+    paths:
+      - "transacoes-service/**"
+      - "processamento-service/**"
+      - "infra/k8s/**"
+      - "infra/compose/json.ps1"
+      - ".github/workflows/credpay-kubernetes-ci.yml"
+  push:
+    branches: [main]
+    paths:
+      - "transacoes-service/**"
+      - "processamento-service/**"
+      - "infra/k8s/**"
+      - "infra/compose/json.ps1"
+      - ".github/workflows/credpay-kubernetes-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: credpay-kubernetes-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kubernetes:
+    name: Startup and persistent Pods in disposable cluster
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CREDPAY_IMAGE_TAG: ${{ github.sha }}
+      CREDPAY_CLUSTER: credpay-ci-${{ github.run_id }}-${{ github.run_attempt }}
+      KIND_EXPERIMENTAL_PROVIDER: docker
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Java 21
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: |
+            transacoes-service/pom.xml
+            processamento-service/pom.xml
+      - name: Prepare pinned tools in workspace
+        run: |
+          mkdir -p .local/bin .local/k8s
+          curl --fail --location --silent --show-error --retry 3 https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64 --output .local/bin/kind
+          echo 'aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d  .local/bin/kind' | sha256sum --check
+          curl --fail --location --silent --show-error --retry 3 https://dl.k8s.io/release/v1.36.4/bin/linux/amd64/kubectl --output .local/bin/kubectl
+          echo '8b8f088da2dab964f853b38464033b1be15ede2839eca751482357c45abdd05a  .local/bin/kubectl' | sha256sum --check
+          chmod +x .local/bin/kind .local/bin/kubectl transacoes-service/mvnw processamento-service/mvnw
+          .local/bin/kind version
+          .local/bin/kubectl --kubeconfig "$PWD/.local/k8s/$CREDPAY_CLUSTER.yaml" version --client -o json
+      - name: Package transaction application
+        working-directory: transacoes-service
+        run: ./mvnw --batch-mode --no-transfer-progress -DskipTests package
+      - name: Package processing application
+        working-directory: processamento-service
+        run: ./mvnw --batch-mode --no-transfer-progress -DskipTests package
+      - name: Build both images locally
+        run: |
+          docker build --tag "credpay-transacoes:$CREDPAY_IMAGE_TAG" transacoes-service
+          docker build --tag "credpay-processamento:$CREDPAY_IMAGE_TAG" processamento-service
+      - name: Create only the disposable CI cluster
+        run: |
+          [[ "$CREDPAY_CLUSTER" =~ ^credpay-ci-[0-9]+-[0-9]+$ ]]
+          existing_clusters=$(.local/bin/kind get clusters)
+          while IFS= read -r existing_cluster; do
+            if [[ "$existing_cluster" == "$CREDPAY_CLUSTER" ]]; then exit 1; fi
+          done <<< "$existing_clusters"
+          printf '%s' "$CREDPAY_CLUSTER" > ".local/k8s/$CREDPAY_CLUSTER.created"
+          .local/bin/kind create cluster --name "$CREDPAY_CLUSTER" --kubeconfig "$PWD/.local/k8s/$CREDPAY_CLUSTER.yaml" --image kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed --wait 180s
+          .local/bin/kind load docker-image "credpay-transacoes:$CREDPAY_IMAGE_TAG" "credpay-processamento:$CREDPAY_IMAGE_TAG" --name "$CREDPAY_CLUSTER"
+      - name: Verify startup and recreation of owned Pods
+        shell: pwsh
+        run: |
+          $env:PATH = "$(Get-Location)/.local/bin$([IO.Path]::PathSeparator)$env:PATH"
+          ./infra/k8s/verify-startup.ps1 -Cluster $env:CREDPAY_CLUSTER
+      - name: Remove only the cluster created by this job
+        if: always()
+        run: |
+          [[ "$CREDPAY_CLUSTER" =~ ^credpay-ci-[0-9]+-[0-9]+$ ]]
+          if [[ -f ".local/k8s/$CREDPAY_CLUSTER.created" && -x .local/bin/kind ]]; then
+            .local/bin/kind delete cluster --name "$CREDPAY_CLUSTER"
+          fi
