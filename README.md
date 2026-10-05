@@ -55,7 +55,7 @@ O projeto está na fase de fluxo assíncrono confiável: os dois aplicativos rea
 | Implementado | `GET /transacoes/{id}` retorna a representação persistida ou `404 Problem Details` para UUID válido ausente |
 | Implementado | UUID malformado retorna `400 Problem Details` sem consultar o caso de uso nem expor detalhes internos |
 | Implementado | testes automatizados nos dois módulos, incluindo PostgreSQL e RabbitMQ reais no CI |
-| Comprovado | imagens dos dois serviços com runtime Java21 fixado por digest, UID10001 e smoke real de startup/health; roteiro em [infra/images](infra/images/README.md) |
+| Comprovado | imagens dos dois serviços com runtime Java21 fixado por digest, UID10001 e smoke real de startup/health, políticas antes da ativação e consumidores exatos; roteiro em [infra/images](infra/images/README.md) |
 | Implementado | `POST /transacoes` exige `Idempotency-Key`, repete a resposta original para payload equivalente e retorna `409` em conflito |
 | Comprovado | aplicação idempotente do resultado grava estado final e histórico atomicamente, inclusive em concorrência real |
 | Comprovado | replay do POST mantém resposta original `PENDENTE`; GET expõe estado final, com dados/histórico/outbox preservados |
