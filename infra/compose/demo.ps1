@@ -9,6 +9,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
 $root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
+. (Join-Path $PSScriptRoot 'json.ps1')
 $composeArgs = @('compose', '--project-name', $Project, '--env-file', (Join-Path $PSScriptRoot $EnvFile),
     '--file', (Join-Path $PSScriptRoot 'compose.yaml'))
 $apps = @('transacoes', 'processamento')
@@ -105,6 +106,7 @@ function CheckApps {
             $info.HostConfig.Privileged -eq $false) 'Usuário/mounts/privilégios do aplicativo divergentes.'
         $health = Request 'GET' "$($urls[$app])/actuator/health"
         Require ($health.StatusCode -eq 200 -and (Json $health.Content).status -ceq 'UP') 'Health do aplicativo não está UP.'
+        Write-Host "Compose: $app health content type=$($health.Content.GetType().Name)."
     }
     Write-Host 'Compose: apps UID10001, mounts=0, privileged=false, health=UP.'
 }
@@ -157,10 +159,6 @@ function Activate {
         Start-Sleep -Milliseconds 300
     } while ([DateTime]::UtcNow -lt $deadline)
     throw 'Consumidores não convergiram; parar apps e diagnosticar antes de publicar.'
-}
-
-function Json([string]$Content) {
-    try { return ($Content | ConvertFrom-Json) } catch { throw 'JSON inválido; conteúdo omitido.' }
 }
 
 function Request([string]$Method, [string]$Url, [string]$Key = '', [string]$Value = '') {

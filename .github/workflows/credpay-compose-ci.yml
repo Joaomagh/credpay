@@ -52,6 +52,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           docker compose --env-file infra/compose/.env.example -f infra/compose/compose.yaml config --quiet
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./infra/compose/check-json.ps1
       - name: Make Maven Wrappers executable
         run: chmod +x transacoes-service/mvnw processamento-service/mvnw
       - name: Package transaction application
