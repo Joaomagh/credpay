@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B07.3 — POST→GET AP/REJ e replay do POST nas imagens. Prova escrita no smoke existente; compilação32 verde; revisão e CI real antes de integrar, spec 9.62.
+- [ ] B07.3 — POST→GET AP/REJ e replay do POST nas imagens. PR #116: Images #7/smoke1/75,84s, transações #187/279, Flow #40/4 e Scan #98 verdes em791f8d3; revisão sem bloqueantes. Gates finais e integração pendentes, spec 9.62.
 
 ## Próximo
 
