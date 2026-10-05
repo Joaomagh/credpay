@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B07.1 — imagens executáveis/non-root e smoke de startup/health. Compilação32/verify168/JAR e revisão verdes; CI real antes de integrar, spec 9.60.
+- [ ] B07.1 — imagens executáveis/non-root e smoke de startup/health. Compilação32/verify168/JAR/revisão e Images CI #1/smoke1 verdes; processador114/transações279/Flow4/Scan verdes; gates finais antes de integrar, spec 9.60.
 
 ## Próximo
 
