@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B07.2 — preparação opt-in/políticas/consumidores nas imagens. Smoke ampliado para três fases; compilação32 verde; revisão e CI aplicável antes de integrar, spec 9.61.
+- [ ] B07.2 — preparação opt-in/políticas/consumidores nas imagens. Smoke3fases/48,23s verde no Images CI #4, compilação32/revisão verdes; transações279/Flow4/Scan verdes; gates do último SHA antes de integrar, spec 9.61.
 
 ## Próximo
 

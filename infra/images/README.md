@@ -12,7 +12,7 @@ O workflow `CredPay Images CI` prepara ambos JARs e constrói duas imagens locai
 
 O teste inicia dois PostgreSQL próprios e RabbitMQ nas baselines do projeto, conectados aos apps por aliases numa rede descartável. Usa credenciais fictícias explícitas; nenhum segredo é incorporado à imagem. Todas as fases exigem HTTP200/JSON `status=UP` nos dois `/actuator/health`, health Rabbit habilitado, UID efetivo10001 por `id -u`, usuário configurado, mounts vazios e privileged=false.
 
-A ampliação B07.2 está escrita e aguarda prova no CI. Seu contrato de preparação mantém bancos/broker entre as fases e reinicia somente apps:
+A preparação B07.2 foi demonstrada no [Images CI #4](https://github.com/Joaomagh/credpay/actions/runs/37251745556): um smoke48,23s, seis startups non-root/healthUP e três fases conferidas no broker. Mantém bancos/broker entre as fases e reinicia somente apps:
 
 1. Topologias/consumo/publicação false: duas exchanges produtoras direct/duráveis, zero filas e consumidores.
 2. Topologias true, consumo/publicação false: importar os dois arquivos de `infra/rabbitmq` no broker descartável. Conferir quatro filas quorum/duráveis, argumentos exatos, nomes/definições efetivas das políticas e ausência de operator policy; at-least-once/reject-publish/caps10000/1000, flag stream_queue e quatro exchanges/bindings. Consumidores zero antes de ativar.
@@ -20,7 +20,7 @@ A ampliação B07.2 está escrita e aguarda prova no CI. Seu contrato de prepara
 
 Network é declarado primeiro no try-with-resources externo; apps ficam em try interno por fase e são registrados antes do start. Cleanup encerra ambos antes da fase seguinte; ao terminar/falhar, encerra broker/bancos e rede, inclusive em startup parcial. Só remove recursos criados pelo teste, sem prune ou alvo global. Não imprimir inspect/env/logs integrais; diagnóstico deve preservar apenas o trecho necessário. O workflow não publica logs como artefatos nem envia imagens para registry.
 
-Startup foi comprovado em B07.1; preparação/ativação ampliadas só terão aceite após CI verde. O teste não envia POST nem prova fluxo financeiro nas imagens, Compose, Kubernetes, HA, scanner de vulnerabilidade ou deploy. O Flow atual comprova o fluxo financeiro em dois processos JAR separados. Daemon/Testcontainers/runner são parte da base de confiança; apps não recebem Docker socket, workspace ou home montados. Rede bridge não é allowlist de egress e esse ambiente não implementa AI-Jail.
+Startup foi comprovado em B07.1; preparação/ativação foram conferidas no Images CI #4. O teste não envia POST nem prova fluxo financeiro nas imagens, Compose, Kubernetes, HA, scanner de vulnerabilidade ou deploy. O Flow atual comprova o fluxo financeiro em dois processos JAR separados. Daemon/Testcontainers/runner são parte da base de confiança; apps não recebem Docker socket, workspace ou home montados. Rede bridge não é allowlist de egress e esse ambiente não implementa AI-Jail.
 
 ## Executar com Java21 e Docker Linux
 
