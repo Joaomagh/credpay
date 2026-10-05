@@ -599,12 +599,12 @@ Esse erro representa sintaxe inválida e ocorre antes do caso de uso. O teste MV
 
 ### Eventos
 
-`TransacaoCriada` v1 é persistido na outbox junto da criação e pode ser publicado com confirmação pelo RabbitMQ. O processamento pelo consumidor permanece planejado.
+`TransacaoCriada` v1 é persistido na outbox junto da criação e publicado com confirmação pelo RabbitMQ. Ambos os consumidores idempotentes estão implementados com opt-in e ack após commit; fluxo final, reentrega e falhas estão comprovados nas seções 9.41–9.54. Ativação operacional exige conferência das políticas e topologias.
 
 | Evento/versão | Produtor | Consumidor | Campos | Garantias |
 |---|---|---|---|---|
-| `TransacaoCriada` v1 | `transacoes-service` | `processamento-service` planejado | envelope versionado e dados da transação `PENDENTE` | intenção persistida atomicamente via outbox; publicação pelo menos uma vez com confirms/returns |
-| `TransacaoProcessada` v1 | `processamento-service` | `transacoes-service` planejado | identidade de saída, causa e estado final | intenção gravada junto do resultado; publicação confirmada opt-in; consumo pendente |
+| `TransacaoCriada` v1 | `transacoes-service` | `processamento-service` | envelope versionado e dados da transação `PENDENTE` | intenção atômica/outbox, publicação pelo menos uma vez com confirms/returns; consumidor idempotente/ack após commit |
+| `TransacaoProcessada` v1 | `processamento-service` | `transacoes-service` | identidade de saída, causa e estado final | intenção junto do resultado/publicação confirmada opt-in; estado e histórico atômicos/idempotentes, ack após commit |
 
 Envelope JSON aprovado:
 
@@ -632,9 +632,9 @@ Envelope JSON aprovado:
 - Campos desconhecidos devem ser ignorados pelos consumidores. Remover, renomear, mudar tipo ou semântica exige nova versão; adição opcional compatível pode permanecer na v1 quando consumidores existentes continuarem válidos.
 - O contrato não contém credenciais, dados pessoais, stack trace nem detalhes de persistência.
 
-O evento representa um fato confirmado no banco, não um comando e não uma promessa de aprovação. A ordem global não é garantida. O consumidor futuro deve tolerar reentrega e deduplicar por `eventId`.
+O evento representa um fato confirmado no banco, não um comando e não uma promessa de aprovação. A ordem global não é garantida. O consumidor tolera reentrega e deduplica por `eventId`, verificando equivalência sem sobrescrever uma decisão confirmada.
 
-Contrato implementado para `TransacaoProcessada` v1 (exemplo; ainda sem consumidor):
+Contrato implementado para `TransacaoProcessada` v1 (exemplo, com consumo implementado):
 
 ```json
 {
@@ -2120,9 +2120,23 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Verificação local:** compilação32 fontes offline passou em10,469s. Revisão/UTF-8/diff passaram sem bloqueantes; quatro gates iniciais verdes, repetir no SHA documental final. Processor verify114 não dispara por filtro se somente harness de transações/workflowImages/docs mudam; última evidência #166, produção intacta. WorkflowImages reempacota e executa o processador real; isso não substitui o verify quando o módulo for alterado. Sem Docker local, prova de execução via CI.
 
-**Primeira prova em `d6026d4`:** [Images CI #4](https://github.com/Joaomagh/credpay/actions/runs/37251745556), job111580620216, passou um smoke48,23s (Maven49,917s), zero falhas/erros/skips. Marcadores das três fases: exchanges produtoras/filas0/consumidores0 → quatro filas quorum/políticas e bindings efetivos/consumidores0 → consumidores2/ack obrigatório/prefetch10/1/bancos próprios. Os seis startups confirmaram UID10001/mounts0/privilegedfalse/healthUP. Nenhum self-attach/dynamic/CDS/warning de conexão fechada no log do job; não inspeciona logs completos dos apps. Preparação Maven4,418s/3,139s só empacotou. Timeout5min/job15 preservado após medição; Todos os gates iniciais d6026d4 verdes: transações #184/run37251745573 passou279/2m41s, Flow #37/run37251745545 passou4/2m09s e Scan #95/run37251745546 verde, junto de Images #4. Logs: self-attach/dynamic0 em todos, CDS1 somente transações, warnings de conexão fechada0 nos três jobs inspecionados. Revisão final sem pendências; gates do commit documental final ainda exigidos.
+**Primeira prova em `d6026d4`:** [Images CI #4](https://github.com/Joaomagh/credpay/actions/runs/37251745556), job111580620216, passou um smoke48,23s (Maven49,917s), zero falhas/erros/skips. Marcadores das três fases: exchanges produtoras/filas0/consumidores0 → quatro filas quorum/políticas e bindings efetivos/consumidores0 → consumidores2/ack obrigatório/prefetch10/1/bancos próprios. Os seis startups confirmaram UID10001/mounts0/privilegedfalse/healthUP. Nenhum self-attach/dynamic/CDS/warning de conexão fechada no log do job; não inspeciona logs completos dos apps. Preparação Maven4,418s/3,139s só empacotou. Timeout5min/job15 preservado após medição; Todos os gates iniciais d6026d4 verdes: transações #184/run37251745573 passou279/2m41s, Flow #37/run37251745545 passou4/2m09s e Scan #95/run37251745546 verde, junto de Images #4. Logs: self-attach/dynamic0 em todos, CDS1 somente transações, warnings de conexão fechada0 nos três jobs inspecionados. Revisão final sem pendências; gates finais3085324: Images #5/run37252054661 passou1/65,38s (Maven1m07s), transações #185/run37252054587 passou279/2m13s, Flow #38/run37252054590 passou4/2m06s e Scan #96/run37252054644 verde. Seis UID/mounts/health e três fases novamente; logs self-attach/dynamic0, CDS1 somente transações, warnings de conexão fechada0. PR #115 integrada em e7388be após todos os gates/revisão, reviews/threads vazios.
 
 **Limites/próximo:** não envia POST/evento financeiro e não afirma POST→GET nas imagens. Depois deste aceite, B07.3 cobre AP/REJ e replay pelas imagens, antes de Compose. FALHOU depende de regra Navigator, sem bloquear preparação atual; sem publicação externa, AI-Jail ou allowlist de egress.
+
+### 9.62 Fluxo financeiro e replay do POST nas imagens — B07.3
+
+**Objetivo/aceite:** caracterizar o fluxo já implementado nos dois JARs agora empacotados nas imagens, sem comportamento novo de produção, alteração de wiring/contrato/dependência ou red artificial de negócio. Após três fases conferidas, dois casos sequenciais50.000/150.000 BRL e limite100.00 devem nascer PENDENTE e alcançar GET APROVADA/REJEITADA. HTTP somente pelo app de transações; processador decide de fato, sem evento/resultado fabricado ou SQL de escrita.
+
+**Prova escrita:** POST201/UUID/Location, GET final preservando identidade/valor/moeda, polling separado das duas outboxes publicadas. JDBC lê decisão/duas intenções/histórico e exige unicidade nas cinco tabelas, causa/correlação/eventId/outputEventId, resultado/limite/origem, epoch/nanos da entrada e saída, instante confirmado da decisão, decimal textual e escala3 nos dois bancos. Filas ready/unacked vazias e contagens presentes/válidas; nenhum fallback de campo ausente para zero.
+
+**Replay:** snapshot completo dos cinco conjuntos persistidos somente após convergência/publicação/filas vazias. POST com mesma chave e decimal de escala equivalente conserva corpo e Location originais PENDENTE, GET final e snapshot integral; aguardar filas vazias antes do próximo caso/cleanup. Snapshots não são uma transação distribuída: ambiente isolado está sem novos produtores e publicações observadas já terminaram. Preserva as três fases/non-root/cleanup/schemas próprios; continua um smoke dedicado e dois casos dentro dele, sem inflar contagem para dois testes.
+
+**Diagnóstico:** mensagens fixas em assert de JSON/map/valor/snapshot; parser JSON falha observavelmente omitindo conteúdo/cause que poderia incluir corpo. Marcadores imprimem somente estado, contagens e conclusão, sem IDs/valor/payload/credenciais. HTTP connect2s/request3s, GET20s/outboxes10s/filas10s, teste5min/job15 preservados e medir no CI. Não copiar recuperação ou republicação do harness JAR, nem criar framework.
+
+**Documentação corrigida:** seção6 mantinha anotações antigas de consumidores planejados apesar dos fatos B04/B05 e dos gates reais. Corrigidas para consumo idempotente/ack após commit/estado e histórico atômicos, com referências às evidências; nenhum campo/semântica do contrato muda. Histórico dos incrementos anteriores permanece.
+
+**Verificação:** compilação offline32 passou6,921s e8,213s após guards de escala/instante/contagens; revisão sem bloqueantes, UTF-8/diff verdes. Primeiro SHA791f8d3: [Images #7](https://github.com/Joaomagh/credpay/actions/runs/37253250486) smoke1/75,84s/Maven1m18 confirmou AP/REJ, duas publicações/histórico/replay em cada caso; [transações #187](https://github.com/Joaomagh/credpay/actions/runs/37253250532) verify279/2m38, [Flow #40](https://github.com/Joaomagh/credpay/actions/runs/37253250577) quatro casos/2m05 e Scan #98 verdes. Transações self/dynamic0, CDS1 visível, warnings Hikari fechada0; smoke/Flow self/dynamic/CDS0. Final documental exige gates do último SHA antes do merge. Docker local indisponível; prova financeira das imagens é do CI real. Processor verify114 permanece baseline#166, filtro não disparou/produção intacta. Próximo Compose depende da integração; FALHOU aguarda regra Navigator. Não comprova reentrega/reinício/DLQ recovery nas imagens (existem nos JARs), HA, Kubernetes, publicação externa ou sandbox/egress.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
