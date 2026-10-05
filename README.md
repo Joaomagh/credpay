@@ -4,6 +4,7 @@
 [![Processing Service CI](https://github.com/Joaomagh/credpay/actions/workflows/processamento-service-ci.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/processamento-service-ci.yml)
 [![Application Flow CI](https://github.com/Joaomagh/credpay/actions/workflows/credpay-flow-ci.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/credpay-flow-ci.yml)
 [![Images CI](https://github.com/Joaomagh/credpay/actions/workflows/credpay-images-ci.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/credpay-images-ci.yml)
+[![Compose CI](https://github.com/Joaomagh/credpay/actions/workflows/credpay-compose-ci.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/credpay-compose-ci.yml)
 [![Secret Scan](https://github.com/Joaomagh/credpay/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/secret-scan.yml)
 
 > Laboratório de engenharia backend para construir e explicar, com evidências, um fluxo assíncrono de transações.
@@ -56,6 +57,7 @@ O projeto está na fase de fluxo assíncrono confiável: os dois aplicativos rea
 | Implementado | UUID malformado retorna `400 Problem Details` sem consultar o caso de uso nem expor detalhes internos |
 | Implementado | testes automatizados nos dois módulos, incluindo PostgreSQL e RabbitMQ reais no CI |
 | Comprovado | imagens dos dois serviços com runtime Java21 fixado por digest, UID10001 e smoke real de startup/health, políticas antes da ativação e consumidores exatos, POST→GET APROVADA/REJEITADA e replay estável; roteiro em [infra/images](infra/images/README.md) |
+| Comprovado | Compose com cinco serviços/três volumes, preparação antes do opt-in, AP/REJ/replay e registros preservados após down/up no CI; [quickstart local](infra/compose/README.md) requer Docker Linux acessível |
 | Implementado | `POST /transacoes` exige `Idempotency-Key`, repete a resposta original para payload equivalente e retorna `409` em conflito |
 | Comprovado | aplicação idempotente do resultado grava estado final e histórico atomicamente, inclusive em concorrência real |
 | Comprovado | replay do POST mantém resposta original `PENDENTE`; GET expõe estado final, com dados/histórico/outbox preservados |
@@ -75,7 +77,7 @@ O projeto está na fase de fluxo assíncrono confiável: os dois aplicativos rea
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
 | Documentado | contrato `TransacaoCriada` v1 e garantia de entrega pelo menos uma vez via outbox |
 | Documentado | baseline RabbitMQ com propriedade da topologia, confirms/returns, retry e DLQ |
-| Ainda não implementado | coordenação entre réplicas publicadoras, imagem da aplicação, Kubernetes e CD |
+| Ainda não implementado | coordenação entre réplicas publicadoras, Kubernetes e CD com destino definido |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 
