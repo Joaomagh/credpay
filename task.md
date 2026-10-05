@@ -4,12 +4,12 @@
 
 ## Último incremento
 
-- B08.3 integrado na PR #113 (`74ba2b2`): processador #163/114, transações #179/279, Flow #32/4 e Scan #90 verdes em `df41c0c`. Mocks com dinâmica impedida; CDS e dívida de outros pools explícitos, spec 9.59.
+- B07.1 integrado na PR #114 (`4d967b3`): Images #2/smoke1, processador #166/114, transações #182/279, Flow #35/4 e Scan #93 verdes em `e3fb345`. Startup non-root/mounts0/health/exchanges comprovados; spec 9.60.
 
 ## Agora
 
-- [ ] B07.1 — imagens executáveis/non-root e smoke de startup/health. Compilação32/verify168/JAR/revisão e Images CI #1/smoke1 verdes; processador114/transações279/Flow4/Scan verdes; gates finais antes de integrar, spec 9.60.
+- [ ] B07.2 — preparação opt-in/políticas/consumidores nas imagens. Smoke ampliado para três fases; compilação32 verde; revisão e CI aplicável antes de integrar, spec 9.61.
 
 ## Próximo
 
-- [ ] B07.2 — preparação opt-in/políticas/consumidores nas imagens, após startup comprovado. FALHOU aguarda decisão do Navigator; fixtures restantes em B08.2e.
+- [ ] B07.3 — POST→GET AP/REJ e replay do POST nas imagens; depois Compose. FALHOU aguarda regra do Navigator; dívidas de fixtures em B08.2e.
