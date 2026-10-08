@@ -17,7 +17,7 @@ try {
         '--list-all-pkgs', '--exit-code', '0', '--ignorefile', $ignore, '--timeout', '10m',
         '--skip-db-update', '--skip-java-db-update')
     foreach ($module in @('transacoes', 'processamento')) {
-        & $binary fs @options --output "$raw/$module-jar.json" ".local/security/inputs/$module"
+        & $binary rootfs @options --output "$raw/$module-jar.json" ".local/security/inputs/$module"
         if ($LASTEXITCODE -ne 0) { throw "Scan JAR falhou: $module" }
         & $binary image @options --input ".local/security/inputs/$module.tar" --output "$raw/$module-image.json"
         if ($LASTEXITCODE -ne 0) { throw "Scan imagem falhou: $module" }

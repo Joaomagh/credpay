@@ -2200,6 +2200,7 @@ Verificação documental: referências locais/UTF-8 passaram; git diff --check s
 
 **Publicação/limites:** somente campos selecionados de pacotes/achados e manifestos; sem tars, env, histórico da imagem ou JSON bruto. Artefatos por sete dias. Achados HIGH/CRITICAL são exibidos para triagem, sem ignore-unfixed/supressões; inventário não é aprovação de segurança. B08.6b trata aplicabilidade, correção e política de bloqueio. Escopo exclui PostgreSQL/RabbitMQ/build/Kubernetes. Docker local indisponível; nenhum comportamento Java alterado.
 
+**Primeiro CI:** Inventory #1/run37842648059 falhou por relatório transacoes-jar vazio; quatro processos retornaram 0, mas o validador interrompeu antes do upload. Imagens reconheceram Java/143 pacotes Ubuntu, enquanto o comando fs encontrou zero arquivos Java. Fonte oficial Trivy0.75.0 pkg/commands/artifact/run.go confirma que ScanFilesystem desabilita TypeIndividualPkgs; para JAR empacotado usar rootfs no diretório isolado contendo somente app.jar, preservando checks de cobertura. Não reduzir o aceite. Correção/revisão/novo CI pendentes.
 **Integrações anteriores confirmadas em 2026-10-08:** B08.4 PR #120 merge `3c8888d`, seis checks verdes no SHA `32ccb91` (Processing #174, Transactions #192, Flow #49, Images #16, Compose #11, Scan #113). B08.5 PR #121 merge `307d160`, Scan #115 verde em `0d6b537`, revisão documental concluída. Ensaio de João permanece pendente; estimativa global 65% concluído/35% restante.
 
 ## 10. Observabilidade e SLOs de aprendizado

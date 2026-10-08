@@ -8,7 +8,7 @@ O workflow `Vulnerability Inventory` empacota os dois módulos Java 21 e constr�
 
 As bases de vulnerabilidades e Java requerem downloads; versões e datas são preservadas no inventário. O binário fixado não congela a base consultada. A rede do runner não é uma allowlist de egress nem comprova sandbox.
 
-O scanner lê os [arquivos Docker exportados](https://trivy.dev/docs/latest/target/container_image/) sem acessar o socket. A [análise Java](https://trivy.dev/docs/latest/coverage/language/java/) reconhece dependências dentro do JAR. `--list-all-pkgs` permite conferir cobertura, inclusive quando não existem achados. `scan.ps1` exige sucesso dos quatro scans; `report.ps1` exige schema, bibliotecas esperadas, pacotes OS nas imagens, metadados das bases e identidade dos alvos.
+O scanner lê os [arquivos Docker exportados](https://trivy.dev/docs/latest/target/container_image/) sem acessar o socket. A [análise Java](https://trivy.dev/docs/latest/coverage/language/java/) reconhece dependências dentro do JAR. `--list-all-pkgs` permite conferir cobertura, inclusive quando não existem achados. JAR empacotado usa `rootfs` no diretório isolado com somente `app.jar`: [o modo fs desabilita análise de pacotes individuais nesta versão](https://github.com/aquasecurity/trivy/blob/v0.75.0/pkg/commands/artifact/run.go). `scan.ps1` exige sucesso dos quatro scans; `report.ps1` exige schema, bibliotecas esperadas, pacotes OS nas imagens, metadados das bases e identidade dos alvos.
 
 Controle local, sem Docker, scanner ou rede:
 
