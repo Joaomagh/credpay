@@ -33,3 +33,7 @@ Busca em `transacoes-service/src/main` e `processamento-service/src/main` não e
 ## Aceite de B08.6b
 
 Revisar todos os HIGH/CRITICAL do inventário, vincular condições/fontes e uma ação por componente; definir baseline compatível antes da resolução, atualizar em incrementos pequenos e repetir scan e suítes afetadas. Política de bloqueio e eventuais exceções precisam de justificativa estreita, prazo e revisão. Este documento não cria ignorefile, supressão, aceite de risco ou certificação.
+
+## Atualização Tomcat — B08.6b.1
+
+[Inventory #5](https://github.com/Joaomagh/credpay/actions/runs/37844620033), head a7972fb, checkout0a746a28: CRITICAL5→2 por alvo, com71 pacotes/JAR e214/imagem mantidos; HIGH10/JAR11/imagem permanecem. Tomcat core/EL/WebSocket10.1.60 foram conferidos nos dois JARs locais. Fonte Apache informa que10.1.58 indicada inicialmente não foi publicada;10.1.60 é versão disponível com correções posteriores. Os dois CRITICAL exibidos no JAR de transações são Spring47884/47890. Fluxo/imagens/Compose/Scan verdes; Transações #194 e Processador #176 também passaram. Integração aguarda checks dos registros documentais. Este registro não apaga a baseline anterior nem encerra a política geral.
