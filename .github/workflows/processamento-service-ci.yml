@@ -3,6 +3,7 @@ name: Processing Service CI
 on:
   pull_request:
     paths:
+      - "config/checkstyle/**"
       - "processamento-service/**"
       - "infra/rabbitmq/**"
       - ".github/workflows/processamento-service-ci.yml"
@@ -10,6 +11,7 @@ on:
     branches:
       - main
     paths:
+      - "config/checkstyle/**"
       - "processamento-service/**"
       - "infra/rabbitmq/**"
       - ".github/workflows/processamento-service-ci.yml"
@@ -45,6 +47,10 @@ jobs:
 
       - name: Make Maven Wrapper executable
         run: chmod +x mvnw
+
+      - name: Verify Checkstyle controls
+        shell: pwsh
+        run: ../config/checkstyle/check-controls.ps1 -Module processamento-service
 
       - name: Verify processing service
         run: ./mvnw --batch-mode --no-transfer-progress -DargLine=-XX:-EnableDynamicAgentLoading verify

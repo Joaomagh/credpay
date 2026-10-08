@@ -8,8 +8,8 @@
 
 ## Agora
 
-- [ ] B08.2e — PR #119: red #168 e green #169 comprovados; suíte 114 e quatro capturas fechadas antes do stop, zero warnings próprios. Flow #44/Images #11/Compose #6/Scan #107 verdes em `e39d453`. Revisão passou; exigir checks do SHA final e integrar. Spec §9.65.
+- [ ] B08.4 — Checkstyle e sete controles locais verdes; verify offline 75/168 e JARs sem ferramentas. Revisar e publicar branch `codex/b08-4-checkstyle`, exigir CI antes de integrar. PR #119 está validada no SHA final, mas integração pendente por conector GitHub indisponível. Spec §9.65–9.66.
 
 ## Próximo
 
-- [ ] B08.4 — Checkstyle mínimo nos dois módulos enquanto Kubernetes aguarda direção: configuração compartilhada, fontes/testes e controles sintéticos; depois análise de dependências/imagens e demo. B07.5a/PR #118 segue inativa; FALHOU aguarda regra de produto.
+- [ ] Análise de dependências/imagens e fechamento da demo; retomar Kubernetes quando houver direção específica (PR #118 inativa). FALHOU aguarda regra de produto. Não afirmar sandbox implementado ou v1 concluída.
