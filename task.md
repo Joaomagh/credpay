@@ -4,14 +4,12 @@
 
 ## Último incremento
 
-- B08.2e integrado na PR #119 (`d9a331f`) após cinco checks verdes no SHA final; spec §9.65.
+- B08.4 integrado na PR #120 (3c8888d), seis checks verdes em 32ccb91; B08.5 documental integrado na PR #121 (307d160), Scan #115 verde e revisão tratada. Ensaio da apresentação continua pendente.
 
 ## Agora
 
-- [ ] B08.4 — PR #120, branch `chore/b08-4-checkstyle`: corrigida propagação do código de saída negativo esperado; reprodutor passou de sete controles/código 1 para sete controles/código 0. Revisão sem bloqueantes. Exigir novos checks antes de integrar; spec §9.66. Roteiro/preferências em PR #121 empilhada.
-
-- [ ] B08.5 — PR #121 documental revisada, com preferência de apresentação persistida em AGENTS.md; integrar após #120 e retarget para main. Roteiro escrito não comprova ensaio.
+- [ ] B08.6a — Inventariar vulnerabilidades dos dois JARs e duas imagens dos apps no mesmo SHA. PR #122: Inventory #2 e Scan #119 verdes em e947fb7, quatro relatórios válidos; triagem inicial registrada. Concluir revisão/documentação e integrar antes do próximo incremento.
 
 ## Próximo
 
-- [ ] Análise de dependências/imagens e ensaio da demo; retomar Kubernetes quando houver direção específica (PR #118 inativa). FALHOU aguarda regra de produto. Não afirmar sandbox implementado ou v1 concluída.
+- [ ] B08.6b — corrigir dependências/imagens conforme triagem e definir política de bloqueio; depois ensaio da demo; retomar Kubernetes quando houver direção específica (PR #118 inativa). FALHOU aguarda regra de produto. Não afirmar sandbox implementado ou v1 concluída.
