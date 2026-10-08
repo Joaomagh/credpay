@@ -2178,6 +2178,14 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Regressão local:** verify offline com os seletores sem infraestrutura documentados passou 75 testes/JAR no processador (20,406 s) e 168/JAR em transações (26,048 s), zero falhas/erros/skips e zero violações. Ambos JARs têm zero entradas Checkstyle/maven-checkstyle em BOOT-INF/lib. Revisão assistida sem bloqueantes; parser/UTF-8/diff verdes. Aviso CDS permanece visível uma vez por módulo, sem self-attach/dynamic. Suíte completa com PostgreSQL/RabbitMQ e CI do incremento ainda pendentes; Docker local não substituído por skips automáticos. Workflows dos dois módulos incluem os controles e filtros config/checkstyle, mantendo verify/timeout. Sem análise de vulnerabilidades concluída ou avanço antecipado no percentual global.
 
+### 9.67 Roteiro de demonstração e apresentação — B08.5
+
+Em 2026-10-08, [docs/DEMO.md](docs/DEMO.md) reúne preparo/ativação do Compose, fluxo fictício, recuperação no broker descartável, explicação de aproximadamente três minutos e seis perguntas com referências de código/evidências. README corrige o roadmap para os experimentos e entregas já comprovados. Não altera comportamento, dependências ou infraestrutura; não executa a demo local nem comprova o aprendizado de João. Engine local, observabilidade, Kubernetes, sandbox e regra FALHOU mantêm seus limites documentados. Percentual global segue estimado em 65% concluído/35% restante.
+
+Preferência de João registrada em AGENTS.md: nomes e textos públicos centrados no projeto, sem inclusão espontânea de marcas de ferramentas de IA; novas branches descritivas. Branch local renomeada para `docs/b08-5-demo-closeout`. Histórico e referências de branches existentes preservados. A preferência aplica-se a chats que leiam o repositório, sem promessa de memória global.
+
+Verificação documental: referências locais/UTF-8 passaram; git diff --check sem erros (aviso de normalização LF/CRLF do checkout). Revisão documental sem bloqueantes; precisão ajustada para atribuir persistência após down/up ao Compose. Sem alteração de runtime, não exige red artificial ou repetição de suítes de negócio. Gates de CI/integração de B08.4 e PR #119 continuam independentes; não presumir integração por escrever o roteiro.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.

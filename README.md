@@ -297,10 +297,10 @@ O sandbox ainda não foi implementado. Docker Desktop, daemon, VM, kernel/hyperv
 | 1 | governança, threat model e contrato do sandbox | documentação concluída; sandbox pendente |
 | 2 | fundação reproduzível e CI mínimo | dois serviços com build e CI independentes; processador já tem decisão por limite e validação de entradas em domínio puro |
 | 3 | regras de domínio em TDD e primeira integração PostgreSQL | concluída |
-| 4 | API, fluxo assíncrono, idempotência, outbox, retry e DLQ | em andamento |
-| 5 | experimentos de falha e resiliência | planejada |
-| 6 | Kubernetes local e observabilidade | planejada |
-| 7 | evolução do CI, CD e roteiro de demonstração | planejada |
+| 4 | API, fluxo assíncrono, idempotência, outbox, retry e DLQ | fluxo principal comprovado; regra de FALHOU pendente |
+| 5 | experimentos de falha e resiliência | recuperação comprovada nos cenários documentados; fechamento de qualidade pendente |
+| 6 | Kubernetes local e observabilidade | proposta Kubernetes sem execução; observabilidade pendente |
+| 7 | evolução do CI, CD e roteiro de demonstração | CI, imagens e Compose comprovados; roteiro disponível, ensaio e fechamento pendentes |
 
 O plano detalhado e os critérios de saída estão em [`CREDPAY_PLAN.md`](CREDPAY_PLAN.md).
 
@@ -308,11 +308,12 @@ O plano detalhado e os critérios de saída estão em [`CREDPAY_PLAN.md`](CREDPA
 
 | Documento | Papel |
 |---|---|
-| [`AGENTS.md`](AGENTS.md) | instruções para agentes ChatGPT/Codex, autonomia, segurança e protocolo dos incrementos |
+| [`AGENTS.md`](AGENTS.md) | acordo de colaboração, autonomia, segurança e protocolo dos incrementos |
 | [`CREDPAY_PLAN.md`](CREDPAY_PLAN.md) | visão, arquitetura-alvo, fases e controle de escopo |
 | [`spec.md`](spec.md) | fonte de verdade técnica, ADRs, contratos e evidências atuais |
 | [`task.md`](task.md) | próximo passo único |
 | [`docs/BACKLOG.md`](docs/BACKLOG.md) | resultados priorizados do MVP, dependências e critérios de aceite |
+| [`docs/DEMO.md`](docs/DEMO.md) | demonstração, explicação de três minutos e perguntas com evidências |
 | [`docs/roles/`](docs/roles/) | papéis de P.O., dev sênior e coordenação do ciclo de entrega |
 | [`skills/`](skills/) | guias repetíveis para TDD, endpoints e testes de integração |
 

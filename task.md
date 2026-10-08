@@ -8,8 +8,9 @@
 
 ## Agora
 
-- [ ] B08.4 — Checkstyle e sete controles locais verdes; verify offline 75/168 e JARs sem ferramentas. Revisar e publicar branch `codex/b08-4-checkstyle`, exigir CI antes de integrar. PR #119 está validada no SHA final, mas integração pendente por conector GitHub indisponível. Spec §9.65–9.66.
+- [ ] B08.5 — Roteiro de apresentação e roadmap atualizados/revisados em `docs/b08-5-demo-closeout`; referências/UTF-8/diff verificados, publicar PR quando houver acesso. Preferência de apresentação de João registrada em AGENTS.md. Roteiro escrito não comprova ensaio ou conclusão da v1.
+- [ ] Integrar PR #119 validada e publicar PR B08.4 (`cb354e8`, branch já enviada); exigir CI antes de integrar Checkstyle. Escrita GitHub aguarda sessão autenticada no navegador interno/conector disponível. Spec §9.65–9.66.
 
 ## Próximo
 
-- [ ] Análise de dependências/imagens e fechamento da demo; retomar Kubernetes quando houver direção específica (PR #118 inativa). FALHOU aguarda regra de produto. Não afirmar sandbox implementado ou v1 concluída.
+- [ ] Análise de dependências/imagens e ensaio da demo; retomar Kubernetes quando houver direção específica (PR #118 inativa). FALHOU aguarda regra de produto. Não afirmar sandbox implementado ou v1 concluída.
