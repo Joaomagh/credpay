@@ -1,6 +1,6 @@
 # CredPay — Backlog do MVP
 
-Atualizado em 2026-10-04. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos e evidências: [spec](../spec.md). Uma única ação executável: [task](../task.md). Papéis: [P.O.](roles/product-owner.md), [dev sênior](roles/senior-developer.md) e [Scrum Master](roles/scrum-master.md).
+Atualizado em 2026-10-05. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos e evidências: [spec](../spec.md). Uma única ação executável: [task](../task.md). Papéis: [P.O.](roles/product-owner.md), [dev sênior](roles/senior-developer.md) e [Scrum Master](roles/scrum-master.md).
 
 ## Prioridades
 
@@ -12,7 +12,7 @@ Atualizado em 2026-10-04. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos
 | B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | Concluído; B04.1–B04.12 comprovados, ativação manual exige conferência |
 | B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | Concluído; PR #106 integrada após checks do SHA final |
 | B06 | Recuperação e diagnóstico demonstráveis | queda, atraso e duplicação testados; correlação, retry/DLQ e replay operacional observáveis | B05; refinar política de `FALHOU` | B06.1/2 concluídos; FALHOU e demais falhas a refinar |
-| B07 | Ambiente local reproduzível | imagens/Compose e depois Kubernetes local com probes e recursos; roteiro demonstra fluxo e falha | B05 e B06 | B07.1/2/3 integrados; B07.4 Compose em execução |
+| B07 | Ambiente local reproduzível | imagens/Compose e depois Kubernetes local com probes e recursos; roteiro demonstra fluxo e falha | B05 e B06 | B07.1–4 integrados; B07.5a proposto na PR #118, aguardando direção |
 | B08 | Entrega e portfólio verificáveis | CI cobre riscos e imagens; CD só com destino/rollback definidos; README e demo coerentes | B07 e critérios do plano | Refinamento |
 
 Não é uma promessa de uma PR por linha nem um cronograma. Itens grandes serão divididos por comportamento, mantendo dependências e evidências. Nenhum percentual de conclusão é inferido do número de PRs.
@@ -22,6 +22,20 @@ Não é uma promessa de uma PR por linha nem um cronograma. Itens grandes serão
 Em2026-10-04, João pediu o balanço por etapas e prioridade em terminar o projeto. Estimativa de escopo aproximada:65% concluído/35% restante, não medição automática, contagem de PRs/testes ou prazo. Avaliação das sete fases do plano: governança/sandbox30%, fundação90%, primeiro TDD100%, fluxo95%, qualidade/resiliência75%, Kubernetes/observabilidade5%, entrega/portfólio60%; maior peso para fluxo/plataforma. Critérios de saída, não o percentual, autorizam conclusão.
 
 Sequência finita: integrar imagens → preparação/fluxo nos containers → Compose → Kubernetes local/observabilidade útil → sandbox verificável/qualidade/revisão de publicação → demo e explicação de três minutos. Refinar somente o próximo incremento dessa sequência; dívidas são priorizadas quando comprometem reprodução ou diagnóstico. FALHOU continua decisão do Navigator; implementação da transição depende da regra aprovada. CD externo continua condicionado a destino/rollback/autorização, sem requisito automático de deploy para demo local. A v1 mantém as exclusões do plano.
+
+Revisão em 2026-10-05 após integrar Compose: estimativa global permanece **aproximadamente 65% concluído / 35% restante**. Pesos abaixo são julgamento de escopo para explicar o balanço, não medição de esforço, horas, velocidade ou prazo. Preparação sem execução não encerra Kubernetes; apps non-root não encerram sandbox do agente.
+
+| Fase do plano | Peso aproximado | Concluído | Restante | Saída ainda necessária |
+|---|---:|---:|---:|---|
+| 1. Governança e sandbox | 10% | 30% | 70% | Sandbox do agente executável; bloqueios de acesso, privilégios, credenciais e rede comprovados |
+| 2. Fundação reproduzível | 10% | 95% | 5% | Confirmar quickstart no ambiente de João quando o engine Linux estiver disponível |
+| 3. Primeiro incremento TDD | 5% | 100% | 0% | Saída atendida com red/green/refactor e PostgreSQL real |
+| 4. Fluxo assíncrono confiável | 30% | 95% | 5% | Resolver a regra FALHOU e implementar/testar se fizer parte do aceite final |
+| 5. Qualidade e resiliência | 15% | 75% | 25% | Encerrar dívida relevante e consolidar relatório de falhas/recuperação e limites |
+| 6. Kubernetes e observabilidade | 20% | 5% | 95% | Cluster real, preparo/fluxo/persistência, painel e diagnóstico de falha |
+| 7. Entrega e portfólio | 10% | 65% | 35% | Checkstyle e análise de dependências/imagens, revisão de publicação, demo e explicação de três minutos |
+
+Fluxo principal está demonstrado em CI. Execução local ainda depende da infraestrutura; CD externo continua condicionado. João conseguir explicar as decisões exige validação com ele, não pode ser declarado por um teste automatizado.
 
 ## Incrementos de B02
 
@@ -127,6 +141,8 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 ## Incrementos de B08
 
+**B08.4 — Checkstyle mínimo — pronto após B08.2e.** O plano prevê qualidade automática e ainda não existe gate de estilo. Configuração compartilhada para Java principal/testes: imports internos JDK, imports star/não usados, tabs e newline final, sem ordenação/reformatação geral/Javadoc obrigatório. Baseline proposta Maven Checkstyle Plugin 3.6.0 com engine 14.3.0 explícito, compatível com Java 21 pelas fontes oficiais; necessidade restrita ao build, nenhuma dependência de runtime. Registrar baseline antes de resolver ferramentas. Aceite: controles sintéticos isolados aceitam record/text block/switch Java 21 e rejeitam cada regra pelo diagnóstico esperado; código dos dois módulos passa; verify e filtros CI contemplam configuração compartilhada; ferramentas ausentes do JAR. Configuração operacional não exige red artificial de negócio. Isso não conclui análise de vulnerabilidades de dependências/imagens.
+
 **B08.1 — Revisão de publicação segura — parcialmente concluída.** Baseline integrada na [PR #90](https://github.com/Joaomagh/credpay/pull/90): `.gitignore` comum, Gitleaks 8.30.1 (hashes em spec 16.1), hook pre-push ativo neste checkout e [Secret Scan #3](https://github.com/Joaomagh/credpay/actions/runs/37098282309) verde no SHA final, inclusive controle positivo com código exclusivo; três falsos positivos históricos iniciais e três routing keys públicas de B04.12 revisados por fingerprint. Nenhum segredo real confirmado. CI atua após o push; hook local contornável exige preparo em novos clones. Revisão complementar de logs/artefatos continua pendente. Reescrever histórico exige autorização específica; não inclui tornar o repo privado ou apagar documentos.
 
 ## Revisão e riscos
@@ -141,7 +157,7 @@ B02 só termina com evidências reais de durabilidade, rollback, conflitos e con
 
 **B08.3 — Agente Mockito explícito nos testes — concluído na PR #113, merge74ba2b2, spec 9.59.** Final df41c0c: processador #163/114, transações #179/279, Flow #32/4 e Scan #90 verdes; dinâmica impedida/mocks funcionam/self-attach0/CDS visível, revisão sem bloqueantes. Baseline #156 registra self-attach e carregamento dinâmico; dependency:tree offline confirmou Mockito5.17.0/ByteBuddyAgent1.17.8 e plugin dependency3.8.1 já disponível. [Orientação da versão](https://javadoc.io/static/org.mockito/mockito-core/5.17.0/org.mockito/org/mockito/Mockito.html#0.3): resolver JAR por dependency:properties e agente no fork Surefire. Aceite: mesma baseline, argLine padrão vazio/preservação de argumentos, caminho entre aspas no Windows, mocks existentes passam com carregamento dinâmico desativado, ambos verify114/279 e Flow verdes. Controle local antes falhou na inicialização do mock maker em dois testes do listener do processador/cinco da outbox de transações; logs ignorados, sem red de negócio. Sem upgrade, dependência nova ou flag que apenas esconda warnings; manter aviso CDS se permanecer. Agente só nos forks, sem alterar JARs/processos reais; IDE/execução sem fork fora desse incremento.
 
-**B08.2e — Ciclo de vida da outbox do processador — refinado, depois de d/B08.3 integrados.** Baseline #156 atribui dez warnings ao pool2. Quatro cenários (health Rabbit, envio confirmado, rota ausente/restaurada, reenvio após falha de marcação) compartilhando contexto e containers. Capturar todas as referências antes do reset/SQL; SAME_THREAD e guard no stop real com PG ativo/cleanup finally. Red exclusivo de lifecycle no verify padrão; depois AFTER_CLASS, quatro capturas fechadas/contexto compartilhado/suíte114 verdes. Preservar filas removidas em finally, payload/eventId, duplicata da janela confirm/marcação e scheduler atual de uma hora. Sem par extra, supressão ou correção inferida dos demais pools.
+**B08.2e — Ciclo de vida da outbox do processador — green observado, gates finais pendentes na PR #119.** Baseline #156 atribui dez warnings ao pool 2. Quatro cenários (health Rabbit, envio confirmado, rota ausente/restaurada, reenvio após falha de marcação) compartilham contexto e containers. Guard captura referências antes do reset/SQL, usa SAME_THREAD e observa o stop real com PG ativo/cleanup finally; compilação e revisão passaram. Processador #168 mostrou quatro capturas abertas/PG ativo e erro exclusivo de teardown, com 114 cenários verdes. AFTER_CLASS produziu green #169: quatro referências fechadas após shutdown e antes do stop, contexto compartilhado, suíte 114/8m12s. Zero warnings próprios; pools 3/5 ainda nove/dez. Flow #44/Images #11/Compose #6/Scan #107 verdes em e39d453; integração exige gates finais. Filas em finally, payload/eventId, duplicata da janela confirm/marcação e scheduler PT1H intactos. Sem par extra, supressão ou correção inferida dos demais pools. Spec §9.65.
 
 **B08.2d — Ciclo de vida da concorrência no processador — concluído na PR #112, merge `38cadc2`.** Red #158 mostrou cinco capturas do pool aberto/PG ativo, única falha de teardown com 114 cenários verdes. AFTER_CLASS produziu green #159: 114/8m16s, shutdown antes das cinco capturas fechadas, zero warnings próprios versus dez no red/baseline #156. Outros pools ainda10/8/10, sem correção presumida. Flow #28/Scan #86 verdes em `be099cf`. Locks/gates/contadores/workflow/timeout preservados, sem par duplicado ou logger suprimido. Final processador #160 passou114/8m20s, Flow #29/Scan #87 verdes em `28333c1`; cinco referências fechadas/zero warnings próprios e outros pools dez cada. Revisão sem pendência, spec 9.58.
 

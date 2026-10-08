@@ -4,12 +4,12 @@
 
 ## Último incremento
 
-- B07.3 integrado na PR #116 (`37999c4`): Images #8/smoke1/80,13s, transações #188/279, Flow #41/4 e Scan #99 verdes em92be78a. AP/REJ, duas publicações/histórico únicos e replay POST estável; spec9.62.
+- B07.4 integrado na PR #117 (`3e89218`): Compose #3 em 169,14 s e Scan #103 verdes em `1e681c6`. Preparo, ativação, APROVADA/REJEITADA e replay; mesmos registros e três volumes após down/up. Spec §9.63.
 
 ## Agora
 
-- [ ] B07.4 — Compose cinco serviços/três volumes, preparo/ativação conferidos e persistência down/up. PR #117: Compose #2/167,92s e Scan #102 verdes em8891d32 após correção JSON comprovada; duas sequências e mesmos registros preservados. Revisão/gates finais/integração pendentes, spec9.63.
+- [ ] B08.2e — PR #119: red #168 e green #169 comprovados; suíte 114 e quatro capturas fechadas antes do stop, zero warnings próprios. Flow #44/Images #11/Compose #6/Scan #107 verdes em `e39d453`. Revisão passou; exigir checks do SHA final e integrar. Spec §9.65.
 
 ## Próximo
 
-- [ ] B07.5 — Kubernetes local com configuração, probes e recursos; depois observabilidade útil. FALHOU aguarda regra do Navigator.
+- [ ] B08.4 — Checkstyle mínimo nos dois módulos enquanto Kubernetes aguarda direção: configuração compartilhada, fontes/testes e controles sintéticos; depois análise de dependências/imagens e demo. B07.5a/PR #118 segue inativa; FALHOU aguarda regra de produto.

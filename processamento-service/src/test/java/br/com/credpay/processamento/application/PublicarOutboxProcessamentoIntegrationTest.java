@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Currency;
 import java.util.UUID;
 import java.util.List;
@@ -13,8 +14,11 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
@@ -30,6 +34,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -45,14 +50,38 @@ import org.testcontainers.utility.DockerImageName;
 })
 @Import(PublicarOutboxProcessamentoIntegrationTest.FalhaNaMarcacaoConfiguration.class)
 @Testcontainers
+@Execution(ExecutionMode.SAME_THREAD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class PublicarOutboxProcessamentoIntegrationTest {
 
+    private static final List<HikariDataSource> POOLS_ORIGINAIS = new ArrayList<>();
+
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
-            "postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0")
+    static final PostgreSQLContainer<?> POSTGRES = new PostgresDaFixture()
             .withDatabaseName("credpay_processamento_publicacao_test")
             .withUsername("test")
             .withPassword("test");
+
+    private static final class PostgresDaFixture extends PostgreSQLContainer<PostgresDaFixture> {
+        private PostgresDaFixture() {
+            super("postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0");
+        }
+
+        @Override
+        public void stop() {
+            try {
+                var pools = List.copyOf(POOLS_ORIGINAIS);
+                assertThat(pools).withFailMessage("fixture outbox do processador não capturou seus pools originais").isNotEmpty();
+                assertThat(isRunning()).withFailMessage("PostgreSQL já estava parado antes da observação da outbox do processador").isTrue();
+                pools.forEach(pool -> System.out.println("CredPay fixture lifecycle ProcessamentoOutbox: pool="
+                        + pool.getPoolName() + " closed=" + pool.isClosed() + " postgresRunning=true"));
+                assertThat(pools.stream().allMatch(HikariDataSource::isClosed))
+                        .withFailMessage("todos os pools da outbox do processador devem fechar antes do PostgreSQL").isTrue();
+            } finally {
+                super.stop();
+            }
+        }
+    }
 
     @Container
     static final RabbitMQContainer RABBITMQ = new RabbitMQContainer(
@@ -74,6 +103,7 @@ class PublicarOutboxProcessamentoIntegrationTest {
     @Autowired private RegistrarProcessamentoService registrar;
     @Autowired(required = false) private PublicarOutboxProcessamento publicarOutbox;
     @Autowired private JdbcTemplate jdbc;
+    @Autowired private HikariDataSource dataSource;
     @Autowired private AmqpAdmin admin;
     @Autowired private DirectExchange exchange;
     @Autowired private RabbitTemplate rabbitTemplate;
@@ -83,6 +113,7 @@ class PublicarOutboxProcessamentoIntegrationTest {
 
     @BeforeEach
     void limparDados() {
+        POOLS_ORIGINAIS.add(dataSource);
         falhaNaMarcacao.desarmar();
         jdbc.update("delete from outbox_eventos");
         jdbc.update("delete from processamentos");
