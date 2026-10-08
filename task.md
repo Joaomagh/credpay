@@ -10,6 +10,8 @@
 
 - [ ] B08.4 — PR #120, branch `chore/b08-4-checkstyle`: corrigida propagação do código de saída negativo esperado; reprodutor passou de sete controles/código 1 para sete controles/código 0. Revisão sem bloqueantes. Exigir novos checks antes de integrar; spec §9.66. Roteiro/preferências em PR #121 empilhada.
 
+- [ ] B08.5 — PR #121 documental revisada, com preferência de apresentação persistida em AGENTS.md; integrar após #120 e retarget para main. Roteiro escrito não comprova ensaio.
+
 ## Próximo
 
-- [ ] Análise de dependências/imagens e fechamento da demo; retomar Kubernetes quando houver direção específica (PR #118 inativa). FALHOU aguarda regra de produto. Não afirmar sandbox implementado ou v1 concluída.
+- [ ] Análise de dependências/imagens e ensaio da demo; retomar Kubernetes quando houver direção específica (PR #118 inativa). FALHOU aguarda regra de produto. Não afirmar sandbox implementado ou v1 concluída.

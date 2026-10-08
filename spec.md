@@ -2170,6 +2170,8 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Gates finais de B08.2e:** SHA `a08faf7`: processador #170 passou 114/JAR em 8m25s; shutdown precedeu quatro referências closed=true/PG ativo, zero warnings do pool 2, pools 3/5 dez cada e CDS 1. Images #12 passou smoke 1/70,60 s; Flow #45 passou quatro casos/2m06s; Compose #7 preservou dados/volumes; Scan #108 verde. Revisão assistida sem bloqueantes e reviews/threads vazios na conferência. Em 2026-10-08, API pública confirmou cinco checks verdes e PR #119 ainda aberta/em rascunho. Conector GitHub de escrita não disponível nesta execução e gh ausente; não contornar gates via push direto em main. Integração pendente; B08.4 usa branch separada sobre esse SHA validado, não pressupõe merge.
 
+**Integração:** após autenticação no navegador interno em 2026-10-08, cinco checks do SHA final e ausência de reviews/comentários de revisão reconferidos. PR #119 concluída em `d9a331f0896ebd0c4b7053a5e9bd5a7e667eae73`, com mensagem de merge descritiva. Nenhuma proteção ou falha de CI contornada.
+
 ### 9.66 Gate mínimo Checkstyle — B08.4
 
 **Necessidade/baseline:** plano §4 prevê Checkstyle e ainda não havia gate automático. Baseline proposta já registrada em B08.4 antes da resolução: plugin Maven 3.6.0 e engine 14.3.0 explícito, Java 21. Fontes oficiais e comandos no [runbook](config/checkstyle/README.md). Ferramentas apenas de build, sem alteração de dependências de produção. Engine declara runtime Java 21 e sintaxe até Java 25; configuração verifica somente Java principal/testes, exclui resources, executa em validate. Regras: IllegalImport internos JDK, AvoidStarImport, UnusedImports, FileTabCharacter e NewlineAtEndOfFile; LF/CRLF, sem reformatação geral/supressões.
@@ -2178,7 +2180,17 @@ Só após observar a recusa, retenção na origem e dois ocupantes ainda na DLQ,
 
 **Regressão local:** verify offline com os seletores sem infraestrutura documentados passou 75 testes/JAR no processador (20,406 s) e 168/JAR em transações (26,048 s), zero falhas/erros/skips e zero violações. Ambos JARs têm zero entradas Checkstyle/maven-checkstyle em BOOT-INF/lib. Revisão assistida sem bloqueantes; parser/UTF-8/diff verdes. Aviso CDS permanece visível uma vez por módulo, sem self-attach/dynamic. Suíte completa com PostgreSQL/RabbitMQ e CI do incremento ainda pendentes; Docker local não substituído por skips automáticos. Workflows dos dois módulos incluem os controles e filtros config/checkstyle, mantendo verify/timeout. Sem análise de vulnerabilidades concluída ou avanço antecipado no percentual global.
 
+**Publicação:** PR #120 criada em 2026-10-08 no SHA cb354e8, branch `chore/b08-4-checkstyle`, com diferença exclusiva do incremento contra main após integrar PR #119. Seis workflows iniciados (transações #190, processador #172, Flow #47, Images #14, Compose #9 e Scan #110). Resultados/integração ainda pendentes. Branch remota antiga preservada, sem exclusão ou reescrita.
+
 **Falha operacional do CI — 2026-10-08:** PR #120 (`chore/b08-4-checkstyle`), processador #172 e transações #190 rejeitaram a etapa de controles, embora os sete markers estivessem verdes. Shell pwsh padrão propaga LASTEXITCODE do último Maven negativo esperado ([contrato oficial](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax)). Reprodutor local com o mesmo epílogo do shell confirmou sete controles corretos/código 1 antes da mudança. Acrescentado exit 0 exclusivamente depois de todos os critérios: green local sete controles/código 0. Throw continua abortando em falha inesperada. Revisão sem bloqueantes; sem alteração de negócio/Java, não red artificial. CI corrigido ainda precisa executar. PR #119 já integrada em d9a331f; autenticação restabelecida. Roteiro e preferência de apresentação estão na PR #121 separada.
+
+### 9.67 Roteiro de demonstração e apresentação — B08.5
+
+Em 2026-10-08, [docs/DEMO.md](docs/DEMO.md) reúne preparo/ativação do Compose, fluxo fictício, recuperação no broker descartável, explicação de aproximadamente três minutos e seis perguntas com referências de código/evidências. README corrige o roadmap para os experimentos e entregas já comprovados. Não altera comportamento, dependências ou infraestrutura; não executa a demo local nem comprova o aprendizado de João. Engine local, observabilidade, Kubernetes, sandbox e regra FALHOU mantêm seus limites documentados. Percentual global segue estimado em 65% concluído/35% restante.
+
+Preferência de João registrada em AGENTS.md: nomes e textos públicos centrados no projeto, sem inclusão espontânea de marcas de ferramentas de IA; novas branches descritivas. Branch local renomeada para `docs/b08-5-demo-closeout`. Histórico e referências de branches existentes preservados. A preferência aplica-se a chats que leiam o repositório, sem promessa de memória global.
+
+Verificação documental: referências locais/UTF-8 passaram; git diff --check sem erros (aviso de normalização LF/CRLF do checkout). Revisão documental sem bloqueantes; precisão ajustada para atribuir persistência após down/up ao Compose. Sem alteração de runtime, não exige red artificial ou repetição de suítes de negócio. Gates de CI/integração de B08.4 e PR #119 continuam independentes; não presumir integração por escrever o roteiro.
 
 ## 10. Observabilidade e SLOs de aprendizado
 

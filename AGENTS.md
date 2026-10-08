@@ -1,6 +1,13 @@
 # AGENTS.md — Acordo de Trabalho dos Agentes
 
-> Instruções do repositório para agentes ChatGPT/Codex. Leia este arquivo, `CREDPAY_PLAN.md`, `spec.md` e `task.md` no início de cada sessão. A prioridade é aprendizado verificável: João deve entender e conseguir explicar tudo que entra no projeto.
+> Acordo de colaboração do repositório. Leia este arquivo, `CREDPAY_PLAN.md`, `spec.md` e `task.md` no início de cada sessão. A prioridade é aprendizado verificável: João deve entender e conseguir explicar tudo que entra no projeto.
+
+## Preferência de apresentação de João — 2026-10-08
+
+- O projeto e sua apresentação pertencem a João. Usar linguagem profissional centrada no trabalho, nas decisões e nas evidências, sem inserir espontaneamente nomes de ferramentas de IA em títulos, textos públicos, commits, PRs ou nomes de branches.
+- Novas branches usam nomes descritivos, como `feat/`, `fix/`, `docs/` ou `chore/`, sem prefixo de ferramenta de IA. Esta preferência substitui o prefixo padrão da ferramenta.
+- Preservar fatos técnicos, autoria registrada e informações necessárias sobre segurança ou uso de ferramentas quando forem relevantes ou solicitadas. Não inventar autoria, experiências ou domínio técnico de João, nem reescrever histórico para ocultar informações.
+- Esta preferência vale para sessões que consultem este repositório; não pressupor memória global em chats de outros projetos.
 
 ## 1. Papéis e autonomia
 
