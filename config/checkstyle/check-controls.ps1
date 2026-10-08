@@ -55,3 +55,5 @@ foreach ($case in $cases) {
     }
     Write-Host "Checkstyle: controle $($case.Name) passou."
 }
+# O último Maven falha deliberadamente; somente chegar aqui comprova todos os controles.
+exit 0

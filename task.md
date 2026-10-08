@@ -4,12 +4,13 @@
 
 ## Último incremento
 
-- B08.2e integrado na PR #119 (`d9a331f`): SHA final a08faf7 com cinco checks verdes, revisão sem bloqueantes e correção do teardown da outbox. Spec §9.65.
+- B08.2e integrado na PR #119 (`d9a331f`) após cinco checks verdes no SHA final; spec §9.65.
 
 ## Agora
 
-- [ ] B08.5 — Roteiro de apresentação e roadmap atualizados/revisados em `docs/b08-5-demo-closeout`; referências/UTF-8/diff verificados, publicar PR quando houver acesso. Preferência de apresentação de João registrada em AGENTS.md. Roteiro escrito não comprova ensaio ou conclusão da v1.
-- [ ] B08.4 publicado na PR #120, branch `chore/b08-4-checkstyle`, SHA cb354e8; seis workflows iniciados. Exigir CI antes de integrar Checkstyle. Acesso GitHub autenticado restabelecido. Spec §9.66.
+- [ ] B08.4 — PR #120, branch `chore/b08-4-checkstyle`: corrigida propagação do código de saída negativo esperado; reprodutor passou de sete controles/código 1 para sete controles/código 0. Revisão sem bloqueantes. Exigir novos checks antes de integrar; spec §9.66. Roteiro/preferências em PR #121 empilhada.
+
+- [ ] B08.5 — PR #121 documental revisada, com preferência de apresentação persistida em AGENTS.md; integrar após #120 e retarget para main. Roteiro escrito não comprova ensaio.
 
 ## Próximo
 
