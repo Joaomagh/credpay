@@ -4,15 +4,15 @@
 
 ## Último incremento
 
-- B08.6b.1 integrado na PR #123 (175e139), sete checks verdes no head 2cece9b e revisão sem bloqueante. Tomcat 10.1.60 alinhado; CRITICAL 5→2 por alvo no inventário da correção, demais achados preservados.
+- B08.5b na PR #124: explicação do produto/tecnologias/etapas e direção FALHOU registrada; referências/UTF-8/diff e revisão passaram. Integração somente após Secret Scan do head final. Tomcat já integrado na #123/175e139; riscos restantes preservados.
 
 ## Agora
 
-- [ ] B08.5b — Integrar a explicação do produto, problemas/tecnologias e etapas em docs/ENTENDA_O_CREDPAY.md; registrar direção FALHOU aprovada, sem afirmar implementação ou aprendizado validado.
+- [ ] B08.6b.2 — Após integrar #124, refinar baseline compatível do Jackson e corrigir os achados; preservar Java 21/Boot 3, repetir suítes reais e inventário antes da integração.
 
 ## Próximo
 
-- [ ] B08.6b.2 — Refinar baseline compatível do Jackson e corrigir achados em um incremento operacional; preservar Java 21/Boot 3, repetir suítes reais e inventário antes da integração.
+- Concluir tratamento dos demais componentes/imagens e política de bloqueio; ensaiar apresentação com João.
 
 ## Depois
 
