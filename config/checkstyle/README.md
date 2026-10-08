@@ -9,3 +9,5 @@ Em cada módulo: `./mvnw.cmd --batch-mode --no-transfer-progress validate` no Wi
 O roteiro copia o plugin real para um projeto descartável em `.local/checkstyle/<UUID>`, sem alterar fontes reais. Dois controles válidos incluem record, text block e pattern switch Java 21 em LF/CRLF; cinco controles inválidos exigem falha e diagnóstico da regra específica. Logs ficam locais/ignorados. Erro de parser/configuração não comprova uma rejeição válida. Não apagar evidências para conseguir green.
 
 Primeira resolução requer Maven Central; execução offline funciona após preparar o cache. Ferramentas são dependências do plugin de build, sem entrada no JAR dos aplicativos. Suites com PostgreSQL/RabbitMQ continuam exigindo Docker Linux; os controles não as substituem.
+
+O roteiro retorna zero somente após validar todos os controles. O último controle negativo deixa Maven com código não zero esperado; sem retorno explícito, o shell padrão do [GitHub Actions](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax) propagaria esse código como falha da etapa. Uma violação inesperada continua lançando erro antes do retorno de sucesso.
