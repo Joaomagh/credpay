@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- B08.4 integrado na PR #120 (3c8888d), seis checks verdes em 32ccb91; B08.5 documental integrado na PR #121 (307d160), Scan #115 verde e revisão tratada. Ensaio da apresentação continua pendente.
+- B08.6a integrado na PR #122 (8007dfa), Inventory #3 e Scan #120 verdes no head4beab86; quatro relatórios válidos e triagem inicial. Segurança não aprovada, correções pendentes.
 
 ## Agora
 
-- [ ] B08.6a — Inventariar vulnerabilidades dos dois JARs e duas imagens dos apps no mesmo SHA. PR #122: Inventory #2 e Scan #119 verdes em e947fb7, quatro relatórios válidos; triagem inicial registrada. Concluir revisão/documentação e integrar antes do próximo incremento.
+- [ ] B08.6b.1 — Atualizar Tomcat10.1.55→10.1.60 nos dois POMs, conforme baseline do backlog. Provar redução dos três CRITICAL, alinhamento/JARs e suites reais antes de integrar.
 
 ## Próximo
 

@@ -2205,6 +2205,14 @@ Verificação documental: referências locais/UTF-8 passaram; git diff --check s
 
 **Integrações anteriores confirmadas em 2026-10-08:** B08.4 PR #120 merge `3c8888d`, seis checks verdes no SHA `32ccb91` (Processing #174, Transactions #192, Flow #49, Images #16, Compose #11, Scan #113). B08.5 PR #121 merge `307d160`, Scan #115 verde em `0d6b537`, revisão documental concluída. Ensaio de João permanece pendente; estimativa global 65% concluído/35% restante.
 
+### 9.69 Atualização compatível do Tomcat — B08.6b.1
+
+Baseline anterior: Inventory #3, três CRITICAL Tomcat10.1.55 (CVE-2026-65182/65905/68525). [Apache](https://tomcat.apache.org/security-10) informa que10.1.58 não foi publicada após votação;10.1.59 inclui aquelas correções e10.1.60 correções posteriores. Maven Central confirmou10.1.60 e Boot3.5.16 como último3.5 antes da resolução. Necessidade/baseline registrada em backlog antes de baixar dependências. Propriedade tomcat.version10.1.60 nos dois POMs preserva gerenciamento do parent, Boot3/Java21 e linha10.1; sem dependência/abstração nova ou alteração de negócio.
+
+Verify local com seletores sem infraestrutura (comandos na seção11) passou transações168/1m09s e processador75/1m02s, zero falhas/erros/skips. Ambos JARs contêm somente core/EL/WebSocket10.1.60 alinhados. Logs ignorados em .local/evidence/b086b-*-verify.log; Checkstyle passou e CDS permanece visível. Configuração de dependências sem red artificial de negócio; inventário anterior é baseline de achados, não um teste de exploração. CI completo e scan de redução ainda pendentes; não baixar aceites por engine local indisponível.
+
+B08.6a integrada na PR #122/8007dfa após Inventory #3/run37843707080 e Scan #120/run37843707085 verdes em4beab86. Triagem parcial registrada, demais HIGH/CRITICAL preservados; sandbox, Kubernetes, FALHOU e ensaio pendentes.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
