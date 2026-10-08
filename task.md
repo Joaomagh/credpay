@@ -4,13 +4,11 @@
 
 ## Último incremento
 
-- B08.2e integrado na PR #119 (`d9a331f`) após cinco checks verdes no SHA final; spec §9.65.
+- B08.4 integrado na PR #120 (3c8888d), seis checks verdes em 32ccb91; B08.5 documental integrado na PR #121 (307d160), Scan #115 verde e revisão tratada. Ensaio da apresentação continua pendente.
 
 ## Agora
 
-- [ ] B08.4 — PR #120, branch `chore/b08-4-checkstyle`: corrigida propagação do código de saída negativo esperado; reprodutor passou de sete controles/código 1 para sete controles/código 0. Revisão sem bloqueantes. Exigir novos checks antes de integrar; spec §9.66. Roteiro/preferências em PR #121 empilhada.
-
-- [ ] B08.5 — PR #121 documental revisada, com preferência de apresentação persistida em AGENTS.md; integrar após #120 e retarget para main. Roteiro escrito não comprova ensaio.
+- [ ] B08.6a — Inventariar vulnerabilidades dos dois JARs e duas imagens dos apps no mesmo SHA. Baseline/aceite em backlog; implementar workflow/relatórios, validar cobertura real e revisar achados antes de integrar.
 
 ## Próximo
 

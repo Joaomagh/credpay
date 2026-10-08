@@ -2192,6 +2192,16 @@ Preferência de João registrada em AGENTS.md: nomes e textos públicos centrado
 
 Verificação documental: referências locais/UTF-8 passaram; git diff --check sem erros (aviso de normalização LF/CRLF do checkout). Revisão documental sem bloqueantes; precisão ajustada para atribuir persistência após down/up ao Compose. Sem alteração de runtime, não exige red artificial ou repetição de suítes de negócio. Gates de CI/integração de B08.4 e PR #119 continuam independentes; não presumir integração por escrever o roteiro.
 
+### 9.68 Inventário de vulnerabilidades dos apps — B08.6a
+
+**Objetivo/baseline:** análise prevista no plano §4. Baseline registrada antes de resolver Trivy 0.75.0 Linux amd64/checksum e upload-artifact fixado; fontes e escopo no [runbook](infra/security/README.md). Workflow empacota dois JARs Java 21 do mesmo checkout, constrói imagens existentes e registra SHA/hashes/IDs/arquitetura. Scanner lê tars, sem socket. Download explícito das duas bases seguido de scans sem atualização durante os quatro alvos; versões/datas registradas não congelam bases entre execuções. Rede CI não comprova allowlist/sandbox.
+
+**Controles locais:** `./infra/security/check-reports.ps1` passou nove controles: inventário válido preserva quatro alvos/metadados/contagens e exclui ambiente; vazio, biblioteca ausente, OS ausente, base ausente, SHA inválido, imagem inválida, relatório de imagem trocado e severidade desconhecida são rejeitados antes da publicação. Primeiro comando interrompido pelo parser PowerShell devido a interpolação de variável antes de dois-pontos; delimitador corrigido e controles repetidos com código 0. Configuração operacional sem red artificial de negócio. CI real e revisão ainda pendentes; não atribuir às fixtures cobertura dos JARs reais.
+
+**Publicação/limites:** somente campos selecionados de pacotes/achados e manifestos; sem tars, env, histórico da imagem ou JSON bruto. Artefatos por sete dias. Achados HIGH/CRITICAL são exibidos para triagem, sem ignore-unfixed/supressões; inventário não é aprovação de segurança. B08.6b trata aplicabilidade, correção e política de bloqueio. Escopo exclui PostgreSQL/RabbitMQ/build/Kubernetes. Docker local indisponível; nenhum comportamento Java alterado.
+
+**Integrações anteriores confirmadas em 2026-10-08:** B08.4 PR #120 merge `3c8888d`, seis checks verdes no SHA `32ccb91` (Processing #174, Transactions #192, Flow #49, Images #16, Compose #11, Scan #113). B08.5 PR #121 merge `307d160`, Scan #115 verde em `0d6b537`, revisão documental concluída. Ensaio de João permanece pendente; estimativa global 65% concluído/35% restante.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
