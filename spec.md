@@ -6,7 +6,7 @@
 
 **Fase atual:** conclusão da v1 — qualidade, ambiente reproduzível e preparação de Kubernetes; observabilidade e sandbox ainda pendentes.
 
-**Estado:** fluxo POST → duas outboxes → GET APROVADA/REJEITADA comprovado com JARs e imagens; idempotência, concorrência, histórico único, ack após commit, retry/DLQ, reinício e recuperação manual comprovados nos cenários registrados. Compose prepara e confere políticas antes de ativar consumo/publicação e preserva dados no down/up (PR #117). Flags seguem desligados por padrão; ativação exige o roteiro. Kubernetes está somente proposto na PR #118, sem execução. FALHOU aguarda regra de produto; observabilidade, sandbox verificável e fechamento de qualidade/portfólio continuam pendentes.
+**Estado:** fluxo POST → duas outboxes → GET APROVADA/REJEITADA comprovado com JARs e imagens; idempotência, concorrência, histórico único, ack após commit, retry/DLQ, reinício e recuperação manual comprovados nos cenários registrados. Compose prepara e confere políticas antes de ativar consumo/publicação e preserva dados no down/up (PR #117). Flags seguem desligados por padrão; ativação exige o roteiro. Kubernetes está somente proposto na PR #118, sem execução. FALHOU tem direção de produto aprovada em 2026-10-08, mas mecanismo e testes pendentes (§9.70); observabilidade, sandbox verificável e fechamento de qualidade/portfólio continuam pendentes.
 
 ## 1. Contexto e limites atuais
 
@@ -19,9 +19,9 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Processamento implementado:** o processador exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda; o caso de uso transacional grava decisão e intenção de saída atomicamente, reutiliza o registro no replay equivalente e serializa entradas concorrentes que compartilham `eventId` ou `transactionId`. A migration V2 cria a outbox própria com backfill dos resultados V1; o caso de uso de publicação lê uma pendência e a marca após `ack` sem return. Um scheduler opt-in de réplica única pode chamar esse caso de uso. O listener chama o registro somente quando topologia e listener são habilitados explicitamente; rejeição permanente, retry limitado e reentrega após perda de conexão entre commit/ack foram testados em PostgreSQL/RabbitMQ reais. A recusa da DLQ cheia, retenção e recuperação foram comprovadas na fixture, não em ambiente operacional. O adapter PostgreSQL do primeiro serviço é validado isoladamente e pelo fluxo HTTP completo; sua constraint monetária foi testada por SQL direto.
 
-**Fluxo vertical e idempotência comprovados:** domínio final, estado/histórico atômicos, idempotência sequencial/concorrente e replay HTTP original. Parser/topologia/políticas e listener opt-in comprovam commit antes de ack, replay sem novo histórico/Clock, permanentes para DLQ sem retry e três tentativas operacionais com rollback real. Dois JARs reais percorrem POST → processador/duas outboxes → GET APROVADA/REJEITADA; duplicatas dos dois eventos e replay POST preservam cinco tabelas completas, resposta/Location original e GET final. Ativação manual exige conferência do runbook, flags padrão false. Recuperação/diagnóstico e definição de FALHOU (B06), imagens/Compose/Kubernetes local (B07) e critérios restantes de qualidade, segurança e demonstração (B08) continuam no backlog. Coordenação entre múltiplas réplicas publicadoras e HA de produção não são capacidades atuais. Sandbox AI-Jail continua apenas documentado.
+**Fluxo vertical e idempotência comprovados:** domínio final, estado/histórico atômicos, idempotência sequencial/concorrente e replay HTTP original. Parser/topologia/políticas e listener opt-in comprovam commit antes de ack, replay sem novo histórico/Clock, permanentes para DLQ sem retry e três tentativas operacionais com rollback real. Dois JARs reais percorrem POST → processador/duas outboxes → GET APROVADA/REJEITADA; duplicatas dos dois eventos e replay POST preservam cinco tabelas completas, resposta/Location original e GET final. Ativação manual exige conferência do runbook, flags padrão false. Recuperação/diagnóstico e mecanismo FALHOU (B06), Kubernetes local (B07) e critérios restantes de qualidade, segurança e demonstração (B08) continuam no backlog. Imagens/Compose já foram comprovados no CI. Coordenação entre múltiplas réplicas publicadoras e HA de produção não são capacidades atuais. Sandbox AI-Jail continua apenas documentado.
 
-**Últimas entregas:** retorno seguro integrado na [PR #104](https://github.com/Joaomagh/credpay/pull/104); primeiro fluxo dos dois JARs na [PR #105](https://github.com/Joaomagh/credpay/pull/105), 1e5e3d3, após Flow #2/transações #153/Secret Scan #60 finais. Duplicata/replay validado na PR #106 por Flow #4/transações #155/Secret Scan #62, aguardando checks finais/integração para encerrar B05. Contagens dos serviços/fluxo são separadas, não somadas como aceite. Seções por incremento preservam evidências daquele momento; próximo passo vigente em task.md.
+**Últimas entregas:** fluxo/recovery, imagens e Compose integrados (§9.52–9.54, §9.60–9.63); Checkstyle na PR #120, roteiro na #121, inventário na #122 e Tomcat na #123 (§9.66–9.69). Achados remanescentes, observabilidade, Kubernetes, sandbox e ensaio pendentes. As seções por incremento preservam a evidência histórica; próximo passo vigente em task.md.
 
 ## 2. Arquitetura vigente
 
@@ -33,13 +33,13 @@ Cliente → transacoes-service ⇄ PostgreSQL
           processamento-service ⇄ PostgreSQL
 ```
 
-A mensageria é assíncrona, com consistência eventual e entrega pelo menos uma vez. O produtor usa idempotência na entrada HTTP, outbox transacional e confirms/returns no RabbitMQ. O consumo idempotente opt-in do processador já foi testado; o retorno do resultado ao primeiro serviço e a operação completa permanecem pendentes.
+A mensageria é assíncrona, com consistência eventual e entrega pelo menos uma vez. O produtor usa idempotência na entrada HTTP, outbox transacional e confirms/returns no RabbitMQ. Os dois consumos idempotentes opt-in e o retorno do resultado já foram comprovados pelo fluxo real; a consulta converge para APROVADA/REJEITADA com histórico causal único.
 
 ### Responsabilidades e propriedade dos dados
 
 | Componente | Responsabilidade | Dados próprios |
 |---|---|---|
-| transacoes-service | entrada, visão consultável e publicação confiável | transações, chaves idempotentes e outbox |
+| transacoes-service | entrada, visão consultável, aplicação do resultado e publicação confiável | transações, chaves idempotentes, histórico e outbox |
 | processamento-service | decisão idempotente e publicação do resultado | snapshots de processamento e outbox próprios |
 | RabbitMQ | transporte e dead-lettering; retry limitado executado pelo consumidor; políticas mínimas de entrada/DLQ versionadas e testadas | mensagens, não fonte de verdade |
 
@@ -2214,6 +2214,16 @@ Verify local com seletores sem infraestrutura (comandos na seção11) passou tra
 **Scan da correção:** Inventory #5/run37844620033 verde em a7972fb (checkout de merge0a746a28): cobertura preservada71/JAR214/imagem, CRITICAL5→2 em cada alvo, HIGH10/JAR11/imagem mantidos. Os dois CRITICAL restantes no JAR de transações são Spring47884/47890; nenhum Tomcat CRITICAL na saída selecionada. Flow #51, Images #18, Compose #13 e Scan #122 verdes; Transações #194 e Processador #176 também verdes, concluindo as sete verificações do código. Revisão final sem bloqueante; integração aguarda checks dos registros documentais. Artefato selecionado sha2562192b082aba574d994e587aed7a40578ee339115d31298483485bee9432a5a79. Aviso CI: ubuntu-latest migrará para Ubuntu26 a partir de19/10; não é erro ou baseline fixa do runner.
 
 B08.6a integrada na PR #122/8007dfa após Inventory #3/run37843707080 e Scan #120/run37843707085 verdes em4beab86. Triagem parcial registrada, demais HIGH/CRITICAL preservados; sandbox, Kubernetes, FALHOU e ensaio pendentes.
+
+### 9.70 Explicação do produto e direção FALHOU — B08.5b
+
+João solicitou explicar o que é o CredPay, problemas resolvidos, escolhas e propósito antes de continuar. `docs/ENTENDA_O_CREDPAY.md` apresenta API/simulação fictícia, exemplo BRL50/150 com limite100 por transação (não saldo), fluxo assíncrono, falhas/soluções e tecnologias/motivos. README e demo apontam o documento. Estimativa ponderada permanece aproximadamente65%/35% com etapas do backlog; não conta PRs nem promete prazo. Documento revisado não comprova aprendizado: ensaio e execução por João continuam necessários.
+
+Na resposta de 2026-10-08, João aprovou a direção recomendada: esgotamento de retry mantém PENDENTE recuperável; FALHOU é terminal após confirmação de falha técnica irrecuperável. Definir mecanismo/autoridade, condições/evidências e testes antes de implementar. Este incremento não adiciona endpoint, migration, estado ao enum ou transição de negócio; referências atuais deixam de chamar a direção de produto de pendente, registros históricos permanecem.
+
+B08.6b.1 integrado na PR #123/175e139 após sete checks finais verdes em2cece9b: Transações #195, Processador #177, Flow #52, Images #19, Compose #14, Inventory #6 e Scan #123. Revisão final sem bloqueante. Redução observada e demais riscos em §9.69/triagem; nenhuma aprovação global de segurança.
+
+Validação documental: UTF-8 estrito, links locais, git diff --check e revisão de fatos/limites. Sem novo comportamento/dependência, não exige red artificial nem reexecução das suítes pelos filtros da PR isolada; Secret Scan segue obrigatório antes de integrar.
 
 ## 10. Observabilidade e SLOs de aprendizado
 

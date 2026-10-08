@@ -13,9 +13,11 @@ O CredPay é um projeto educacional e de portfólio em evolução. Seu foco não
 
 Cada capacidade entra em um incremento pequeno, testado e documentado. Assim, o repositório mostra não apenas o resultado, mas também o raciocínio de engenharia que levou até ele.
 
+Para entender o produto, os problemas técnicos e as escolhas, leia [Entenda o CredPay](docs/ENTENDA_O_CREDPAY.md).
+
 ## Status atual
 
-O projeto está na fase de fluxo assíncrono confiável: os dois aplicativos reais já comprovaram POST → duas outboxes → GET APROVADA/REJEITADA, com bancos próprios e histórico causal único. Duplicatas dos dois eventos e replay do POST preservam registros completos, resposta original e GET final no fluxo real. Parada controlada do processador mantém PENDENTE e mensagem pronta; reinício no mesmo banco/broker recupera a transação pela causa original. Ambos os listeners opt-in têm ack após commit, rejeições permanentes e retry limitado testados em PostgreSQL/RabbitMQ reais. Reentrega pós-commit e retenção/recuperação sob recusa da DLQ foram comprovadas no processador. Flags permanecem desligadas por padrão e ativação manual exige conferência operacional pelos runbooks. Replay manual no broker descartável após corrigir limite ausente recupera a transação; tentativa sem rota conserva a DLQ. Definição de FALHOU, ambiente local e observabilidade continuam no backlog.
+O projeto está na fase de fluxo assíncrono confiável: os dois aplicativos reais já comprovaram POST → duas outboxes → GET APROVADA/REJEITADA, com bancos próprios e histórico causal único. Duplicatas dos dois eventos e replay do POST preservam registros completos, resposta original e GET final no fluxo real. Parada controlada do processador mantém PENDENTE e mensagem pronta; reinício no mesmo banco/broker recupera a transação pela causa original. Ambos os listeners opt-in têm ack após commit, rejeições permanentes e retry limitado testados em PostgreSQL/RabbitMQ reais. Reentrega pós-commit e retenção/recuperação sob recusa da DLQ foram comprovadas no processador. Flags permanecem desligadas por padrão e ativação manual exige conferência operacional pelos runbooks. Replay manual no broker descartável após corrigir limite ausente recupera a transação; tentativa sem rota conserva a DLQ. A direção de FALHOU foi definida: esgotar retry mantém recuperação possível; o mecanismo para confirmar falha irrecuperável, ambiente local e observabilidade continuam no backlog.
 
 | Estado | Entrega |
 |---|---|
