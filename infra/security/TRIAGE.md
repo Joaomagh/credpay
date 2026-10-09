@@ -49,3 +49,9 @@ Resultado Jackson: PR #125/35c4087 integrada após sete gates verdes do head07df
 Baseline e fontes no backlog antes da resolução: amqp-client5.25.0→5.34.0, preservando Spring AMQP3.2.12/Boot3.5.16/Java21. Regressão real e ausência dos quatro IDs em todos os alvos ainda exigidas; nenhuma supressão ou aprovação geral. Runtime: metadata oficial consultada de21-jre-jammy/21.0.12.1_1-jre-jammy aponta ao mesmo digest atual, sem candidata corrigida identificada; [Ubuntu](https://ubuntu.com/security/CVE-2026-84782) indica libssl3 .30 em Jammy. Trocar só a tag não corrige o achado; baseline/digest atualizado precisam de scan antes de adotar.
 
 Inventory #10 bloqueou o aceite Rabbit: quatro IDs removidos, porém Netty transitivo4.1.135 adicionou59901 HIGH/75595 CRITICAL. Cobertura79/222 inclui sete Netty módulos e jctools-core embutido; HIGH2/3 e CRITICAL3. Nova baseline no backlog: netty.version4.1.137.Final para os dois POMs, mesma linha Boot; seis IDs devem desaparecer e todos os gates repetir. Não excluir dependências nem ocultar o achado. Fonte vendor75595 HIGH/scanner CRITICAL preservados; condição não é prova de exploração no aplicativo.
+
+**B08.6b.3 integrado:** PR #126/b5e001f, sete gates verdes em5f5e406; Inventory11 seis IDs ausentes, cobertura79/222, HIGH1/JAR2/imagem CRITICAL2. Evidência completa em spec9.72. Netty transitivo corrigido antes do merge, sem excluir bibliotecas ou reduzir testes.
+
+## PostgreSQL JDBC — B08.6b.4 em validação
+
+Baseline no backlog antes da resolução:42.7.11→42.7.12, CVE-2026-54291, condição channelBinding=require. Correção na mesma linha sem alterar TLS; novo inventário dos quatro alvos e sete gates ainda exigidos. Rabbit/Netty integrado; Spring/OpenSSL permanecem pendentes, sem aprovação global.
