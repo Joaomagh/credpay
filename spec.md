@@ -2299,6 +2299,12 @@ Inventory19 completo manteve quatro relatórios79/222, HIGH0/JAR1/imagem e CRITI
 
 Próximo recorte B08.2g revisado: única fixture ProcessamentoServiceApplicationTest, dois cenários health HTTP/replay e RANDOM_PORT preservados. Capturas Hikari BeforeEach, SAME_THREAD, guard no stop real e cleanup finally; red deve passar os casos e falhar exclusivamente por pool aberto. Só depois AFTER_CLASS fecha contexto/servidor após último teste; green exige duas referências fechadas/PG ativo, suíte114 e gates. Não inferir propriedade apenas por numeração ou último teste; implementação não iniciada.
 
+### 9.77 Ciclo de vida da fixture da aplicação — B08.2g
+
+Red preparado antes da correção: ProcessamentoServiceApplicationTest mantém RANDOM_PORT, health HTTP e replay com valor de escala equivalente, dois casos/contexto/container compartilhados. BeforeEach captura Hikari original; SAME_THREAD protege observação; guard no PostgreSQLContainer.stop exige capturas presentes, PG ainda ativo e pools fechados, sempre libera em finally. Nenhum AFTER_CLASS novo, fechamento manual, logger suprimido ou mudança de produção. Baseline final189 tinha dez warnings pool5; propriedade deve ser confirmada nesta execução, sem depender só da numeração.
+
+Docker local indisponível: CI inclui temporariamente foco da classe antes do verify completo, autenticação Read já aprovada e timeout10 preservados. Red somente se ambos os casos passarem e teardown falhar por pool aberto/PG ativo; startup/compilação não valem red. Depois da prova, correção mínima e foco/suíte114/gates, retirada da etapa temporária e repetição final. Sem dependência nova; revisão e compilação local ainda em andamento.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
@@ -2535,3 +2541,5 @@ O workflow `.github/workflows/secret-scan.yml` usa checkout fixado por SHA, hist
 - [ ] documentação/contratos/migrations atualizados;
 - [ ] João consegue explicar a decisão e o trade-off;
 - [ ] `task.md` aponta um único próximo passo.
+
+B08.2g verificação estrutural: verify local75/zero falhas/erros/skips, Checkstyle0 em22,134s, compilação de todos os testes; não executa infraestrutura nem vale red. Log ignorado .local/evidence/b082g-red-local-verify.log. Revisão sem bloqueantes para publicar draft e provar red, sem implementar fechamento antecipado. git diff --check passou.

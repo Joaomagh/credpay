@@ -215,3 +215,5 @@ B08.2f green188 comprovado em c2bd034/attempt2: foco2 e verify114, duas capturas
 
 
 B08.2f integrado após sete gates finais verdes em032daec. Proc189114/8m14, shutdown antes de duas capturas fechadas/PG ativo, zero warnings próprios; pool5 dez. Spec9.76 registra evidência e inventário final. B08.2g pronto/revisado: fixture ProcessamentoServiceApplicationTest, health HTTP/replay2casos preservados, red exclusivo de teardown antes de AFTER_CLASS; green com capturas fechadas/PG ativo, verify114 e gates. Implementação ainda não iniciada.
+
+B08.2g em execução: red guard preparado com capturas BeforeEach/SAME_THREAD e stop real/cleanup finally, health HTTP/replay intactos. Foco temporário remoto por Docker local indisponível, sem correção antecipada; exigir dois casos verdes e erro exclusivo no teardown antes de AFTER_CLASS. Sem produção/dependência nova. Spec9.77.

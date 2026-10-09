@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.2g — Provar fechamento da fixture ProcessamentoServiceApplicationTest. Preservar health HTTP/replay, dois casos e contexto compartilhado; capturar pools antes dos casos e observar stop real. Red exclusivo de teardown antes da correção; depois green e suíte114/gates. Refinamento revisado, implementação ainda não iniciada.
+- [ ] B08.2g — Guard red preparado na fixture ProcessamentoServiceApplicationTest, dois casos health HTTP/replay preservados. Compilar/revisar e confirmar red real na CI antes de corrigir. Foco temporário; depois green/suíte114/gates e retirada do foco. Spec9.77.
 
 ## Próximo
 

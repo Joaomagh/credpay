@@ -74,5 +74,8 @@ jobs:
         shell: pwsh
         run: ../config/checkstyle/check-controls.ps1 -Module processamento-service
 
+      - name: Verify application fixture lifecycle
+        run: ./mvnw --batch-mode --no-transfer-progress -Dtest=ProcessamentoServiceApplicationTest -DargLine=-XX:-EnableDynamicAgentLoading test
+
       - name: Verify processing service
         run: ./mvnw --batch-mode --no-transfer-progress -DargLine=-XX:-EnableDynamicAgentLoading verify
