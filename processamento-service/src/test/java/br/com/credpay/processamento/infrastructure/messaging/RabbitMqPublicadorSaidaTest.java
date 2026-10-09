@@ -1,13 +1,16 @@
 package br.com.credpay.processamento.infrastructure.messaging;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.concurrent.TimeoutException;
 
 import br.com.credpay.processamento.application.EventoSaidaPendente;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -65,6 +68,121 @@ class RabbitMqPublicadorSaidaTest {
             assertThat(contador).isNotNull();
             assertThat(contador.count()).isEqualTo(1.0);
             assertThat(metricas.find(METRICA).tag("outcome", "confirmed").counter()).isNull();
+            assertThat(metricas.getMeters()).hasSize(1);
+        } finally {
+            metricas.close();
+        }
+    }
+
+    @Test
+    void publicar_deveContarRecusa_quandoBrokerResponderNack() {
+        var rabbit = mock(RabbitTemplate.class);
+        doAnswer(invocacao -> {
+            CorrelationData correlacao = invocacao.getArgument(3);
+            correlacao.getFuture().complete(new CorrelationData.Confirm(false, "recusa controlada"));
+            return null;
+        }).when(rabbit).send(anyString(), anyString(), any(Message.class), any(CorrelationData.class));
+        var metricas = new SimpleMeterRegistry();
+        try {
+            var publicador = new RabbitMqPublicadorSaida(rabbit, metricas);
+
+            assertThat(publicador.publicar(evento())).isFalse();
+
+            var contador = metricas.find(METRICA).tag("outcome", "nacked").counter();
+            assertThat(contador).isNotNull();
+            assertThat(contador.count()).isEqualTo(1.0);
+            assertThat(metricas.getMeters()).hasSize(1);
+        } finally {
+            metricas.close();
+        }
+    }
+
+    @Test
+    void publicar_deveContarErroEPreservarExcecao_quandoEnvioFalharImediatamente() {
+        var rabbit = mock(RabbitTemplate.class);
+        var falha = new IllegalStateException("falha controlada no envio");
+        doThrow(falha).when(rabbit).send(anyString(), anyString(), any(Message.class), any(CorrelationData.class));
+        var metricas = new SimpleMeterRegistry();
+        try {
+            var publicador = new RabbitMqPublicadorSaida(rabbit, metricas);
+
+            assertThatThrownBy(() -> publicador.publicar(evento())).isSameAs(falha);
+
+            var contador = metricas.find(METRICA).tag("outcome", "error").counter();
+            assertThat(contador).isNotNull();
+            assertThat(contador.count()).isEqualTo(1.0);
+            assertThat(metricas.getMeters()).hasSize(1);
+        } finally {
+            metricas.close();
+        }
+    }
+
+    @Test
+    void publicar_deveContarErroEPreservarCausa_quandoConfirmacaoFalhar() {
+        var rabbit = mock(RabbitTemplate.class);
+        var falha = new IllegalStateException("falha controlada na confirmação");
+        doAnswer(invocacao -> {
+            CorrelationData correlacao = invocacao.getArgument(3);
+            correlacao.getFuture().completeExceptionally(falha);
+            return null;
+        }).when(rabbit).send(anyString(), anyString(), any(Message.class), any(CorrelationData.class));
+        var metricas = new SimpleMeterRegistry();
+        try {
+            var publicador = new RabbitMqPublicadorSaida(rabbit, metricas);
+
+            assertThatThrownBy(() -> publicador.publicar(evento()))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("não foi possível obter confirmação do RabbitMQ")
+                    .hasRootCause(falha);
+
+            var contador = metricas.find(METRICA).tag("outcome", "error").counter();
+            assertThat(contador).isNotNull();
+            assertThat(contador.count()).isEqualTo(1.0);
+            assertThat(metricas.getMeters()).hasSize(1);
+        } finally {
+            metricas.close();
+        }
+    }
+
+    @Test
+    void publicar_deveContarErroEPreservarInterrupcao_quandoEsperaForInterrompida() {
+        var rabbit = mock(RabbitTemplate.class);
+        var metricas = new SimpleMeterRegistry();
+        try {
+            var publicador = new RabbitMqPublicadorSaida(rabbit, metricas);
+            Thread.currentThread().interrupt();
+
+            assertThatThrownBy(() -> publicador.publicar(evento()))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("interrompido ao aguardar confirmação do RabbitMQ")
+                    .hasCauseInstanceOf(InterruptedException.class);
+            assertThat(Thread.currentThread().isInterrupted()).isTrue();
+
+            var contador = metricas.find(METRICA).tag("outcome", "error").counter();
+            assertThat(contador).isNotNull();
+            assertThat(contador.count()).isEqualTo(1.0);
+            assertThat(metricas.getMeters()).hasSize(1);
+        } finally {
+            Thread.interrupted();
+            metricas.close();
+        }
+    }
+
+    @Test
+    void publicar_deveContarErro_quandoConfirmacaoNaoChegarNoPrazo() {
+        var rabbit = mock(RabbitTemplate.class);
+        var metricas = new SimpleMeterRegistry();
+        try {
+            var publicador = new RabbitMqPublicadorSaida(rabbit, metricas);
+
+            assertThatThrownBy(() -> publicador.publicar(evento()))
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessage("não foi possível obter confirmação do RabbitMQ")
+                    .hasCauseInstanceOf(TimeoutException.class);
+
+            var contador = metricas.find(METRICA).tag("outcome", "error").counter();
+            assertThat(contador).isNotNull();
+            assertThat(contador.count()).isEqualTo(1.0);
             assertThat(metricas.getMeters()).hasSize(1);
         } finally {
             metricas.close();

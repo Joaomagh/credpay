@@ -216,10 +216,12 @@ class PublicarOutboxProcessamentoIntegrationTest {
             var payload = jdbc.queryForObject(
                     "select payload::text from outbox_eventos where event_id = ?", String.class, eventId);
             falhaNaMarcacao.armar();
+            var confirmadasAntes = tentativas("confirmed");
 
             assertThatThrownBy(() -> publicarOutbox.publicarProximo())
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessage("falha controlada antes de marcar publicado");
+            assertThat(tentativas("confirmed")).isEqualTo(confirmadasAntes + 1);
             var primeira = rabbitTemplate.receive(fila.getName(), 5_000);
             assertThat(primeira).isNotNull();
             assertThat(primeira.getMessageProperties().getMessageId()).isEqualTo(eventId.toString());
@@ -229,6 +231,7 @@ class PublicarOutboxProcessamentoIntegrationTest {
 
             falhaNaMarcacao.desarmar();
             assertThat(publicarOutbox.publicarProximo()).isTrue();
+            assertThat(tentativas("confirmed")).isEqualTo(confirmadasAntes + 2);
             var segunda = rabbitTemplate.receive(fila.getName(), 5_000);
             assertThat(segunda).isNotNull();
             assertThat(segunda.getMessageProperties().getMessageId()).isEqualTo(eventId.toString());

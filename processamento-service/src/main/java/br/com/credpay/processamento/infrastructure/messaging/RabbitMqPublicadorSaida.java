@@ -40,20 +40,27 @@ class RabbitMqPublicadorSaida implements PublicadorEventoSaida {
         var mensagem = new Message(evento.payload().getBytes(StandardCharsets.UTF_8), propriedades);
         var correlacao = new CorrelationData(evento.eventId().toString());
 
-        rabbitTemplate.send(RabbitMqSaidaConfiguration.EVENTOS_EXCHANGE,
-                RabbitMqSaidaConfiguration.TRANSACAO_PROCESSADA_ROUTING_KEY,
-                mensagem, correlacao);
-
+        CorrelationData.Confirm confirmacao;
         try {
-            var confirmacao = correlacao.getFuture().get(
+            rabbitTemplate.send(RabbitMqSaidaConfiguration.EVENTOS_EXCHANGE,
+                    RabbitMqSaidaConfiguration.TRANSACAO_PROCESSADA_ROUTING_KEY,
+                    mensagem, correlacao);
+            confirmacao = correlacao.getFuture().get(
                     CONFIRMACAO_TIMEOUT_SEGUNDOS, TimeUnit.SECONDS);
-            meterRegistry.counter("credpay.messaging.publish.attempts", "outcome", "confirmed").increment();
-            return confirmacao.isAck() && correlacao.getReturned() == null;
         } catch (InterruptedException excecao) {
             Thread.currentThread().interrupt();
+            meterRegistry.counter("credpay.messaging.publish.attempts", "outcome", "error").increment();
             throw new IllegalStateException("interrompido ao aguardar confirmação do RabbitMQ", excecao);
         } catch (ExecutionException | TimeoutException excecao) {
+            meterRegistry.counter("credpay.messaging.publish.attempts", "outcome", "error").increment();
             throw new IllegalStateException("não foi possível obter confirmação do RabbitMQ", excecao);
+        } catch (RuntimeException excecao) {
+            meterRegistry.counter("credpay.messaging.publish.attempts", "outcome", "error").increment();
+            throw excecao;
         }
+        var outcome = correlacao.getReturned() != null ? "returned"
+                : confirmacao.isAck() ? "confirmed" : "nacked";
+        meterRegistry.counter("credpay.messaging.publish.attempts", "outcome", outcome).increment();
+        return confirmacao.isAck() && correlacao.getReturned() == null;
     }
 }
