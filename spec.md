@@ -2305,6 +2305,8 @@ Red preparado antes da correção: ProcessamentoServiceApplicationTest mantém R
 
 Docker local indisponível: CI inclui temporariamente foco da classe antes do verify completo, autenticação Read já aprovada e timeout10 preservados. Red somente se ambos os casos passarem e teardown falhar por pool aberto/PG ativo; startup/compilação não valem red. Depois da prova, correção mínima e foco/suíte114/gates, retirada da etapa temporária e repetição final. Sem dependência nova; revisão e compilação local ainda em andamento.
 
+**B08.2g red confirmado:** Proc191/run37999741198/job114054626572 em a6af9f0, foco21,389s. Dois casos health HTTP/replay passaram; duas capturas HikariPool-1 closed=false/postgresRunning=true e única falha do guard no teardown. Surefire classe3/Failures1; agregado3/Errors1/zero skips representa callback, não terceiro caso de negócio. Verify114 não iniciou após red focado. Causa demonstrada na fixture: contexto/pool sobrevivia ao PostgreSQL. Só depois foi adicionado DirtiesContext(AFTER_CLASS), fechamento do contexto/servidor após os dois casos, sem fechamento manual ou redução de logger. Guard/casos permanecem; foco verde/verify114/gates ainda exigidos.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
@@ -2543,3 +2545,5 @@ O workflow `.github/workflows/secret-scan.yml` usa checkout fixado por SHA, hist
 - [ ] `task.md` aponta um único próximo passo.
 
 B08.2g verificação estrutural: verify local75/zero falhas/erros/skips, Checkstyle0 em22,134s, compilação de todos os testes; não executa infraestrutura nem vale red. Log ignorado .local/evidence/b082g-red-local-verify.log. Revisão sem bloqueantes para publicar draft e provar red, sem implementar fechamento antecipado. git diff --check passou.
+
+B08.2g green mínimo revisado sem bloqueantes: somente import/AFTER_CLASS após red. Verify local75/zero falhas/erros/skips e Checkstyle0 em22,135s, sem executar infraestrutura; foco real/servidor/pool/suíte114/gates pendentes. Log ignorado .local/evidence/b082g-green-local-verify.log.

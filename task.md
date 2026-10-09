@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.2g — Guard red preparado na fixture ProcessamentoServiceApplicationTest, dois casos health HTTP/replay preservados. Compilar/revisar e confirmar red real na CI antes de corrigir. Foco temporário; depois green/suíte114/gates e retirada do foco. Spec9.77.
+- [ ] B08.2g — PR #130 draft: red191 confirmado, dois casos passaram e teardown mostrou duas capturas abertas/PG ativo. AFTER_CLASS preparado só depois; exigir foco verde/suíte114/gates, retirar etapa temporária e repetir final. Spec9.77.
 
 ## Próximo
 
