@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- JDBC integrado na PR #127/f342d3f após sete gates verdes em96f6f7a; inventário79/222 sem54291. B08.6b.5 consolida triagem/proposta documental; política automatizada e segurança global continuam abertas.
+- B08.6b.5 documental integrado na PR #128/7b6d5bf; Scan135/Inventory15 verdes, mesmos três IDs restantes e cobertura79/222. JDBC127 integrado; política automatizada e segurança global continuam abertas.
 
 ## Agora
 
-- [ ] B08.2f — Diagnóstico/guard TDD da fixture RegistrarProcessamentoOutbox. Iniciar após revisão, Scan e integração da consolidação documental atual; red real de fechamento antes do stop, correção somente após causa confirmada, mesmos cenários e suíte114.
+- [ ] B08.2f — PR #129 draft. Red186 e green188 comprovados: foco2 e suíte114, duas capturas fechadas/PG ativo, zero warnings próprios; outros dez persistem. Login e demais gates verdes após cadastro por João. Etapa focada retirada; revisar e exigir gates do head final antes de integrar. Spec9.75/9.76.
 
 ## Próximo
 
