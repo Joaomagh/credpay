@@ -1,5 +1,7 @@
 # Triagem inicial — 2026-10-08
 
+**Estado consolidado em 2026-10-09:** JDBC integrado na PR #127; Inventory #13 registra HIGH0/JAR1/imagem e CRITICAL2/alvo. Os três IDs restantes e a proposta de publicação estão no final deste documento. As tabelas e preparações anteriores preservam o histórico.
+
 Fonte: [Inventory #2](https://github.com/Joaomagh/credpay/actions/runs/37843133113), head `e947fb7`, checkout de merge da PR `3ae9d97b82995a4e4cbc30a24996812a42df567b`. Os quatro relatórios passaram cobertura e identidade. Artefato selecionado: seis arquivos, SHA256 `a6f5ed68255b2a8e5e5f2758937ea6588390737a32f990ae8bfa5a9398fd7363`, retenção sete dias. Esta triagem parcial preserva o resultado; não aprova segurança ou define exceções.
 
 | Alvo | Pacotes | LOW | MEDIUM | HIGH | CRITICAL |
@@ -44,7 +46,7 @@ Baseline e fontes dos cinco HIGH registradas no backlog antes da resolução. BO
 
 Resultado Jackson: PR #125/35c4087 integrada após sete gates verdes do head07df2f0. Inventory #8/run37868732324, log completo dos quatro alvos: nenhum dos cinco IDs Jackson, cobertura71/214, HIGH5/JAR6/imagem e CRITICAL2. Artefato11589766080, SHA25660a39d12daed75edc1ddde9b5022e478d8c71f1be08d4e965cbb20a4bff54f61. Preparação inicial acima registra o estado anterior ao aceite. Restam quatro HIGH RabbitMQ client, um JDBC, OpenSSL nas imagens e dois CRITICAL Spring.
 
-## Cliente RabbitMQ — B08.6b.3 em validação
+## Cliente RabbitMQ — B08.6b.3 integrado
 
 Baseline e fontes no backlog antes da resolução: amqp-client5.25.0→5.34.0, preservando Spring AMQP3.2.12/Boot3.5.16/Java21. Regressão real e ausência dos quatro IDs em todos os alvos ainda exigidas; nenhuma supressão ou aprovação geral. Runtime: metadata oficial consultada de21-jre-jammy/21.0.12.1_1-jre-jammy aponta ao mesmo digest atual, sem candidata corrigida identificada; [Ubuntu](https://ubuntu.com/security/CVE-2026-84782) indica libssl3 .30 em Jammy. Trocar só a tag não corrige o achado; baseline/digest atualizado precisam de scan antes de adotar.
 
@@ -52,6 +54,20 @@ Inventory #10 bloqueou o aceite Rabbit: quatro IDs removidos, porém Netty trans
 
 **B08.6b.3 integrado:** PR #126/b5e001f, sete gates verdes em5f5e406; Inventory11 seis IDs ausentes, cobertura79/222, HIGH1/JAR2/imagem CRITICAL2. Evidência completa em spec9.72. Netty transitivo corrigido antes do merge, sem excluir bibliotecas ou reduzir testes.
 
-## PostgreSQL JDBC — B08.6b.4 em validação
+## PostgreSQL JDBC — B08.6b.4 integrado
 
 Baseline no backlog antes da resolução:42.7.11→42.7.12, CVE-2026-54291, condição channelBinding=require. Correção na mesma linha sem alterar TLS; novo inventário dos quatro alvos e sete gates ainda exigidos. Rabbit/Netty integrado; Spring/OpenSSL permanecem pendentes, sem aprovação global.
+
+## Disposição dos achados restantes — 2026-10-09
+
+Inventory #13/run37871930354 do head96f6f7a validou quatro relatórios completos:79 pacotes por JAR,222 por imagem; HIGH0/JAR1/imagem, CRITICAL2/alvo. JDBC54291 ausente; PR #127/f342d3f integrada após sete gates verdes. Identidade, digest e testes completos em spec9.73. As imagens repetem as bibliotecas dos JARs: três IDs únicos restantes, não somar ocorrências como CVEs distintos.
+
+| ID/componente instalado | Alvos e severidade | Condição e evidência disponível | Correção/ação e lacuna |
+|---|---|---|---|
+| [47884 — spring-webmvc6.2.19](https://spring.io/security/cve-2026-47884/) | Quatro alvos; scannerCRITICAL/vendorMEDIUM | XsltView, mapeamento amplo /** e nome de view implícito. Controller de aplicação REST/ResponseEntity; buscas e configuração não mostram XSLT/views. | Vendor6.2.20 Enterprise ou7.0.9 OSS. Decidir migração coerente Boot/Framework ou suporte; não inserir Framework7 isolado no Boot3. Busca não é prova dinâmica ou exceção. |
+| [47890 — spring-webmvc6.2.19](https://spring.io/security/cve-2026-47890/) | Quatro alvos; scannerCRITICAL/vendorLOW | SSE com fragmentos de views/dados do atacante. Não encontrados SseEmitter, ServerSentEvent, FragmentsRendering ou text/event-stream na produção consultada. | Mesmas linhas corrigidas do vendor. Evidência estática insuficiente para afirmar não afetado; decisão de direção pendente. |
+| [84782 — libssl3 3.0.2-0ubuntu1.29](https://ubuntu.com/security/CVE-2026-84782) | Duas imagens; scanner/vendorHIGH | Retransmissão DTLS durante escrita parcial suspensa pode divulgar memória ou derrubar processo. Presença do pacote comprovada; exploração e uso DTLS não testados. | Jammy corrigido em3.0.2-0ubuntu1.30. Consulta registrada em8/10 não identificou digest Java21JREJammy oficial corrigido. Selecionar candidata/digest e provar patch/ausência do ID por scan antes da adoção; não instalar pacote manual ou trocar só tag. |
+
+Mapeamento estático em produção: TransacaoController é @RestController com POST/transacoes e GET/transacoes/{id}, retorno ResponseEntity com DTO; nenhum outro @Controller, WebMvcConfigurer, ViewResolver ou classes de views/SSE encontradas. application.yml dos serviços não configura resolver/view; processador expõe health. Reexaminar ao mudar dependências/configuração; não extrapolar para bibliotecas, autoconfiguração, infraestrutura externa ou prova de ausência de vulnerabilidade.
+
+**Proposta pendente de direção:** entrega externa exige correção ou disposição estreita aprovada para cada HIGH/CRITICAL. Inventário verde permite revisar dados válidos, sem aprovar publicação. Não há gate de severidade, risco aceito, ignorefile ou supressão implementados. João decide migração de major, contratação, família runtime ou eventual disposição de risco com evidência, alcance, responsável, prazo e revisão. Desenvolvimento/revisão do repositório seguem dentro da v1; implantação externa não está autorizada.

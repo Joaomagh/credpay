@@ -25,3 +25,9 @@ Somente `inventory.json`, `summary.md` e manifestos selecionados são publicados
 Achados não interrompem este inventário inicial; erro operacional, falta de cobertura ou relatório inválido interrompem. Isso não aprova segurança. B08.6b deve revisar HIGH/CRITICAL, aplicabilidade, versão corrigida e ação concreta antes de definir o bloqueio. Um CVE detectado não prova exploração nem pode ser descartado apenas porque não há versão corrigida.
 
 O escopo inclui somente dependências empacotadas e as duas imagens dos apps. PostgreSQL, RabbitMQ, ferramentas de build e Kubernetes exigem análises próprias. A suíte funcional existente continua responsável pelos comportamentos da aplicação.
+
+## Proposta de bloqueio da entrega externa
+
+A [triagem atual](TRIAGE.md) registra três IDs HIGH/CRITICAL remanescentes. A proposta é impedir entrega externa enquanto houver achado sem correção ou disposição explícita aprovada pelo Navigator. Uma disposição teria de identificar CVE, componente/versão, condições, evidências e lacunas, alcance, responsável, prazo e revisão; nenhuma está aprovada neste incremento.
+
+O workflow continua validando e publicando o inventário; não existe gate automatizado de severidade implementado. Sua conclusão verde comprova execução, identidade e cobertura, sem liberar produção. A implementação de um gate separado exige política definida e controles de bloqueio/aprovação técnica; não se altera o relatório bruto para passar. Implantação externa continua exigindo autorização específica.
