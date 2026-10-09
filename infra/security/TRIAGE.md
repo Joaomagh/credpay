@@ -37,3 +37,7 @@ Revisar todos os HIGH/CRITICAL do inventário, vincular condições/fontes e uma
 ## Atualização Tomcat — B08.6b.1
 
 [Inventory #5](https://github.com/Joaomagh/credpay/actions/runs/37844620033), head a7972fb, checkout0a746a28: CRITICAL5→2 por alvo, com71 pacotes/JAR e214/imagem mantidos; HIGH10/JAR11/imagem permanecem. Tomcat core/EL/WebSocket10.1.60 foram conferidos nos dois JARs locais. Fonte Apache informa que10.1.58 indicada inicialmente não foi publicada;10.1.60 é versão disponível com correções posteriores. Os dois CRITICAL exibidos no JAR de transações são Spring47884/47890. Fluxo/imagens/Compose/Scan verdes; Transações #194 e Processador #176 também passaram. Integração aguarda checks dos registros documentais. Este registro não apaga a baseline anterior nem encerra a política geral.
+
+## Atualização Jackson — B08.6b.2 em validação
+
+Baseline e fontes dos cinco HIGH registradas no backlog antes da resolução. BOM 2.21.7 aplicado nos dois POMs; JARs locais confirmam core/databind e demais módulos 2.21.7, annotations 2.21 conforme BOM. Verify local 168/75 passou, sem testes de infraestrutura por ausência do engine local. Suítes reais e novo inventário precisam comprovar regressão e ausência dos cinco IDs em cada alvo antes da integração. Nenhum ignorefile, supressão ou aprovação global de segurança. Tomcat já integrado na PR #123/175e139 após sete checks finais verdes em 2cece9b.
