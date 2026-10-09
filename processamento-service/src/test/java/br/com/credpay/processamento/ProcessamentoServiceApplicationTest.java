@@ -7,14 +7,21 @@ import br.com.credpay.processamento.application.RegistrarProcessamentoService;
 import br.com.credpay.processamento.application.TransacaoCriadaRecebida;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Currency;
+import java.util.List;
 import java.util.UUID;
+import com.zaxxer.hikari.HikariDataSource;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -24,14 +31,38 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = "credpay.processamento.limites.BRL=100.00")
 @Testcontainers
+@Execution(ExecutionMode.SAME_THREAD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class ProcessamentoServiceApplicationTest {
 
+    private static final List<HikariDataSource> POOLS_ORIGINAIS = new ArrayList<>();
+
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
-            "postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0")
+    static final PostgreSQLContainer<?> POSTGRES = new PostgresDaFixture()
             .withDatabaseName("credpay_processamento_test")
             .withUsername("test")
             .withPassword("test");
+
+    private static final class PostgresDaFixture extends PostgreSQLContainer<PostgresDaFixture> {
+        private PostgresDaFixture() {
+            super("postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0");
+        }
+
+        @Override
+        public void stop() {
+            try {
+                var pools = List.copyOf(POOLS_ORIGINAIS);
+                assertThat(pools).withFailMessage("fixture aplicação não capturou seus pools originais").isNotEmpty();
+                assertThat(isRunning()).withFailMessage("PostgreSQL parou antes da observação da aplicação").isTrue();
+                pools.forEach(pool -> System.out.println("CredPay fixture lifecycle Aplicacao: pool="
+                        + pool.getPoolName() + " closed=" + pool.isClosed() + " postgresRunning=true"));
+                assertThat(pools.stream().allMatch(HikariDataSource::isClosed))
+                        .withFailMessage("todos os pools da aplicação devem fechar antes do PostgreSQL").isTrue();
+            } finally {
+                super.stop();
+            }
+        }
+    }
 
     @DynamicPropertySource
     static void configurarBanco(DynamicPropertyRegistry registry) {
@@ -51,6 +82,14 @@ class ProcessamentoServiceApplicationTest {
 
     @Autowired
     private JdbcTemplate jdbc;
+
+    @Autowired
+    private HikariDataSource dataSource;
+
+    @BeforeEach
+    void capturarPoolOriginal() {
+        POOLS_ORIGINAIS.add(dataSource);
+    }
 
     @Test
     void health_deveResponderUp_quandoAplicacaoIniciar() {

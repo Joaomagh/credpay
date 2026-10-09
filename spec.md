@@ -2295,6 +2295,20 @@ Cadastro sensível fica com João, diretamente nos secrets Actions do repositór
 
 Inventory19 completo manteve quatro relatórios79/222, HIGH0/JAR1/imagem e CRITICAL2; mesmos três IDs47884/47890/84782. Checkout de merge5ce1603ee3aeaba9573dd06f2a4f15773defbcdb, artifact11648160553, digest06a5422cb98876d2ad78f734e349e907a0eab0b0009f8198b97b391242a7bd2b. Não é aprovação global de segurança. Após prova real, etapa focada temporária retirada; guard permanece na suíte. Comentário nos seis workflows explicita confiança no código do job. Exigir revisão e gates finais do novo head antes do merge.
 
+**Integração final B08.2f:** head032daec teve sete gates verdes: Trans205/run37998100157, Proc189/run37998100277, Flow64/run37998100110, Images31/run37998100260, Compose26/run37998100144, Inventory20/run37998100421 e Scan140/run37998100105. Proc189/job114049170609 passou114/8m14/zero falhas/erros/skips; shutdown pool3 seguido de duas capturas closed=true/PG ativo, zero warnings próprios; pool5 permanece com dez. Sem etapa focada duplicada, timeout10 preservado. Inventory20 completo manteve quatro relatórios79/222 e mesmos três IDs; checkoutda7ae96f50930b062df3b6b44e745738be192bf4, artifact11648002757, digestac57c74b9a8d6a7e8f4e472c12f22c432a39c4e54bcacc63e092673c063f1c78. Revisão sem bloqueantes, PR #129 integrada emccc61d2, main local atualizado por fast-forward.
+
+Próximo recorte B08.2g revisado: única fixture ProcessamentoServiceApplicationTest, dois cenários health HTTP/replay e RANDOM_PORT preservados. Capturas Hikari BeforeEach, SAME_THREAD, guard no stop real e cleanup finally; red deve passar os casos e falhar exclusivamente por pool aberto. Só depois AFTER_CLASS fecha contexto/servidor após último teste; green exige duas referências fechadas/PG ativo, suíte114 e gates. Não inferir propriedade apenas por numeração ou último teste; implementação não iniciada.
+
+### 9.77 Ciclo de vida da fixture da aplicação — B08.2g
+
+Red preparado antes da correção: ProcessamentoServiceApplicationTest mantém RANDOM_PORT, health HTTP e replay com valor de escala equivalente, dois casos/contexto/container compartilhados. BeforeEach captura Hikari original; SAME_THREAD protege observação; guard no PostgreSQLContainer.stop exige capturas presentes, PG ainda ativo e pools fechados, sempre libera em finally. Nenhum AFTER_CLASS novo, fechamento manual, logger suprimido ou mudança de produção. Baseline final189 tinha dez warnings pool5; propriedade deve ser confirmada nesta execução, sem depender só da numeração.
+
+Docker local indisponível: CI inclui temporariamente foco da classe antes do verify completo, autenticação Read já aprovada e timeout10 preservados. Red somente se ambos os casos passarem e teardown falhar por pool aberto/PG ativo; startup/compilação não valem red. Depois da prova, correção mínima e foco/suíte114/gates, retirada da etapa temporária e repetição final. Sem dependência nova; revisão e compilação local ainda em andamento.
+
+**B08.2g red confirmado:** Proc191/run37999741198/job114054626572 em a6af9f0, foco21,389s. Dois casos health HTTP/replay passaram; duas capturas HikariPool-1 closed=false/postgresRunning=true e única falha do guard no teardown. Surefire classe3/Failures1; agregado3/Errors1/zero skips representa callback, não terceiro caso de negócio. Verify114 não iniciou após red focado. Causa demonstrada na fixture: contexto/pool sobrevivia ao PostgreSQL. Só depois foi adicionado DirtiesContext(AFTER_CLASS), fechamento do contexto/servidor após os dois casos, sem fechamento manual ou redução de logger. Guard/casos permanecem; foco verde/verify114/gates ainda exigidos.
+
+**B08.2g green real:** Proc192/run37999974389/job114055397073 em0448574 passou foco2/24,223s e verify114/7m48, zero falhas/erros/skips. Log completo: graceful shutdown do Tomcat e shutdown Hikari antes de duas capturas fechadas/PG ativo no foco(pool1) e na suíte(pool5). Zero warnings de conexão na suíte inteira, contra dez no baseline189; zero warning de agente dinâmico. Não houve redução de logger. Flow67/Images34/Compose29/Inventory23/Scan143 verdes nesse código. Inventory23 manteve quatro relatórios79/222 e mesmos três IDs; checkoutb2377131aec56cf558d821e7ad424d48fc689807, artifact11647624827, digest409268f5346dd37a6405b16000a66bbb3acb2d4f1f3910cf8f45d6db5064df86. Etapa temporária retirada após prova, guard permanece na suíte normal; exigir revisão e CI final do workflow alterado antes da integração.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
@@ -2531,3 +2545,7 @@ O workflow `.github/workflows/secret-scan.yml` usa checkout fixado por SHA, hist
 - [ ] documentação/contratos/migrations atualizados;
 - [ ] João consegue explicar a decisão e o trade-off;
 - [ ] `task.md` aponta um único próximo passo.
+
+B08.2g verificação estrutural: verify local75/zero falhas/erros/skips, Checkstyle0 em22,134s, compilação de todos os testes; não executa infraestrutura nem vale red. Log ignorado .local/evidence/b082g-red-local-verify.log. Revisão sem bloqueantes para publicar draft e provar red, sem implementar fechamento antecipado. git diff --check passou.
+
+B08.2g green mínimo revisado sem bloqueantes: somente import/AFTER_CLASS após red. Verify local75/zero falhas/erros/skips e Checkstyle0 em22,135s, sem executar infraestrutura; foco real/servidor/pool/suíte114/gates pendentes. Log ignorado .local/evidence/b082g-green-local-verify.log.

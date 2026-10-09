@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- B08.6b.5 documental integrado na PR #128/7b6d5bf; Scan135/Inventory15 verdes, mesmos três IDs restantes e cobertura79/222. JDBC127 integrado; política automatizada e segurança global continuam abertas.
+- B08.2f integrado na PR #129/ccc61d2: sete gates finais verdes em032daec; processador114/8m14, duas capturas fechadas/PG ativo e zero warnings próprios. Autenticação Read comprovada. Pool5 ainda dez warnings; três IDs Spring/OpenSSL permanecem.
 
 ## Agora
 
-- [ ] B08.2f — PR #129 draft. Red186 e green188 comprovados: foco2 e suíte114, duas capturas fechadas/PG ativo, zero warnings próprios; outros dez persistem. Login e demais gates verdes após cadastro por João. Etapa focada retirada; revisar e exigir gates do head final antes de integrar. Spec9.75/9.76.
+- [ ] B08.2g — PR #130 draft: red191 e green192 comprovados. Foco2/suíte114, servidor/pool fecham antes de duas capturas fechadas/PG ativo, zero warnings de conexão. Demais gates verdes. Etapa temporária retirada; revisar e exigir CI final antes de integrar. Spec9.77.
 
 ## Próximo
 
