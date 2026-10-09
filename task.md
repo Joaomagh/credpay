@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.2f — Guard da fixture RegistrarProcessamentoOutbox preparado, sem correção; CI focada primeiro/verify depois. Confirmar red real, então green com mesmos casos/suíte114 e gates aplicáveis; não silenciar warnings.
+- [ ] B08.2f — Red186 confirmou duas capturas abertas/PG ativo e única falha de teardown, dois casos verdes. AFTER_CLASS preparado após red; exigir foco verde, verify114 e gates, depois retirar foco temporário/repetir final. Não silenciar warnings.
 
 ## Próximo
 

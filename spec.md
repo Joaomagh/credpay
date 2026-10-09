@@ -2275,6 +2275,10 @@ Docker local indisponível exige red remoto, sem chamar falha de infraestrutura/
 
 Revisão do guard sem bloqueantes para PR draft: red focado deve preservar os dois casos, duas capturas e PG ativo; verify114 obrigatório no green. Etapa focada é temporária para esta prova e será retirada após green, mantendo guard e repetindo suíte final. Compilação dos testes/verify local com seletor sem infraestrutura:75 cenários verdes, zero falhas/erros/skips, Checkstyle0,23,987s; log ignorado .local/evidence/b082f-red-local-verify.log. Isso valida estrutura, não executa o guard nem é red. git diff --check passou; nenhuma correção de fechamento foi aplicada.
 
+**Red observado:** Processador186/run37990026316 em233820d, teste focado real. Dois casos de negócio passaram; duas capturas de HikariPool-1 closed=false/postgresRunning=true e única falha "todos os pools do registro/outbox devem fechar antes do PostgreSQL" no teardown. Surefire agrega3 execuções/1 erro de callback/zero skips; classe mostra1failure, agregado Errors1. Total19,415s, classe14,68s. verify completo não executou após red do foco, conforme ordem normal do job; não se alegam114 verdes nesta rodada. Causa comprovada na fixture: pool/contexto sobrevivia ao container; numeração1 do foco não atribui automaticamente os warnings históricos aos pools3/5 da suíte.
+
+**Green mínimo preparado após red:** DirtiesContext(AFTER_CLASS) fecha contexto ao fim dos dois cenários e antes do stop, sem fechar pool manualmente, logger reduzido ou mudança de aplicação. Capturas e guard permanecem. Foco deve passar com duas referências fechadas/PG ativo, depois verify114 e gates do SHA atual; resultado remoto ainda pendente. Verify local75/zero falhas/erros/skips e Checkstyle0 em18,725s; revisão do green mínimo sem bloqueantes para push, sem aceitar merge antecipado.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
