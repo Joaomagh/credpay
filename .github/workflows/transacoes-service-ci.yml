@@ -39,6 +39,27 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: Check public pull authentication availability
+        id: dockerhub_auth
+        if: ${{ github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        shell: bash
+        env:
+          CREDPAY_DOCKERHUB_USERNAME: ${{ secrets.CREDPAY_DOCKERHUB_USERNAME }}
+          CREDPAY_DOCKERHUB_TOKEN: ${{ secrets.CREDPAY_DOCKERHUB_TOKEN }}
+        run: |
+          if [ -n "$CREDPAY_DOCKERHUB_USERNAME" ] && [ -n "$CREDPAY_DOCKERHUB_TOKEN" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "Docker Hub authentication unavailable; public pulls and tests remain enabled."
+          fi
+      - name: Authenticate public image pulls
+        if: ${{ steps.dockerhub_auth.outputs.available == 'true' }}
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.CREDPAY_DOCKERHUB_USERNAME }}
+          password: ${{ secrets.CREDPAY_DOCKERHUB_TOKEN }}
+
       - name: Set up Java 21
         uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
         with:

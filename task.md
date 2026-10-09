@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.2f — PR #129 draft/head90b9f42. Red186 comprovado; AFTER_CLASS preparado e verify local75 verde. Green remoto bloqueado pelo limite de pulls Docker Hub (Proc187/Flow62/Images29/Compose24/Inventory18); uma reexecução de Images29 repetiu429. Aguardar direção para autenticação Read proposta; exigir foco verde, verify114 e gates, depois retirar foco temporário/repetir final. Sem merge ou supressão de warnings.
+- [ ] B08.2f — PR #129 draft. Red186 comprovado; AFTER_CLASS preparado e verify local75 verde. João autorizou autenticação Read Docker Hub; configuração adicionada nos seis workflows (spec9.76), cadastro dos dois secrets fica com João. Exigir login/foco verde, verify114 e gates; depois retirar foco temporário/repetir final. Sem merge antecipado ou supressão de warnings.
 
 ## Próximo
 

@@ -2283,6 +2283,14 @@ Revisão do guard sem bloqueantes para PR draft: red focado deve preservar os do
 
 **Próxima decisão:** proposta concreta de autenticação Read Docker Hub preparada em arquivo local ignorado, não aplicada. Action oficial docker/login-action v4.6.0, SHA dbcb813823bdd20940b903addbd779551569679f, em seis workflows, permissões GitHub contents:read preservadas; sem push de imagem. Credencial e alcance exigem direção específica de João (AGENTS §1/§5). Secrets ausentes/forks/Dependabot mantêm pulls públicos e testes obrigatórios. Código confiável do job pode acessar o token; mascaramento não é isolamento. Nenhum token lido, criado ou cadastrado. Alternativa: aguardar recuperação da cota. PR #129 permanece draft; etapa focada só será retirada após green real e suíte114, repetindo gates finais.
 
+### 9.76 Autenticação de pulls na CI — autorização e baseline
+
+João autorizou a proposta de autenticação Read Docker Hub em 2026-10-09. Necessidade concreta: limite de pulls públicos impediu PostgreSQL/RabbitMQ e builds no head90b9f42. Baseline antes da execução: [docker/login-action v4.6.0](https://github.com/docker/login-action/releases/tag/v4.6.0), SHA oficial dbcb813823bdd20940b903addbd779551569679f, conforme tag conferida; [PAT](https://docs.docker.com/security/access-tokens/) Read com validade definida, sem senha/Write/Delete. Nenhuma instalação local ou publicação de imagem.
+
+Configuração adicionada nos seis workflows de transações, processamento, fluxo, imagens, Compose e inventário. Antes do primeiro pull, verificar disponibilidade dos secrets sem imprimir valores e autenticar somente execução confiável do próprio repositório; forks e Dependabot não recebem login. Secrets ausentes mantêm pulls públicos e testes obrigatórios, com diagnóstico fixo. Actions fixadas, contents:read, imagens/digests/timeouts/testes preservados. Logout pós-job padrão; código confiável do job pode acessar o token durante execução, mascaramento não isola credenciais. Autenticação não garante cota ilimitada. Configuração operacional dispensa red artificial; revisão estrutural e CI real continuam obrigatórias.
+
+Cadastro sensível fica com João, diretamente nos secrets Actions do repositório: CREDPAY_DOCKERHUB_USERNAME e CREDPAY_DOCKERHUB_TOKEN. Read pode alcançar outros repositórios acessíveis à identidade; revisar alcance/identidade e expiração. Nenhum valor foi solicitado no chat, lido ou cadastrado. PR129 permanece draft até foco/verify114 e demais gates reais; configuração aplicada ainda não equivale a login ou green comprovado.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
