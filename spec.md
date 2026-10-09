@@ -2247,6 +2247,14 @@ Verify local com seletores da seção11: transações168/30,162s e processador75
 
 **Correção transitiva local:** verify repetido após netty.version4.1.137.Final: transações168/36,307s, processador75/31,822s, zero falhas/erros/skips, Checkstyle passou. Dois JARs contêm exatamente sete módulos Netty4.1.137.Final e amqp-client5.34.0, com Spring AMQP3.2.12 preservado. Logs .local/evidence/b086b-rabbit-netty-*-verify.log ignorados. Nova rodada CI/inventário dos seis IDs permanece necessária; não usar a rodada de de5f9af como aceite do código corrigido.
 
+**Aceite final Rabbit/Netty:** PR #126 integrada em b5e001f após sete gates verdes do head5f5e406: Trans200, Proc182, Flow57, Images24, Compose19, Scan131 e Inventory11. Log completo Inventory11/run37870861033: seis IDs tratados ausentes nos quatro alvos, cobertura79/JAR222/imagem, HIGH1/JAR2/imagem e CRITICAL2/alvo. Checkout8cd08378767b8517ac3b841cf57129381aaea3cc; artefato11590002126, SHA25676ee5de81d6ce9f9690263642d39f268df9c73658fc271e8f95daf43d6359b31. Proc182:114 testes/zero falhas/erros/skips, CDS1/dynamic-agent0/Hikari18; baseline177=18 e Jackson179=20, variação registrada sem atribuir causalidade. Dívida Hikari permanece; nenhum logger reduzido. Preparações acima são históricas, não bloqueio atual deste recorte. Restam JDBC, OpenSSL e Spring; sem aprovação global de segurança.
+
+### 9.73 PostgreSQL JDBC compatível — B08.6b.4
+
+Baseline e fontes no backlog antes da resolução:42.7.11→42.7.12, propriedade postgresql.version nos dois POMs, sem novas dependências declaradas no POM publicado. Correção de CVE-2026-54291 sob channelBinding=require; configuração não encontrada nos diretórios consultados. Não se alega exploração reproduzida ou teste TLS específico. Riscos de persistência exigem suítes reais/migrations/constraints/rollback/locks/snapshots e fluxo, além dos quatro relatórios sem o ID e cobertura79/222. Alteração operacional, sem red artificial; CI/inventário ainda pendentes.
+
+Verify local pelos seletores da seção11: transações168/28,824s e processador75/25,107s, zero falhas/erros/skips, Checkstyle aprovado. ZipFile dos dois JARs confirma único postgresql42.7.12, amqp-client5.34.0 e sete Netty4.1.137.Final preservados. Logs ignorados .local/evidence/b086b-jdbc-*-verify.log. Engine Docker local indisponível; testes reais e sete checks remotos permanecem obrigatórios antes do merge.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.

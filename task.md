@@ -4,15 +4,15 @@
 
 ## Último incremento
 
-- B08.6b.2 integrado na PR #125 (35c4087), sete gates verdes em 07df2f0. Cinco IDs Jackson ausentes nos quatro alvos, cobertura71/214; HIGH5/JAR6/imagem e CRITICAL2. Avisos Hikari do processador permanecem explícitos.
+- B08.6b.3 integrado na PR #126 (b5e001f), sete gates verdes em 5f5e406. Seis IDs Rabbit/Netty ausentes nos quatro alvos, cobertura79/222; HIGH1/JAR2/imagem e CRITICAL2. Avisos Hikari do processador permanecem explícitos.
 
 ## Agora
 
-- [ ] B08.6b.3 — RabbitMQ5.34.0 + Netty4.1.137.Final alinhado; local168/75 passou novamente. Inventory #10 bloqueou merge por Netty transitivo vulnerável; exigir nova rodada sete gates, seis IDs ausentes e cobertura79/222 explicada antes de integrar.
+- [ ] B08.6b.4 — JDBC42.7.12 nos dois POMs, baseline anterior à resolução. Local168/75 e JARs verificados; exigir sete gates, ID54291 ausente nos quatro relatórios e cobertura79/222 antes de integrar.
 
 ## Próximo
 
-- [ ] B08.6b.4 — Refinar baseline JDBC42.7.12 e corrigir HIGH54291; preservar migrations, transações, locks e snapshots nos testes reais.
+- [ ] B08.6b.5 — Consolidar triagem Spring/OpenSSL e proposta de política de bloqueio/publicação, sem supressão ou aceitação automática de risco.
 
 ## Depois
 
