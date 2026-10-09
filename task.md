@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.2g — PR #130 draft: red191 confirmado, dois casos passaram e teardown mostrou duas capturas abertas/PG ativo. AFTER_CLASS preparado só depois; exigir foco verde/suíte114/gates, retirar etapa temporária e repetir final. Spec9.77.
+- [ ] B08.2g — PR #130 draft: red191 e green192 comprovados. Foco2/suíte114, servidor/pool fecham antes de duas capturas fechadas/PG ativo, zero warnings de conexão. Demais gates verdes. Etapa temporária retirada; revisar e exigir CI final antes de integrar. Spec9.77.
 
 ## Próximo
 

@@ -219,3 +219,5 @@ B08.2f integrado após sete gates finais verdes em032daec. Proc189114/8m14, shut
 B08.2g em execução: red guard preparado com capturas BeforeEach/SAME_THREAD e stop real/cleanup finally, health HTTP/replay intactos. Foco temporário remoto por Docker local indisponível, sem correção antecipada; exigir dois casos verdes e erro exclusivo no teardown antes de AFTER_CLASS. Sem produção/dependência nova. Spec9.77.
 
 B08.2g red191/a6af9f0 comprovado: dois casos health/replay passaram, duas capturas abertas/PG ativo e erro exclusivo do guard no teardown. Foco21,389s; verify114 não executou após red. AFTER_CLASS preparado somente depois; green remoto/gates pendentes. Spec9.77.
+
+B08.2g green192 em0448574: foco2/24,223s e verify114/7m48, shutdown Tomcat/pool antes de duas capturas fechadas/PG ativo, zero warnings de conexão (baseline189 dez). Flow67/Images34/Compose29/Inventory23/Scan143 verdes; mesma cobertura79/222/três IDs. Etapa temporária retirada; guard permanente e CI final exigidos. Spec9.77.
