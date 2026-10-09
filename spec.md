@@ -2291,6 +2291,10 @@ Configuração adicionada nos seis workflows de transações, processamento, flu
 
 Cadastro sensível fica com João, diretamente nos secrets Actions do repositório: CREDPAY_DOCKERHUB_USERNAME e CREDPAY_DOCKERHUB_TOKEN. Read pode alcançar outros repositórios acessíveis à identidade; revisar alcance/identidade e expiração. Nenhum valor foi solicitado no chat, lido ou cadastrado. PR129 permanece draft até foco/verify114 e demais gates reais; configuração aplicada ainda não equivale a login ou green comprovado.
 
+**Green real após cadastro por João:** João confirmou revogação/substituição da credencial exposta e cadastro dos dois secrets; valores não foram acessados. Reexecuções attempt2 do headc2bd034: Proc188/run37992819760/job114045773895 passou foco2/26,722s e verify114/8m05, zero falhas/erros/skips. Foco: duas capturas HikariPool-1 closed=true/PG ativo; suíte: shutdown HikariPool-3 completo, duas capturas closed=true/PG ativo e zero warnings desse pool. Permanecem dez warnings HikariPool-5; não atribuir solução a outra fixture. Login bem-sucedido e logout pós-job. Trans204/run37992819828/job114046044107 passou279/2m47, zero falhas/erros/skips, zero warnings de conexão ou agente dinâmico. Flow63, Images30, Compose25, Inventory19 e Scan139 também verdes.
+
+Inventory19 completo manteve quatro relatórios79/222, HIGH0/JAR1/imagem e CRITICAL2; mesmos três IDs47884/47890/84782. Checkout de merge5ce1603ee3aeaba9573dd06f2a4f15773defbcdb, artifact11648160553, digest06a5422cb98876d2ad78f734e349e907a0eab0b0009f8198b97b391242a7bd2b. Não é aprovação global de segurança. Após prova real, etapa focada temporária retirada; guard permanece na suíte. Comentário nos seis workflows explicita confiança no código do job. Exigir revisão e gates finais do novo head antes do merge.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.

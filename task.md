@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.2f — PR #129 draft. Red186 comprovado; AFTER_CLASS preparado e verify local75 verde. João autorizou autenticação Read Docker Hub; configuração adicionada nos seis workflows (spec9.76), cadastro dos dois secrets fica com João. Exigir login/foco verde, verify114 e gates; depois retirar foco temporário/repetir final. Sem merge antecipado ou supressão de warnings.
+- [ ] B08.2f — PR #129 draft. Red186 e green188 comprovados: foco2 e suíte114, duas capturas fechadas/PG ativo, zero warnings próprios; outros dez persistem. Login e demais gates verdes após cadastro por João. Etapa focada retirada; revisar e exigir gates do head final antes de integrar. Spec9.75/9.76.
 
 ## Próximo
 
