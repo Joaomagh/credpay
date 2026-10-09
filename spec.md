@@ -2255,6 +2255,16 @@ Baseline e fontes no backlog antes da resolução:42.7.11→42.7.12, propriedade
 
 Verify local pelos seletores da seção11: transações168/28,824s e processador75/25,107s, zero falhas/erros/skips, Checkstyle aprovado. ZipFile dos dois JARs confirma único postgresql42.7.12, amqp-client5.34.0 e sete Netty4.1.137.Final preservados. Logs ignorados .local/evidence/b086b-jdbc-*-verify.log. Engine Docker local indisponível; testes reais e sete checks remotos permanecem obrigatórios antes do merge.
 
+**Aceite final JDBC:** PR #127 integrada em f342d3f, sete gates verdes em96f6f7a: Trans202, Proc184, Flow59, Images26, Compose21, Scan133 e Inventory13. Logs integrais:279/114 testes, zero falhas/erros/skips; CDS1 por módulo, dynamic-agent0, Hikari0trans/18proc (dívida preexistente). Inventory13/run37871930354 completo:54291 ausente nos quatro alvos, cobertura79/222, HIGH0/JAR1/imagem e CRITICAL2/alvo. Checkoutf392da356f712449d85b068783dc33791931e80d; artefato11590478677, SHA256aec3af8eacb8eda0f7c4d7e295b06886019cccc5d574a427b5c6542ffe82186a. Retenção sete dias; hash/identidade registram a evidência, não garantem disponibilidade futura. Preparação acima é histórica; JDBC encerrado, segurança global não aprovada.
+
+### 9.74 Triagem restante e proposta de publicação — B08.6b.5
+
+Em2026-10-09, consolidação documental em infra/security/TRIAGE.md separa os três IDs restantes, condições, fontes e ações. Inspeção de produção: único controller de aplicação é TransacaoController, REST/ResponseEntity em POST/transacoes e GET/transacoes/{id}; nenhuma classe MVC/view/resolver/SSE indicada nas buscas. application.yml não configura resolver/view; processador expõe health. Isso é inspeção de código/configuração, não prova dinâmica de ausência de exploração. Não alterar severidades brutas ou interpretar os testes funcionais como teste de vulnerabilidade.
+
+Política proposta: entrega externa exige HIGH/CRITICAL corrigidos ou disposição estreita explicitamente aprovada pelo Navigator; inventário válido não libera publicação. Não cria gate automatizado, exceção, ignorefile ou autorização de implantação. Migração Boot/Framework major, suporte pago, outra família runtime e aceite de risco continuam decisões específicas de João. Próximo experimento pronto é B08.2f: capturar pool da fixture RegistrarProcessamentoOutbox, confirmar falha de fechamento antes do stop pelo guard real, só então corrigir o contexto e repetir os mesmos cenários/suíte. Associação entre nome de teste e warnings não prova propriedade do pool; sem diagnóstico causal não espalhar DirtiesContext.
+
+Verificação documental: git diff --check passou; decodificação UTF-8 estrita e resolução dos links locais dos seis documentos passaram. Diff resumido: nota pública de risco, matriz de três achados, proposta de publicação e estados/próxima tarefa; nenhum POM, script ou workflow modificado neste incremento. Revisão documental detectou ID B08.2d já ocupado; novo experimento renomeado para B08.2f sem alterar o histórico. Correção verificada, restante sem bloqueantes; Secret Scan remoto ainda exigido antes da integração.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
