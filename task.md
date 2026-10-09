@@ -4,16 +4,16 @@
 
 ## Último incremento
 
-- B08.5b na PR #124: explicação do produto/tecnologias/etapas e direção FALHOU registrada; referências/UTF-8/diff e revisão passaram. Integração somente após Secret Scan do head final. Tomcat já integrado na #123/175e139; riscos restantes preservados.
+- B08.5b integrado na PR #124 (5b105d5): explicação do produto e direção FALHOU registrada; UTF-8/links/diff/revisão e Scan #126 verdes no head 8f68a8f. Ensaio por João ainda necessário.
 
 ## Agora
 
-- [ ] B08.6b.2 — Após integrar #124, refinar baseline compatível do Jackson e corrigir os achados; preservar Java 21/Boot 3, repetir suítes reais e inventário antes da integração.
+- [ ] B08.6b.2 — Jackson BOM 2.21.7 nos dois serviços: verify local 168/75 e JARs alinhados. Aguardar suítes reais, Flow/Images/Compose/Scan, inventário sem cinco CVEs e revisão antes de integrar.
 
 ## Próximo
 
-- Concluir tratamento dos demais componentes/imagens e política de bloqueio; ensaiar apresentação com João.
+- [ ] B08.6b.3 — Refinar baseline compatível do RabbitMQ Java client; corrigir os quatro HIGH e provar publicação/consumo/recuperação reais.
 
 ## Depois
 
-- Concluir tratamento de dependências/imagens e política de bloqueio, ensaiar demo com João. Refinar mecanismo/testes FALHOU: retry esgotado mantém PENDENTE recuperável; encerramento exige confirmação irrecuperável. Kubernetes aguarda direção específica (PR #118 inativa); observabilidade/sandbox e v1 não concluídos.
+- Tratar JDBC/runtime e achados restantes, política de bloqueio e revisão de publicação. Ensaiar demo; definir mecanismo/testes FALHOU. Kubernetes depende de direção específica (PR #118 inativa); observabilidade/sandbox e v1 pendentes.

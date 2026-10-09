@@ -2225,6 +2225,14 @@ B08.6b.1 integrado na PR #123/175e139 após sete checks finais verdes em2cece9b:
 
 Validação documental: UTF-8 estrito, links locais, git diff --check e revisão de fatos/limites. Sem novo comportamento/dependência, não exige red artificial nem reexecução das suítes pelos filtros da PR isolada; Secret Scan segue obrigatório antes de integrar.
 
+### 9.71 Jackson compatível — B08.6b.2
+
+Baseline registrada no backlog antes da resolução: Jackson core/databind 2.21.4 com cinco HIGH (CVE-2026-89407/89425/68497/91776/91777). Advisories FasterXML e BOM publicado conferidos; propriedade jackson-bom.version 2.21.7 nos dois POMs mantém Boot 3.5.16/Java 21 e a linha 2.21. Annotations 2.21 é a versão prevista no BOM; não forçar 2.21.7 nesse módulo. Sem alteração de Java, contratos, dependência nova de aplicação ou supressão. Revisão da proposta sem bloqueante.
+
+Verify local com os seletores sem infraestrutura da seção 11 e -DargLine=-XX:-EnableDynamicAgentLoading passou: transações 168 testes/32,498s; processador 75/29,663s; zero falhas/erros/skips. Ambos JARs conferidos com ZipFile contêm core/databind, datatype-jdk8/jsr310, module-parameter-names e dataformat-toml 2.21.7, annotations 2.21; nenhuma outra versão Jackson empacotada. Checkstyle passou; um aviso CDS por módulo, zero avisos de agente dinâmico. Logs ignorados em .local/evidence/b086b-jackson-*-verify.log. Atualização operacional usa regressão existente, sem red artificial de negócio ou alegação de reprodução das cinco explorações.
+
+Integrações PostgreSQL/RabbitMQ reais, Flow/Images/Compose/Scan e inventário comparando os cinco IDs nos quatro alvos ainda pendentes. Docker local segue indisponível; não reduzir aceite ou encerrar a triagem geral. PR #124/5b105d5 integrada após Scan #126 verde no head 8f68a8f; explicação documental não comprova ensaio por João.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
