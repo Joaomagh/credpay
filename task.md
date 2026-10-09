@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.6b.3 — Cliente RabbitMQ5.34.0, Spring AMQP3.2.12 preservado nos dois JARs; local168/75 passou. Exigir suítes reais, Flow/Images/Compose/Scan, inventário sem quatro IDs e revisão antes de integrar.
+- [ ] B08.6b.3 — RabbitMQ5.34.0 + Netty4.1.137.Final alinhado; local168/75 passou novamente. Inventory #10 bloqueou merge por Netty transitivo vulnerável; exigir nova rodada sete gates, seis IDs ausentes e cobertura79/222 explicada antes de integrar.
 
 ## Próximo
 
