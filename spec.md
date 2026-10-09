@@ -2265,6 +2265,16 @@ Política proposta: entrega externa exige HIGH/CRITICAL corrigidos ou disposiç�
 
 Verificação documental: git diff --check passou; decodificação UTF-8 estrita e resolução dos links locais dos seis documentos passaram. Diff resumido: nota pública de risco, matriz de três achados, proposta de publicação e estados/próxima tarefa; nenhum POM, script ou workflow modificado neste incremento. Revisão documental detectou ID B08.2d já ocupado; novo experimento renomeado para B08.2f sem alterar o histórico. Correção verificada, restante sem bloqueantes; Secret Scan remoto ainda exigido antes da integração.
 
+**Integração documental:** PR #128/7b6d5bf, headc2ee485, Scan135 e Inventory15/run37989265135 verdes. Log integral mantém quatro alvos79/222, HIGH0/JAR1/imagem CRITICAL2 e os mesmos três IDs. Artefato11645160323, checkout0a219a863b7ef5d5ee433a876464f6b4ac8ec7dd, SHA2565e7d23e7c6aff3087d696fb7284b8637bc377e63ac16aae0274ee8c09752f525. Nenhuma decisão de risco/política automatizada foi aprovada pela integração dos documentos.
+
+### 9.75 Ciclo de vida do registro/outbox — B08.2f
+
+Guard preparado antes da correção: captura HikariDataSource original antes de desarmar a falha em cada um dos dois cenários existentes; SAME_THREAD protege a observação. Subclasse PostgreSQLContainer observa o stop real com lista não vazia, banco ainda ativo e todos os pools fechados; super.stop sempre ocorre em finally. Cenários de replay e rollback/outbox permanecem intactos. Não há DirtiesContext novo neste red; causa só será confirmada pelo teste real.
+
+Docker local indisponível exige red remoto, sem chamar falha de infraestrutura/compilação de red. Workflow processador inclui primeiro teste focado da classe, depois verify completo; mantém controles Checkstyle/Java21/argLine e timeout10min. Risco de tempo será medido; não aumentar limite ou reduzir suíte para passar. Sem dependência nova ou mudança de produção. Revisão, compilação e red real ainda pendentes; implementação aguarda falha esperada com dois casos de negócio verdes e guard fechado falso/PG ativo.
+
+Revisão do guard sem bloqueantes para PR draft: red focado deve preservar os dois casos, duas capturas e PG ativo; verify114 obrigatório no green. Etapa focada é temporária para esta prova e será retirada após green, mantendo guard e repetindo suíte final. Compilação dos testes/verify local com seletor sem infraestrutura:75 cenários verdes, zero falhas/erros/skips, Checkstyle0,23,987s; log ignorado .local/evidence/b082f-red-local-verify.log. Isso valida estrutura, não executa o guard nem é red. git diff --check passou; nenhuma correção de fechamento foi aplicada.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
