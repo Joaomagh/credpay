@@ -2231,7 +2231,17 @@ Baseline registrada no backlog antes da resolução: Jackson core/databind 2.21.
 
 Verify local com os seletores sem infraestrutura da seção 11 e -DargLine=-XX:-EnableDynamicAgentLoading passou: transações 168 testes/32,498s; processador 75/29,663s; zero falhas/erros/skips. Ambos JARs conferidos com ZipFile contêm core/databind, datatype-jdk8/jsr310, module-parameter-names e dataformat-toml 2.21.7, annotations 2.21; nenhuma outra versão Jackson empacotada. Checkstyle passou; um aviso CDS por módulo, zero avisos de agente dinâmico. Logs ignorados em .local/evidence/b086b-jackson-*-verify.log. Atualização operacional usa regressão existente, sem red artificial de negócio ou alegação de reprodução das cinco explorações.
 
-Integrações PostgreSQL/RabbitMQ reais, Flow/Images/Compose/Scan e inventário comparando os cinco IDs nos quatro alvos ainda pendentes. Docker local segue indisponível; não reduzir aceite ou encerrar a triagem geral. PR #124/5b105d5 integrada após Scan #126 verde no head 8f68a8f; explicação documental não comprova ensaio por João.
+Preparação inicial aguardou integrações PostgreSQL/RabbitMQ reais, Flow/Images/Compose/Scan e inventário comparando os cinco IDs nos quatro alvos. Docker local segue indisponível; não reduzir aceite ou encerrar a triagem geral. PR #124/5b105d5 integrada após Scan #126 verde no head 8f68a8f; explicação documental não comprova ensaio por João.
+
+**Resultado final:** PR #125 integrada em 35c4087 após sete checks verdes do head07df2f0: Transações #197/279, Processador #179/114 (zero falhas/erros/skips), Flow #54, Images #21, Compose #16, Inventory #8 e Scan #128. Log completo do inventário run37868732324/job113621587872 confirmou ausência dos cinco IDs nos quatro scans reais, separados das fixtures sintéticas; cobertura71/JAR214/imagem, HIGH10→5/JAR11→6/imagem, CRITICAL2 por alvo. Checkout71919eb536cb0660fee953d0cc8c03d36f153a4d; artefato11589766080 SHA25660a39d12daed75edc1ddde9b5022e478d8c71f1be08d4e965cbb20a4bff54f61. Revisão sem bloqueante, sem supressão/segurança global aprovada.
+
+Logs completos dos módulos: CDS1 cada, agente dinâmico0; transações sem warnings Hikari de validação. Processador #179 contém20 avisos de conexões fechadas (pool3=10/pool5=10), baseline #177 tinha18 (8/10), mesmos pools/mensagem/últimoRunning RabbitMqEntradaTopologyIntegrationTest. Variação2 observada, sem atribuição causal ao Jackson ou declaração de dívida resolvida; fixtures ainda exigem revisão própria.
+
+### 9.72 Cliente RabbitMQ compatível — B08.6b.3
+
+Baseline antes da resolução no backlog: quatro HIGH amqp-client5.25.0, candidata5.34.0 publicada no Central, linha5/Java21 e Spring AMQP3.2.12 preservados. Dois POMs usam rabbit-amqp-client.version5.34.0; sem contrato/evento/negócio novo, major ou supressão. Advisories e release oficiais justificam o recorte; não é alegação de latest ou reprodução dos ataques. Riscos negociação/frame/header e recuperação exigem regressões existentes com broker real.
+
+Verify local com seletores da seção11: transações168/30,162s e processador75/26,668s, zero falhas/erros/skips; Checkstyle passou. Inspeção dos dois JARs: único amqp-client5.34.0, spring-amqp/spring-rabbit3.2.12. Logs ignorados .local/evidence/b086b-rabbit-*-verify.log; atualização operacional sem red artificial. CI completo, fluxo/images/Compose/Scan e inventário sem os quatro IDs nos quatro alvos ainda exigidos antes de integrar; engine local indisponível não reduz aceite.
 
 ## 10. Observabilidade e SLOs de aprendizado
 

@@ -4,16 +4,16 @@
 
 ## Último incremento
 
-- B08.5b integrado na PR #124 (5b105d5): explicação do produto e direção FALHOU registrada; UTF-8/links/diff/revisão e Scan #126 verdes no head 8f68a8f. Ensaio por João ainda necessário.
+- B08.6b.2 integrado na PR #125 (35c4087), sete gates verdes em 07df2f0. Cinco IDs Jackson ausentes nos quatro alvos, cobertura71/214; HIGH5/JAR6/imagem e CRITICAL2. Avisos Hikari do processador permanecem explícitos.
 
 ## Agora
 
-- [ ] B08.6b.2 — Jackson BOM 2.21.7 nos dois serviços: verify local 168/75 e JARs alinhados. Aguardar suítes reais, Flow/Images/Compose/Scan, inventário sem cinco CVEs e revisão antes de integrar.
+- [ ] B08.6b.3 — Cliente RabbitMQ5.34.0, Spring AMQP3.2.12 preservado nos dois JARs; local168/75 passou. Exigir suítes reais, Flow/Images/Compose/Scan, inventário sem quatro IDs e revisão antes de integrar.
 
 ## Próximo
 
-- [ ] B08.6b.3 — Refinar baseline compatível do RabbitMQ Java client; corrigir os quatro HIGH e provar publicação/consumo/recuperação reais.
+- [ ] B08.6b.4 — Refinar baseline JDBC42.7.12 e corrigir HIGH54291; preservar migrations, transações, locks e snapshots nos testes reais.
 
 ## Depois
 
-- Tratar JDBC/runtime e achados restantes, política de bloqueio e revisão de publicação. Ensaiar demo; definir mecanismo/testes FALHOU. Kubernetes depende de direção específica (PR #118 inativa); observabilidade/sandbox e v1 pendentes.
+- Runtime: digest oficial corrigido ainda não identificado; não trocar só a tag. Tratar Spring/política de bloqueio/publicação, ensaiar demo e definir mecanismo FALHOU. Kubernetes depende de direção específica (PR #118 inativa); observabilidade/sandbox/v1 pendentes.
