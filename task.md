@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- B08.6b.5 documental integrado na PR #128/7b6d5bf; Scan135/Inventory15 verdes, mesmos três IDs restantes e cobertura79/222. JDBC127 integrado; política automatizada e segurança global continuam abertas.
+- B08.2f integrado na PR #129/ccc61d2: sete gates finais verdes em032daec; processador114/8m14, duas capturas fechadas/PG ativo e zero warnings próprios. Autenticação Read comprovada. Pool5 ainda dez warnings; três IDs Spring/OpenSSL permanecem.
 
 ## Agora
 
-- [ ] B08.2f — PR #129 draft. Red186 e green188 comprovados: foco2 e suíte114, duas capturas fechadas/PG ativo, zero warnings próprios; outros dez persistem. Login e demais gates verdes após cadastro por João. Etapa focada retirada; revisar e exigir gates do head final antes de integrar. Spec9.75/9.76.
+- [ ] B08.2g — Provar fechamento da fixture ProcessamentoServiceApplicationTest. Preservar health HTTP/replay, dois casos e contexto compartilhado; capturar pools antes dos casos e observar stop real. Red exclusivo de teardown antes da correção; depois green e suíte114/gates. Refinamento revisado, implementação ainda não iniciada.
 
 ## Próximo
 

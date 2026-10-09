@@ -2295,6 +2295,10 @@ Cadastro sensível fica com João, diretamente nos secrets Actions do repositór
 
 Inventory19 completo manteve quatro relatórios79/222, HIGH0/JAR1/imagem e CRITICAL2; mesmos três IDs47884/47890/84782. Checkout de merge5ce1603ee3aeaba9573dd06f2a4f15773defbcdb, artifact11648160553, digest06a5422cb98876d2ad78f734e349e907a0eab0b0009f8198b97b391242a7bd2b. Não é aprovação global de segurança. Após prova real, etapa focada temporária retirada; guard permanece na suíte. Comentário nos seis workflows explicita confiança no código do job. Exigir revisão e gates finais do novo head antes do merge.
 
+**Integração final B08.2f:** head032daec teve sete gates verdes: Trans205/run37998100157, Proc189/run37998100277, Flow64/run37998100110, Images31/run37998100260, Compose26/run37998100144, Inventory20/run37998100421 e Scan140/run37998100105. Proc189/job114049170609 passou114/8m14/zero falhas/erros/skips; shutdown pool3 seguido de duas capturas closed=true/PG ativo, zero warnings próprios; pool5 permanece com dez. Sem etapa focada duplicada, timeout10 preservado. Inventory20 completo manteve quatro relatórios79/222 e mesmos três IDs; checkoutda7ae96f50930b062df3b6b44e745738be192bf4, artifact11648002757, digestac57c74b9a8d6a7e8f4e472c12f22c432a39c4e54bcacc63e092673c063f1c78. Revisão sem bloqueantes, PR #129 integrada emccc61d2, main local atualizado por fast-forward.
+
+Próximo recorte B08.2g revisado: única fixture ProcessamentoServiceApplicationTest, dois cenários health HTTP/replay e RANDOM_PORT preservados. Capturas Hikari BeforeEach, SAME_THREAD, guard no stop real e cleanup finally; red deve passar os casos e falhar exclusivamente por pool aberto. Só depois AFTER_CLASS fecha contexto/servidor após último teste; green exige duas referências fechadas/PG ativo, suíte114 e gates. Não inferir propriedade apenas por numeração ou último teste; implementação não iniciada.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
