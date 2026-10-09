@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B06.3 — Diagnóstico das tentativas de publicação do processador. Começar pelo menor teste de contador com SimpleMeterRegistry; outcomes bounded confirmed/returned/nacked/error, sem IDs/payload. Preservar resultado, propriedades, timeout e propagação de erros; comprovar envio real/rota ausente e suíte. Refinamento pronto, implementação ainda não iniciada.
+- [ ] B06.3 — Contador de publicação em TDD: confirmed red por contador ausente, mínimo implementado após red. Próximos ciclos returned/nacked/error; preservar contrato e comprovar contagem na fixture RabbitMQ real. Sem nova dependência ou exposição HTTP alterada. Spec9.78.
 
 ## Próximo
 

@@ -2311,9 +2311,17 @@ Docker local indisponível: CI inclui temporariamente foco da classe antes do ve
 
 **B08.2g integração final:** head8d29b3f teve seis checks verdes, confirmados na PR: Proc193/run38000883077, Flow68/run38000883083, Images35/run38000883097, Compose30/run38000883157, Inventory24/run38000883113 e Scan144/run38000883164. Proc193/job114058373312 passou114/8m08/zero falhas/erros/skips; shutdown gracioso Tomcat e pool5 completo antes de duas capturas closed=true/PG ativo; zero warnings de conexão e de agente dinâmico. Foco temporário ausente, guard permanente, timeout10 intacto. Inventory24 completo manteve quatro relatórios79/222 e mesmos três IDs; checkouta413b786e6e5ba23ee83d0e46c766266bc6f3735, artifact11649945610, digestbd2905aa80424c675733d45637864de8978b25a98a339e6babec9a88a1ee494a. Consulta pública GitHub atingiu limite; confirmação final pela página da PR, sem leitura de credenciais ou redução de checks. Revisão sem bloqueantes, PR #130 integrada em4f3ed7f, main local atualizado por fast-forward.
 
+### 9.78 Contador de tentativas de publicação — B06.3
+
+Baseline: Actuator existente inclui Micrometer core/observation/commons/jakarta9 1.15.12 no JAR local; nenhum POM, download ou instalação nova. Métrica proposta credpay.messaging.publish.attempts com tag outcome limitada a confirmed/returned/nacked/error; tentativas ao broker incluem reenvio e não significam transação única nem marcação da outbox. Não registrar IDs, payload, moeda ou erro em tags. Propriedades, timeout e comportamento de retorno/erros devem permanecer.
+
+Preparação de teste: constructor recebe MeterRegistry, sem contagem antecipada; somente scaffolding de injeção para observar efeito, antes do primeiro red. SimpleMeterRegistry dessa versão possui close mas não implementa AutoCloseable: primeira tentativa com try-with-resources falhou na compilação, não contou como red; corrigida para finally/close. Teste confirmed então compilou, publicação retornou true e falhou exclusivamente por contador ausente (1failure/9,986s). Só depois foi acrescentada contagem mínima; demais outcomes aguardam seus próprios reds.
+
+**TDD returned em andamento:** confirmed passou1/11,089s após red. Novo teste returned compilou e falhou exclusivamente por contador returned ausente (2execuções/1failure/10,370s), publicação mantém false. Fixture real existente agora compara deltas de confirmed/returned antes/depois do envio roteado, ausência de pendência, retorno sem rota e restauração da rota; sem reset global ou caso/container adicional. Foco temporário da fixture no workflow precede verify completo, timeout10 preservado. Implementação de classificação returned aguarda prova real na CI; PR draft permite red intencional, sem alegar incremento concluído.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
-Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
+Primeiro contador em implementação/TDD em B06.3 (§9.78), ainda sem entrega integrada ou nova exposição HTTP. As demais métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
 
 Não declarar SLO de produção fictício; usar objetivos de experimento local claramente rotulados.
 
