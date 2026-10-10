@@ -310,8 +310,25 @@ class FluxoCredPayE2E {
         System.out.println("CredPay diagnostics: rota restaurada, evento original recuperado e registros únicos; publicador=" + publicador);
     }
 
-    private double lerReturned(String publicador) {
-        return 0;
+    private double lerReturned(String publicador) throws Exception {
+        int porta = "transacoes".equals(publicador) ? portaTransacoes : portaProcessamento;
+        var endereco = URI.create("http://localhost:" + porta
+                + "/actuator/metrics/credpay.messaging.publish.attempts?tag=outcome:returned");
+        var resposta = enviar(HttpRequest.newBuilder(endereco).GET());
+        if (resposta.statusCode() == 404) return 0;
+        assertThat(resposta.statusCode()).withFailMessage("Consulta returned não respondeu HTTP 200").isEqualTo(200);
+        var contador = jsonHttpSeguro(resposta.body());
+        assertThat(contador).withFailMessage("Resposta returned vazia").isNotNull();
+        assertThat(contador.path("name").asText()).withFailMessage("Nome do contador returned inválido")
+                .isEqualTo("credpay.messaging.publish.attempts");
+        var medidas = contador.path("measurements");
+        assertThat(medidas.isArray() && medidas.size() == 1).withFailMessage("Medição returned inválida").isTrue();
+        assertThat(medidas.get(0).path("statistic").asText()).withFailMessage("Estatística returned inválida").isEqualTo("COUNT");
+        var valor = medidas.get(0).path("value");
+        assertThat(valor.isNumber()).withFailMessage("COUNT returned não numérico").isTrue();
+        double total = valor.asDouble();
+        assertThat(Double.isFinite(total) && total >= 0).withFailMessage("COUNT returned inválido").isTrue();
+        return total;
     }
 
     private JsonNode jsonHttpSeguro(String corpo) {
