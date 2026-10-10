@@ -2327,10 +2327,27 @@ Fixture real compara deltas de confirmed/returned para envio roteado, ociosidade
 
 Green remoto em 7820757: Proc196/run38003456323 passou foco4/32,294s e verify121/7m49, zero falhas/erros/skips. Guard da outbox observou quatro referências ao pool fechado com PG ativo em cada execução; zero warnings Hikari/agente dinâmico na saída completa. Etapa de foco retirada após essa prova; testes permanecem na suíte normal e head final ainda exige gates/revisão.
 
+**Entrega final:** PR #131 integrada em 668d73b após seis checks verdes no head bbf99f296cf0874287efc81d6d04f6335cb67104. Run38014774384 passou verify121/8m13, zero falhas/erros/skips e warnings Hikari/agente dinâmico; fixture real4/9,647s, quatro referências ao pool fechado com PG ativo. Foco temporário ausente do workflow final. Inventário run38014774427: quatro relatórios completos79/222, mesmos três IDs Spring/OpenSSL; artifact11655609437, checkout8462b72bb3e386f953259556aa1a380dd4a04804. Revisão sem bloqueantes, main sincronizada por fast-forward. Screenshot ignorado .local/evidence/pr131-merged.jpg.
+
+### 9.79 Diagnóstico da publicação de TransacaoCriada — B06.4
+
+Próximo recorte aprovado pelo plano e revisado: completar a instrumentação no publicador do serviço de transações, com o mesmo nome e outcomes fixos de B06.3. Cada aplicativo tem seu próprio registry; contador não representa transações únicas ou conclusão de negócio. Baseline local do JAR de transações comprova Micrometer core/observation/commons/jakarta9 1.15.12 já existentes. Nenhum POM, download, instalação, módulo comum ou exposição HTTP nova.
+
+Arquivos previstos: RabbitMqPublicadorEvento, seus três testes atuais, PublicarOutboxIntegrationTest e registros. Preparar injeção do registry sem contagem, confirmar red pelo contador ausente nos casos de confirmação/retorno/nack, corrigir cada resultado e então cobrir erros/interrupção/timeout. Preservar propriedades e cinco segundos, exceções e flag da thread. Fixture real já tem dois casos: confirmação e ociosidade; retorno sem rota e recuperação do mesmo evento. Publisher automático desligado permite deltas sem reset global; manter limpeza e guard Hikari. Ela não comprova falha de marcação após ACK. Exigir green real, suíte completa e gates do último SHA antes de integrar. TDD em execução, sem entrega integrada.
+
+TDD iniciado: registry injetado como scaffolding sem contagem; os três construtores de teste foram ajustados antes do red. Caso existente de contrato confirmou retorno/propriedades corretos e falhou somente pelo contador confirmed ausente (1 falha/10,787s). Contagem mínima acrescentada depois; três testes verdes/8,963s. Asserção returned então falhou pelo contador ausente (3 testes/1 falha/8,455s), mantendo retorno false. Fixture real de dois casos ganhou deltas roteado/ocioso/sem rota/restauração, sem reset do registry ou infraestrutura nova. Foco temporário no workflow precede verify; timeout10 preservado. Verificação estrutural skipTests passou/8,051s e Checkstyle0, sem alegar execução real. Nack também confirmou red por contador ausente (1 falha); classificação aguarda prova remota. Revisão sem bloqueantes para rascunho; asserções de ociosidade após recuperação acrescentadas. Red remoto ainda pendente; não integrar o rascunho.
+
+Red real em989b442/run38015730783: dois cenários executados, uma única falha de classificação (confirmed esperado0, observado1), zero erros/skips, 36,694s. Duas referências ao pool fechado com PG ativo, zero warnings Hikari. Returned foi corrigido somente após prova: foco3/9,201s; nack red1/8,563s→green acumulado4/9,306s. Erro imediato red1/8,974s→foco2/9,634s, confirmação excepcional red1/8,430s→green5/9,119s, interrupção red1/8,611s→green6/9,084s. Erros preservam identidade/causa/flag; classificação fora da captura evita dupla contagem. Timeout adicional caracteriza o tratamento já corrigido, sem alegar outro red. Sete casos no publicador (três existentes reforçados e quatro novos).
+
+A primeira seleção local omitiu as exclusões PostgresRuntimeTest/*E2E e incluiu três casos sem Docker/imagens preparadas: FluxoCredPayE2E/PostgresRuntimeTest falharam por Docker indisponível e ImagensCredPayE2E pela tag de imagem ausente. Os sete testes do publicador passaram; isso não é red de negócio. Com o comando local já documentado (§11), verify corrigido passou172/20,603s, zero falhas/erros/skips e Checkstyle0; timeout real na classe7/5,264s. Suíte real283 e gates ainda pendentes, sem redução do CI. Revisão sem bloqueantes.
+
+Green remoto8c9290d/run38016119774: foco2/32,193s e verify283/2m37, zero falhas/erros/skips e warnings Hikari/agente dinâmico. Duas referências ao pool fechado com PG ativo no foco e na suíte. Seis checks verdes na PR #132. Etapa temporária retirada após prova; todos os testes permanentes, timeout10 preservado. Head final ainda requer gates/revisão.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
-Primeiro contador em implementação/TDD em B06.3 (§9.78), ainda sem entrega integrada ou nova exposição HTTP. As demais métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
+
+Primeiro contador de publicação do processador integrado em B06.3 (§9.78), com quatro outcomes fixos e sem nova exposição HTTP. Instrumentação do publicador de transações será completada em B06.4 (§9.79). As demais métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
 
 Não declarar SLO de produção fictício; usar objetivos de experimento local claramente rotulados.
 

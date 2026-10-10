@@ -4,16 +4,16 @@
 
 ## Último incremento
 
-- B08.2g integrado na PR #130/4f3ed7f: seis gates finais verdes em8d29b3f; processador114/8m08, shutdown servidor/pool antes do PostgreSQL e zero warnings de conexão. Três IDs Spring/OpenSSL permanecem.
+- B06.3 integrado na PR #131/668d73b: contador do publicador do processador, sete testes novos, suíte121/8m13 e seis gates finais verdes em bbf99f2. Sem nova exposição HTTP/dependência; três IDs Spring/OpenSSL permanecem. Spec9.78.
 
 ## Agora
 
-- [ ] B06.3 — Contador de publicação: reds confirmed/returned/nacked/error comprovados, incluindo returned no RabbitMQ real. Sete testes novos e verify local82/26,338s verdes, Checkstyle0. Green real Proc196: foco4/32,294s e suíte121/7m49, zero falhas/erros/skips e warnings Hikari/agente dinâmico. Foco temporário retirado; aguardar gates/revisão do head final. Sem dependência ou exposição HTTP nova. Spec9.78.
+- [ ] B06.4 — Completar diagnóstico no publicador de TransacaoCriada. Mesmo contrato de tentativas/outcomes, TDD em testes existentes e prova de deltas na fixture real de dois casos. Preservar mensagens, exceções, interrupção, timeout e ociosidade. Reds locais e sem rota real comprovados; quatro outcomes implementados após reds. Verify local172/20,603s, sete casos do publicador e Checkstyle0 verdes. Green real8c9290d: foco2/32,193s e suíte283/2m37, zero falhas/erros/skips e warnings Hikari/agente dinâmico. Foco temporário retirado; aguardar gates/revisão do head final. Spec9.79.
 
 ## Próximo
 
-- [ ] Refinar somente a próxima fixture confirmada ou observabilidade do fluxo; decisão Spring/runtime/política continua separada, sem ampliação automática.
+- [ ] Refinar leitura operacional das métricas após instrumentar os dois publicadores, preservando health padrão e exposição somente explícita.
 
 ## Depois
 
-- Spring/OpenSSL: três IDs aguardam correção/direção; proposta de bloqueio externo não é gate implementado. Runtime oficial corrigido ainda não identificado na consulta registrada. Demo, mecanismo FALHOU, observabilidade/sandbox e v1 pendentes. Kubernetes exige direção específica (PR #118 inativa).
+- Mecanismo FALHOU, sandbox verificável, demo e v1 pendentes. Kubernetes exige direção específica (PR #118 inativa). Spring/OpenSSL e política de bloqueio permanecem separados; consulta oficial09/10 não identificou runtime corrigido, sem aprovação de risco.
