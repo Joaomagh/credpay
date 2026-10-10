@@ -247,3 +247,5 @@ B06.5: TDD404→HTTP3/serviço verdes e suites locais172/82 aprovadas. Runbook e
 B06.5 integrado na PR #133/6ed1f36: sete gates, Trans286/Proc124 e HTTP3 por app verdes. Preparações anteriores históricas. Spec9.80.
 
 **B06.6 — Diagnóstico da demo Compose — em execução.** Switch/override explícito, lista metrics200 e delta confirmed>=2 após dois resultados existentes, mesmos processos. Preservar volumes/replay/cleanup e padrão fechado; TDD red404 real antes do override. Sem dependência/deploy. Riscos/limites em spec9.81.
+
+B06.6: endpoint red404 comprovado em dac404f; delta red0 em e282495 após demo saudável. Leitura HTTP corrigida após prova, controles/parse/config aprovados, runbooks atualizados. Green real/gates pendentes. Spec9.81.

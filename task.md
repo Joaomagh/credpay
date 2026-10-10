@@ -19,3 +19,5 @@
 - FALHOU, sandbox, demo local e v1 pendentes. Kubernetes exige direção específica (PR #118 inativa). Spring/OpenSSL e política de bloqueio permanecem separados.
 
 B06.6: red endpoint dac404f/run38017998523, esperado200/observado404 após healthUP, cleanupverde. Override mínimo acrescentado; controles COUNT red/green/parse/config aprovados. Asserção de delta com leitor provisório0 aguarda red real antes da leitura HTTP. Spec9.81.
+
+B06.6: segundo red e282495/run38018190885, lista200/healthUP/AP/REJ/replays aprovados, delta0 falhou como esperado e cleanupverde. Leitura HTTP mínima implementada após red; controles/parse verdes. Aguardar green completo e gates. Spec9.81.

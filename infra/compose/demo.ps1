@@ -227,7 +227,10 @@ function Demo {
 }
 
 function ReadConfirmedCount([string]$App) {
-    return 0
+    $response = Request 'GET' "$($urls[$App])/actuator/metrics/credpay.messaging.publish.attempts?tag=outcome:confirmed"
+    if ($response.StatusCode -eq 404) { return 0 }
+    Require ($response.StatusCode -eq 200) 'Consulta do contador de publicação não retornou HTTP200/404.'
+    return (PublishAttemptCount (Json $response.Content))
 }
 
 function WaitPublicationMetrics($Baselines) {

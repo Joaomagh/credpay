@@ -36,6 +36,8 @@ Linux usa `./mvnw` no lugar de `./mvnw.cmd`; os demais comandos funcionam em `pw
 
 `Demo` cria somente exemplos fictícios50.000/150.000 BRL, aguarda GET APROVADA/REJEITADA com limite100.00 e confere replay da resposta original PENDENTE/Location. Imprime somente conclusões; nenhum UUID, payload ou credencial. O teste das imagens conserva a prova completa de causalidade, cinco tabelas e ambas publicações; esse roteiro operacional não repete toda aquela matriz.
 
+Para observar contadores reais, acrescente `-Diagnostics` a Prepare, Activate e Demo seguindo o [roteiro de diagnóstico](../observability/README.md). O override é opcional; a configuração padrão permanece sem métricas HTTP. A leitura compara tentativas confirmed antes/depois da demo nos mesmos processos, sem interpretá-las como transações únicas.
+
 ## Parar preservando dados
 
 ```powershell
