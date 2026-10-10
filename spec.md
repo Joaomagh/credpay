@@ -2327,10 +2327,18 @@ Fixture real compara deltas de confirmed/returned para envio roteado, ociosidade
 
 Green remoto em 7820757: Proc196/run38003456323 passou foco4/32,294s e verify121/7m49, zero falhas/erros/skips. Guard da outbox observou quatro referências ao pool fechado com PG ativo em cada execução; zero warnings Hikari/agente dinâmico na saída completa. Etapa de foco retirada após essa prova; testes permanecem na suíte normal e head final ainda exige gates/revisão.
 
+**Entrega final:** PR #131 integrada em 668d73b após seis checks verdes no head bbf99f296cf0874287efc81d6d04f6335cb67104. Run38014774384 passou verify121/8m13, zero falhas/erros/skips e warnings Hikari/agente dinâmico; fixture real4/9,647s, quatro referências ao pool fechado com PG ativo. Foco temporário ausente do workflow final. Inventário run38014774427: quatro relatórios completos79/222, mesmos três IDs Spring/OpenSSL; artifact11655609437, checkout8462b72bb3e386f953259556aa1a380dd4a04804. Revisão sem bloqueantes, main sincronizada por fast-forward. Screenshot ignorado .local/evidence/pr131-merged.jpg.
+
+### 9.79 Diagnóstico da publicação de TransacaoCriada — B06.4
+
+Próximo recorte aprovado pelo plano e revisado: completar a instrumentação no publicador do serviço de transações, com o mesmo nome e outcomes fixos de B06.3. Cada aplicativo tem seu próprio registry; contador não representa transações únicas ou conclusão de negócio. Baseline local do JAR de transações comprova Micrometer core/observation/commons/jakarta9 1.15.12 já existentes. Nenhum POM, download, instalação, módulo comum ou exposição HTTP nova.
+
+Arquivos previstos: RabbitMqPublicadorEvento, seus três testes atuais, PublicarOutboxIntegrationTest e registros. Preparar injeção do registry sem contagem, confirmar red pelo contador ausente nos casos de confirmação/retorno/nack, corrigir cada resultado e então cobrir erros/interrupção/timeout. Preservar propriedades e cinco segundos, exceções e flag da thread. Fixture real já tem dois casos: confirmação e ociosidade; retorno sem rota e recuperação do mesmo evento. Publisher automático desligado permite deltas sem reset global; manter limpeza e guard Hikari. Ela não comprova falha de marcação após ACK. Exigir green real, suíte completa e gates do último SHA antes de integrar. Implementação ainda não iniciada.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
-Primeiro contador em implementação/TDD em B06.3 (§9.78), ainda sem entrega integrada ou nova exposição HTTP. As demais métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
+Primeiro contador de publicação do processador integrado em B06.3 (§9.78), com quatro outcomes fixos e sem nova exposição HTTP. Instrumentação do publicador de transações será completada em B06.4 (§9.79). As demais métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
 
 Não declarar SLO de produção fictício; usar objetivos de experimento local claramente rotulados.
 
