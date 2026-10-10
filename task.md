@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B06.3 — Contador de publicação: reds confirmed/returned/nacked/error comprovados, incluindo returned no RabbitMQ real. Sete testes novos e verify local82/26,338s verdes, Checkstyle0. Aguardar green da fixture real e suíte121/gates; depois remover foco temporário e validar head final. Sem dependência ou exposição HTTP nova. Spec9.78.
+- [ ] B06.3 — Contador de publicação: reds confirmed/returned/nacked/error comprovados, incluindo returned no RabbitMQ real. Sete testes novos e verify local82/26,338s verdes, Checkstyle0. Green real Proc196: foco4/32,294s e suíte121/7m49, zero falhas/erros/skips e warnings. Foco temporário retirado; aguardar gates/revisão do head final. Sem dependência ou exposição HTTP nova. Spec9.78.
 
 ## Próximo
 

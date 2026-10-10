@@ -2323,7 +2323,12 @@ Reds focados adicionais falharam exclusivamente pelo contador ausente: nack 1/12
 
 Fixture real compara deltas de confirmed/returned para envio roteado, ociosidade, ausência/restauração de rota e falha de marcação após confirmação seguida de reenvio. Esse último cenário deve contar duas confirmações, mesmo para o mesmo evento. Sem reset global, novo caso/container ou mudança de contrato. Foco temporário da fixture precede verify completo, timeout10 preservado; green real e gates ainda pendentes. PR permanece em rascunho.
 
+`B06.3 local`: verify com exclusões explícitas de integração/HTTP passou 82 testes, zero falhas/erros/skips, 26,338s e Checkstyle0; sete testes do publicador incluem timeout real (classe5,488s). Não substitui PostgreSQL/RabbitMQ na CI. Revisão somente leitura sem bloqueantes; aceite remoto pendente.
+
+Green remoto em 7820757: Proc196/run38003456323 passou foco4/32,294s e verify121/7m49, zero falhas/erros/skips. Guard da outbox observou quatro pools fechados com PG ativo em cada execução; zero warnings Hikari/agente dinâmico na saída completa. Etapa de foco retirada após essa prova; testes permanecem na suíte normal e head final ainda exige gates/revisão.
+
 ## 10. Observabilidade e SLOs de aprendizado
+
 
 Primeiro contador em implementação/TDD em B06.3 (§9.78), ainda sem entrega integrada ou nova exposição HTTP. As demais métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
 
@@ -2563,4 +2568,3 @@ O workflow `.github/workflows/secret-scan.yml` usa checkout fixado por SHA, hist
 B08.2g verificação estrutural: verify local75/zero falhas/erros/skips, Checkstyle0 em22,134s, compilação de todos os testes; não executa infraestrutura nem vale red. Log ignorado .local/evidence/b082g-red-local-verify.log. Revisão sem bloqueantes para publicar draft e provar red, sem implementar fechamento antecipado. git diff --check passou.
 
 B08.2g green mínimo revisado sem bloqueantes: somente import/AFTER_CLASS após red. Verify local75/zero falhas/erros/skips e Checkstyle0 em22,135s, sem executar infraestrutura; foco real/servidor/pool/suíte114/gates pendentes. Log ignorado .local/evidence/b082g-green-local-verify.log.
-`B06.3 local`: verify com exclusões explícitas de integração/HTTP passou 82 testes, zero falhas/erros/skips, 26,338s e Checkstyle0; sete testes do publicador incluem timeout real (classe5,488s). Não substitui PostgreSQL/RabbitMQ na CI. Revisão somente leitura sem bloqueantes; aceite remoto pendente.
