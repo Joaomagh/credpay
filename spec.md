@@ -2343,11 +2343,19 @@ A primeira seleção local omitiu as exclusões PostgresRuntimeTest/*E2E e inclu
 
 Green remoto8c9290d/run38016119774: foco2/32,193s e verify283/2m37, zero falhas/erros/skips e warnings Hikari/agente dinâmico. Duas referências ao pool fechado com PG ativo no foco e na suíte. Seis checks verdes na PR #132. Etapa temporária retirada após prova; todos os testes permanentes, timeout10 preservado. Head final ainda requer gates/revisão.
 
+Aceite final: PR #132 integrada em d77d7f6 após seis gates verdes do head ce2f393. Trans209/run38016553489: 283 testes/zero falhas/erros/skips, 2m54; fixture2/8,619s e duas referências pool fechado/PG ativo, Hikari0/dynamic0. Inventory33/run38016553500: quatro alvos79/JAR222/imagem, mesmos três IDs; checkoutd038b86a06c69185fcfef89829baf3bfdbaa0dba, artefato11656591636. Preparações acima são históricas; entrega integrada.
+
+### 9.80 Consulta local de diagnóstico — B06.5
+
+Objetivo: perfil opcional diagnostics em ambos os aplicativos expondo health e metrics, preservando health padrão. Baseline Actuator/Micrometer já existentes, sem dependência ou instalação. Arquivos: dois application-diagnostics.yml, quatro testes HTTP e runbook infra/observability/README.md, registros e link público de execução. Risco: metrics inclui métricas automáticas JVM/HTTP; uso local restrito, sem alteração de Compose/Kubernetes/deploy ou autorização de exposição pública.
+
+Aceite/TDD: caracterizar default health200/metrics404 com contador real registrado; diagnostics deve falhar por HTTP404 antes do perfil. Fixture primária nested @Configuration + @EnableAutoConfiguration, explicitamente escolhida, sem component scan nem infraestrutura DB/Rabbit. Contexto HTTP real em porta aleatória/loopback; registry real sem mocks. Após red, perfil mínimo e testes de COUNT, etiquetas fixas/filtro; env/beans/configprops404. Testes não substituem prova dos brokers de B06.3/B06.4. Foco local, suites afetadas e gates finais antes de integrar.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
 
-Primeiro contador de publicação do processador integrado em B06.3 (§9.78), com quatro outcomes fixos e sem nova exposição HTTP. Instrumentação do publicador de transações será completada em B06.4 (§9.79). As demais métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
+Primeiro contador de publicação do processador integrado em B06.3 (§9.78), com quatro outcomes fixos e sem nova exposição HTTP. Publicador de transações integrado em B06.4 (§9.79). As demais métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
 
 Não declarar SLO de produção fictício; usar objetivos de experimento local claramente rotulados.
 
