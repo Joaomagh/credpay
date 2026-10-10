@@ -12,6 +12,7 @@ import java.util.UUID;
 import br.com.credpay.transacoes.TransacoesServiceApplication;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zaxxer.hikari.HikariDataSource;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
@@ -112,6 +113,9 @@ class PublicarOutboxIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private MeterRegistry metricas;
+
     @BeforeEach
     void limparDados() {
         POOLS_ORIGINAIS.add(dataSource);
@@ -142,7 +146,9 @@ class PublicarOutboxIntegrationTest {
                     "SELECT status FROM transacoes WHERE id = ?", String.class, transacao.id()))
                     .isEqualTo("PENDENTE");
 
+            var confirmadasAntes = tentativas("confirmed");
             assertThat(publicarOutbox.publicarLote()).isEqualTo(1);
+            assertThat(tentativas("confirmed")).isEqualTo(confirmadasAntes + 1);
 
             var mensagem = rabbitTemplate.receive(fila.getName(), 5_000);
             assertThat(mensagem).isNotNull();
@@ -167,6 +173,7 @@ class PublicarOutboxIntegrationTest {
             assertThat(instantePublicado).isNotNull();
 
             assertThat(publicarOutbox.publicarLote()).isZero();
+            assertThat(tentativas("confirmed")).isEqualTo(confirmadasAntes + 1);
             assertThat(publicadoEm(eventId)).isEqualTo(instantePublicado);
             assertThat(rabbitTemplate.receive(fila.getName(), 200)).isNull();
         } finally {
@@ -189,7 +196,11 @@ class PublicarOutboxIntegrationTest {
                     "SELECT payload::text FROM outbox_eventos WHERE event_id = ?",
                     String.class, eventId);
 
+            var confirmadasAntes = tentativas("confirmed");
+            var retornadasAntes = tentativas("returned");
             assertThat(publicarOutbox.publicarLote()).isZero();
+            assertThat(tentativas("confirmed")).isEqualTo(confirmadasAntes);
+            assertThat(tentativas("returned")).isEqualTo(retornadasAntes + 1);
 
             assertThat(publicadoEm(eventId)).isNull();
             assertThat(rabbitTemplate.receive(fila.getName(), 200)).isNull();
@@ -205,6 +216,8 @@ class PublicarOutboxIntegrationTest {
                     .with("transacao.criada.v1"));
 
             assertThat(publicarOutbox.publicarLote()).isEqualTo(1);
+            assertThat(tentativas("confirmed")).isEqualTo(confirmadasAntes + 1);
+            assertThat(tentativas("returned")).isEqualTo(retornadasAntes + 1);
 
             var mensagem = rabbitTemplate.receive(fila.getName(), 5_000);
             assertThat(mensagem).isNotNull();
@@ -213,10 +226,17 @@ class PublicarOutboxIntegrationTest {
                     .isEqualTo(objectMapper.readTree(payloadOriginal));
             assertThat(publicadoEm(eventId)).isNotNull();
             assertThat(publicarOutbox.publicarLote()).isZero();
+            assertThat(tentativas("confirmed")).isEqualTo(confirmadasAntes + 1);
+            assertThat(tentativas("returned")).isEqualTo(retornadasAntes + 1);
             assertThat(rabbitTemplate.receive(fila.getName(), 200)).isNull();
         } finally {
             amqpAdmin.deleteQueue(fila.getName());
         }
+    }
+
+    private double tentativas(String outcome) {
+        var contador = metricas.find("credpay.messaging.publish.attempts").tag("outcome", outcome).counter();
+        return contador == null ? 0 : contador.count();
     }
 
     private Timestamp publicadoEm(UUID eventId) {

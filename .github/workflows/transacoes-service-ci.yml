@@ -76,5 +76,8 @@ jobs:
         shell: pwsh
         run: ../config/checkstyle/check-controls.ps1 -Module transacoes-service
 
+      - name: Verify publication metric with real infrastructure
+        run: ./mvnw --batch-mode --no-transfer-progress -Dtest=PublicarOutboxIntegrationTest -DargLine=-XX:-EnableDynamicAgentLoading test
+
       - name: Verify transaction service
         run: ./mvnw --batch-mode --no-transfer-progress -DargLine=-XX:-EnableDynamicAgentLoading verify

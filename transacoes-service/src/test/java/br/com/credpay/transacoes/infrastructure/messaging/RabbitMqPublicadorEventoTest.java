@@ -11,6 +11,9 @@ import java.time.Instant;
 import java.util.UUID;
 
 import br.com.credpay.transacoes.application.EventoOutbox;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageDeliveryMode;
@@ -21,10 +24,24 @@ import org.mockito.ArgumentCaptor;
 
 class RabbitMqPublicadorEventoTest {
 
+    private static final String METRICA = "credpay.messaging.publish.attempts";
+
+    private SimpleMeterRegistry metricas;
+
+    @BeforeEach
+    void criarMetricas() {
+        metricas = new SimpleMeterRegistry();
+    }
+
+    @AfterEach
+    void fecharMetricas() {
+        metricas.close();
+    }
+
     @Test
     void publicar_deveEnviarContratoPersistente_quandoBrokerConfirmarSemRetorno() {
         var rabbitTemplate = mock(RabbitTemplate.class);
-        var publicador = new RabbitMqPublicadorEvento(rabbitTemplate);
+        var publicador = new RabbitMqPublicadorEvento(rabbitTemplate, metricas);
         var evento = evento();
         doAnswer(invocacao -> {
             var correlacao = invocacao.getArgument(3, CorrelationData.class);
@@ -61,12 +78,17 @@ class RabbitMqPublicadorEventoTest {
         assertThat(mensagem.getValue().getMessageProperties().getCorrelationId())
                 .isEqualTo(evento.aggregateId().toString());
         assertThat(correlacao.getValue().getId()).isEqualTo(evento.eventId().toString());
+        var contador = metricas.find(METRICA).tag("outcome", "confirmed").counter();
+        assertThat(contador).isNotNull();
+        assertThat(contador.count()).isEqualTo(1.0);
+        assertThat(metricas.getMeters()).hasSize(1);
+        assertThat(contador.getId().getTags()).hasSize(1);
     }
 
     @Test
     void publicar_deveFalhar_quandoMensagemForRetornadaMesmoComAck() {
         var rabbitTemplate = mock(RabbitTemplate.class);
-        var publicador = new RabbitMqPublicadorEvento(rabbitTemplate);
+        var publicador = new RabbitMqPublicadorEvento(rabbitTemplate, metricas);
         doAnswer(invocacao -> {
             var mensagem = invocacao.getArgument(2, Message.class);
             var correlacao = invocacao.getArgument(3, CorrelationData.class);
@@ -83,12 +105,17 @@ class RabbitMqPublicadorEventoTest {
         var confirmado = publicador.publicar(evento());
 
         assertThat(confirmado).isFalse();
+        var contador = metricas.find(METRICA).tag("outcome", "returned").counter();
+        assertThat(contador).isNotNull();
+        assertThat(contador.count()).isEqualTo(1.0);
+        assertThat(metricas.find(METRICA).tag("outcome", "confirmed").counter()).isNull();
+        assertThat(metricas.getMeters()).hasSize(1);
     }
 
     @Test
     void publicar_deveFalhar_quandoBrokerResponderNack() {
         var rabbitTemplate = mock(RabbitTemplate.class);
-        var publicador = new RabbitMqPublicadorEvento(rabbitTemplate);
+        var publicador = new RabbitMqPublicadorEvento(rabbitTemplate, metricas);
         doAnswer(invocacao -> {
             var correlacao = invocacao.getArgument(3, CorrelationData.class);
             correlacao.getFuture().complete(new CorrelationData.Confirm(false, "broker indisponível"));
@@ -98,6 +125,10 @@ class RabbitMqPublicadorEventoTest {
         var confirmado = publicador.publicar(evento());
 
         assertThat(confirmado).isFalse();
+        var contador = metricas.find(METRICA).tag("outcome", "nacked").counter();
+        assertThat(contador).isNotNull();
+        assertThat(contador.count()).isEqualTo(1.0);
+        assertThat(metricas.getMeters()).hasSize(1);
     }
 
     private EventoOutbox evento() {

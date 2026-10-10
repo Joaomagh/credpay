@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B06.4 — Completar diagnóstico no publicador de TransacaoCriada. Mesmo contrato de tentativas/outcomes, TDD em testes existentes e prova de deltas na fixture real de dois casos. Preservar mensagens, exceções, interrupção, timeout e ociosidade. Desenho revisado; sem implementação iniciada. Spec9.79.
+- [ ] B06.4 — Completar diagnóstico no publicador de TransacaoCriada. Mesmo contrato de tentativas/outcomes, TDD em testes existentes e prova de deltas na fixture real de dois casos. Preservar mensagens, exceções, interrupção, timeout e ociosidade. Confirmed red legítimo→green3; returned red por contador ausente. Fixture/foco remoto preparados; aguardar prova real antes da classificação returned. Spec9.79.
 
 ## Próximo
 
