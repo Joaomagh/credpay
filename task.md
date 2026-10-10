@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B06.4 — Completar diagnóstico no publicador de TransacaoCriada. Mesmo contrato de tentativas/outcomes, TDD em testes existentes e prova de deltas na fixture real de dois casos. Preservar mensagens, exceções, interrupção, timeout e ociosidade. Reds locais e sem rota real comprovados; quatro outcomes implementados após reds. Verify local172/20,603s, sete casos do publicador e Checkstyle0 verdes. Aguardar green real/suíte283 e gates; depois retirar foco temporário e validar head final. Spec9.79.
+- [ ] B06.4 — Completar diagnóstico no publicador de TransacaoCriada. Mesmo contrato de tentativas/outcomes, TDD em testes existentes e prova de deltas na fixture real de dois casos. Preservar mensagens, exceções, interrupção, timeout e ociosidade. Reds locais e sem rota real comprovados; quatro outcomes implementados após reds. Verify local172/20,603s, sete casos do publicador e Checkstyle0 verdes. Green real8c9290d: foco2/32,193s e suíte283/2m37, zero falhas/erros/skips e warnings Hikari/agente dinâmico. Foco temporário retirado; aguardar gates/revisão do head final. Spec9.79.
 
 ## Próximo
 
