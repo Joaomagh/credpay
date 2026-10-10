@@ -2309,9 +2309,28 @@ Docker local indisponível: CI inclui temporariamente foco da classe antes do ve
 
 **B08.2g green real:** Proc192/run37999974389/job114055397073 em0448574 passou foco2/24,223s e verify114/7m48, zero falhas/erros/skips. Log completo: graceful shutdown do Tomcat e shutdown Hikari antes de duas capturas fechadas/PG ativo no foco(pool1) e na suíte(pool5). Zero warnings de conexão na suíte inteira, contra dez no baseline189; zero warning de agente dinâmico. Não houve redução de logger. Flow67/Images34/Compose29/Inventory23/Scan143 verdes nesse código. Inventory23 manteve quatro relatórios79/222 e mesmos três IDs; checkoutb2377131aec56cf558d821e7ad424d48fc689807, artifact11647624827, digest409268f5346dd37a6405b16000a66bbb3acb2d4f1f3910cf8f45d6db5064df86. Etapa temporária retirada após prova, guard permanece na suíte normal; exigir revisão e CI final do workflow alterado antes da integração.
 
+**B08.2g integração final:** head8d29b3f teve seis checks verdes, confirmados na PR: Proc193/run38000883077, Flow68/run38000883083, Images35/run38000883097, Compose30/run38000883157, Inventory24/run38000883113 e Scan144/run38000883164. Proc193/job114058373312 passou114/8m08/zero falhas/erros/skips; shutdown gracioso Tomcat e pool5 completo antes de duas capturas closed=true/PG ativo; zero warnings de conexão e de agente dinâmico. Foco temporário ausente, guard permanente, timeout10 intacto. Inventory24 completo manteve quatro relatórios79/222 e mesmos três IDs; checkouta413b786e6e5ba23ee83d0e46c766266bc6f3735, artifact11649945610, digestbd2905aa80424c675733d45637864de8978b25a98a339e6babec9a88a1ee494a. Consulta pública GitHub atingiu limite; confirmação final pela página da PR, sem leitura de credenciais ou redução de checks. Revisão sem bloqueantes, PR #130 integrada em4f3ed7f, main local atualizado por fast-forward.
+
+### 9.78 Contador de tentativas de publicação — B06.3
+
+Baseline: Actuator existente inclui Micrometer core/observation/commons/jakarta9 1.15.12 no JAR local; nenhum POM, download ou instalação nova. Métrica proposta credpay.messaging.publish.attempts com tag outcome limitada a confirmed/returned/nacked/error; tentativas ao broker incluem reenvio e não significam transação única nem marcação da outbox. Não registrar IDs, payload, moeda ou erro em tags. Propriedades, timeout e comportamento de retorno/erros devem permanecer.
+
+Preparação de teste: constructor recebe MeterRegistry, sem contagem antecipada; somente scaffolding de injeção para observar efeito, antes do primeiro red. SimpleMeterRegistry dessa versão possui close mas não implementa AutoCloseable: primeira tentativa com try-with-resources falhou na compilação, não contou como red; corrigida para finally/close. Teste confirmed então compilou, publicação retornou true e falhou exclusivamente por contador ausente (1failure/9,986s). Só depois foi acrescentada contagem mínima; demais outcomes aguardam seus próprios reds.
+
+**TDD e prova real:** confirmed passou 1/11,089s após red. Returned falhou por contador ausente (2 testes/1 falha/10,370s). Na PR #131, Proc195/run38002997490, head f990832, executou os quatro cenários reais e falhou somente na classificação sem rota: confirmed esperado 1, observado 2 (26,297s), sem erros/skips. Quatro capturas de pool fechado com PostgreSQL ativo; nenhum warning de conexão. Só depois foi corrigida a precedência do retorno; foco confirmed/returned passou 2/12,039s.
+
+Reds focados adicionais falharam exclusivamente pelo contador ausente: nack 1/12,835s; erro imediato de envio 1/10,935s; confirmação excepcional 1/11,070s; interrupção 1/13,126s. Após cada implementação mínima, testes acumulados passaram 3/11,987s, 4/12,158s, 5/12,511s e 6/12,108s. Envio entrou no bloco observado; RuntimeException original é propagada, causa da confirmação e flag de interrupção preservadas. Classificação/contagem após o bloco evita tratar uma falha do próprio contador como segundo resultado de envio. Teste adicional cobre o timeout existente de cinco segundos sem alterar o prazo; confirmação excepcional e timeout compartilham o tratamento já corrigido, sem alegar novo red para esse teste.
+
+Fixture real compara deltas de confirmed/returned para envio roteado, ociosidade, ausência/restauração de rota e falha de marcação após confirmação seguida de reenvio. Esse último cenário deve contar duas confirmações, mesmo para o mesmo evento. Sem reset global, novo caso/container ou mudança de contrato. Foco temporário da fixture precede verify completo, timeout10 preservado; green real e gates ainda pendentes. PR permanece em rascunho.
+
+`B06.3 local`: verify com exclusões explícitas de integração/HTTP passou 82 testes, zero falhas/erros/skips, 26,338s e Checkstyle0; sete testes do publicador incluem timeout real (classe5,488s). Não substitui PostgreSQL/RabbitMQ na CI. Revisão somente leitura sem bloqueantes; aceite remoto pendente.
+
+Green remoto em 7820757: Proc196/run38003456323 passou foco4/32,294s e verify121/7m49, zero falhas/erros/skips. Guard da outbox observou quatro referências ao pool fechado com PG ativo em cada execução; zero warnings Hikari/agente dinâmico na saída completa. Etapa de foco retirada após essa prova; testes permanecem na suíte normal e head final ainda exige gates/revisão.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
-Ainda não implementada. As métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
+
+Primeiro contador em implementação/TDD em B06.3 (§9.78), ainda sem entrega integrada ou nova exposição HTTP. As demais métricas candidatas são throughput, latência ponta a ponta, resultados, erros, retries, duplicatas e DLQ. Nome, unidade, labels e cardinalidade serão registrados quando instrumentados.
 
 Não declarar SLO de produção fictício; usar objetivos de experimento local claramente rotulados.
 

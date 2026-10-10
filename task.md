@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- B08.2f integrado na PR #129/ccc61d2: sete gates finais verdes em032daec; processador114/8m14, duas capturas fechadas/PG ativo e zero warnings próprios. Autenticação Read comprovada. Pool5 ainda dez warnings; três IDs Spring/OpenSSL permanecem.
+- B08.2g integrado na PR #130/4f3ed7f: seis gates finais verdes em8d29b3f; processador114/8m08, shutdown servidor/pool antes do PostgreSQL e zero warnings de conexão. Três IDs Spring/OpenSSL permanecem.
 
 ## Agora
 
-- [ ] B08.2g — PR #130 draft: red191 e green192 comprovados. Foco2/suíte114, servidor/pool fecham antes de duas capturas fechadas/PG ativo, zero warnings de conexão. Demais gates verdes. Etapa temporária retirada; revisar e exigir CI final antes de integrar. Spec9.77.
+- [ ] B06.3 — Contador de publicação: reds confirmed/returned/nacked/error comprovados, incluindo returned no RabbitMQ real. Sete testes novos e verify local82/26,338s verdes, Checkstyle0. Green real Proc196: foco4/32,294s e suíte121/7m49, zero falhas/erros/skips e warnings Hikari/agente dinâmico. Foco temporário retirado; aguardar gates/revisão do head final. Sem dependência ou exposição HTTP nova. Spec9.78.
 
 ## Próximo
 

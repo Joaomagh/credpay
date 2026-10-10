@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zaxxer.hikari.HikariDataSource;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
@@ -107,6 +108,7 @@ class PublicarOutboxProcessamentoIntegrationTest {
     @Autowired private AmqpAdmin admin;
     @Autowired private DirectExchange exchange;
     @Autowired private RabbitTemplate rabbitTemplate;
+    @Autowired private MeterRegistry metricas;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private FalhaNaMarcacao falhaNaMarcacao;
     @Autowired(required = false) private RabbitHealthIndicator rabbitHealthIndicator;
@@ -141,8 +143,10 @@ class PublicarOutboxProcessamentoIntegrationTest {
                     "select payload::text from outbox_eventos where event_id = ?", String.class, eventId);
             assertThat(publicadoEm(eventId)).isNull();
 
+            var confirmadasAntes = tentativas("confirmed");
             assertThat(publicarOutbox).isNotNull();
             assertThat(publicarOutbox.publicarProximo()).isTrue();
+            assertThat(tentativas("confirmed")).isEqualTo(confirmadasAntes + 1);
 
             var mensagem = rabbitTemplate.receive(fila.getName(), 5_000);
             assertThat(mensagem).isNotNull();
@@ -151,6 +155,7 @@ class PublicarOutboxProcessamentoIntegrationTest {
             assertThat(mensagem.getMessageProperties().getMessageId()).isEqualTo(eventId.toString());
             assertThat(publicadoEm(eventId)).isNotNull();
             assertThat(publicarOutbox.publicarProximo()).isFalse();
+            assertThat(tentativas("confirmed")).isEqualTo(confirmadasAntes + 1);
             assertThat(rabbitTemplate.receive(fila.getName(), 200)).isNull();
         } finally {
             admin.deleteQueue(fila.getName());
@@ -170,7 +175,11 @@ class PublicarOutboxProcessamentoIntegrationTest {
             var payload = jdbc.queryForObject(
                     "select payload::text from outbox_eventos where event_id = ?", String.class, eventId);
 
+            var confirmadasAntes = tentativas("confirmed");
+            var retornadasAntes = tentativas("returned");
             assertThat(publicarOutbox.publicarProximo()).isFalse();
+            assertThat(tentativas("confirmed")).isEqualTo(confirmadasAntes);
+            assertThat(tentativas("returned")).isEqualTo(retornadasAntes + 1);
             assertThat(publicadoEm(eventId)).isNull();
             assertThat(jdbc.queryForObject("select count(*) from outbox_eventos where event_id = ?",
                     Integer.class, eventId)).isEqualTo(1);
@@ -179,6 +188,8 @@ class PublicarOutboxProcessamentoIntegrationTest {
                     .to(exchange).with("transacao.processada.v1"));
 
             assertThat(publicarOutbox.publicarProximo()).isTrue();
+            assertThat(tentativas("confirmed")).isEqualTo(confirmadasAntes + 1);
+            assertThat(tentativas("returned")).isEqualTo(retornadasAntes + 1);
             var mensagem = rabbitTemplate.receive(fila.getName(), 5_000);
             assertThat(mensagem).isNotNull();
             assertThat(mensagem.getMessageProperties().getMessageId()).isEqualTo(eventId.toString());
@@ -205,10 +216,12 @@ class PublicarOutboxProcessamentoIntegrationTest {
             var payload = jdbc.queryForObject(
                     "select payload::text from outbox_eventos where event_id = ?", String.class, eventId);
             falhaNaMarcacao.armar();
+            var confirmadasAntes = tentativas("confirmed");
 
             assertThatThrownBy(() -> publicarOutbox.publicarProximo())
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessage("falha controlada antes de marcar publicado");
+            assertThat(tentativas("confirmed")).isEqualTo(confirmadasAntes + 1);
             var primeira = rabbitTemplate.receive(fila.getName(), 5_000);
             assertThat(primeira).isNotNull();
             assertThat(primeira.getMessageProperties().getMessageId()).isEqualTo(eventId.toString());
@@ -218,6 +231,7 @@ class PublicarOutboxProcessamentoIntegrationTest {
 
             falhaNaMarcacao.desarmar();
             assertThat(publicarOutbox.publicarProximo()).isTrue();
+            assertThat(tentativas("confirmed")).isEqualTo(confirmadasAntes + 2);
             var segunda = rabbitTemplate.receive(fila.getName(), 5_000);
             assertThat(segunda).isNotNull();
             assertThat(segunda.getMessageProperties().getMessageId()).isEqualTo(eventId.toString());
@@ -228,6 +242,11 @@ class PublicarOutboxProcessamentoIntegrationTest {
             falhaNaMarcacao.desarmar();
             admin.deleteQueue(fila.getName());
         }
+    }
+
+    private double tentativas(String outcome) {
+        var contador = metricas.find("credpay.messaging.publish.attempts").tag("outcome", outcome).counter();
+        return contador == null ? 0 : contador.count();
     }
 
     private Timestamp publicadoEm(UUID eventId) {
