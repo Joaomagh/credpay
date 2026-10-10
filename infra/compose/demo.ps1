@@ -123,7 +123,7 @@ function StartApps([bool]$Topology, [bool]$Flow) {
 function CheckMetricsEndpoints {
     foreach ($app in $apps) {
         $response = Request 'GET' "$($urls[$app])/actuator/metrics"
-        Require ($response.StatusCode -eq 200) 'Diagnostics exige /actuator/metrics HTTP200 após healthUP.'
+        Require ($response.StatusCode -eq 200) "Diagnostics exige /actuator/metrics HTTP200 após healthUP; observado=$([int]$response.StatusCode)."
         $body = Json $response.Content
         Require ($null -ne $body.names -and $body.names -is [array]) 'Lista de métricas inválida.'
     }
