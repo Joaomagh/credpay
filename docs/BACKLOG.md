@@ -249,3 +249,7 @@ B06.5 integrado na PR #133/6ed1f36: sete gates, Trans286/Proc124 e HTTP3 por app
 **B06.6 — Diagnóstico da demo Compose — em execução.** Switch/override explícito, lista metrics200 e delta confirmed>=2 após dois resultados existentes, mesmos processos. Preservar volumes/replay/cleanup e padrão fechado; TDD red404 real antes do override. Sem dependência/deploy. Riscos/limites em spec9.81.
 
 B06.6: endpoint red404 comprovado em dac404f; delta red0 em e282495 após demo saudável. Leitura HTTP corrigida após prova, controles/parse/config aprovados, runbooks atualizados. Green real/gates pendentes. Spec9.81.
+
+B06.6 integrado na PR #134/d17eb0e: Compose46 confirmou deltas2/2 e persistência/replay/volumes; dois gates aplicáveis verdes. Spec9.81.
+
+**B06.7 — Retorno sem rota observável por HTTP — em execução.** Dois cenários E2E nos mesmos JARs/containers: returned/PENDENTE/outbox não publicada, restauração do binding e recuperação íntegra. Diagnostics somente na fixture; TDD exposição/leitura. Sem produção/deploy/dependência nova, quatro casos anteriores preservados. Spec9.82.

@@ -4,20 +4,18 @@
 
 ## Último incremento
 
-- B06.5 integrado na PR #133/6ed1f36: diagnostics opcional, seis testes HTTP e runbook. Head3d5e558, sete gates verdes; Trans286/2m52, Proc124/8m20, zero falhas/erros/skips/Hikari/dynamic. Três IDs Spring/OpenSSL permanecem. Spec9.80.
+- B06.6 integrado na PR #134/d17eb0e: Compose opt-in, deltas confirmed2 em ambos, AP/REJ/replays e três volumes/GET/POST preservados após down/up. Dois gates finais968dc4a verdes. Java/POM intocados; suites286/124 baseline133. Spec9.81.
 
 ## Agora
 
-- [ ] B06.6 — Provar contadores reais na demo Compose com switch Diagnostics/override opt-in. Lista200, deltas confirmed>=2 nos dois apps, mesmos processos; preservar preparo/fluxo/persistência/cleanup. Red404 real antes do override, controles seguros, green/gates antes de integrar. Spec9.81.
+- [ ] B06.7 — Retorno sem rota observável por HTTP nos JARs reais. Dois cenários na fixture E2E existente, perfil diagnostics explícito, returned/PENDENTE/outbox íntegra e recuperação do mesmo evento. TDD exposição/leitura antes dos ajustes da fixture; preservar quatro cenários/cleanup. Spec9.82.
 
 ## Próximo
 
-- [ ] Refinar o próximo diagnóstico de falha demonstrável após concluir a demo instrumentada.
+- [ ] Consolidar balanço de observabilidade/falhas e selecionar próximo critério de conclusão pronto.
 
 ## Depois
 
 - FALHOU, sandbox, demo local e v1 pendentes. Kubernetes exige direção específica (PR #118 inativa). Spring/OpenSSL e política de bloqueio permanecem separados.
 
-B06.6: red endpoint dac404f/run38017998523, esperado200/observado404 após healthUP, cleanupverde. Override mínimo acrescentado; controles COUNT red/green/parse/config aprovados. Asserção de delta com leitor provisório0 aguarda red real antes da leitura HTTP. Spec9.81.
-
-B06.6: segundo red e282495/run38018190885, lista200/healthUP/AP/REJ/replays aprovados, delta0 falhou como esperado e cleanupverde. Leitura HTTP mínima implementada após red; controles/parse verdes. Aguardar green completo e gates. Spec9.81.
+B06.7: red exposição40544b4/run38018934543, esperado200/404 nos dois JARs;6/2falhas/0erros/skips, antigos4 verdes. Perfil somente na fixture corrigido após prova; red de leitura cbf9974/run38019394069 confirmado (6/2 falhas,0 erros/skips); leitor HTTP real preparado e aguarda green. Estrutura/Checkstyle0 verdes. Spec9.82.
