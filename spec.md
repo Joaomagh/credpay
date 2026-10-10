@@ -2365,6 +2365,14 @@ Red real do endpoint:7462358/run38017871281 falhou após healthUP nos dois apps 
 
 Segundo red real e282495/run38018190885: lista metrics200 em ambas as fases/preparo/ativação, healthUP, consumidores2/ack/prefetch10/1 e AP/REJ/replays corretos; leitor provisório0 falhou por delta insuficiente após30s (transacoes0/processamento0), cleanup2s passou. Leitura HTTP filtrada implementada somente depois:404 lazy→0 após lista200,200→JSON/validator, outros status erro seguro. Controles COUNT/JSON e parse0 verdes; inspeção da configuração resolvida confirmou padrão sem perfil, opt-in diagnostics nos dois apps e hostloopback. Runbooks atualizados; green real completo/gates ainda pendentes. Sem mudança de Java, POM ou testes financeiros.
 
+Aceite final B06.6: PR #134 integrada emd17eb0e após dois gates aplicáveis verdes do head968dc4a (Compose/Scan). Compose46/run38018420251: lista200 nos dois apps em preparo/ativação e após reinício; AP/REJ/replays e delta confirmed2 em cada aplicativo no mesmo processo; down/up conservou três volumes/GET/POST originais, cleanup passou. Controles JSON/COUNT verdes. Java/POM intocados, suites286/124 e demais gates permanecem baseline PR #133, não foram reexecutados por filtros deste recorte. Preparações acima históricas; demo instrumentada integrada.
+
+### 9.82 Retorno sem rota observável por HTTP — B06.7
+
+Objetivo/aceite: ampliar FluxoCredPayE2E com dois cenários de rota ausente, um por publicador, nos JARs reais. Reusar três containers e processos já existentes; perfil diagnostics somente na fixture. Antes de retirar binding, exigir filas vazias/outboxes anteriores publicadas e baseline returned do publicador correto. POST fictício50BRL; delta returned>=1, GETPENDENTE e outbox de mesma identidade/payload ainda não publicada. Entrada ausente não produz processamento/saída/histórico; saída ausente conserva decisãoAPROVADA/criação publicada e histórico ausente. Restaurar binding em finally, concluir AP/publicações e causalidade/identidade/unicidade; filas vazias.
+
+Arquivos: FluxoCredPayE2E, registros e runbook de observabilidade. Baseline bibliotecas atuais/diagnostics da PR #133 e fluxo de quatro cenários; nenhuma dependência/instalação ou produção/deploy novo. Novo controle HTTP falha404 antes de adicionar perfil aos JARs; depois prova de leitura returned usa stub0 para red antes de cliente HTTP. Não fabricar novo red de negócio para classificação/recuperação já implementadas. Guardas/timings/cleanup preservados; dois casos antes dos cenários de reinício, porta do processador como campo, ausência do binding conferida, reenvios sem igualdade rígida. Mudanças de binding somente no broker descartável de teste; não é ferramenta de operação em ambiente residente. Sem prova nack/error, crash abrupto/HA ou nova regraFALHOU. Revisão do desenho sem bloqueantes.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
