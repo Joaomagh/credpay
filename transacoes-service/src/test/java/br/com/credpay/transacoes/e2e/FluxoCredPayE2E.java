@@ -758,7 +758,7 @@ class FluxoCredPayE2E {
         do {
             var resposta = enviar(HttpRequest.newBuilder(uri(location)).GET());
             assertThat(resposta.statusCode()).isEqualTo(200);
-            var body = JSON.readTree(resposta.body());
+            var body = jsonHttpSeguro(resposta.body());
             if (status.equals(body.path("status").asText())) return body;
             TimeUnit.MILLISECONDS.sleep(100);
         } while (System.nanoTime() < prazo);

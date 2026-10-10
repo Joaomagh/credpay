@@ -42,6 +42,10 @@ Após construir as imagens do checkout conforme o [quickstart Compose](../compos
 
 O switch seleciona `compose.diagnostics.yaml` além do arquivo padrão. Ele substitui a lista de perfis ativos por `diagnostics` nos dois apps; não combina automaticamente outros perfis. O Compose padrão permanece sem esse perfil. `Prepare` e `Activate` recriam os apps conforme as mesmas verificações de topologia/consumo; não basta acrescentar o switch somente na leitura de uma instância já iniciada sem o perfil.
 
-A demo confere lista de métricas200, lê baseline de confirmed, executa os dois resultados/replays existentes e aguarda até30s por delta>=2 em cada aplicativo, antes de qualquer reinício. Não exige igualdade exata, porque retries também contam.404 da série filtrada vale zero somente depois de conferir que a lista de métricas está acessível. Respostas inválidas falham com mensagem segura.
+A demo confere lista de métricas200, lê baseline de confirmed, executa os dois resultados/replays existentes e faz polling por30s, com timeout de3s por requisição, buscando delta>=2 em cada aplicativo, antes de qualquer reinício. Não exige igualdade exata, porque retries também contam.404 da série filtrada vale zero somente depois de conferir que a lista de métricas está acessível. Respostas inválidas falham com mensagem segura.
 
 O Smoke do CI usa projeto/volumes novos, sem publicações concorrentes externas, e depois conserva a prova de GET/replay/volumes após down/up. Não exige contador zero após reinício: outbox pendente pode ser recuperada. Esta prova não cobre returned/nacked/error via HTTP nem associa cada incremento a um evento específico. A publicação no host continua127.0.0.1; outros serviços na rede Compose podem acessar o endpoint interno. Não há autenticação acrescentada.
+
+## Retorno sem rota nos JARs reais
+
+A fixture FluxoCredPayE2E habilita diagnostics explicitamente e contém dois cenários adicionais, um por publicador. Retira somente o binding do broker descartável, consulta returned por HTTP e exige PENDENTE/outbox pendente íntegra. O finally restaura o binding; depois exige o evento original recuperado, decisão preservada e unicidade nas cinco tabelas. São seis casos no total; a validação deste incremento ainda aguarda CI. Não cobre nack/error, crash abrupto ou HA.

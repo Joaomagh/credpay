@@ -38,3 +38,7 @@ Depois, em `transacoes-service`:
 ```
 
 Linux usa `./mvnw`. O teste resolve os dois JARs em seus diretórios `target` dentro do workspace. O [CI vertical #4](https://github.com/Joaomagh/credpay/actions/runs/37160110175) passou os dois estados finais, duplicatas e replay pelos aplicativos reais, com preparação conferida e snapshots preservados. Compilação local não substitui execução com containers.
+
+## Diagnóstico de retornos sem rota
+
+Os JARs da fixture usam o perfil diagnostics. Antes dos cenários de reinício, dois casos adicionais retiram um binding do broker descartável e consultam outcome:returned por HTTP no produtor correspondente. Exigem transação PENDENTE, intenção ainda não publicada e snapshots íntegros; restauram o binding em finally e verificam recuperação causal do mesmo evento e registros únicos. O total passa de quatro para seis casos; green deste incremento ainda pendente. O perfil padrão dos aplicativos permanece inalterado.
