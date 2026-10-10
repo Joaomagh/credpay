@@ -82,6 +82,7 @@ class FluxoCredPayE2E {
     private JdbcTemplate transacoes;
     private JdbcTemplate processamento;
     private int portaTransacoes;
+    private int portaProcessamento;
     private int fase;
     private CachingConnectionFactory republicacao;
     private RabbitTemplate rabbit;
@@ -210,8 +211,19 @@ class FluxoCredPayE2E {
         aguardarFilasVazias();
     }
 
-    @Test
+    @ParameterizedTest
     @Order(2)
+    @CsvSource({"transacoes", "processamento"})
+    @Timeout(value = 2, unit = TimeUnit.MINUTES)
+    void rotaAusente_deveObservarRetornoERecuperarMesmoEvento(String publicador) throws Exception {
+        int porta = "transacoes".equals(publicador) ? portaTransacoes : portaProcessamento;
+        var resposta = enviar(HttpRequest.newBuilder(URI.create("http://localhost:" + porta + "/actuator/metrics")).GET());
+        assertThat(resposta.statusCode()).withFailMessage("diagnostics HTTP esperado200, observado%d", resposta.statusCode())
+                .isEqualTo(200);
+    }
+
+    @Test
+    @Order(3)
     @Timeout(value = 2, unit = TimeUnit.MINUTES)
     void processadorParado_devePreservarPendenteERecuperarPeloEventoOriginal() throws Exception {
         aguardarFilasVazias();
@@ -296,7 +308,7 @@ class FluxoCredPayE2E {
     }
 
     @Test
-    @Order(3)
+    @Order(4)
     @Timeout(value = 2, unit = TimeUnit.MINUTES)
     void limiteAusente_deveConservarDlqAteReplayConfirmadoDepoisDaCorrecao() throws Exception {
         aguardarFilasVazias();
@@ -458,7 +470,6 @@ class FluxoCredPayE2E {
     private void iniciar(boolean topologia, boolean consumirEPublicar) throws Exception {
         fase++;
         portaTransacoes = portaLivre();
-        int portaProcessamento;
         do { portaProcessamento = portaLivre(); } while (portaProcessamento == portaTransacoes);
         var primeiro = iniciar("transacoes", TRANSACOES, portaTransacoes, topologia, consumirEPublicar);
         var segundo = iniciar("processamento", PROCESSAMENTO, portaProcessamento, topologia, consumirEPublicar);
