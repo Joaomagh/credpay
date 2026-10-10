@@ -2325,7 +2325,7 @@ Fixture real compara deltas de confirmed/returned para envio roteado, ociosidade
 
 `B06.3 local`: verify com exclusões explícitas de integração/HTTP passou 82 testes, zero falhas/erros/skips, 26,338s e Checkstyle0; sete testes do publicador incluem timeout real (classe5,488s). Não substitui PostgreSQL/RabbitMQ na CI. Revisão somente leitura sem bloqueantes; aceite remoto pendente.
 
-Green remoto em 7820757: Proc196/run38003456323 passou foco4/32,294s e verify121/7m49, zero falhas/erros/skips. Guard da outbox observou quatro pools fechados com PG ativo em cada execução; zero warnings Hikari/agente dinâmico na saída completa. Etapa de foco retirada após essa prova; testes permanecem na suíte normal e head final ainda exige gates/revisão.
+Green remoto em 7820757: Proc196/run38003456323 passou foco4/32,294s e verify121/7m49, zero falhas/erros/skips. Guard da outbox observou quatro referências ao pool fechado com PG ativo em cada execução; zero warnings Hikari/agente dinâmico na saída completa. Etapa de foco retirada após essa prova; testes permanecem na suíte normal e head final ainda exige gates/revisão.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
