@@ -15,6 +15,10 @@ foreach ($invalid in @(
         '{"name":"credpay.messaging.publish.attempts","measurements":[{"statistic":"COUNT","value":"2"}],"availableTags":[]}',
         '{"name":"credpay.messaging.publish.attempts","measurements":[{"statistic":"COUNT","value":true}],"availableTags":[]}',
         '{"name":"credpay.messaging.publish.attempts","measurements":[],"availableTags":[]}',
+        '{"name":"credpay.messaging.publish.attempts","availableTags":[]}',
+        '{"name":"credpay.messaging.publish.attempts","measurements":{"statistic":"COUNT","value":2},"availableTags":[]}',
+        '{"name":"credpay.messaging.publish.attempts","measurements":[{"statistic":"COUNT","value":2}]}',
+        '{"name":"credpay.messaging.publish.attempts","measurements":[{"statistic":"COUNT","value":2}],"availableTags":{}}',
         '{"name":"credpay.messaging.publish.attempts","measurements":[{"statistic":"COUNT","value":2},{"statistic":"COUNT","value":3}],"availableTags":[]}',
         '{"name":"credpay.messaging.publish.attempts","measurements":[{"statistic":"COUNT","value":2}],"availableTags":[{"tag":"eventId","values":["anything"]}]}',
         '{"name":"credpay.messaging.publish.attempts","measurements":[{"statistic":"COUNT","value":2}],"availableTags":[{"tag":"outcome","values":["unknown"]}]}'

@@ -2361,6 +2361,8 @@ Objetivo/aceite: switch Diagnostics explícito no roteiro local seleciona overri
 
 Arquivos previstos: demo.ps1, helper de COUNT e controles pequenos, compose.diagnostics.yaml, workflow Compose e runbooks/registros. Baseline PowerShell/Compose existentes, nenhuma dependência/instalação. TDD real primeiro: exigir lista metrics200 após healthUP no Smoke opt-in sem override, observar404 específico; startup/infra não são red. Após prova, override mínimo; controles rejeitam COUNT inválido/negativo/estrutura errada, distinguiem série lazy ausente. Manter preparo, políticas, flags, persistência, cleanup e timeout. Revisão de desenho sem bloqueantes. Engine local indisponível: integração real somente CI.
 
+Red real do endpoint:7462358/run38017871281 falhou após healthUP nos dois apps e UID10001/mounts0/privilegedfalse, cleanup passou. A primeira mensagem não registrava status; repetição dac404f/run38017998523 comprovou HTTP200 esperado/404 observado após os mesmos guards, controle34s/cleanup2s. Sem falha de startup. Override acrescentado somente após essa prova. Controles locais de COUNT: stub0 falhou esperado2, leitura mínima verde; negativo-1 aceito produziu segundo red, validator mínimo verde. Caracterizações adicionais cobrem nome/statistic, arrays ausentes/objeto, tipos/NaN/infinito e labels fixas/subsets, com erro seguro; check-json preservado. Revisão sem bloqueantes. Parse0 e config Compose override quiet válidos. Nova asserção de delta>=2 após Demo usa leitor provisório0 para comprovar red de leitura antes da implementação HTTP; green operacional ainda pendente.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

@@ -1,0 +1,7 @@
+services:
+  transacoes:
+    environment:
+      SPRING_PROFILES_ACTIVE: diagnostics
+  processamento:
+    environment:
+      SPRING_PROFILES_ACTIVE: diagnostics
