@@ -74,7 +74,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           docker compose --env-file infra/compose/.env.example -f infra/compose/compose.yaml config --quiet
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          docker compose --env-file infra/compose/.env.example -f infra/compose/compose.yaml -f infra/compose/compose.diagnostics.yaml config --quiet
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./infra/compose/check-json.ps1
+          ./infra/compose/check-metrics.ps1
       - name: Make Maven Wrappers executable
         run: chmod +x transacoes-service/mvnw processamento-service/mvnw
       - name: Package transaction application
@@ -87,11 +90,11 @@ jobs:
         run: docker compose --env-file infra/compose/.env.example -f infra/compose/compose.yaml build transacoes processamento
       - name: Verify phases, flow and persistence
         shell: pwsh
-        run: ./infra/compose/demo.ps1 -Action Smoke -Project $env:COMPOSE_PROJECT_NAME -EnvFile .env.example
+        run: ./infra/compose/demo.ps1 -Action Smoke -Project $env:COMPOSE_PROJECT_NAME -EnvFile .env.example -Diagnostics
       - name: Remove only this disposable CI project
         if: always()
         shell: pwsh
         run: |
           if ($env:COMPOSE_PROJECT_NAME -cnotmatch '^credpay-ci-[0-9]+-[0-9]+$') { throw 'Invalid CI project' }
-          docker compose --project-name $env:COMPOSE_PROJECT_NAME --env-file infra/compose/.env.example -f infra/compose/compose.yaml down --volumes --timeout 30
+          docker compose --project-name $env:COMPOSE_PROJECT_NAME --env-file infra/compose/.env.example -f infra/compose/compose.yaml -f infra/compose/compose.diagnostics.yaml down --volumes --timeout 30
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

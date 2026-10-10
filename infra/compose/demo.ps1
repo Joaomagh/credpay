@@ -3,15 +3,18 @@
 param(
     [Parameter(Mandatory)][ValidateSet('Prepare', 'Activate', 'Demo', 'Smoke', 'Down')][string]$Action,
     [ValidatePattern('^credpay-[a-z0-9][a-z0-9-]{0,40}$')][string]$Project = 'credpay-demo',
-    [ValidateSet('.env', '.env.example')][string]$EnvFile = '.env'
+    [ValidateSet('.env', '.env.example')][string]$EnvFile = '.env',
+    [switch]$Diagnostics
 )
 
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
 $root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 . (Join-Path $PSScriptRoot 'json.ps1')
+. (Join-Path $PSScriptRoot 'metrics.ps1')
 $composeArgs = @('compose', '--project-name', $Project, '--env-file', (Join-Path $PSScriptRoot $EnvFile),
     '--file', (Join-Path $PSScriptRoot 'compose.yaml'))
+if ($Diagnostics) { $composeArgs += @('--file', (Join-Path $PSScriptRoot 'compose.diagnostics.yaml')) }
 $apps = @('transacoes', 'processamento')
 $queueNames = @('credpay.processamento.transacao-criada.v1', 'credpay.processamento.transacao-criada.dlq.v1',
     'credpay.transacoes.transacao-processada.v1', 'credpay.transacoes.transacao-processada.dlq.v1')
@@ -116,6 +119,17 @@ function StartApps([bool]$Topology, [bool]$Flow) {
     $env:CREDPAY_FLOW_ENABLED = $Flow.ToString().ToLowerInvariant()
     $null = Compose up -d --no-build --force-recreate --wait --wait-timeout 150 transacoes processamento
     CheckApps
+    if ($Diagnostics) { CheckMetricsEndpoints }
+}
+
+function CheckMetricsEndpoints {
+    foreach ($app in $apps) {
+        $response = Request 'GET' "$($urls[$app])/actuator/metrics"
+        Require ($response.StatusCode -eq 200) "Diagnostics exige /actuator/metrics HTTP200 após healthUP; observado=$([int]$response.StatusCode)."
+        $body = Json $response.Content
+        Require ($null -ne $body.names -and $body.names -is [array]) 'Lista de métricas inválida.'
+    }
+    Write-Host 'Compose diagnostics: lista metrics HTTP200 nos dois apps.'
 }
 
 function Prepare {
@@ -186,6 +200,11 @@ function WaitFinal([string]$Location, [string]$Status) {
 
 function Demo {
     $records = @()
+    $baselines = @{}
+    if ($Diagnostics) {
+        CheckMetricsEndpoints
+        foreach ($app in $apps) { $baselines[$app] = ReadConfirmedCount $app }
+    }
     foreach ($case in @(@{Value='50.000'; Status='APROVADA'}, @{Value='150.000'; Status='REJEITADA'})) {
         $key = [Guid]::NewGuid().ToString()
         $post = Request 'POST' "$($urls.transacoes)/transacoes" $key $case.Value
@@ -203,7 +222,35 @@ function Demo {
         $records += @{Key=$key; Location=$location; Post=$post.Content; Final=$final; Status=$case.Status; Value=$case.Value}
         Write-Host "Compose: fluxo=$($case.Status), replay POST original estável."
     }
+    if ($Diagnostics) { WaitPublicationMetrics $baselines }
     return $records
+}
+
+function ReadConfirmedCount([string]$App) {
+    $response = Request 'GET' "$($urls[$App])/actuator/metrics/credpay.messaging.publish.attempts?tag=outcome:confirmed"
+    if ($response.StatusCode -eq 404) { return 0 }
+    Require ($response.StatusCode -eq 200) 'Consulta do contador de publicação não retornou HTTP200/404.'
+    return (PublishAttemptCount (Json $response.Content))
+}
+
+function WaitPublicationMetrics($Baselines) {
+    $deadline = [DateTime]::UtcNow.AddSeconds(30)
+    do {
+        $ready = $true
+        $deltas = @{}
+        foreach ($app in $apps) {
+            $current = ReadConfirmedCount $app
+            Require ($current -ge $Baselines[$app]) 'Contador reiniciou durante a demo; repetir em processo estável.'
+            $deltas[$app] = $current - $Baselines[$app]
+            $ready = $ready -and $deltas[$app] -ge 2
+        }
+        if ($ready) {
+            Write-Host "Compose diagnostics: confirmed delta transacoes=$($deltas.transacoes), processamento=$($deltas.processamento)."
+            return
+        }
+        Start-Sleep -Milliseconds 300
+    } while ([DateTime]::UtcNow -lt $deadline)
+    throw "Diagnostics não observou delta confirmed>=2 em ambos no prazo; transacoes=$($deltas.transacoes), processamento=$($deltas.processamento)."
 }
 
 $savedTopology = $env:CREDPAY_TOPOLOGY_ENABLED

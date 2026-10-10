@@ -4,18 +4,20 @@
 
 ## Último incremento
 
-- B06.4 integrado na PR #132/d77d7f6: contador de transações, quatro outcomes, sete casos unitários e deltas reais. Head ce2f393 com seis gates verdes; Trans209:283/2m54, zero falhas/erros/skips, Hikari0/dynamic0. Três IDs Spring/OpenSSL permanecem. Spec9.79.
+- B06.5 integrado na PR #133/6ed1f36: diagnostics opcional, seis testes HTTP e runbook. Head3d5e558, sete gates verdes; Trans286/2m52, Proc124/8m20, zero falhas/erros/skips/Hikari/dynamic. Três IDs Spring/OpenSSL permanecem. Spec9.80.
 
 ## Agora
 
-- [ ] B06.5 — Perfil opcional diagnostics nos dois serviços: health/metrics, default health apenas, testes HTTP reais sem DB/Rabbit. TDD antes dos perfis; COUNT/labels/filtro e endpoints administrativos fechados. Sem dependências/deploy novos. Spec9.80.
+- [ ] B06.6 — Provar contadores reais na demo Compose com switch Diagnostics/override opt-in. Lista200, deltas confirmed>=2 nos dois apps, mesmos processos; preservar preparo/fluxo/persistência/cleanup. Red404 real antes do override, controles seguros, green/gates antes de integrar. Spec9.81.
 
 ## Próximo
 
-- [ ] Refinar demonstração operacional das métricas após validar o perfil local.
+- [ ] Refinar o próximo diagnóstico de falha demonstrável após concluir a demo instrumentada.
 
 ## Depois
 
-- Mecanismo FALHOU, sandbox verificável, demo e v1 pendentes. Kubernetes exige direção específica (PR #118 inativa). Spring/OpenSSL e política de bloqueio permanecem separados.
+- FALHOU, sandbox, demo local e v1 pendentes. Kubernetes exige direção específica (PR #118 inativa). Spring/OpenSSL e política de bloqueio permanecem separados.
 
-B06.5: reds404 nos dois módulos, verdes focados3/serviço; suites locais Trans172/22,020s e Proc82/20,103s, Checkstyle0. Revisão técnica sem bloqueantes; aguardar CI real286/124 e gates antes de integrar. Runbook local com loopback explícito. Spec9.80.
+B06.6: red endpoint dac404f/run38017998523, esperado200/observado404 após healthUP, cleanupverde. Override mínimo acrescentado; controles COUNT red/green/parse/config aprovados. Asserção de delta com leitor provisório0 aguarda red real antes da leitura HTTP. Spec9.81.
+
+B06.6: segundo red e282495/run38018190885, lista200/healthUP/AP/REJ/replays aprovados, delta0 falhou como esperado e cleanupverde. Leitura HTTP mínima implementada após red; controles/parse verdes. Aguardar green completo e gates. Spec9.81.
