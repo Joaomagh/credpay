@@ -2351,6 +2351,8 @@ Objetivo: perfil opcional diagnostics em ambos os aplicativos expondo health e m
 
 Aceite/TDD: caracterizar default health200/metrics404 com contador real registrado; diagnostics deve falhar por HTTP404 antes do perfil. Fixture primária nested @Configuration + @EnableAutoConfiguration, explicitamente escolhida, sem component scan nem infraestrutura DB/Rabbit. Contexto HTTP real em porta aleatória/loopback; registry real sem mocks. Após red, perfil mínimo e testes de COUNT, etiquetas fixas/filtro; env/beans/configprops404. Testes não substituem prova dos brokers de B06.3/B06.4. Foco local, suites afetadas e gates finais antes de integrar.
 
+TDD local: default trans1/12,550s verde; diagnostics trans2/uma falha/11,959s pelo esperado200 observado404, zero erros/skips. Perfil mínimo então verify3/9,657s/Checkstyle0. Processador default verde e diagnostics com mesma falha404: total3/uma falha/13,137s, zero erros/skips; perfil mínimo então verify3/9,523s/Checkstyle0. Foco usa -Dtest=DefaultManagementHttpTest,DiagnosticsManagementHttpTest; suites locais §11: Trans172/22,020s e Proc82/20,103s, zero falhas/erros/skips/Checkstyle. Warnings esperados de propriedades inválidas em testes negativos permanecem; não alegar todos os logs sem warnings. Revisão técnica sem bloqueantes; runbook explica que perfil não impõe autenticação/loopback, métricas automáticas também acessíveis e contadores só aparecem após tentativa. CI real286/124 e gates finais ainda pendentes. Comandos de execução do runbook não substituem ensaio operacional com infraestrutura real.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

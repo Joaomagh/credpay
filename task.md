@@ -17,3 +17,5 @@
 ## Depois
 
 - Mecanismo FALHOU, sandbox verificável, demo e v1 pendentes. Kubernetes exige direção específica (PR #118 inativa). Spring/OpenSSL e política de bloqueio permanecem separados.
+
+B06.5: reds404 nos dois módulos, verdes focados3/serviço; suites locais Trans172/22,020s e Proc82/20,103s, Checkstyle0. Revisão técnica sem bloqueantes; aguardar CI real286/124 e gates antes de integrar. Runbook local com loopback explícito. Spec9.80.

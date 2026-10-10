@@ -241,3 +241,5 @@ B06.4 green8c9290d/run38016119774: foco2/32,193s e verify283/2m37, zero falhas/e
 B06.4 integrado na PR #132/d77d7f6; head ce2f393, seis gates verdes e Trans283/2m54. Preparações anteriores são históricas. Spec9.79.
 
 **B06.5 — Consulta local de diagnóstico — em execução.** Perfil opcional diagnostics com health/metrics nos dois serviços; default e demais endpoints administrativos preservados. Aceite HTTP real COUNT/labels/filtro, red404 antes do perfil, sem DB/Rabbit ou dependências novas. Uso local restrito, sem deploy. Spec9.80.
+
+B06.5: TDD404→HTTP3/serviço verdes e suites locais172/82 aprovadas. Runbook e link público preparados; revisão técnica sem bloqueantes. CI286/124 e gates finais pendentes. Spec9.80.

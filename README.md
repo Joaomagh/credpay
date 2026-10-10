@@ -169,6 +169,8 @@ O teste de repository comprova duas operações separadas: gravação com commit
 
 ## Executando o estado atual
 
+Para consultar os contadores de publicação em uma execução local restrita, use o [perfil opcional de diagnóstico](infra/observability/README.md). O padrão continua expondo apenas health; o roteiro explica os resultados e os limites da medição.
+
 Pré-requisito da aplicação: JDK 21. Para executar a suíte completa (`test`, `package` ou `verify`), também é necessário Docker com engine Linux acessível. Na primeira execução, Maven e Testcontainers precisam de acesso aos repositórios para baixar dependências e imagens. No Windows, inicie o Docker Desktop e aguarde o engine ficar pronto.
 
 No PowerShell:
