@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.StreamSupport;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -38,11 +39,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.MessageDeliveryMode;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.RabbitMQContainer;
@@ -220,6 +223,136 @@ class FluxoCredPayE2E {
         var resposta = enviar(HttpRequest.newBuilder(URI.create("http://localhost:" + porta + "/actuator/metrics")).GET());
         assertThat(resposta.statusCode()).withFailMessage("diagnostics HTTP esperado200, observado%d", resposta.statusCode())
                 .isEqualTo(200);
+        aguardarFilasVazias();
+        aguardarOutboxesAnterioresPublicadas();
+        boolean entradaSemRota = "transacoes".equals(publicador);
+        var banco = entradaSemRota ? transacoes : processamento;
+        var exchange = entradaSemRota ? "credpay.transacoes.v1" : "credpay.processamento.v1";
+        var rota = entradaSemRota ? "transacao.criada.v1" : "transacao.processada.v1";
+        var fila = FILAS.get(entradaSemRota ? 0 : 2);
+        var binding = new Binding(fila, Binding.DestinationType.QUEUE, exchange, rota, null);
+        var admin = new RabbitAdmin(republicacao);
+        double baseline = lerReturned(publicador);
+        UUID id;
+        String location;
+        Map<String, Object> pendente;
+        Map<String, Object> transacaoAntes;
+        Map<String, Object> decisaoAntes = null;
+        try {
+            admin.removeBinding(binding);
+            var bindings = consultar("list_bindings", "source_name", "destination_name", "destination_kind", "routing_key");
+            assertThat(StreamSupport.stream(bindings.spliterator(), false).filter(linha ->
+                    exchange.equals(linha.path("source_name").asText()) && fila.equals(linha.path("destination_name").asText())
+                    && "queue".equals(linha.path("destination_kind").asText()) && rota.equals(linha.path("routing_key").asText()))
+                    .count()).withFailMessage("binding exato ainda presente antes do POST").isZero();
+            var post = enviar(HttpRequest.newBuilder(uri("/transacoes"))
+                    .header("Content-Type", "application/json").header("Idempotency-Key", UUID.randomUUID().toString())
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"valor\":50.000,\"moeda\":\"BRL\"}")));
+            assertThat(post.statusCode()).isEqualTo(201);
+            var original = jsonHttpSeguro(post.body());
+            assertThat(original.path("status").asText()).isEqualTo("PENDENTE");
+            id = UUID.fromString(original.path("id").asText());
+            location = post.headers().firstValue("Location").orElseThrow();
+            assertThat(location).withFailMessage("Location não corresponde à transação criada").isEqualTo("/transacoes/" + id);
+            aguardarReturned(publicador, baseline + 1);
+            pendente = banco.queryForMap("SELECT * FROM outbox_eventos WHERE aggregate_id = ?", id);
+            transacaoAntes = new LinkedHashMap<>(transacoes.queryForMap("SELECT * FROM transacoes WHERE id = ?", id));
+            assertThat(pendente.get("published_at")).withFailMessage("retorno marcou intenção como publicada").isNull();
+            assertThat(aguardarFinal(location, "PENDENTE")).withFailMessage("retorno alterou GET PENDENTE").isEqualTo(original);
+            assertThat(transacoes.queryForObject("SELECT COUNT(*) FROM historico_transacoes WHERE transaction_id = ?", Integer.class, id))
+                    .withFailMessage("retorno criou histórico final").isZero();
+            if (entradaSemRota) {
+                assertThat(processamento.queryForObject("SELECT COUNT(*) FROM processamentos WHERE transaction_id = ?", Integer.class, id))
+                        .withFailMessage("entrada sem rota criou processamento").isZero();
+                assertThat(processamento.queryForObject("SELECT COUNT(*) FROM outbox_eventos WHERE aggregate_id = ?", Integer.class, id))
+                        .withFailMessage("entrada sem rota criou saída").isZero();
+            } else {
+                aguardarCriacaoPublicada(id);
+                decisaoAntes = processamento.queryForMap("SELECT * FROM processamentos WHERE transaction_id = ?", id);
+                assertThat(decisaoAntes.get("resultado"))
+                        .isEqualTo("APROVADA");
+            }
+        } finally {
+            admin.declareBinding(binding);
+        }
+        var finalizada = aguardarFinal(location, "APROVADA");
+        assertThat(finalizada.path("id").asText()).withFailMessage("recuperação alterou identidade da transação").isEqualTo(id.toString());
+        assertThat(finalizada.path("valor").decimalValue()).withFailMessage("recuperação alterou valor da transação")
+                .isEqualByComparingTo("50.000");
+        assertThat(finalizada.path("moeda").asText()).isEqualTo("BRL");
+        transacaoAntes.put("status", "APROVADA");
+        assertThat(transacoes.queryForMap("SELECT * FROM transacoes WHERE id = ?", id))
+                .withFailMessage("recuperação alterou dados além do status da transação").isEqualTo(transacaoAntes);
+        aguardarPublicacoes(id);
+        var publicada = banco.queryForMap("SELECT * FROM outbox_eventos WHERE aggregate_id = ?", id);
+        assertThat(publicada.get("published_at")).withFailMessage("recuperação não marcou publicação").isNotNull();
+        var esperada = new LinkedHashMap<>(pendente);
+        esperada.put("published_at", publicada.get("published_at"));
+        assertThat(publicada).withFailMessage("recuperação alterou identidade/payload ou dados da intenção original").isEqualTo(esperada);
+        var entrada = transacoes.queryForMap("SELECT * FROM outbox_eventos WHERE aggregate_id = ?", id);
+        var saida = processamento.queryForMap("SELECT * FROM outbox_eventos WHERE aggregate_id = ?", id);
+        var registro = processamento.queryForMap("SELECT * FROM processamentos WHERE transaction_id = ?", id);
+        if (decisaoAntes != null) {
+            assertThat(registro).withFailMessage("recuperação alterou snapshot de decisão já persistido").isEqualTo(decisaoAntes);
+        }
+        var historico = transacoes.queryForMap("SELECT * FROM historico_transacoes WHERE transaction_id = ?", id);
+        assertThat(registro.get("event_id")).withFailMessage("recuperação mudou causa do processamento").isEqualTo(entrada.get("event_id"));
+        assertThat(registro.get("output_event_id")).withFailMessage("recuperação mudou identidade da saída").isEqualTo(saida.get("event_id"));
+        assertThat(historico.get("event_id")).withFailMessage("histórico não corresponde à saída original").isEqualTo(saida.get("event_id"));
+        assertThat(historico.get("causation_id")).withFailMessage("histórico perdeu causalidade original").isEqualTo(entrada.get("event_id"));
+        assertThat(historico.get("correlation_id")).withFailMessage("histórico perdeu correlação original").isEqualTo(id);
+        conferirUnicidade(transacoes, "transacoes", "id", id);
+        conferirUnicidade(transacoes, "outbox_eventos", "aggregate_id", id);
+        conferirUnicidade(transacoes, "historico_transacoes", "transaction_id", id);
+        conferirUnicidade(processamento, "processamentos", "transaction_id", id);
+        conferirUnicidade(processamento, "outbox_eventos", "aggregate_id", id);
+        aguardarFilasVazias();
+        System.out.println("CredPay diagnostics: rota restaurada, evento original recuperado e registros únicos; publicador=" + publicador);
+    }
+
+    private double lerReturned(String publicador) {
+        return 0;
+    }
+
+    private JsonNode jsonHttpSeguro(String corpo) {
+        try {
+            return JSON.readTree(corpo);
+        } catch (JsonProcessingException invalido) {
+            throw new AssertionError("Resposta HTTP JSON inválida; corpo omitido.");
+        }
+    }
+
+    private void aguardarReturned(String publicador, double minimo) throws Exception {
+        var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+        double observado;
+        do {
+            observado = lerReturned(publicador);
+            if (observado >= minimo) {
+                System.out.println("CredPay diagnostics: returned observado no publicador=" + publicador);
+                return;
+            }
+            TimeUnit.MILLISECONDS.sleep(100);
+        } while (System.nanoTime() < prazo);
+        throw new AssertionError("returned mínimo não observado por HTTP; publicador=" + publicador + ", observado=" + observado);
+    }
+
+    private void aguardarOutboxesAnterioresPublicadas() throws InterruptedException {
+        var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        do {
+            if (transacoes.queryForObject("SELECT COUNT(*) FROM outbox_eventos WHERE published_at IS NULL", Integer.class) == 0
+                    && processamento.queryForObject("SELECT COUNT(*) FROM outbox_eventos WHERE published_at IS NULL", Integer.class) == 0) return;
+            TimeUnit.MILLISECONDS.sleep(100);
+        } while (System.nanoTime() < prazo);
+        throw new AssertionError("outboxes anteriores não ficaram publicadas antes da falha controlada");
+    }
+
+    private void aguardarCriacaoPublicada(UUID id) throws InterruptedException {
+        var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        do {
+            if (transacoes.queryForObject("SELECT COUNT(*) FROM outbox_eventos WHERE aggregate_id = ? AND published_at IS NOT NULL", Integer.class, id) == 1) return;
+            TimeUnit.MILLISECONDS.sleep(100);
+        } while (System.nanoTime() < prazo);
+        throw new AssertionError("criação não ficou publicada enquanto saída permanecia sem rota");
     }
 
     @Test
@@ -484,7 +617,8 @@ class FluxoCredPayE2E {
         assertThat(jar.startsWith(RAIZ) && Files.isRegularFile(jar)).as("JAR real compilado no workspace: " + modulo).isTrue();
         Files.createDirectories(logs);
         var argumentos = new ArrayList<>(List.of("java", "-Xmx256m", "-jar", jar.toString(), "--server.port=" + porta,
-                "--management.health.rabbit.enabled=true", "--credpay." + servico + ".consumer.topology.enabled=" + topologia,
+                "--management.health.rabbit.enabled=true", "--spring.profiles.active=diagnostics",
+                "--credpay." + servico + ".consumer.topology.enabled=" + topologia,
                 "--credpay." + servico + ".consumer.listener.enabled=" + consumirEPublicar,
                 "--credpay.outbox.publisher.enabled=" + consumirEPublicar, "--credpay.processamento.limites.BRL=100.00"));
         argumentos.addAll(List.of(ajustes));

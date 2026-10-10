@@ -17,3 +17,5 @@
 ## Depois
 
 - FALHOU, sandbox, demo local e v1 pendentes. Kubernetes exige direção específica (PR #118 inativa). Spring/OpenSSL e política de bloqueio permanecem separados.
+
+B06.7: red exposição40544b4/run38018934543, esperado200/404 nos dois JARs;6/2falhas/0erros/skips, antigos4 verdes. Perfil somente na fixture corrigido após prova; cenários completos com leitor returned0 aguardam red de leitura. Estrutura/Checkstyle0 verdes. Spec9.82.

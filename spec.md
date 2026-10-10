@@ -2373,6 +2373,8 @@ Objetivo/aceite: ampliar FluxoCredPayE2E com dois cenários de rota ausente, um 
 
 Arquivos: FluxoCredPayE2E, registros e runbook de observabilidade. Baseline bibliotecas atuais/diagnostics da PR #133 e fluxo de quatro cenários; nenhuma dependência/instalação ou produção/deploy novo. Novo controle HTTP falha404 antes de adicionar perfil aos JARs; depois prova de leitura returned usa stub0 para red antes de cliente HTTP. Não fabricar novo red de negócio para classificação/recuperação já implementadas. Guardas/timings/cleanup preservados; dois casos antes dos cenários de reinício, porta do processador como campo, ausência do binding conferida, reenvios sem igualdade rígida. Mudanças de binding somente no broker descartável de teste; não é ferramenta de operação em ambiente residente. Sem prova nack/error, crash abrupto/HA ou nova regraFALHOU. Revisão do desenho sem bloqueantes.
 
+Red de exposição40544b4/run38018934543: seis casos/duas falhas por diagnostics esperado200/observado404 nos dois JARs, zero erros/skips,1m56; quatro casos anteriores passaram. Nenhum binding retirado antes desse red. Perfil diagnostics acrescentado somente depois aos argumentos da fixture, sem alterar aplicativos. Dois cenários completos de rota ausente foram preparados com leitor returned provisório0: ausência conferida, retorno mínimo aguardado e binding restaurado em finally mesmo na falha. Snapshot completo da intenção exceto published_at, transação exceto status e decisão já persistida da saída devem permanecer íntegros; cinco tabelas únicas e causalidade/fila conferidas após recuperação. Estrutura verify skipTests7,941s/Checkstyle0 verde, sem alegar red/green comportamental. Red de leitura real ainda pendente.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
