@@ -3,7 +3,8 @@
 param(
     [Parameter(Mandatory)][ValidateSet('Prepare', 'Activate', 'Demo', 'Smoke', 'Down')][string]$Action,
     [ValidatePattern('^credpay-[a-z0-9][a-z0-9-]{0,40}$')][string]$Project = 'credpay-demo',
-    [ValidateSet('.env', '.env.example')][string]$EnvFile = '.env'
+    [ValidateSet('.env', '.env.example')][string]$EnvFile = '.env',
+    [switch]$Diagnostics
 )
 
 $ErrorActionPreference = 'Stop'
@@ -116,6 +117,17 @@ function StartApps([bool]$Topology, [bool]$Flow) {
     $env:CREDPAY_FLOW_ENABLED = $Flow.ToString().ToLowerInvariant()
     $null = Compose up -d --no-build --force-recreate --wait --wait-timeout 150 transacoes processamento
     CheckApps
+    if ($Diagnostics) { CheckMetricsEndpoints }
+}
+
+function CheckMetricsEndpoints {
+    foreach ($app in $apps) {
+        $response = Request 'GET' "$($urls[$app])/actuator/metrics"
+        Require ($response.StatusCode -eq 200) 'Diagnostics exige /actuator/metrics HTTP200 após healthUP.'
+        $body = Json $response.Content
+        Require ($null -ne $body.names -and $body.names -is [array]) 'Lista de métricas inválida.'
+    }
+    Write-Host 'Compose diagnostics: lista metrics HTTP200 nos dois apps.'
 }
 
 function Prepare {
