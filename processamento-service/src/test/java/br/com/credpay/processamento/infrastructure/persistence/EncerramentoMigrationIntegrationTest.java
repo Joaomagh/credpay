@@ -35,6 +35,8 @@ class EncerramentoMigrationIntegrationTest {
     private static final UUID CRIACAO = UUID.fromString("5ba9d9fc-652b-45c9-a7f5-47f8d3044429");
     private static final UUID RESPOSTA = UUID.fromString("a6a0fd63-1d9a-4f3a-a60f-ea370e674a7c");
     private static final UUID EVIDENCIA = UUID.fromString("9704dff4-c778-4f1b-bf84-95025945d6b4");
+    private static final UUID SAIDA_FINANCEIRA = UUID.fromString("b6f69b53-a295-48fa-8138-84883e3b5578");
+    private static final UUID OUTRA_IDENTIDADE = UUID.fromString("04c58b10-bceb-4aef-9637-65fca5f733fd");
     private static final Instant PEDIDO_EM = Instant.parse("2026-10-14T12:00:00.123456789Z");
     private static final Instant RESPOSTA_EM = Instant.parse("2026-10-14T12:00:01.987654Z");
 
@@ -53,7 +55,7 @@ class EncerramentoMigrationIntegrationTest {
     @BeforeEach
     void limparSomenteBancoDescartavelDaFixture() throws Exception {
         try (var conexao = conectar(); var comando = conexao.createStatement()) {
-            comando.execute("TRUNCATE TABLE outbox_encerramentos, encerramentos");
+            comando.execute("TRUNCATE TABLE outbox_encerramentos, encerramentos, outbox_eventos, processamentos");
         }
     }
 
@@ -275,13 +277,111 @@ class EncerramentoMigrationIntegrationTest {
         EnvelopeInvalido(String sql, String constraint) { this.sql = sql; this.constraint = constraint; }
     }
 
+    @ParameterizedTest
+    @EnumSource(VinculoInvalido.class)
+    void persistir_deveRecusarVinculoDivergenteSemAlterarOriginal(VinculoInvalido caso) throws Exception {
+        gravarERelerPedidoEResposta();
+        try (var conexao = conectar(); var comando = conexao.createStatement()) {
+            if (caso == VinculoInvalido.TRANSACAO_FINANCEIRA || caso == VinculoInvalido.CRIACAO_FINANCEIRA) {
+                inserirDecisaoFinanceira(conexao, caso == VinculoInvalido.TRANSACAO_FINANCEIRA ? OUTRA_IDENTIDADE : TRANSACAO,
+                        caso == VinculoInvalido.CRIACAO_FINANCEIRA ? OUTRA_IDENTIDADE : CRIACAO);
+            }
+            var pedidoOriginal = snapshot(conexao, "encerramentos");
+            var outboxOriginal = snapshot(conexao, "outbox_encerramentos");
+            var falha = catchThrowable(() -> {
+                if (caso == VinculoInvalido.RESPOSTA_OUTBOX || caso == VinculoInvalido.TRANSACAO_OUTBOX) {
+                    comando.executeUpdate("UPDATE outbox_encerramentos SET "
+                            + (caso == VinculoInvalido.RESPOSTA_OUTBOX ? "event_id" : "aggregate_id")
+                            + " = '" + OUTRA_IDENTIDADE + "'");
+                } else {
+                    comando.executeUpdate("UPDATE encerramentos SET resultado = 'DECISAO_EXISTENTE', output_event_id = '"
+                            + SAIDA_FINANCEIRA + "'");
+                }
+            });
+            assertThat(falha).withFailMessage("vínculo inválido foi aceito ou falhou fora do PostgreSQL").isInstanceOf(PSQLException.class);
+            var erro = (PSQLException) falha;
+            assertThat(erro.getSQLState()).withFailMessage("vínculo não falhou por FK").isEqualTo("23503");
+            assertThat(erro.getServerErrorMessage().getConstraint())
+                    .withFailMessage("vínculo não atingiu a FK esperada").isEqualTo(caso.constraint);
+            assertThat(snapshot(conexao, "encerramentos")).withFailMessage("pedido original foi alterado").isEqualTo(pedidoOriginal);
+            assertThat(snapshot(conexao, "outbox_encerramentos")).withFailMessage("outbox original foi alterada").isEqualTo(outboxOriginal);
+        }
+    }
+
+    @Test
+    void persistir_deveAceitarNegativa_quandoSaidaPertencerAMesmaTransacaoECriacao() throws Exception {
+        try (var conexao = conectar()) {
+            conexao.setAutoCommit(false);
+            inserirDecisaoFinanceira(conexao, TRANSACAO, CRIACAO);
+            inserirPedido(conexao, "DECISAO_EXISTENTE", SAIDA_FINANCEIRA);
+            String payload = new ObjectMapper().writeValueAsString(Map.of(
+                    "eventId", RESPOSTA, "eventType", "EncerramentoTransacaoRespondido", "eventVersion", 1,
+                    "occurredAt", RESPOSTA_EM.toString(), "correlationId", TRANSACAO, "causationId", PEDIDO,
+                    "data", Map.of("transactionId", TRANSACAO, "creationEventId", CRIACAO,
+                            "resultado", "DECISAO_EXISTENTE", "outputEventId", SAIDA_FINANCEIRA)));
+            try (var inserir = conexao.prepareStatement("""
+                    INSERT INTO outbox_encerramentos (event_id, aggregate_id, event_type, event_version, payload, occurred_at)
+                    VALUES (?, ?, 'EncerramentoTransacaoRespondido', 1, CAST(? AS jsonb), ?)
+                    """)) {
+                inserir.setObject(1, RESPOSTA);
+                inserir.setObject(2, TRANSACAO);
+                inserir.setString(3, payload);
+                inserir.setTimestamp(4, Timestamp.from(RESPOSTA_EM));
+                assertThat(inserir.executeUpdate()).isEqualTo(1);
+            }
+            conexao.commit();
+        }
+        try (var conexao = conectar(); var comando = conexao.createStatement(); var linhas = comando.executeQuery("""
+                SELECT e.resultado, e.output_event_id, p.resultado AS financeiro FROM encerramentos e
+                JOIN processamentos p ON p.transaction_id = e.transaction_id AND p.event_id = e.creation_event_id
+                    AND p.output_event_id = e.output_event_id
+                """)) {
+            assertThat(linhas.next()).isTrue();
+            assertThat(linhas.getString("resultado")).isEqualTo("DECISAO_EXISTENTE");
+            assertThat(linhas.getObject("output_event_id", UUID.class)).isEqualTo(SAIDA_FINANCEIRA);
+            assertThat(linhas.getString("financeiro")).isEqualTo("APROVADA");
+            assertThat(linhas.next()).isFalse();
+        }
+    }
+
+    private void inserirDecisaoFinanceira(Connection conexao, UUID transacao, UUID criacao) throws Exception {
+        try (var inserir = conexao.prepareStatement("""
+                INSERT INTO processamentos (event_id, transaction_id, event_type, event_version,
+                    event_occurred_epoch_second, event_occurred_nano, correlation_id, input_status,
+                    valor, moeda, limite_aplicado, resultado, processed_at, output_event_id)
+                VALUES (?, ?, 'TransacaoCriada', 1, ?, ?, ?, 'PENDENTE', 50.00, 'BRL', 100.00, 'APROVADA', ?, ?)
+                """)) {
+            inserir.setObject(1, criacao);
+            inserir.setObject(2, transacao);
+            inserir.setLong(3, PEDIDO_EM.getEpochSecond());
+            inserir.setInt(4, PEDIDO_EM.getNano());
+            inserir.setObject(5, transacao);
+            inserir.setTimestamp(6, Timestamp.from(RESPOSTA_EM));
+            inserir.setObject(7, SAIDA_FINANCEIRA);
+            assertThat(inserir.executeUpdate()).isEqualTo(1);
+        }
+    }
+
+    enum VinculoInvalido {
+        RESPOSTA_OUTBOX("fk_outbox_encerramentos_response"), TRANSACAO_OUTBOX("fk_outbox_encerramentos_response"),
+        SAIDA_FINANCEIRA_AUSENTE("fk_encerramentos_financial_decision"),
+        TRANSACAO_FINANCEIRA("fk_encerramentos_financial_decision"), CRIACAO_FINANCEIRA("fk_encerramentos_financial_decision");
+
+        private final String constraint;
+        VinculoInvalido(String constraint) { this.constraint = constraint; }
+    }
+
     private void inserirPedido(Connection conexao) throws Exception {
+        inserirPedido(conexao, "CONFIRMADO", null);
+    }
+
+    private void inserirPedido(Connection conexao, String resultado, UUID saidaFinanceira) throws Exception {
         try (var inserir = conexao.prepareStatement("""
                 INSERT INTO encerramentos (request_event_id, transaction_id, creation_event_id,
                     event_type, event_version, request_occurred_epoch_second, request_occurred_nano,
-                    correlation_id, motivo, evidence_id, resultado, response_event_id, responded_at)
+                    correlation_id, motivo, evidence_id, resultado, response_event_id, responded_at, output_event_id)
                 VALUES (?, ?, ?, 'EncerramentoTransacaoSolicitado', 1, ?, ?, ?,
-                    'FALHA_PERMANENTE_CONTROLADA', ?, 'CONFIRMADO', ?, ?)
+                    'FALHA_PERMANENTE_CONTROLADA', ?, ?, ?, ?, ?)
                 """)) {
             inserir.setObject(1, PEDIDO);
             inserir.setObject(2, TRANSACAO);
@@ -290,8 +390,10 @@ class EncerramentoMigrationIntegrationTest {
             inserir.setInt(5, PEDIDO_EM.getNano());
             inserir.setObject(6, TRANSACAO);
             inserir.setObject(7, EVIDENCIA);
-            inserir.setObject(8, RESPOSTA);
-            inserir.setTimestamp(9, Timestamp.from(RESPOSTA_EM));
+            inserir.setString(8, resultado);
+            inserir.setObject(9, RESPOSTA);
+            inserir.setTimestamp(10, Timestamp.from(RESPOSTA_EM));
+            inserir.setObject(11, saidaFinanceira);
             assertThat(inserir.executeUpdate()).isEqualTo(1);
         }
     }
