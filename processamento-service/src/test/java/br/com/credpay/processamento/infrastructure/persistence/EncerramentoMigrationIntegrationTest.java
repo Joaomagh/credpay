@@ -1,6 +1,7 @@
 package br.com.credpay.processamento.infrastructure.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -10,10 +11,14 @@ import java.util.UUID;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.postgresql.util.PSQLException;
 
 @Testcontainers
 class EncerramentoMigrationIntegrationTest {
@@ -37,8 +42,19 @@ class EncerramentoMigrationIntegrationTest {
                 .locations("classpath:db/migration").load().migrate();
     }
 
+    @BeforeEach
+    void limparSomenteBancoDescartavelDaFixture() throws Exception {
+        try (var conexao = conectar(); var comando = conexao.createStatement()) {
+            comando.execute("TRUNCATE TABLE outbox_encerramentos, encerramentos");
+        }
+    }
+
     @Test
     void persistir_deveConservarPedidoERespostaNaOutboxPropria() throws Exception {
+        gravarERelerPedidoEResposta();
+    }
+
+    private void gravarERelerPedidoEResposta() throws Exception {
         String payload = new ObjectMapper().writeValueAsString(java.util.Map.of(
                 "eventId", RESPOSTA, "eventType", "EncerramentoTransacaoRespondido", "eventVersion", 1,
                 "occurredAt", RESPOSTA_EM.toString(), "correlationId", TRANSACAO, "causationId", PEDIDO,
@@ -91,6 +107,79 @@ class EncerramentoMigrationIntegrationTest {
             assertThat(linhas.next()).isTrue();
             assertThat(linhas.getInt(1)).isZero();
         }
+    }
+
+    @ParameterizedTest
+    @EnumSource(IdentidadeUnica.class)
+    void persistir_deveRecusarIdentidadeDuplicadaSemSubstituirOriginal(IdentidadeUnica campo) throws Exception {
+        gravarERelerPedidoEResposta();
+        var outroPedido = UUID.fromString("cb762331-c013-4dc8-a8b7-0eb40810a3cf");
+        var outraTransacao = UUID.fromString("ea352857-d34e-49a4-bfb9-9856be519582");
+        var outraResposta = UUID.fromString("68a98549-6a11-4097-b945-b9fb99d7d4c");
+        try (var conexao = conectar()) {
+            var falha = catchThrowable(() -> {
+                if (campo == IdentidadeUnica.OUTBOX_EVENTO || campo == IdentidadeUnica.OUTBOX_TRANSACAO) {
+                    copiarPedido(conexao, outroPedido, outraTransacao, outraResposta);
+                    try (var inserir = conexao.prepareStatement("""
+                            INSERT INTO outbox_encerramentos
+                                (event_id, aggregate_id, event_type, event_version, payload, occurred_at)
+                            SELECT ?, ?, event_type, event_version, payload, occurred_at FROM outbox_encerramentos
+                            """)) {
+                        inserir.setObject(1, campo == IdentidadeUnica.OUTBOX_EVENTO ? RESPOSTA : outraResposta);
+                        inserir.setObject(2, campo == IdentidadeUnica.OUTBOX_TRANSACAO ? TRANSACAO : outraTransacao);
+                        inserir.executeUpdate();
+                    }
+                } else {
+                    copiarPedido(conexao, campo == IdentidadeUnica.PEDIDO ? PEDIDO : outroPedido,
+                            campo == IdentidadeUnica.TRANSACAO ? TRANSACAO : outraTransacao,
+                            campo == IdentidadeUnica.RESPOSTA ? RESPOSTA : outraResposta);
+                }
+            });
+            assertThat(falha).withFailMessage("identidade duplicada foi aceita ou falhou fora do PostgreSQL")
+                    .isInstanceOf(PSQLException.class);
+            var erro = (PSQLException) falha;
+            assertThat(erro.getSQLState()).withFailMessage("duplicata não falhou por unicidade").isEqualTo("23505");
+            assertThat(erro.getServerErrorMessage().getConstraint())
+                    .withFailMessage("duplicata não atingiu sua constraint de identidade").isEqualTo(campo.constraint);
+        }
+        try (var conexao = conectar(); var consultar = conexao.prepareStatement(
+                "SELECT response_event_id, resultado, evidence_id FROM encerramentos WHERE request_event_id = ?")) {
+            consultar.setObject(1, PEDIDO);
+            try (var linhas = consultar.executeQuery()) {
+                assertThat(linhas.next()).isTrue();
+                assertThat(linhas.getObject("response_event_id", UUID.class)).isEqualTo(RESPOSTA);
+                assertThat(linhas.getString("resultado")).isEqualTo("CONFIRMADO");
+                assertThat(linhas.getObject("evidence_id", UUID.class)).isEqualTo(EVIDENCIA);
+                assertThat(linhas.next()).isFalse();
+            }
+        }
+    }
+
+    private void copiarPedido(Connection conexao, UUID pedido, UUID transacao, UUID resposta) throws Exception {
+        try (var inserir = conexao.prepareStatement("""
+                INSERT INTO encerramentos (request_event_id, transaction_id, creation_event_id, event_type,
+                    event_version, request_occurred_epoch_second, request_occurred_nano, correlation_id,
+                    motivo, evidence_id, resultado, response_event_id, responded_at, output_event_id)
+                SELECT ?, ?, creation_event_id, event_type, event_version, request_occurred_epoch_second,
+                    request_occurred_nano, ?, motivo, evidence_id, resultado, ?, responded_at, output_event_id
+                FROM encerramentos WHERE request_event_id = ?
+                """)) {
+            inserir.setObject(1, pedido);
+            inserir.setObject(2, transacao);
+            inserir.setObject(3, transacao);
+            inserir.setObject(4, resposta);
+            inserir.setObject(5, PEDIDO);
+            inserir.executeUpdate();
+        }
+    }
+
+    enum IdentidadeUnica {
+        PEDIDO("pk_encerramentos"), TRANSACAO("uq_encerramentos_transaction_id"),
+        RESPOSTA("uq_encerramentos_response_event_id"), OUTBOX_EVENTO("pk_outbox_encerramentos"),
+        OUTBOX_TRANSACAO("uq_outbox_encerramentos_aggregate_id");
+
+        private final String constraint;
+        IdentidadeUnica(String constraint) { this.constraint = constraint; }
     }
 
     private void inserirPedido(Connection conexao) throws Exception {
