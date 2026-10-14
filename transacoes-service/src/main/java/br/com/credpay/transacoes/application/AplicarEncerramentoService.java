@@ -36,9 +36,6 @@ public class AplicarEncerramentoService {
         var existente = respostas.buscarPorEvento(resposta.eventId());
         if (existente.isPresent()) {
             if (!existente.orElseThrow().equals(resposta)) { throw divergente(); }
-            if (resposta.resultado() == RespostaEncerramentoRecebida.Resultado.DECISAO_EXISTENTE) {
-                return new AplicacaoEncerramento(existente.orElseThrow(), Optional.empty());
-            }
         } else if (respostas.buscarPorTransactionId(resposta.transactionId()).isPresent()) { throw divergente(); }
         if (resposta.resultado() == RespostaEncerramentoRecebida.Resultado.CONFIRMADO) {
             var aplicada = historico.buscarPorEvento(resposta.eventId());
@@ -61,7 +58,7 @@ public class AplicarEncerramentoService {
                 .orElseThrow(() -> new ConfirmacaoEncerramentoRecusadaException("estado terminal incompatível com confirmação"));
         if (resposta.resultado() == RespostaEncerramentoRecebida.Resultado.DECISAO_EXISTENTE) {
             validarFinanceiro(resposta, original.status());
-            respostas.inserir(resposta);
+            if (existente.isEmpty()) { respostas.inserir(resposta); }
             return new AplicacaoEncerramento(resposta, Optional.empty());
         }
         if (original.status() != StatusTransacao.PENDENTE) {

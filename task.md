@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B06.8g — Aplicação controlada da confirmação: FALHOU e histórico único atômicos com recibo positivo; negativa preserva vencedor financeiro em ambos os ordenamentos. Domínio red41/8 e green195; aplicação/upgrade red2 confirmado. Positivo mínimo/V8 em validação, rodada22+upgrade exige guardas/replay/negativa ainda ausentes. Caso somente importado em teste. Spec9.90.
+- [ ] B06.8g — Aplicação controlada da confirmação: FALHOU e histórico único atômicos com recibo positivo; negativa preserva vencedor financeiro em ambos os ordenamentos. Domínio195 e verify382 verdes; etapa36+upgrade verde. Revisão achou negativa pré-recebida sem validação financeira: red38/uma falha confirmado e correção implementada. Foco temporário retirado; falta aceite397/seis gates e revisão final. Caso somente importado em teste. Spec9.90.
 
 ## Próximo
 

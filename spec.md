@@ -2508,6 +2508,8 @@ Green em49f4715/run38637394661/job116103934914: foco23/24,515s e verify completo
 
 Revisão final identificou lacuna em negativo pré-recebido: replay equivalente retornava antes de confrontar financeiro já aplicado. Novo teste semeia recibo negativo após financeiro com outra saída, exige conflito/Clock0 e preservação integral. Precisa red antes da correção; os 36 cenários anteriores e upgrade concluíram etapa focada verde emca9fa7e/run38637854706/job116105515879. Novo total esperado397 (aplicação37 e upgrade1). Feature continua sem aceite até tratar o achado.
 
+Red da revisão em1f3d001/run38638187873/job116106864434: 38 cenários/uma falha/zero erros/skips, total1m38; aplicação37/86,74s. A única falha era a negativa pré-recebida contraditória aceita. Correção elimina o retorno antecipado: negativa equivalente também valida pedido/estado/saída e só evita novo INSERT. Foco temporário retirado; o green será avaliado diretamente no verify padrão397, que inclui o teste novo e toda a suíte afetada. Nenhum teste/timeout reduzido. Aceite final e revisão da correção pendentes.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
