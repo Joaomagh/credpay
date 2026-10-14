@@ -2468,6 +2468,12 @@ Red válido em7fc1b1b/run38631159414/job116082843308:26cenários,22falhas/3erros
 
 Green focado emcdb9c65/run38631610722/job116084375510: etapa dos33cenários concluída com sucesso; verify completo iniciou. Local172/28,725s/Checkstyle0, revisão sem bloqueantes, diff/UTF-8 válidos. Removida a etapa temporária para o aceite final com verify padrão intacto; suíte319 e seis gates do SHA final ainda pendentes. Migrações anteriores e contratos financeiros preservados; caso não descoberto na aplicação real. Próximo após integração: preparar resposta/recibo causal e evolução do histórico único, antes de aplicar confirmação controlada; nenhum transporte entre etapas.
 
+Aceite B06.8e: PR #142 integrada em996942c após seis gates ee3b94a verdes. Trans319/2m56 (fixture33/2,933s), Flow6/2m13, zero falhas/erros/skips/Checkstyle0. Transrun38631936435/job116085764477; Flow38631936614/job116085654157; Compose38631936439/job116085942504 (deltas2/2 e preservação); Images38631937005/job116085475162; Scan38631936653/job116085474576; Inventory38631936524/job116085473599, quatroalvos79/222 e mesmos3CVE, checkoutbf1d4f6cd36ff9594b9e7b91c4fdd6cc87748f3f, artifact11926701561, SHA2566c9acc0e5d81e73d868ea9d03e10f8887fbf335a4b5d347b6363df0369e74ea7. Foco temporário ausente, suíte/timeout preservados, revisão sem bloqueantes e nenhuma revisão remota solicitada/pendente. Main sincronizada. Inventário não é aceite global de segurança.
+
+### 9.89 Recibo causal da resposta — B06.8f em TDD
+
+Menor preparação antes do aplicador: DTO próprio EncerramentoTransacaoRespondido.v1 e persistência do envelope semântico completo, preservando nanos, resultado e outputEventId somente na negativa. V7 própria vincula resposta ao pedido/TX/criação, com unicidade por pedido; não altera V1–V6, estado, histórico, parser financeiro ou transporte. Adapter somente executado na fixture, nenhum caso de uso descoberto ou endpoint. Recebimento isolado não significa confirmação aplicada. Critérios: roundtrip após commit, causalidade/estrutura/unicidade e rollback real; testes pequenos red/green antes de comportamento. Sem dependência nova. Riscos: identidade cruzada, negativa sem saída financeira, perda de nanos e confusão entre receber e aplicar. Próxima fatia evoluirá domínio/histórico único e aplicador controlado com validação simétrica da negativa antes/depois do financeiro.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
