@@ -148,7 +148,7 @@ class RegistrarProcessamentoServiceTest {
             implements ProcessamentoRepository, CriacaoBloqueadaRepository {
         private final Map<UUID, ProcessamentoRegistrado> registros = new HashMap<>();
 
-        @Override public void bloquearIdentidades(UUID eventId, UUID transactionId) { }
+        @Override public void bloquearIdentidades(UUID... identidades) { }
 
         @Override public Optional<BloqueioConfirmado> buscarPedidoConfirmadoPorTransactionId(UUID transactionId) {
             return Optional.empty();

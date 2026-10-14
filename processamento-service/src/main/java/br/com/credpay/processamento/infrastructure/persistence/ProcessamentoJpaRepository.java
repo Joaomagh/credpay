@@ -17,8 +17,8 @@ class ProcessamentoJpaRepository implements ProcessamentoRepository {
     private EntityManager entityManager;
 
     @Override
-    public void bloquearIdentidades(UUID eventId, UUID transactionId) {
-        Stream.of(eventId, transactionId).map(this::chaveDeLock)
+    public void bloquearIdentidades(UUID... identidades) {
+        Stream.of(identidades).map(this::chaveDeLock)
                 .distinct().sorted().forEach(this::bloquear);
     }
 

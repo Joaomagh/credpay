@@ -577,8 +577,8 @@ class TransacaoCriadaListenerIntegrationTest {
         }
 
         @Override
-        public void bloquearIdentidades(UUID eventId, UUID transactionId) {
-            delegate.bloquearIdentidades(eventId, transactionId);
+        public void bloquearIdentidades(UUID... identidades) {
+            delegate.bloquearIdentidades(identidades);
         }
 
         @Override
