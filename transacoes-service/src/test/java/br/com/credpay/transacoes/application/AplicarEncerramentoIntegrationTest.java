@@ -302,6 +302,24 @@ class AplicarEncerramentoIntegrationTest {
         assertThat(jdbc.queryForList("SELECT * FROM respostas_encerramento_recebidas")).isEmpty();
     }
 
+    @Test
+    void executar_deveValidarNegativaPreRecebida_contraFinanceiroAtual() {
+        var resposta = entrada(RespostaEncerramentoRecebida.Resultado.DECISAO_EXISTENTE);
+        financeiro.executar(financeiro(resposta, StatusTransacao.APROVADA, UUID.randomUUID(), resposta.creationEventId()));
+        respostas.inserir(resposta);
+        var antes = jdbc.queryForMap("SELECT * FROM transacoes");
+        var registro = jdbc.queryForMap("SELECT * FROM historico_transacoes");
+        clock.chamadas.set(0);
+
+        assertThatThrownBy(() -> aplicar.executar(resposta)).isInstanceOf(ConfirmacaoEncerramentoRecusadaException.class)
+                .hasMessage("saída financeira incompatível com encerramento");
+
+        assertThat(clock.chamadas.get()).isZero();
+        assertThat(jdbc.queryForMap("SELECT * FROM transacoes")).isEqualTo(antes);
+        assertThat(jdbc.queryForMap("SELECT * FROM historico_transacoes")).isEqualTo(registro);
+        assertThat(respostas.buscarPorEvento(resposta.eventId())).contains(resposta);
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"evento", "criacao"})
     void financeiro_deveExigirSaidaECriacaoRegistradasNaNegativa(String campo) {
