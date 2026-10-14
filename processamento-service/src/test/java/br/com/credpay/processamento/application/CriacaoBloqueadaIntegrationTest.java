@@ -2,6 +2,7 @@ package br.com.credpay.processamento.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -9,6 +10,7 @@ import java.util.Currency;
 import java.util.UUID;
 
 import com.zaxxer.hikari.HikariDataSource;
+import org.postgresql.util.PSQLException;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +21,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -155,6 +158,44 @@ class CriacaoBloqueadaIntegrationTest {
     }
 
     private enum Divergencia { VALOR, MOEDA, INSTANTE, TRANSACAO, EVENTO }
+
+    @ParameterizedTest
+    @EnumSource(CampoInvalido.class)
+    void schema_devePreservarRecibo_quandoDinheiroOuMoedaForInvalido(CampoInvalido campo) {
+        var entrada = entrada("75.00");
+        semearConfirmacaoControlada(entrada);
+        service.executar(entrada);
+        var snapshot = jdbc.queryForMap("SELECT * FROM criacao_bloqueada_recebimentos");
+
+        var falha = catchThrowable(() -> jdbc.update("UPDATE criacao_bloqueada_recebimentos SET "
+                + campo.coluna + " = " + campo.literalSql));
+
+        assertThat(falha).isInstanceOf(DataIntegrityViolationException.class);
+        var causa = ((DataIntegrityViolationException) falha).getMostSpecificCause();
+        assertThat(causa).isInstanceOf(PSQLException.class);
+        var erroPostgres = (PSQLException) causa;
+        assertThat(erroPostgres.getSQLState()).isEqualTo("23514");
+        assertThat(erroPostgres.getServerErrorMessage().getConstraint()).isEqualTo(campo.constraint);
+        assertThat(jdbc.queryForMap("SELECT * FROM criacao_bloqueada_recebimentos")).isEqualTo(snapshot);
+    }
+
+    private enum CampoInvalido {
+        NAN("valor", "'NaN'::numeric", "ck_blocked_creation_valor_positivo_finito"),
+        INFINITO("valor", "'Infinity'::numeric", "ck_blocked_creation_valor_positivo_finito"),
+        MOEDA_MINUSCULA("moeda", "'brl'", "ck_blocked_creation_moeda_formato"),
+        MOEDA_CURTA("moeda", "'BR'", "ck_blocked_creation_moeda_formato"),
+        MOEDA_VAZIA("moeda", "''", "ck_blocked_creation_moeda_formato");
+
+        private final String coluna;
+        private final String literalSql;
+        private final String constraint;
+
+        CampoInvalido(String coluna, String literalSql, String constraint) {
+            this.coluna = coluna;
+            this.literalSql = literalSql;
+            this.constraint = constraint;
+        }
+    }
 
     private TransacaoCriadaRecebida entrada(String valor) {
         var transacao = UUID.randomUUID();

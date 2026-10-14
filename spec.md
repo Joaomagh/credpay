@@ -2426,6 +2426,8 @@ Green focado da primeira criação aprovado em d75ee64/run38606442166/job1159984
 
 Red de replay/conflitos d907410/run38606951740/job116000410530:7 casos/5falhas/1erro,23,500s. Reentrega colidiu na PK em vez de reutilizar recibo; divergências produziram erro SQL ou foram aceitas (outra transação). Após a prova, leitura JDBC recompõe o snapshot original, equivalência monetária usa compareTo, replay vem antes de relógio/gerador e fence verifica a criação antes da escrita. Local99/26,300s, Checkstyle0, sem falhas/erros/skips; green7 remoto pendente.
 
+Green7 focado aprovado no head116a292/job116001631698; revisão sem bloqueantes na ordem e equivalência. Próximo ciclo alinha a proteção de dinheiro/moeda do novo recibo à baseline V1: PostgreSQL numeric aceita NaN/Infinity e valor>0 sozinho é insuficiente; varchar(3) sozinho aceita códigos malformados. Cinco controles negativos JDBC exigem erro23514/constraint e snapshot intacto. Literais/colunas são enum estático da fixture, nunca entrada externa.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
