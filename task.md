@@ -4,16 +4,16 @@
 
 ## Último incremento
 
-- Contrato de eventos/arbitragem integrado na PR #137/bbeab54 após Scan/revisão/UTF-8/diff. Direção: confirmação coordenada; João aprovou primeira prova controlada somente em teste, sem API. Spec9.83/9.84.
+- B06.8a integrado na PR #138/786d11e: seis gates436ce3a verdes, Proc132/8m03 e regra8. Arbitragem pura preserva decisão/saída, sem FALHOU operacional. Spec9.84.
 
 ## Agora
 
-- [ ] B06.8a — Validar regra pura ArbitrarEncerramento: preservar decisão/saída, recusar identidades divergentes, ausência exige bloqueio. TDD8 e verify local90 verdes; CI132/gates e revisão ainda necessários. Sem bloqueio persistente ou FALHOU implementados. Spec9.84.
+- [ ] B06.8b/PR #139 — Validar schema preparatório e45 casos PostgreSQL. TDD por ciclo, foco44 aprovado e rollback caracterizado; etapa temporária retirada. Local90/26,746s/Checkstyle0 e revisão aprovados; CI177 e gates finais necessários. Sem caso operacional/fence efetivo/API. Spec9.85.
 
 ## Próximo
 
-- [ ] Bloqueio durável e recebimento/resposta/outbox atômicos sob lock compartilhado com processamento normal. TDD PostgreSQL: rollback, replay/conflito e disputa pedido/decisão; depois transporte.
+- [ ] Adapter e arbitragem durável sob lock compartilhado, incluindo proteção do processamento normal. Provar replay/rollback/corrida e entrada atrasada antes de transportar confirmação positiva.
 
 ## Depois
 
-- Autoridade/evidência de início operacional e auditoria tardia antes de ativação. Painel/Kubernetes/sandbox/segurança/ensaio continuam pendentes. Estimativa global65%, sem conclusão por quantidade de PRs.
+- Autoridade/evidência operacional e auditoria tardia antes de ativação. Painel/Kubernetes/sandbox/segurança/ensaio continuam pendentes. Estimativa global65%, sem conclusão por quantidade de PRs.

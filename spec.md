@@ -2,7 +2,7 @@
 
 > Fonte de verdade do sistema que existe hoje. Preencher somente com decisão tomada, contrato aceito ou comportamento comprovado. Planos futuros ficam em `CREDPAY_PLAN.md`; próximas ações ficam em `task.md`.
 
-**Última atualização:** 2026-10-08
+**Última atualização:** 2026-10-14
 
 **Fase atual:** conclusão da v1 — qualidade, ambiente reproduzível e preparação de Kubernetes; observabilidade e sandbox ainda pendentes.
 
@@ -2391,6 +2391,27 @@ Objetivo: regra pura ArbitrarEncerramento na aplicação preserva decisão finan
 TDD: primeiro stub sempreCONFIRMADO falhou dois casos AP/REJ por DECISAO_EXISTENTE esperado19,733s; correção→2 verdes11,364s. Identidades divergentes falharam5/2 por ausência de exceção10,369s; correção→5 verdes11,362s. Parâmetros ausentes falharam8/3 (IDs aceitos; Optional NPE sem mensagem fixa)10,688s; guards→8 verdes11,087s. Ausência de decisão é caracterização verde, sem red inventado. Verify local offline sem infraestrutura90/22,805s,0 falhas/erros/skips e Checkstyle0; compila todas classes, mas não executa PostgreSQL/Rabbit. Logs ignorados .local/evidence/b068-*. CI completa132 e gates finais ainda necessários.
 
 Limites: a regra não prova fence, concorrência, replay durável, confirmação ou estado FALHOU; somente classifica a escolha. Próximo incremento une bloqueio/recebimento/outbox em PostgreSQL sob o mesmo lock do processamento normal, com rollback/corrida/replay testados antes de transporte. Autoridade/evidência operacional não definida não é contornada pelo teste.
+B06.8a integrado na PR #138/786d11e após seis gates finais436ce3a verdes: Proc132/8m03/run38591083061,0 falhas/erros/skips/Checkstyle e warnings Hikari/agente dinâmico; Flow6/1m55/run38591083140; Compose/run38591083083 confirmed2/2 e três volumes/GET/POST após reinício; Images/run38591083051; Inventory/run38591083279 cobertura79/222 mesmos3CVE, artifact11908096979/checkoutd977745c4698d825ea5bd6d92916ccf455727cf5; Scan/run38591083356. Sem foco temporário. Revisão sem bloqueantes. Java base oficial21-jre-jammy ainda índicef04fb34e…7d010b/amd648c2dddf1…c2cfe0, atualização02/10, consultado14/10; não foi identificado tag corrigido nesse recorte.
+
+### 9.85 Persistência preparatória de encerramento — B06.8b
+
+Objetivo: receber/persistir resposta e intenção próprias, sem enviar pela rota financeira. V2 exige FK/tipo TransacaoProcessada/aggregate único e o publicador tem routing key fixa; V3 cria encerramentos/outbox_encerramentos sem modificar V1/V2. Não oferece caso operacional, gravação de fence pela aplicação, publicação ou FALHOU. Motivo FALHA_PERMANENTE_CONTROLADA e referência UUID são exclusivos da primeira demonstração controlada aprovada, sem autoridade operacional implícita.
+
+Fixture JDBC/Flyway/PostgreSQL no digest existente, descartável, SAME_THREAD, conexões fechadas e truncamento explícito de quatro tabelas somente nesse banco. Commit/releitura independente preservam IDs, nanos do pedido, resposta/envelope e publicação ausente; outbox financeira não é usada. Resultado negativo precisa apontar à decisão da mesma transação/criação/saída; outbox vincula resposta/transação por FK composta. UNIQUEs compostas são chaves candidatas necessárias às FKs, sem alegação de benchmark. Resposta/metadata de outbox usam timestamptz(6), como a saída financeira atual; o pedido conserva epoch/nano completos.
+
+| Ciclo | Red real | Green focado anterior ao próximo ciclo |
+|---|---|---|
+| tabelas |32cda1c/run38593287002/job115953450419:1 caso/1erro,21,330s; V1/V2 aplicadas, relation encerramentos does not exist |621d43b/job115954725873 etapa aprovada |
+| unicidade |f43ceeb/run38594295715/job115957424900:6 casos/5falhas,25,518s; duplicatas sem erro de unicidade |8dd5fed/job115958646597 etapa6 aprovada |
+| obrigatórios |00dbeb1/run38595442351/job115961308357:25/17falhas,18,470s; campos ausentes aceitos |ea271c4/job115962792761 etapa25 aprovada |
+| envelope |008aa8c/run38596603679/job115965432104:38/13falhas,21,329s; envelopes inválidos aceitos |c2daf5c/job115967266068 etapa38 aprovada |
+| vínculos |ee96cf9/run38598134021/job115970444012:44/5falhas,23,173s; referências inválidas aceitas; negativa válida passou |b2d081c/job115971760047 etapa44 aprovada |
+
+Cada correção ocorreu depois do red correspondente. Gates/verify de heads intermediários não são aceites finais; a concorrência normal do workflow cancela heads superados. PKs já existentes nos testes de ausência e controle de negativa válida são caracterizações, sem red inventado.
+
+Rollback acrescentado como caracterização: primeira escrita válida, segunda falha pelo CHECK de versão; rollback explícito e nova conexão exigem zero registros nas quatro tabelas. Isso prova a transação JDBC do experimento, não atomicidade de um futuro serviço Spring. Payload e INSERT duplicados foram extraídos após green44, sem alterar a regra. Total45 casos; foco temporário retirado, verify completo/timeout intactos. Local offline90/26,746s,0 falhas/erros/skips e Checkstyle0, compilando todos os testes; não executa infraestrutura. Estruturas anteriores11,723/11,617/12,065/11,265/10,632/11,623s aprovadas. Logs ignorados .local/evidence/b068b-*. Revisão sem bloqueantes; CI177 e gates finais pendentes.
+
+Limites: JSON só é validado como objeto, sem igualdade dos campos internos/colunas; isso cabe ao adapter/contrato futuro. Nenhum lock, exclusão entre fence e decisão, replay operacional, envio ou ACK é provado por este schema. Próximo: adapter e arbitragem durável, protegendo também o processamento normal antes de disponibilizar confirmação positiva. Autoridade/evidência de início operacional e auditoria tardia permanecem condicionadas; nenhuma operação de API ativa.
 ## 10. Observabilidade e SLOs de aprendizado
 
 
