@@ -27,6 +27,38 @@ Pedido e confirmação terão eventos próprios versionados. TransacaoProcessada
 
 Primeira fatia futura: regra de bloqueio no domínio/aplicação do processador, sem listener ou endpoint. TDD: bloqueio impede primeira decisão; decisão existente impede confirmação positiva; replay conserva identidades; conflito preserva vencedor. Depois PostgreSQL real cobre corrida pedido/processamento, atomicidade bloqueio/outbox e rollback. Só após essas provas entra transporte.
 
+## Envelopes e arbitragem propostos — 2026-10-14
+
+Dois eventos próprios, versão1; os nomes abaixo são proposta de contrato, ainda sem transporte. UUIDs não nulos e Instant preservado com nanos seguem a semântica atual. correlationId deve ser igual a transactionId.
+
+| Campo | EncerramentoTransacaoSolicitado | EncerramentoTransacaoRespondido |
+|---|---|---|
+| eventId | identidade persistida do pedido | identidade persistida da resposta |
+| causationId | eventId da criação original | eventId do pedido |
+| occurredAt | instante original do pedido | instante persistido da resposta |
+| data.transactionId | transação alvo | mesma transação |
+| data.creationEventId | criação original, igual à causa | mesma criação original |
+| data.motivo / evidenceRef | código permitido e referência opaca; definição pendente | não copiar texto livre de evidência |
+| data.resultado | ausente | CONFIRMADO ou DECISAO_EXISTENTE |
+| data.outputEventId | ausente | obrigatório somente em DECISAO_EXISTENTE; saída financeira já persistida |
+
+CONFIRMADO corresponde ao bloqueio durável de novas decisões. DECISAO_EXISTENTE é resposta negativa ao encerramento: não aplica FALHOU nem cria outra decisão; se ainda PENDENTE, aguarda a saída original; se já APROVADA/REJEITADA, preserva o estado final. Criação incompatível é conflito; não pode receber confirmação válida.
+
+Equivalência compara envelope semântico completo, incluindo instantes, identidades e dados; ordem JSON e representação textual equivalente de UUID/Instant não definem conflito. Replay devolve a resposta original antes de usar relógio, gerador ou criar outra intenção. Novo eventId para a mesma transação é outro pedido, não replay: deve ser rejeitado como conflito sem substituir o vencedor. Como a outbox marca publicação separadamente, reenviar preserva eventId/payload originais.
+
+Processamento normal e pedido usam READ_COMMITTED e o mesmo lock por transactionId antes de ler decisão/bloqueio. Hashes efetivos de todas as identidades bloqueadas são deduplicados e ordenados, como no adapter atual, para evitar ordem inversa. A regra deve proteger a aplicação que persiste, antes de decisor.executar; o decisor puro isolado não garante concorrência ou durabilidade.
+
+| Ordem dos commits | Resultado exigido |
+|---|---|
+| decisão financeira primeiro | snapshot/outbox preservados; resposta DECISAO_EXISTENTE |
+| bloqueio primeiro | resposta CONFIRMADO e criação posterior sem decisão financeira |
+| pedido equivalente novamente | mesma resposta/identidades; nenhuma escrita adicional |
+| pedido divergente ou criação incompatível | conflito seguro e vencedor intacto |
+| rollback antes de confirmação | nenhum bloqueio ou resposta parcial; nova tentativa permitida |
+
+Criação atrasada equivalente exige recebimento bloqueado durável com sua semântica completa, para comparar duplicatas; não fabricar ProcessamentoRegistrado financeiro. Ack somente após commit, tanto do pedido quanto dessa criação. Toda entrada que grava decisão deve consultar o bloqueio, inclusive chamada direta ao caso de uso. Resultado financeiro incompatível posterior é conflito preservado para diagnóstico, sem sobrescrever terminal; política concreta de auditoria e DLQ ainda precisa ser definida, sem ciclo infinito ou descarte silencioso.
+
+Este refinamento permite revisar identidades, vencedor e matriz TDD. Motivos/autoridade/evidência de início continuam impedindo ativação operacional; nenhum comando do operador prova sozinho irreversibilidade.
 ## Estado e conclusão
 
 Contrato preliminar revisável, sem enum, migration, endpoint, AMQP ou dependência novos. B06.7 encerra observação de retornos; não conclui FALHOU, dashboard, Kubernetes ou sandbox. Percentual global permanece estimativa aproximada de 65%; critérios de saída governam a conclusão.

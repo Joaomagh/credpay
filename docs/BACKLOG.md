@@ -257,3 +257,5 @@ B06.6 integrado na PR #134/d17eb0e: Compose46 confirmou deltas2/2 e persistênci
 B06.7 concluído na PR #135/8c4bd8d, seis gates finais a7cdbe2 verdes; Trans286/2m19 e prova E2E seis casos/retornos/recuperação. Spec9.82.
 
 **B06.8 — Confirmação coordenada de encerramento — contrato em refinamento.** Direção aprovada por João10/10. Pedido/bloqueio durável/confirmação, vencedor financeiro preservado, PENDENTE até confirmação causal; definir autoridade/evidência e contratos antes do TDD. docs/CONFIRMACAO_FALHA.md e spec9.83. Sem implementação ou encerramento arbitrário.
+
+B06.8 direção preliminar integrada na PR #136/adf318f. Refinamento14/10 propõe envelopes de pedido/resposta e matriz decisão versus bloqueio; contrato continua preliminar até definir autoridade/evidência e auditoria tardia. Nenhuma implementação. Spec9.83.

@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- B06.7 integrado na PR #135/8c4bd8d. Seis gates finais a7cdbe2 verdes; Trans286/2m19, E2E seis casos com returned por HTTP e recuperação original/única. Spec9.82.
+- Direção coordenada registrada e integrada na PR #136/adf318f; Scan do headb07699c verde, revisão/UTF-8/diff aprovados. Java inalterado; spec9.83.
 
 ## Agora
 
-- [ ] B06.8 — Finalizar contrato da confirmação coordenada aprovada por João10/10: pedido mantém PENDENTE, bloqueio durável no processador, decisão existente preservada, confirmação causal antes de FALHOU. Definir autoridade/evidência de início e envelopes antes de implementação. docs/CONFIRMACAO_FALHA.md; spec9.83.
+- [ ] B06.8 — Finalizar contrato da confirmação coordenada aprovada por João10/10: pedido mantém PENDENTE, bloqueio durável no processador, decisão existente preservada, confirmação causal antes de FALHOU. Envelopes/arbitragem refinados documentalmente em14/10, aguardam revisão. Autoridade/evidência de início e auditoria tardia ainda precisam definição antes de ativação. docs/CONFIRMACAO_FALHA.md; spec9.83.
 
 ## Próximo
 
