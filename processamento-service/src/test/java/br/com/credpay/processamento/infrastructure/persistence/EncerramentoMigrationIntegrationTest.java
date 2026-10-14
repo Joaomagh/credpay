@@ -8,6 +8,7 @@ import java.sql.DriverManager;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.stream.Stream;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeAll;
@@ -18,9 +19,14 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.postgresql.util.PSQLException;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
 @Testcontainers
+@Execution(ExecutionMode.SAME_THREAD)
 class EncerramentoMigrationIntegrationTest {
     private static final UUID PEDIDO = UUID.fromString("613bd312-a432-4eac-a71a-7d6434cb5ce3");
     private static final UUID TRANSACAO = UUID.fromString("96cb62d8-c735-47fb-9a0e-3b1ac4e4cde4");
@@ -180,6 +186,39 @@ class EncerramentoMigrationIntegrationTest {
 
         private final String constraint;
         IdentidadeUnica(String constraint) { this.constraint = constraint; }
+    }
+
+    @ParameterizedTest
+    @MethodSource("camposObrigatorios")
+    void persistir_deveRecusarCampoAusenteSemAlterarOriginal(String tabela, String coluna) throws Exception {
+        gravarERelerPedidoEResposta();
+        try (var conexao = conectar(); var comando = conexao.createStatement()) {
+            Object original;
+            try (var linhas = comando.executeQuery("SELECT " + coluna + " FROM " + tabela)) {
+                assertThat(linhas.next()).isTrue();
+                original = linhas.getObject(1);
+            }
+            var falha = catchThrowable(() -> comando.executeUpdate("UPDATE " + tabela + " SET " + coluna + " = NULL"));
+            assertThat(falha).withFailMessage("campo obrigatório foi aceito ou falhou fora do PostgreSQL")
+                    .isInstanceOf(PSQLException.class);
+            var erro = (PSQLException) falha;
+            assertThat(erro.getSQLState()).withFailMessage("ausência não falhou por NOT NULL").isEqualTo("23502");
+            assertThat(erro.getServerErrorMessage().getColumn())
+                    .withFailMessage("NOT NULL não atingiu a coluna esperada").isEqualTo(coluna);
+            try (var linhas = comando.executeQuery("SELECT " + coluna + " FROM " + tabela)) {
+                assertThat(linhas.next()).isTrue();
+                assertThat(linhas.getObject(1)).withFailMessage("campo obrigatório original foi alterado").isEqualTo(original);
+            }
+        }
+    }
+
+    private static Stream<Arguments> camposObrigatorios() {
+        return Stream.concat(Stream.of("request_event_id", "transaction_id", "creation_event_id", "event_type",
+                        "event_version", "request_occurred_epoch_second", "request_occurred_nano", "correlation_id",
+                        "motivo", "evidence_id", "resultado", "response_event_id", "responded_at")
+                .map(coluna -> Arguments.of("encerramentos", coluna)),
+                Stream.of("event_id", "aggregate_id", "event_type", "event_version", "payload", "occurred_at")
+                        .map(coluna -> Arguments.of("outbox_encerramentos", coluna)));
     }
 
     private void inserirPedido(Connection conexao) throws Exception {
