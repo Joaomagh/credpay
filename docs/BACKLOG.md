@@ -259,3 +259,5 @@ B06.7 concluído na PR #135/8c4bd8d, seis gates finais a7cdbe2 verdes; Trans286/
 **B06.8 — Confirmação coordenada de encerramento — contrato em refinamento.** Direção aprovada por João10/10. Pedido/bloqueio durável/confirmação, vencedor financeiro preservado, PENDENTE até confirmação causal; definir autoridade/evidência e contratos antes do TDD. docs/CONFIRMACAO_FALHA.md e spec9.83. Sem implementação ou encerramento arbitrário.
 
 B06.8 direção preliminar integrada na PR #136/adf318f. Refinamento14/10 propõe envelopes de pedido/resposta e matriz decisão versus bloqueio; contrato continua preliminar até definir autoridade/evidência e auditoria tardia. Nenhuma implementação. Spec9.83.
+
+**B06.8a — Regra pura de arbitragem — em validação.** João aprovou14/10 cenário controlado sem API. Preserva decisão/saída, conflitos de identidade e ausência exige bloqueio, sem confirmação antecipada. TDD8 e verifylocal90 verdes; falta CI132/gates. Próximo bloqueio durável/atomicidade/replay/corrida PostgreSQL; transporte só depois. Spec9.84.
