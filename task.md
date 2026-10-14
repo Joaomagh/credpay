@@ -8,11 +8,11 @@
 
 ## Agora
 
-- [ ] B06.8d/PR #141 — Positiva/negativa/identidade aprovadas no PostgreSQL. Replay teve red12/5falhas/2erros e lookup foi escrito depois; local100/29,136s verde, green12 remoto pendente. Atomicidade/corrida ainda faltam. Caso de uso só na fixture, sem produção/API/transporte. Spec9.87.
+- [ ] B06.8d/PR #141 — Três ciclos red/green PostgreSQL aprovados até12 casos. Oito caracterizações de atomicidade/corrida acrescentadas; local100/27,124s verde, revisão aprovada, foco temporário retirado. CI222/gates finais necessários. Caso de uso só na fixture, sem produção/API/transporte. Spec9.87.
 
 ## Próximo
 
-- Após red esperado, persistir sob lock pedido/TX/criação. Provar negativa preservando decisão financeira, replay antes de Clock/UUID, conflitos, atomicidade e disputa. Retirar foco temporário antes do aceite.
+- Integrar o caso controlado somente após CI/revisão finais. Depois preparar pedido auditável/outbox própria em Transações, permanecendo PENDENTE até confirmação causal; sem API operacional.
 
 ## Depois
 
