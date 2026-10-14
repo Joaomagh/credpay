@@ -46,13 +46,25 @@ public class RegistrarProcessamentoService {
             }
             throw new ConflitoProcessamentoException("evento divergente");
         }
+        var reciboExistente = bloqueados.buscarRecebimentoPorEventId(entrada.eventId());
+        if (reciboExistente.isPresent()) {
+            var recibo = reciboExistente.orElseThrow();
+            if (!recibo.correspondeA(entrada)) {
+                throw new ConflitoProcessamentoException("criacao bloqueada divergente");
+            }
+            return recibo;
+        }
         if (repository.existePorTransactionId(entrada.transactionId())) {
             throw new ConflitoProcessamentoException("transacao ja processada");
         }
 
         var pedidoConfirmado = bloqueados.buscarPedidoConfirmadoPorTransactionId(entrada.transactionId());
         if (pedidoConfirmado.isPresent()) {
-            var recebimento = new CriacaoBloqueadaRegistrada(entrada, pedidoConfirmado.orElseThrow());
+            var bloqueio = pedidoConfirmado.orElseThrow();
+            if (!bloqueio.creationEventId().equals(entrada.eventId())) {
+                throw new ConflitoProcessamentoException("criacao bloqueada divergente");
+            }
+            var recebimento = new CriacaoBloqueadaRegistrada(entrada, bloqueio.requestEventId());
             bloqueados.inserir(recebimento);
             return recebimento;
         }

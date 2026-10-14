@@ -2424,6 +2424,8 @@ Red real de criação bloqueada: a72f0e8/run38605703161/job115995890194, 1 caso/
 
 Green focado da primeira criação aprovado em d75ee64/run38606442166/job115998443868, antes do próximo ciclo; verify integral desse head não é aceite final. Novo red proposto: reentrega numericamante equivalente deve reutilizar snapshot original, e divergências de valor/moeda/instante/transação/evento devem conflitar sem alterar recibo nem criar resultado financeiro. Fixture passa a conferir colunas, nanos e escala real do recibo, não só sua contagem. Nenhuma implementação de replay antecipada.
 
+Red de replay/conflitos d907410/run38606951740/job116000410530:7 casos/5falhas/1erro,23,500s. Reentrega colidiu na PK em vez de reutilizar recibo; divergências produziram erro SQL ou foram aceitas (outra transação). Após a prova, leitura JDBC recompõe o snapshot original, equivalência monetária usa compareTo, replay vem antes de relógio/gerador e fence verifica a criação antes da escrita. Local99/26,300s, Checkstyle0, sem falhas/erros/skips; green7 remoto pendente.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

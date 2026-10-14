@@ -5,7 +5,11 @@ import java.util.UUID;
 
 public interface CriacaoBloqueadaRepository {
 
-    Optional<UUID> buscarPedidoConfirmadoPorTransactionId(UUID transactionId);
+    Optional<BloqueioConfirmado> buscarPedidoConfirmadoPorTransactionId(UUID transactionId);
+
+    Optional<CriacaoBloqueadaRegistrada> buscarRecebimentoPorEventId(UUID eventId);
 
     void inserir(CriacaoBloqueadaRegistrada recebimento);
+
+    record BloqueioConfirmado(UUID requestEventId, UUID creationEventId) { }
 }

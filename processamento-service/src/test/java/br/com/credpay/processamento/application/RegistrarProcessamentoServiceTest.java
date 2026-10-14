@@ -150,7 +150,11 @@ class RegistrarProcessamentoServiceTest {
 
         @Override public void bloquearIdentidades(UUID eventId, UUID transactionId) { }
 
-        @Override public Optional<UUID> buscarPedidoConfirmadoPorTransactionId(UUID transactionId) {
+        @Override public Optional<BloqueioConfirmado> buscarPedidoConfirmadoPorTransactionId(UUID transactionId) {
+            return Optional.empty();
+        }
+
+        @Override public Optional<CriacaoBloqueadaRegistrada> buscarRecebimentoPorEventId(UUID id) {
             return Optional.empty();
         }
 
