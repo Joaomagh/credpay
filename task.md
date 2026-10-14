@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B06.8d/PR #141 — Red PostgreSQL confirmado em887ea55: pedido ausente após commit. Lock de três identidades também cumpriu red/green; local100 verde e checkpoint revisado. Implementar registro/resposta/outbox mínimo; caso de uso só na fixture, sem produção/API/transporte. Spec9.87.
+- [ ] B06.8d/PR #141 — Red PostgreSQL confirmado e primeira escrita positiva implementada; local100/28,262s verde/revisada. Green PostgreSQL positivo pendente. Negativa/replay/conflitos ainda não implementados; caso de uso só na fixture, sem produção/API/transporte. Spec9.87.
 
 ## Próximo
 

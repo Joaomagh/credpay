@@ -2441,6 +2441,8 @@ Objetivo: pedido sem decisão persiste registro e resposta/outbox própria no me
 
 Red inicial confirmado em887ea55/run38610658086/job116012831459:1 teste/1falha/0erros/skips,24,688s; pedido ausente após retorno/commit do scaffolding, infraestrutura disponível. Locks estendidos para varargs: scaffold limitado a duas chaves produziu red3/1falha/9,305s ([20,30] em vez de [10,20,30]); remoção do limite preserva distinct/ordem por hash real. Suite local100/24,789s/Checkstyle0 verde, dois adapters de teste adaptados. Erro anterior de compilação do decorator foi corrigido antes do red válido, sem contá-lo como TDD. Revisão sem bloqueantes limitada ao checkpoint; writer/replay/atomicidade/corrida ainda não aceitos. Mensagem do teste passa a informar quantidade observada no próximo CI.
 
+Primeira implementação positiva escrita após red: três locks antes das escritas, EncerramentoRegistrado normaliza resposta em micros, duas portas/adaptor JDBC gravam registro/outbox própria na transação externa. Fixture confere nanos do pedido, referência opaca, retorno/banco/payload, causa/correlação e ausência de output financeiro. Local100/28,262s/Checkstyle0, sem falhas/erros/skips; ambiguidade de inferência na asserção JDBC foi corrigida antes dessa execução válida, sem contá-la como red. Revisão sem bloqueantes somente para essa fatia. Negativa/replay/conflito ainda não implementados; não habilitar em produção nem integrar este estágio. Green PostgreSQL positivo pendente.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
