@@ -2492,6 +2492,10 @@ Desenho mínimo revisado: operação técnica explícita no domínio, concluir e
 
 Aplicador sob locks resposta/TX valida pedido e equivalência integral. Positivo recebido isolado ainda PENDENTE precisa concluir; positivo com histórico correspondente retorna antes de Clock; terminal incompatível conflita. Negativa confronta output/criação com financeiro existente. AplicarResultado consultará recibo por TX antes da nova conclusão: negativa exige saída/criação correspondentes, positiva impede contradição. Retorno deve distinguir resposta e histórico opcional. Primeira prova será domínio puro red/green, depois cenário positivo PostgreSQL antes da persistência/aplicação.
 
+TDD do domínio em239d732: 41 testes focados, oito falhas esperadas/zero erros/skips, total12,399s; operação técnica/mapper ainda devolviam PENDENTE e a operação técnica não recusava chamadas em terminais. A primeira invocação parou na sintaxe PowerShell de argumentos e não conta como red. Após implementação mínima, verify local195/29,071s/Checkstyle0 verde. Contrato financeiro recusou FALHOU antes/depois, sem ampliar parser ou concluir.
+
+Primeiro cenário PostgreSQL: POST real via MockMvc, pedido real, confirmação positiva, GET FALHOU, histórico/recibo causais, fonte/outboxes e POST/Location originais preservados. Exclusão do recibo aplicado deve falhar pela FK específica. Caso scaffold ainda não escreve; precisa red de estado antes de V8/persistência. Fixture própria fecha pool antes do PostgreSQL e limpa somente sete tabelas nomeadas. Etapa focada temporária precede verify completo sem reduzir timeout/testes; sai no aceite.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
