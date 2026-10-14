@@ -2,6 +2,7 @@ package br.com.credpay.transacoes.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.postgresql.util.PSQLException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -129,7 +131,7 @@ class RespostaEncerramentoIntegrationTest {
         respostas.inserir(original);
         var antes = jdbc.queryForMap("SELECT * FROM respostas_encerramento_recebidas");
 
-        assertThatThrownBy(() -> {
+        var falha = catchThrowable(() -> {
             switch (campo) {
                 case "pedido_inexistente" -> jdbc.update(
                         "UPDATE respostas_encerramento_recebidas SET causation_id = ?", UUID.randomUUID());
@@ -152,7 +154,15 @@ class RespostaEncerramentoIntegrationTest {
                 case "saida_ausente" -> jdbc.update("UPDATE respostas_encerramento_recebidas SET output_event_id = NULL");
                 default -> throw new IllegalArgumentException(campo);
             }
-        }).isInstanceOf(DataIntegrityViolationException.class);
+        });
+        var constraint = switch (campo) {
+            case "tipo", "versao" -> "ck_resposta_encerramento_tipo";
+            case "correlacao" -> "ck_resposta_encerramento_correlacao";
+            case "nano_negativo", "nano_alto" -> "ck_resposta_encerramento_nano";
+            case "resultado", "saida_extra", "saida_ausente" -> "ck_resposta_encerramento_resultado";
+            default -> "fk_resposta_encerramento_pedido";
+        };
+        assertViolacao(falha, constraint.startsWith("fk_") ? "23503" : "23514", constraint);
 
         assertThat(jdbc.queryForMap("SELECT * FROM respostas_encerramento_recebidas")).isEqualTo(antes);
         assertThat(respostas.buscarPorEvento(original.eventId())).contains(original);
@@ -163,14 +173,15 @@ class RespostaEncerramentoIntegrationTest {
         var original = prepararResposta(RespostaEncerramentoRecebida.Resultado.CONFIRMADO);
         respostas.inserir(original);
 
-        assertThatThrownBy(() -> jdbc.update("""
+        var falha = catchThrowable(() -> jdbc.update("""
                 INSERT INTO respostas_encerramento_recebidas
                   (event_id, transaction_id, creation_event_id, event_type, event_version, correlation_id,
                    causation_id, occurred_epoch_second, occurred_nano, resultado, output_event_id)
                 SELECT ?, transaction_id, creation_event_id, event_type, event_version, correlation_id,
                        causation_id, occurred_epoch_second, occurred_nano, resultado, output_event_id
                 FROM respostas_encerramento_recebidas
-                """, UUID.randomUUID())).isInstanceOf(DataIntegrityViolationException.class);
+                """, UUID.randomUUID()));
+        assertViolacao(falha, "23505", "uq_resposta_encerramento_pedido");
 
         assertThat(jdbc.queryForObject("SELECT count(*) FROM respostas_encerramento_recebidas", Integer.class))
                 .isEqualTo(1);
@@ -180,9 +191,14 @@ class RespostaEncerramentoIntegrationTest {
     @Test
     void banco_devePreservarEventoOriginal_quandoIdentidadeDuplicar() {
         var original = prepararResposta(RespostaEncerramentoRecebida.Resultado.CONFIRMADO);
+        var outra = prepararResposta(RespostaEncerramentoRecebida.Resultado.CONFIRMADO);
         respostas.inserir(original);
 
-        assertThatThrownBy(() -> respostas.inserir(original)).isInstanceOf(DataIntegrityViolationException.class);
+        var divergente = new RespostaEncerramentoRecebida(original.eventId(), outra.transactionId(),
+                outra.creationEventId(), outra.occurredAt(), outra.correlationId(), outra.causationId(),
+                outra.resultado(), outra.outputEventId());
+        var falha = catchThrowable(() -> respostas.inserir(divergente));
+        assertViolacao(falha, "23505", "respostas_encerramento_recebidas_pkey");
 
         assertThat(respostas.buscarPorEvento(original.eventId())).contains(original);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM respostas_encerramento_recebidas", Integer.class))
@@ -218,5 +234,14 @@ class RespostaEncerramentoIntegrationTest {
                 Instant.parse("2026-10-14T18:00:00.123456789Z"), transacao.id(), pedido.eventId(), resultado,
                 resultado == RespostaEncerramentoRecebida.Resultado.DECISAO_EXISTENTE
                         ? Optional.of(UUID.randomUUID()) : Optional.empty());
+    }
+
+    private void assertViolacao(Throwable falha, String sqlState, String constraint) {
+        assertThat(falha).isInstanceOf(DataIntegrityViolationException.class);
+        var causa = ((DataIntegrityViolationException) falha).getMostSpecificCause();
+        assertThat(causa).isInstanceOf(PSQLException.class);
+        var postgres = (PSQLException) causa;
+        assertThat(postgres.getSQLState()).isEqualTo(sqlState);
+        assertThat(postgres.getServerErrorMessage().getConstraint()).isEqualTo(constraint);
     }
 }

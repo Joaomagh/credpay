@@ -2478,6 +2478,8 @@ TDD puro: contrato sem validação90cf887 executou13/11falhas/0erros/0skips em11
 
 Red PostgreSQL em4992da8/run38633292223/job116090048686:2cenários/2erros/0falhas/0skips,15,00s (total25,380s), relation respostas_encerramento_recebidas does not exist após pedido real. Implementação mínima V7/adapter passa a gravar/reler envelope semântico; campo de publicação do pedido e estado não são usados como autoridade. Próxima rodada17cenários inclui13 exigências ainda ausentes de vínculo/estrutura/unicidade; PK e rollback JDBC são caracterizações, sem red próprio alegado. Lista de limpeza explicitamente sete tabelas, também atualizada na fixture dos pedidos para suportar a FK futura.
 
+Red das restrições em633c042/run38633656160/job116091267019:17cenários/13falhas/0erros/0skips,16,00s (total27,109s); roundtrip positivo/negativo, PK e rollback passaram, vínculos/estrutura e segunda resposta eram aceitos. V7 agora adiciona FK tripla ao pedido/TX/criação, UK da causa e checks namespace/versão/correlação/nanos/resultado-saída. Testes exigem SQLSTATE e constraint específicos; PK isolada usa outro pedido válido para evitar duas violações simultâneas. Revisão do checkpoint sem bloqueantes, com esse fortalecimento de diagnóstico incorporado. Output financeiro não tem FK à outbox local: pertence ao processador e pode ainda não ter chegado. Green17/suíte/gates pendentes.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
