@@ -12,7 +12,10 @@ CREATE TABLE encerramentos (
     resultado varchar(32),
     response_event_id uuid,
     responded_at timestamptz(6),
-    output_event_id uuid
+    output_event_id uuid,
+    CONSTRAINT pk_encerramentos PRIMARY KEY (request_event_id),
+    CONSTRAINT uq_encerramentos_transaction_id UNIQUE (transaction_id),
+    CONSTRAINT uq_encerramentos_response_event_id UNIQUE (response_event_id)
 );
 
 CREATE TABLE outbox_encerramentos (
@@ -22,5 +25,7 @@ CREATE TABLE outbox_encerramentos (
     event_version integer,
     payload jsonb,
     occurred_at timestamptz(6),
-    published_at timestamptz(6)
+    published_at timestamptz(6),
+    CONSTRAINT pk_outbox_encerramentos PRIMARY KEY (event_id),
+    CONSTRAINT uq_outbox_encerramentos_aggregate_id UNIQUE (aggregate_id)
 );
