@@ -252,4 +252,8 @@ B06.6: endpoint red404 comprovado em dac404f; delta red0 em e282495 após demo s
 
 B06.6 integrado na PR #134/d17eb0e: Compose46 confirmou deltas2/2 e persistência/replay/volumes; dois gates aplicáveis verdes. Spec9.81.
 
-**B06.7 — Retorno sem rota observável por HTTP — em execução.** Dois cenários E2E nos mesmos JARs/containers: returned/PENDENTE/outbox não publicada, restauração do binding e recuperação íntegra. Diagnostics somente na fixture; TDD exposição/leitura. Sem produção/deploy/dependência nova, quatro casos anteriores preservados. Spec9.82.
+**B06.7 — Retorno sem rota observável por HTTP — concluído na PR #135/8c4bd8d.** Dois cenários E2E nos mesmos JARs/containers: returned/PENDENTE/outbox não publicada, restauração do binding e recuperação íntegra. Diagnostics somente na fixture; TDD exposição/leitura. Sem produção/deploy/dependência nova, quatro casos anteriores preservados. Spec9.82.
+
+B06.7 concluído na PR #135/8c4bd8d, seis gates finais a7cdbe2 verdes; Trans286/2m19 e prova E2E seis casos/retornos/recuperação. Spec9.82.
+
+**B06.8 — Confirmação coordenada de encerramento — contrato em refinamento.** Direção aprovada por João10/10. Pedido/bloqueio durável/confirmação, vencedor financeiro preservado, PENDENTE até confirmação causal; definir autoridade/evidência e contratos antes do TDD. docs/CONFIRMACAO_FALHA.md e spec9.83. Sem implementação ou encerramento arbitrário.

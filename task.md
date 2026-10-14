@@ -1,21 +1,19 @@
 # CredPay — Tarefas
 
-> Um incremento = um resultado verificável. Papéis em docs/roles/, prioridades em docs/BACKLOG.md e evidências em spec.md.
+> Um incremento = um resultado verificável. Prioridades em docs/BACKLOG.md; evidências em spec.md.
 
 ## Último incremento
 
-- B06.6 integrado na PR #134/d17eb0e: Compose opt-in, deltas confirmed2 em ambos, AP/REJ/replays e três volumes/GET/POST preservados após down/up. Dois gates finais968dc4a verdes. Java/POM intocados; suites286/124 baseline133. Spec9.81.
+- B06.7 integrado na PR #135/8c4bd8d. Seis gates finais a7cdbe2 verdes; Trans286/2m19, E2E seis casos com returned por HTTP e recuperação original/única. Spec9.82.
 
 ## Agora
 
-- [ ] B06.7 — Retorno sem rota observável por HTTP nos JARs reais. Dois cenários na fixture E2E existente, perfil diagnostics explícito, returned/PENDENTE/outbox íntegra e recuperação do mesmo evento. TDD exposição/leitura antes dos ajustes da fixture; preservar quatro cenários/cleanup. Spec9.82.
+- [ ] B06.8 — Finalizar contrato da confirmação coordenada aprovada por João10/10: pedido mantém PENDENTE, bloqueio durável no processador, decisão existente preservada, confirmação causal antes de FALHOU. Definir autoridade/evidência de início e envelopes antes de implementação. docs/CONFIRMACAO_FALHA.md; spec9.83.
 
 ## Próximo
 
-- [ ] Consolidar balanço de observabilidade/falhas e selecionar próximo critério de conclusão pronto.
+- [ ] Primeira fatia TDD do bloqueio no processador, após contrato pronto; depois concorrência/atomicidade PostgreSQL real e transporte.
 
 ## Depois
 
-- FALHOU, sandbox, demo local e v1 pendentes. Kubernetes exige direção específica (PR #118 inativa). Spring/OpenSSL e política de bloqueio permanecem separados.
-
-B06.7: red exposição40544b4/run38018934543, esperado200/404 nos dois JARs;6/2falhas/0erros/skips, antigos4 verdes. Perfil somente na fixture corrigido após prova; red de leitura cbf9974/run38019394069 confirmado (6/2 falhas,0 erros/skips); leitor HTTP real preparado e aguarda green. Estrutura/Checkstyle0 verdes. Spec9.82.
+- Painel, Kubernetes local, sandbox verificável, segurança e ensaio da demo continuam pendentes. PR #118 inativa exige direção específica. Estimativa global65%, sem conclusão por quantidade de PRs.
