@@ -1,16 +1,24 @@
 package br.com.credpay.processamento.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Instant;
 import java.time.Clock;
 import java.time.ZoneOffset;
 import java.util.UUID;
+import java.math.BigDecimal;
+import java.util.Currency;
 
 import com.zaxxer.hikari.HikariDataSource;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -28,6 +36,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @SpringBootTest(properties = "credpay.processamento.limites.BRL=100.00")
 @Import({RegistrarEncerramentoService.class, RegistrarEncerramentoIntegrationTest.RelogioControlado.class})
 @Testcontainers
+@Execution(ExecutionMode.SAME_THREAD)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class RegistrarEncerramentoIntegrationTest {
 
@@ -65,8 +74,12 @@ class RegistrarEncerramentoIntegrationTest {
     @Autowired private JdbcTemplate jdbc;
     @Autowired private HikariDataSource dataSource;
     @Autowired private ObjectMapper objectMapper;
+    @Autowired private RegistrarProcessamentoService financeiro;
 
-    @BeforeEach void capturarPool() { poolDaFixture = dataSource; }
+    @BeforeEach void limparBancoDescartavel() {
+        poolDaFixture = dataSource;
+        jdbc.execute("TRUNCATE criacao_bloqueada_recebimentos, outbox_encerramentos, encerramentos, outbox_eventos, processamentos");
+    }
 
     @Test
     void executar_deveCommitarRegistroERespostaPropria_quandoNaoExistirDecisao() throws Exception {
@@ -118,6 +131,71 @@ class RegistrarEncerramentoIntegrationTest {
         assertThat(json.path("data").path("resultado").asText()).isEqualTo("CONFIRMADO");
         assertThat(json.path("data").has("outputEventId")).isFalse();
         assertThat(json.path("data").size()).isEqualTo(3);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"75.00,APROVADA", "101.00,REJEITADA"})
+    void executar_deveResponderNegativaEPreservarVencedor_quandoDecisaoExistir(String valor, String status)
+            throws Exception {
+        var entrada = entrada(valor);
+        var decisao = (ProcessamentoRegistrado) financeiro.executar(entrada);
+        assertThat(decisao.status().name()).isEqualTo(status);
+        var snapshot = jdbc.queryForMap("SELECT * FROM processamentos");
+        var saida = jdbc.queryForMap("SELECT * FROM outbox_eventos");
+        var pedido = pedido(entrada.transactionId(), entrada.eventId());
+
+        var resultado = service.executar(pedido);
+
+        assertThat(resultado.resultado()).isEqualTo(EncerramentoRegistrado.Resultado.DECISAO_EXISTENTE);
+        assertThat(resultado.outputEventId()).contains(decisao.outputEventId());
+        assertThat(jdbc.queryForMap("SELECT * FROM processamentos")).isEqualTo(snapshot);
+        assertThat(jdbc.queryForMap("SELECT * FROM outbox_eventos")).isEqualTo(saida);
+        assertThat(financeiro.executar(entrada)).isEqualTo(decisao);
+        var registro = jdbc.queryForMap("SELECT * FROM encerramentos");
+        assertThat(registro.get("resultado")).isEqualTo("DECISAO_EXISTENTE");
+        assertThat(registro.get("output_event_id")).isEqualTo(decisao.outputEventId());
+        var json = objectMapper.readTree(jdbc.queryForObject("SELECT payload::text FROM outbox_encerramentos", String.class));
+        assertThat(json.path("causationId").asText()).isEqualTo(pedido.eventId().toString());
+        assertThat(json.path("data").path("resultado").asText()).isEqualTo("DECISAO_EXISTENTE");
+        assertThat(json.path("data").path("outputEventId").asText()).isEqualTo(decisao.outputEventId().toString());
+        assertThat(json.path("data").size()).isEqualTo(4);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM criacao_bloqueada_recebimentos", Integer.class)).isZero();
+    }
+
+    @ParameterizedTest
+    @EnumSource(IdentidadeDivergente.class)
+    void executar_deveConflitarSemEscrita_quandoIdentidadeFinanceiraDivergir(IdentidadeDivergente campo) {
+        var entrada = entrada("75.00");
+        financeiro.executar(entrada);
+        var snapshot = jdbc.queryForMap("SELECT * FROM processamentos");
+        var saida = jdbc.queryForMap("SELECT * FROM outbox_eventos");
+        var pedido = campo == IdentidadeDivergente.CRIACAO
+                ? pedido(entrada.transactionId(), UUID.randomUUID())
+                : pedido(UUID.randomUUID(), entrada.eventId());
+
+        assertThatThrownBy(() -> service.executar(pedido))
+                .isInstanceOf(ConflitoProcessamentoException.class)
+                .hasMessage("identidade do encerramento divergente");
+
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM encerramentos", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM outbox_encerramentos", Integer.class)).isZero();
+        assertThat(jdbc.queryForMap("SELECT * FROM processamentos")).isEqualTo(snapshot);
+        assertThat(jdbc.queryForMap("SELECT * FROM outbox_eventos")).isEqualTo(saida);
+    }
+
+    private enum IdentidadeDivergente { CRIACAO, TRANSACAO }
+
+    private TransacaoCriadaRecebida entrada(String valor) {
+        var transacao = UUID.randomUUID();
+        return new TransacaoCriadaRecebida(UUID.randomUUID(), transacao,
+                Instant.parse("2026-10-14T12:00:00.123456789Z"), transacao,
+                new BigDecimal(valor), Currency.getInstance("BRL"));
+    }
+
+    private PedidoEncerramentoRecebido pedido(UUID transacao, UUID criacao) {
+        return new PedidoEncerramentoRecebido(UUID.randomUUID(), transacao, criacao,
+                Instant.parse("2026-10-14T12:00:00.123456789Z"), transacao,
+                PedidoEncerramentoRecebido.Motivo.FALHA_PERMANENTE_CONTROLADA, UUID.randomUUID());
     }
 
     @TestConfiguration(proxyBeanMethods = false)

@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B06.8d/PR #141 — Red PostgreSQL confirmado e primeira escrita positiva implementada; local100/28,262s verde/revisada. Green PostgreSQL positivo pendente. Negativa/replay/conflitos ainda não implementados; caso de uso só na fixture, sem produção/API/transporte. Spec9.87.
+- [ ] B06.8d/PR #141 — Primeira escrita positiva aprovada no PostgreSQL em42fc7f2. Novos cinco casos exigem negativa financeira e conflito de identidade; red real pendente antes de implementar. Replay/atomicidade/corrida ainda faltam; caso de uso só na fixture, sem produção/API/transporte. Spec9.87.
 
 ## Próximo
 

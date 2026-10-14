@@ -2443,6 +2443,8 @@ Red inicial confirmado em887ea55/run38610658086/job116012831459:1 teste/1falha/0
 
 Primeira implementação positiva escrita após red: três locks antes das escritas, EncerramentoRegistrado normaliza resposta em micros, duas portas/adaptor JDBC gravam registro/outbox própria na transação externa. Fixture confere nanos do pedido, referência opaca, retorno/banco/payload, causa/correlação e ausência de output financeiro. Local100/28,262s/Checkstyle0, sem falhas/erros/skips; ambiguidade de inferência na asserção JDBC foi corrigida antes dessa execução válida, sem contá-la como red. Revisão sem bloqueantes somente para essa fatia. Negativa/replay/conflito ainda não implementados; não habilitar em produção nem integrar este estágio. Green PostgreSQL positivo pendente.
 
+Green positivo focado aprovado em42fc7f2/run38624734331/job116060894710, antes do próximo ciclo; verify completo intermediário não é aceite final. Próximo red: APROVADA e REJEITADA existentes devem gerar negativa com output original e preservar snapshot/outbox/replay financeiro; identidade de criação/transação incompatível deve conflitar antes de escrever. Fixture SAME_THREAD limpa explicitamente somente suas cinco tabelas descartáveis. Estrutura10,929s/Checkstyle0 aprovada; cinco casos agora aguardam red real.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
