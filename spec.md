@@ -2462,6 +2462,8 @@ Primeiro scaffolding não escreve; teste cria transação real, exige pedido/int
 
 Green positivo: 2a1287c, run38630413231/job116080296185, etapa focada concluída com sucesso antes do verify completo. Verify offline172/30,330s/Checkstyle0; integração completa ainda não aceita. Próximo red adiciona sete recusas de estado/origem: inexistente, APROVADA/REJEITADA e criação ausente/tipo/versão/ambiguidade. Estrutura compila em11,753s; sem implementação dessas recusas.
 
+Falha da fixture em b6dc8f5/run38630614199/job116081734377: oito erros no BeforeEach, PostgreSQL recusou TRUNCATE porque idempotencias_transacao referencia transacoes. Não é red de negócio. Corrigida a lista explícita das seis tabelas próprias, sem CASCADE; produção preservada. A repetição inclui replay (PENDENTE/APROVADA/REJEITADA, Clock/publicação intactos), conflitos de identidade e 12 controles de causalidade/estrutura SQL. Relógio controlado fixa nanos123456789. As recusas/replay/constraints aguardam red válido antes da implementação.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
