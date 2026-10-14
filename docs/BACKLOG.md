@@ -261,3 +261,5 @@ B06.7 concluído na PR #135/8c4bd8d, seis gates finais a7cdbe2 verdes; Trans286/
 B06.8 direção preliminar integrada na PR #136/adf318f. Refinamento14/10 propõe envelopes de pedido/resposta e matriz decisão versus bloqueio; contrato continua preliminar até definir autoridade/evidência e auditoria tardia. Nenhuma implementação. Spec9.83.
 
 **B06.8a — Regra pura de arbitragem — em validação.** João aprovou14/10 cenário controlado sem API. Preserva decisão/saída, conflitos de identidade e ausência exige bloqueio, sem confirmação antecipada. TDD8 e verifylocal90 verdes; falta CI132/gates. Próximo bloqueio durável/atomicidade/replay/corrida PostgreSQL; transporte só depois. Spec9.84.
+
+B06.8a concluído na PR #138/786d11e: seisgates436ce3a verdes, Proc132/8m03, regra8. B06.8b emTDD: persistência preparatória própria (recebimento/resposta/outbox), nenhum caso operacional/fence aplicado. Primeira prova roundtrip real deve falhar por relações ausentes antesV3. Spec9.85.
