@@ -22,7 +22,7 @@ public record ProcessamentoRegistrado(
         BigDecimal limiteAplicado,
         StatusProcessamento status,
         Instant processedAt,
-        UUID outputEventId) {
+        UUID outputEventId) implements RecebimentoProcessamento {
 
     public ProcessamentoRegistrado {
         Objects.requireNonNull(eventId, "eventId");

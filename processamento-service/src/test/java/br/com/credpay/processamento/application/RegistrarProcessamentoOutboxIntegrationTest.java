@@ -92,7 +92,7 @@ class RegistrarProcessamentoOutboxIntegrationTest {
     void executar_devePersistirUmaIntencaoEReutilizaLa_quandoEntradaForReentregue() throws Exception {
         var entrada = entrada();
 
-        var primeiro = service.executar(entrada);
+        var primeiro = (ProcessamentoRegistrado) service.executar(entrada);
         var replay = service.executar(entrada);
 
         assertThat(replay).isEqualTo(primeiro);

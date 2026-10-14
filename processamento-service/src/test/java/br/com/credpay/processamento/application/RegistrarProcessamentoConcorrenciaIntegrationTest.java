@@ -158,22 +158,22 @@ class RegistrarProcessamentoConcorrenciaIntegrationTest {
 
             if (falharPrimeira) {
                 var erro = falhaDe(primeira);
-                return new Disputa(null, segunda.get(10, TimeUnit.SECONDS), erro);
+                return new Disputa(null, (ProcessamentoRegistrado) segunda.get(10, TimeUnit.SECONDS), erro);
             }
-            var confirmado = primeira.get(10, TimeUnit.SECONDS);
+            var confirmado = (ProcessamentoRegistrado) primeira.get(10, TimeUnit.SECONDS);
             if (!primeiraEntrada.equals(segundaEntrada)
                     && !(primeiraEntrada.eventId().equals(segundaEntrada.eventId())
                     && primeiraEntrada.transactionId().equals(segundaEntrada.transactionId())
                     && primeiraEntrada.valor().compareTo(segundaEntrada.valor()) == 0)) {
                 return new Disputa(confirmado, null, falhaDe(segunda));
             }
-            return new Disputa(confirmado, segunda.get(10, TimeUnit.SECONDS), null);
+            return new Disputa(confirmado, (ProcessamentoRegistrado) segunda.get(10, TimeUnit.SECONDS), null);
         } finally {
             porta.liberar().countDown();
         }
     }
 
-    private Throwable falhaDe(java.util.concurrent.Future<ProcessamentoRegistrado> futuro) {
+    private Throwable falhaDe(java.util.concurrent.Future<RecebimentoProcessamento> futuro) {
         try {
             futuro.get(10, TimeUnit.SECONDS);
             throw new AssertionError("a chamada deveria falhar");

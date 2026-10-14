@@ -61,7 +61,7 @@ Criação atrasada equivalente exige recebimento bloqueado durável com sua sem�
 Este refinamento permite revisar identidades, vencedor e matriz TDD. Motivos/autoridade/evidência de início continuam impedindo ativação operacional; nenhum comando do operador prova sozinho irreversibilidade.
 ## Estado e conclusão
 
-Contrato preliminar revisável, sem enum, migration, endpoint, AMQP ou dependência novos. B06.7 encerra observação de retornos; não conclui FALHOU, dashboard, Kubernetes ou sandbox. Percentual global permanece estimativa aproximada de 65%; critérios de saída governam a conclusão.
+Contrato preliminar revisável. Regra pura e schema preparatório próprios integrados nas PRs #138 e #139; ainda não há pedido operacional, confirmação transportada ou estado FALHOU aplicado. B06.7 encerra observação de retornos; não conclui FALHOU, dashboard, Kubernetes ou sandbox. Percentual global permanece estimativa aproximada de 65%; critérios de saída governam a conclusão.
 
 ## Primeira fatia controlada — 2026-10-14
 

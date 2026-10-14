@@ -20,20 +20,23 @@ public class RegistrarProcessamentoService {
     private final GeradorEventIdSaida gerador;
     private final OutboxProcessamentoRepository outbox;
     private final ObjectMapper objectMapper;
+    private final CriacaoBloqueadaRepository bloqueados;
 
     public RegistrarProcessamentoService(ProcessamentoRepository repository,
             ProcessarTransacaoService decisor, Clock clock, GeradorEventIdSaida gerador,
-            OutboxProcessamentoRepository outbox, ObjectMapper objectMapper) {
+            OutboxProcessamentoRepository outbox, ObjectMapper objectMapper,
+            CriacaoBloqueadaRepository bloqueados) {
         this.repository = repository;
         this.decisor = decisor;
         this.clock = clock;
         this.gerador = gerador;
         this.outbox = outbox;
         this.objectMapper = objectMapper;
+        this.bloqueados = bloqueados;
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public ProcessamentoRegistrado executar(TransacaoCriadaRecebida entrada) {
+    public RecebimentoProcessamento executar(TransacaoCriadaRecebida entrada) {
         Objects.requireNonNull(entrada, "entrada");
         repository.bloquearIdentidades(entrada.eventId(), entrada.transactionId());
         var existente = repository.buscarPorEventId(entrada.eventId());
@@ -43,8 +46,27 @@ public class RegistrarProcessamentoService {
             }
             throw new ConflitoProcessamentoException("evento divergente");
         }
+        var reciboExistente = bloqueados.buscarRecebimentoPorEventId(entrada.eventId());
+        if (reciboExistente.isPresent()) {
+            var recibo = reciboExistente.orElseThrow();
+            if (!recibo.correspondeA(entrada)) {
+                throw new ConflitoProcessamentoException("criacao bloqueada divergente");
+            }
+            return recibo;
+        }
         if (repository.existePorTransactionId(entrada.transactionId())) {
             throw new ConflitoProcessamentoException("transacao ja processada");
+        }
+
+        var pedidoConfirmado = bloqueados.buscarPedidoConfirmadoPorTransactionId(entrada.transactionId());
+        if (pedidoConfirmado.isPresent()) {
+            var bloqueio = pedidoConfirmado.orElseThrow();
+            if (!bloqueio.creationEventId().equals(entrada.eventId())) {
+                throw new ConflitoProcessamentoException("criacao bloqueada divergente");
+            }
+            var recebimento = new CriacaoBloqueadaRegistrada(entrada, bloqueio.requestEventId());
+            bloqueados.inserir(recebimento);
+            return recebimento;
         }
 
         var decisao = decisor.executar(entrada.valor(), entrada.moeda());

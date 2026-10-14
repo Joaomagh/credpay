@@ -135,7 +135,7 @@ class PublicarOutboxProcessamentoIntegrationTest {
             admin.declareBinding(BindingBuilder.bind(fila)
                     .to(exchange).with("transacao.processada.v1"));
             var transacaoId = UUID.randomUUID();
-            var resultado = registrar.executar(new TransacaoCriadaRecebida(
+            var resultado = (ProcessamentoRegistrado) registrar.executar(new TransacaoCriadaRecebida(
                     UUID.randomUUID(), transacaoId, Instant.parse("2026-10-01T12:00:00Z"),
                     transacaoId, new BigDecimal("75.00"), Currency.getInstance("BRL")));
             var eventId = resultado.outputEventId();
@@ -168,7 +168,7 @@ class PublicarOutboxProcessamentoIntegrationTest {
         admin.declareQueue(fila);
         try {
             var transacaoId = UUID.randomUUID();
-            var resultado = registrar.executar(new TransacaoCriadaRecebida(
+            var resultado = (ProcessamentoRegistrado) registrar.executar(new TransacaoCriadaRecebida(
                     UUID.randomUUID(), transacaoId, Instant.parse("2026-10-01T12:00:00Z"),
                     transacaoId, new BigDecimal("75.00"), Currency.getInstance("BRL")));
             var eventId = resultado.outputEventId();
@@ -209,7 +209,7 @@ class PublicarOutboxProcessamentoIntegrationTest {
             admin.declareBinding(BindingBuilder.bind(fila)
                     .to(exchange).with("transacao.processada.v1"));
             var transacaoId = UUID.randomUUID();
-            var resultado = registrar.executar(new TransacaoCriadaRecebida(
+            var resultado = (ProcessamentoRegistrado) registrar.executar(new TransacaoCriadaRecebida(
                     UUID.randomUUID(), transacaoId, Instant.parse("2026-10-01T12:00:00Z"),
                     transacaoId, new BigDecimal("75.00"), Currency.getInstance("BRL")));
             var eventId = resultado.outputEventId();

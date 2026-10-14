@@ -265,3 +265,9 @@ B06.8 direção preliminar integrada na PR #136/adf318f. Refinamento14/10 propõ
 B06.8a concluído na PR #138/786d11e: seisgates436ce3a verdes, Proc132/8m03, regra8. B06.8b emTDD: persistência preparatória própria (recebimento/resposta/outbox), nenhum caso operacional/fence aplicado. Primeira prova roundtrip real deve falhar por relações ausentes antesV3. Spec9.85.
 
 B06.8b em validação final: schema preparatório V3/45 casos de roundtrip, unicidade, obrigatórios, envelope, vínculos e rollback JDBC; TDD real por ciclo. Foco temporário removido; local90/26,746s/Checkstyle0 e revisão aprovados, aguarda CI177/gates finais. Não aplica fence/FALHOU/ACK nem ativa API. Spec9.85.
+
+B06.8b concluído na PR #139/5ad7e3d: seis gates finais verdes no head d80a899, processador177/8m30 e fixture45; revisão sem bloqueantes. Evidência final em spec9.85 substitui os estados preparatórios acima.
+
+**B06.8c — Proteção durável da criação normal — em execução.** Pedido validado, proteção de toda chamada normal e recibo bloqueado. Aceite: replay conserva recibo/IDs/snapshot, vencedor financeiro intacto, rollback e espera pelo lock PostgreSQL real. Confirmação somente semeada na fixture; nenhum writer operacional/API/listener/transporte. Desenho e riscos em spec9.86.
+
+**B06.8d — Registro controlado do pedido e resposta — depende de B06.8c.** Caso de uso somente registrado em testes, sob o mesmo lock, arbitra decisão existente versus bloqueio, persiste resposta/outbox própria atomicamente e conserva replay. Provar rollback e disputa real com processamento normal. Sem origem operacional ou transporte antes do aceite; usar regra pura/contrato e schema já existentes.

@@ -56,7 +56,7 @@ class EncerramentoMigrationIntegrationTest {
     @BeforeEach
     void limparSomenteBancoDescartavelDaFixture() throws Exception {
         try (var conexao = conectar(); var comando = conexao.createStatement()) {
-            comando.execute("TRUNCATE TABLE outbox_encerramentos, encerramentos, outbox_eventos, processamentos");
+            comando.execute("TRUNCATE TABLE criacao_bloqueada_recebimentos, outbox_encerramentos, encerramentos, outbox_eventos, processamentos");
         }
     }
 
