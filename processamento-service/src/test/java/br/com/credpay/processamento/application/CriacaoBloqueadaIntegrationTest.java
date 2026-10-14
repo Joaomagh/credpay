@@ -1,6 +1,7 @@
 package br.com.credpay.processamento.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -11,6 +12,8 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -91,6 +94,73 @@ class CriacaoBloqueadaIntegrationTest {
         assertThat(contar("criacao_bloqueada_recebimentos")).isEqualTo(1);
         assertThat(contar("encerramentos")).isEqualTo(1);
         assertThat(contar("outbox_encerramentos")).isEqualTo(1);
+        var snapshot = jdbc.queryForMap("SELECT * FROM criacao_bloqueada_recebimentos WHERE event_id = ?",
+                entrada.eventId());
+        assertThat(snapshot.get("transaction_id")).isEqualTo(entrada.transactionId());
+        assertThat(snapshot.get("event_occurred_epoch_second")).isEqualTo(entrada.occurredAt().getEpochSecond());
+        assertThat(snapshot.get("event_occurred_nano")).isEqualTo(entrada.occurredAt().getNano());
+        assertThat(snapshot.get("correlation_id")).isEqualTo(entrada.correlationId());
+        assertThat(snapshot.get("valor")).isEqualTo(entrada.valor());
+        assertThat(snapshot.get("moeda")).isEqualTo("BRL");
+        assertThat(snapshot.get("request_event_id")).isEqualTo(pedido);
+        assertThat(snapshot.get("closure_result")).isEqualTo("CONFIRMADO");
+    }
+
+    @Test
+    void executar_deveReutilizarRecibo_quandoReentregaForNumericamenteEquivalente() {
+        var entrada = entrada("75.0");
+        semearConfirmacaoControlada(entrada);
+        var primeiro = service.executar(entrada);
+        var snapshot = jdbc.queryForMap("SELECT * FROM criacao_bloqueada_recebimentos");
+        var equivalente = new TransacaoCriadaRecebida(entrada.eventId(), entrada.transactionId(),
+                entrada.occurredAt(), entrada.correlationId(), new BigDecimal("75.00"), entrada.moeda());
+
+        var replay = service.executar(equivalente);
+
+        assertThat(replay).isEqualTo(primeiro);
+        assertThat(contar("criacao_bloqueada_recebimentos")).isEqualTo(1);
+        assertThat(jdbc.queryForMap("SELECT * FROM criacao_bloqueada_recebimentos")).isEqualTo(snapshot);
+        assertThat(contar("processamentos")).isZero();
+        assertThat(contar("outbox_eventos")).isZero();
+    }
+
+    @ParameterizedTest
+    @EnumSource(Divergencia.class)
+    void executar_devePreservarReciboEConflitar_quandoCriacaoDivergir(Divergencia divergencia) {
+        var entrada = entrada("75.00");
+        semearConfirmacaoControlada(entrada);
+        service.executar(entrada);
+        var snapshot = jdbc.queryForMap("SELECT * FROM criacao_bloqueada_recebimentos");
+        var outraTransacao = UUID.randomUUID();
+        var outra = switch (divergencia) {
+            case VALOR -> new TransacaoCriadaRecebida(entrada.eventId(), entrada.transactionId(),
+                    entrada.occurredAt(), entrada.correlationId(), new BigDecimal("76.00"), entrada.moeda());
+            case MOEDA -> new TransacaoCriadaRecebida(entrada.eventId(), entrada.transactionId(),
+                    entrada.occurredAt(), entrada.correlationId(), entrada.valor(), Currency.getInstance("USD"));
+            case INSTANTE -> new TransacaoCriadaRecebida(entrada.eventId(), entrada.transactionId(),
+                    entrada.occurredAt().plusNanos(1), entrada.correlationId(), entrada.valor(), entrada.moeda());
+            case TRANSACAO -> new TransacaoCriadaRecebida(entrada.eventId(), outraTransacao,
+                    entrada.occurredAt(), outraTransacao, entrada.valor(), entrada.moeda());
+            case EVENTO -> new TransacaoCriadaRecebida(UUID.randomUUID(), entrada.transactionId(),
+                    entrada.occurredAt(), entrada.correlationId(), entrada.valor(), entrada.moeda());
+        };
+
+        assertThatThrownBy(() -> service.executar(outra))
+                .isInstanceOf(ConflitoProcessamentoException.class)
+                .hasMessage("criacao bloqueada divergente");
+
+        assertThat(jdbc.queryForMap("SELECT * FROM criacao_bloqueada_recebimentos")).isEqualTo(snapshot);
+        assertThat(contar("processamentos")).isZero();
+        assertThat(contar("outbox_eventos")).isZero();
+    }
+
+    private enum Divergencia { VALOR, MOEDA, INSTANTE, TRANSACAO, EVENTO }
+
+    private TransacaoCriadaRecebida entrada(String valor) {
+        var transacao = UUID.randomUUID();
+        return new TransacaoCriadaRecebida(UUID.randomUUID(), transacao,
+                Instant.parse("2026-10-14T12:00:00.123456789Z"), transacao,
+                new BigDecimal(valor), Currency.getInstance("BRL"));
     }
 
     private UUID semearConfirmacaoControlada(TransacaoCriadaRecebida entrada) {

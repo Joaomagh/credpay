@@ -2422,6 +2422,8 @@ PedidoEncerramentoRecebido: correlação divergente red2/1falha/13,266s (aceita 
 
 Red real de criação bloqueada: a72f0e8/run38605703161/job115995890194, 1 caso/1falha,23,474s; PostgreSQL saudável, seed positivo commitado e pool fechado antes do banco. Observado ProcessamentoRegistrado/APROVADA em vez de CriacaoBloqueadaRegistrada. Após a prova, retorno sealed e guard sob lock existente, adapter JDBC e V4 de recibo próprio com FK composta ao pedido positivo/transação/criação. Nenhum writer de encerramento disponível. Fixtures que truncam pais incluem agora a nova tabela filha, sem CASCADE. Adaptação de consumidores do retorno exigiu corrigir compilação dos testes financeiros/constructor/Future; isso não conta como red TDD. Local99/28,429s, zero falhas/erros/skips e Checkstyle0; green PostgreSQL pendente. Replay/conflitos/rollback/corrida ainda não aceitos; não integrar este estágio.
 
+Green focado da primeira criação aprovado em d75ee64/run38606442166/job115998443868, antes do próximo ciclo; verify integral desse head não é aceite final. Novo red proposto: reentrega numericamante equivalente deve reutilizar snapshot original, e divergências de valor/moeda/instante/transação/evento devem conflitar sem alterar recibo nem criar resultado financeiro. Fixture passa a conferir colunas, nanos e escala real do recibo, não só sua contagem. Nenhuma implementação de replay antecipada.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
