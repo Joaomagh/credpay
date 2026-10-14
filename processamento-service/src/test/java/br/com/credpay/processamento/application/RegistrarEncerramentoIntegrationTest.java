@@ -72,7 +72,7 @@ class RegistrarEncerramentoIntegrationTest {
 
         var quantidade = jdbc.queryForObject("SELECT count(*) FROM encerramentos WHERE request_event_id = ?",
                 Integer.class, pedido.eventId());
-        assertThat(quantidade).withFailMessage("pedido deve permanecer apos retorno/commit").isEqualTo(1);
+        assertThat(quantidade).withFailMessage("pedido apos commit: esperado1, observado%s", quantidade).isEqualTo(1);
         assertThat(jdbc.queryForObject("""
                 SELECT count(*) FROM encerramentos e JOIN outbox_encerramentos o
                   ON o.event_id = e.response_event_id AND o.aggregate_id = e.transaction_id

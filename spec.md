@@ -2439,6 +2439,8 @@ Aceite final B06.8c: PR #140 integrada em f804fd4, seis gates verdes do head2722
 
 Objetivo: pedido sem decisão persiste registro e resposta/outbox própria no mesmo commit; depois provar negativa financeira, replay, conflitos, rollback e disputa usando a proteção B06.8c. Caso de uso sem @Service ou descoberta em produção; importado somente na fixture. Primeiro scaffolding compilável não escreve; teste PostgreSQL exige registro pós-retorno e resposta própria não publicada, sem resultado financeiro. Red remoto ainda necessário antes de implementação. Foco temporário precede verify sem reduzir suíte/timeout e será retirado antes do aceite. Nenhuma API/transporte/estado FALHOU novo. Arquivos previstos: application caso de uso/records/portas, adapter próprio e testes. Riscos: identidade causal, lock e atomicidade. Revisão recomenda bloquear pedido/TX/criação juntos, deduplicando/ordenando hashes reais; não adquirir lock extra depois das leituras.
 
+Red inicial confirmado em887ea55/run38610658086/job116012831459:1 teste/1falha/0erros/skips,24,688s; pedido ausente após retorno/commit do scaffolding, infraestrutura disponível. Locks estendidos para varargs: scaffold limitado a duas chaves produziu red3/1falha/9,305s ([20,30] em vez de [10,20,30]); remoção do limite preserva distinct/ordem por hash real. Suite local100/24,789s/Checkstyle0 verde, dois adapters de teste adaptados. Erro anterior de compilação do decorator foi corrigido antes do red válido, sem contá-lo como TDD. Revisão sem bloqueantes limitada ao checkpoint; writer/replay/atomicidade/corrida ainda não aceitos. Mensagem do teste passa a informar quantidade observada no próximo CI.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

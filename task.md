@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B06.8d — Primeiro teste PostgreSQL exige registro do pedido e resposta/outbox após commit. Scaffolding não escreve; red remoto necessário antes da implementação. Caso de uso importado só na fixture, sem descoberta em produção/API/transporte. Spec9.87.
+- [ ] B06.8d/PR #141 — Red PostgreSQL confirmado em887ea55: pedido ausente após commit. Lock de três identidades também cumpriu red/green; local100 verde e checkpoint revisado. Implementar registro/resposta/outbox mínimo; caso de uso só na fixture, sem produção/API/transporte. Spec9.87.
 
 ## Próximo
 

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -36,6 +37,18 @@ class ProcessamentoJpaRepositoryLockOrderTest {
     }
 
     private List<Object> executarComHashes(long hashPrimeiro, long hashSegundo) {
+        return executarComHashes(Map.of(PRIMEIRO, hashPrimeiro, SEGUNDO, hashSegundo), PRIMEIRO, SEGUNDO);
+    }
+
+    @Test
+    void bloquearIdentidades_deveIncluirEOrdenarTresIdentidades() {
+        var terceiro = UUID.fromString("00000000-0000-0000-0000-000000000003");
+        var chaves = executarComHashes(Map.of(PRIMEIRO, 20L, SEGUNDO, 30L, terceiro, 10L),
+                PRIMEIRO, SEGUNDO, terceiro);
+        assertThat(chaves).containsExactly(10L, 20L, 30L);
+    }
+
+    private List<Object> executarComHashes(Map<UUID, Long> hashes, UUID... identidades) {
         var entityManager = mock(EntityManager.class);
         var chavesAdquiridas = new ArrayList<Object>();
         when(entityManager.createNativeQuery(anyString(), eq(Long.class))).thenAnswer(invocacao -> {
@@ -52,14 +65,14 @@ class ProcessamentoJpaRepositoryLockOrderTest {
                     chavesAdquiridas.add(parametro.get());
                     return 1L;
                 }
-                return PRIMEIRO.toString().equals(parametro.get()) ? hashPrimeiro : hashSegundo;
+                return hashes.get(UUID.fromString(parametro.get().toString()));
             });
             return query;
         });
         var repository = new ProcessamentoJpaRepository();
         ReflectionTestUtils.setField(repository, "entityManager", entityManager);
 
-        repository.bloquearIdentidades(PRIMEIRO, SEGUNDO);
+        repository.bloquearIdentidades(identidades);
         return chavesAdquiridas;
     }
 }
