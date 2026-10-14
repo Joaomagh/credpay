@@ -8,12 +8,12 @@
 
 ## Agora
 
-- [ ] B06.8b — Persistência preparatória de recebimento/resposta e outbox próprios. Teste PostgreSQL roundtrip preparado, aguarda red de relações ausentes antesV3. Foco temporário remoto antesverify normal; retirar nofinal. Sem caso operacional/alteração do processamento normal. Spec9.85.
+- [ ] B06.8b/PR #139 — Validar schema preparatório e45 casos PostgreSQL. TDD por ciclo, foco44 aprovado e rollback caracterizado; etapa temporária retirada. Local90/26,746s/Checkstyle0 e revisão aprovados; CI177 e gates finais necessários. Sem caso operacional/fence efetivo/API. Spec9.85.
 
 ## Próximo
 
-- [ ] Integridade/rollback e depois adapter/lock compartilhado com processamento normal; provar replay/corrida/entrada atrasada antes de transporte. Não confirmar sem proteger decisão normal.
+- [ ] Adapter e arbitragem durável sob lock compartilhado, incluindo proteção do processamento normal. Provar replay/rollback/corrida e entrada atrasada antes de transportar confirmação positiva.
 
 ## Depois
 
-- Autoridade/evidência de início operacional e auditoria tardia antes de ativação. Painel/Kubernetes/sandbox/segurança/ensaio continuam pendentes. Estimativa global65%, sem conclusão por quantidade de PRs.
+- Autoridade/evidência operacional e auditoria tardia antes de ativação. Painel/Kubernetes/sandbox/segurança/ensaio continuam pendentes. Estimativa global65%, sem conclusão por quantidade de PRs.

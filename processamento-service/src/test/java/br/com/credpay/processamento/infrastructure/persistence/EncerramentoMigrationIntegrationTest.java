@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.UUID;
 import java.util.Map;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.stream.Stream;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.flywaydb.core.Flyway;
@@ -65,23 +66,11 @@ class EncerramentoMigrationIntegrationTest {
     }
 
     private void gravarERelerPedidoEResposta() throws Exception {
-        String payload = new ObjectMapper().writeValueAsString(java.util.Map.of(
-                "eventId", RESPOSTA, "eventType", "EncerramentoTransacaoRespondido", "eventVersion", 1,
-                "occurredAt", RESPOSTA_EM.toString(), "correlationId", TRANSACAO, "causationId", PEDIDO,
-                "data", java.util.Map.of("transactionId", TRANSACAO, "creationEventId", CRIACAO, "resultado", "CONFIRMADO")));
+        String payload = payloadResposta("CONFIRMADO", null, 1);
         try (var conexao = conectar()) {
             conexao.setAutoCommit(false);
             inserirPedido(conexao);
-            try (var inserir = conexao.prepareStatement("""
-                    INSERT INTO outbox_encerramentos (event_id, aggregate_id, event_type, event_version, payload, occurred_at)
-                    VALUES (?, ?, 'EncerramentoTransacaoRespondido', 1, CAST(? AS jsonb), ?)
-                    """)) {
-                inserir.setObject(1, RESPOSTA);
-                inserir.setObject(2, TRANSACAO);
-                inserir.setString(3, payload);
-                inserir.setTimestamp(4, Timestamp.from(RESPOSTA_EM));
-                assertThat(inserir.executeUpdate()).isEqualTo(1);
-            }
+            inserirIntencao(conexao, payload, 1);
             conexao.commit();
         }
         try (var conexao = conectar(); var consultar = conexao.createStatement();
@@ -314,21 +303,7 @@ class EncerramentoMigrationIntegrationTest {
             conexao.setAutoCommit(false);
             inserirDecisaoFinanceira(conexao, TRANSACAO, CRIACAO);
             inserirPedido(conexao, "DECISAO_EXISTENTE", SAIDA_FINANCEIRA);
-            String payload = new ObjectMapper().writeValueAsString(Map.of(
-                    "eventId", RESPOSTA, "eventType", "EncerramentoTransacaoRespondido", "eventVersion", 1,
-                    "occurredAt", RESPOSTA_EM.toString(), "correlationId", TRANSACAO, "causationId", PEDIDO,
-                    "data", Map.of("transactionId", TRANSACAO, "creationEventId", CRIACAO,
-                            "resultado", "DECISAO_EXISTENTE", "outputEventId", SAIDA_FINANCEIRA)));
-            try (var inserir = conexao.prepareStatement("""
-                    INSERT INTO outbox_encerramentos (event_id, aggregate_id, event_type, event_version, payload, occurred_at)
-                    VALUES (?, ?, 'EncerramentoTransacaoRespondido', 1, CAST(? AS jsonb), ?)
-                    """)) {
-                inserir.setObject(1, RESPOSTA);
-                inserir.setObject(2, TRANSACAO);
-                inserir.setString(3, payload);
-                inserir.setTimestamp(4, Timestamp.from(RESPOSTA_EM));
-                assertThat(inserir.executeUpdate()).isEqualTo(1);
-            }
+            inserirIntencao(conexao, payloadResposta("DECISAO_EXISTENTE", SAIDA_FINANCEIRA, 1), 1);
             conexao.commit();
         }
         try (var conexao = conectar(); var comando = conexao.createStatement(); var linhas = comando.executeQuery("""
@@ -369,6 +344,54 @@ class EncerramentoMigrationIntegrationTest {
 
         private final String constraint;
         VinculoInvalido(String constraint) { this.constraint = constraint; }
+    }
+
+    @Test
+    void reverter_deveRemoverPrimeiraEscrita_quandoIntencaoFalhar() throws Exception {
+        try (var conexao = conectar()) {
+            conexao.setAutoCommit(false);
+            inserirPedido(conexao);
+            var falha = catchThrowable(() -> inserirIntencao(conexao, payloadResposta("CONFIRMADO", null, 2), 2));
+            assertThat(falha).withFailMessage("segunda escrita não falhou no PostgreSQL").isInstanceOf(PSQLException.class);
+            var erro = (PSQLException) falha;
+            assertThat(erro.getSQLState()).withFailMessage("segunda escrita não falhou por CHECK").isEqualTo("23514");
+            assertThat(erro.getServerErrorMessage().getConstraint())
+                    .withFailMessage("segunda escrita não atingiu a constraint esperada").isEqualTo("ck_outbox_encerramentos_event_version");
+            conexao.rollback();
+        }
+        try (var conexao = conectar(); var consultar = conexao.createStatement()) {
+            for (var tabela : List.of("encerramentos", "outbox_encerramentos", "processamentos", "outbox_eventos")) {
+                try (var linhas = consultar.executeQuery("SELECT COUNT(*) FROM " + tabela)) {
+                    assertThat(linhas.next()).isTrue();
+                    assertThat(linhas.getInt(1)).withFailMessage("rollback deixou registro parcial").isZero();
+                }
+            }
+        }
+    }
+
+    private String payloadResposta(String resultado, UUID saidaFinanceira, int versao) throws Exception {
+        var dados = new LinkedHashMap<String, Object>();
+        dados.put("transactionId", TRANSACAO);
+        dados.put("creationEventId", CRIACAO);
+        dados.put("resultado", resultado);
+        if (saidaFinanceira != null) dados.put("outputEventId", saidaFinanceira);
+        return new ObjectMapper().writeValueAsString(Map.of(
+                "eventId", RESPOSTA, "eventType", "EncerramentoTransacaoRespondido", "eventVersion", versao,
+                "occurredAt", RESPOSTA_EM.toString(), "correlationId", TRANSACAO, "causationId", PEDIDO, "data", dados));
+    }
+
+    private void inserirIntencao(Connection conexao, String payload, int versao) throws Exception {
+        try (var inserir = conexao.prepareStatement("""
+                INSERT INTO outbox_encerramentos (event_id, aggregate_id, event_type, event_version, payload, occurred_at)
+                VALUES (?, ?, 'EncerramentoTransacaoRespondido', ?, CAST(? AS jsonb), ?)
+                """)) {
+            inserir.setObject(1, RESPOSTA);
+            inserir.setObject(2, TRANSACAO);
+            inserir.setInt(3, versao);
+            inserir.setString(4, payload);
+            inserir.setTimestamp(5, Timestamp.from(RESPOSTA_EM));
+            assertThat(inserir.executeUpdate()).isEqualTo(1);
+        }
     }
 
     private void inserirPedido(Connection conexao) throws Exception {
