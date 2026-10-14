@@ -2464,6 +2464,8 @@ Green positivo: 2a1287c, run38630413231/job116080296185, etapa focada concluída
 
 Falha da fixture em b6dc8f5/run38630614199/job116081734377: oito erros no BeforeEach, PostgreSQL recusou TRUNCATE porque idempotencias_transacao referencia transacoes. Não é red de negócio. Corrigida a lista explícita das seis tabelas próprias, sem CASCADE; produção preservada. A repetição inclui replay (PENDENTE/APROVADA/REJEITADA, Clock/publicação intactos), conflitos de identidade e 12 controles de causalidade/estrutura SQL. Relógio controlado fixa nanos123456789. As recusas/replay/constraints aguardam red válido antes da implementação.
 
+Red válido em7fc1b1b/run38631159414/job116082843308:26cenários,22falhas/3erros/0skips,16,25s (total27,517s). Positivo passou; recusas ausentes produziam NoSuchElementException/aceite indevido, replay colidia com PK e constraints permitiam corrupção. Implementação passa a reconhecer pedido antes de estado/Clock, recusar nova identidade pela mesma TX, exigir PENDENTE e criação v1 única; V6 adiciona vínculos e checks próprios. FK prova criação/TX, tipo/versão/unicidade de origem continuam responsabilidade da aplicação. Sete cenários adicionais caracterizam transação/locks já existentes (não se alega red próprio): segunda escrita real falha e retry, pedidos concorrentes, ordem pedido/resultado com commit/rollback nos dois sentidos. Decorators somente na fixture, gates depois do SQL, observação pg_locks antes de liberar, workers encerrados em finally. Green real pendente.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

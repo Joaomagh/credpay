@@ -1,6 +1,8 @@
 package br.com.credpay.transacoes.infrastructure.persistence;
 
 import java.util.List;
+import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 import br.com.credpay.transacoes.application.EventoOutbox;
@@ -17,6 +19,23 @@ public class PedidoEncerramentoJdbcRepository
     private final JdbcTemplate jdbc;
 
     public PedidoEncerramentoJdbcRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+
+    @Override
+    public Optional<PedidoEncerramentoRegistrado> buscarPorPedidoId(UUID pedidoId) {
+        return jdbc.query("SELECT * FROM pedidos_encerramento WHERE event_id = ?", (rs, row) ->
+                new PedidoEncerramentoRegistrado(rs.getObject("event_id", UUID.class),
+                        rs.getObject("transaction_id", UUID.class), rs.getObject("creation_event_id", UUID.class),
+                        Instant.ofEpochSecond(rs.getLong("occurred_epoch_second"), rs.getInt("occurred_nano")),
+                        rs.getObject("correlation_id", UUID.class), rs.getString("motivo"),
+                        rs.getObject("evidence_ref", UUID.class)), pedidoId).stream().findFirst();
+    }
+
+    @Override
+    public boolean existePorTransactionId(UUID transactionId) {
+        return Boolean.TRUE.equals(jdbc.queryForObject(
+                "SELECT EXISTS (SELECT 1 FROM pedidos_encerramento WHERE transaction_id = ?)",
+                Boolean.class, transactionId));
+    }
 
     @Override
     public List<UUID> buscarCriacoesOriginais(UUID transactionId) {

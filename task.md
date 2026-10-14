@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B06.8e — Pedido auditável em Transações: primeiro teste PostgreSQL exige pedido/intenção preservando PENDENTE, POST e histórico. Red PostgreSQL confirmado (relation pedidos_encerramento does not exist); implementação positiva mínima em validação, sem aceite de replay/recusas/constraints. Caso somente importado na fixture. Spec9.88.
+- [ ] B06.8e — Pedido auditável em Transações: primeiro teste PostgreSQL exige pedido/intenção preservando PENDENTE, POST e histórico. Positivo verde; red válido26/22falhas3erros confirmou ausência de recusas/replay/constraints. Proteções implementadas e33cenários (incluindo caracterizações de rollback/concorrência) aguardam green real. Caso somente importado na fixture. Spec9.88.
 
 ## Próximo
 
