@@ -6,8 +6,20 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Currency;
 import java.util.UUID;
+import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 
 import com.zaxxer.hikari.HikariDataSource;
 import org.postgresql.util.PSQLException;
@@ -16,10 +28,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.annotation.DirtiesContext;
@@ -32,6 +50,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest(properties = "credpay.processamento.limites.BRL=100.00")
+@Import(CriacaoBloqueadaIntegrationTest.ColaboradoresControlados.class)
 @Testcontainers
 @Execution(ExecutionMode.SAME_THREAD)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -73,10 +92,17 @@ class CriacaoBloqueadaIntegrationTest {
     @Autowired private JdbcTemplate jdbc;
     @Autowired private PlatformTransactionManager transactionManager;
     @Autowired private HikariDataSource dataSource;
+    @Autowired private ProcessamentoRepository processamentos;
+    @Autowired private FalhaControlada falha;
+    @Autowired private RelogioContado relogio;
+    @Autowired private GeradorContado gerador;
 
     @BeforeEach
     void limparBancoDescartavel() {
         poolDaFixture = dataSource;
+        falha.armada.set(false);
+        relogio.chamadas.set(0);
+        gerador.chamadas.set(0);
         jdbc.execute("TRUNCATE criacao_bloqueada_recebimentos, outbox_encerramentos, encerramentos, outbox_eventos, processamentos");
     }
 
@@ -107,6 +133,8 @@ class CriacaoBloqueadaIntegrationTest {
         assertThat(snapshot.get("moeda")).isEqualTo("BRL");
         assertThat(snapshot.get("request_event_id")).isEqualTo(pedido);
         assertThat(snapshot.get("closure_result")).isEqualTo("CONFIRMADO");
+        assertThat(relogio.chamadas.get()).isZero();
+        assertThat(gerador.chamadas.get()).isZero();
     }
 
     @Test
@@ -125,6 +153,8 @@ class CriacaoBloqueadaIntegrationTest {
         assertThat(jdbc.queryForMap("SELECT * FROM criacao_bloqueada_recebimentos")).isEqualTo(snapshot);
         assertThat(contar("processamentos")).isZero();
         assertThat(contar("outbox_eventos")).isZero();
+        assertThat(relogio.chamadas.get()).isZero();
+        assertThat(gerador.chamadas.get()).isZero();
     }
 
     @ParameterizedTest
@@ -158,6 +188,107 @@ class CriacaoBloqueadaIntegrationTest {
     }
 
     private enum Divergencia { VALOR, MOEDA, INSTANTE, TRANSACAO, EVENTO }
+
+    @Test
+    void executar_deveReverterReciboEPermitirRetry_quandoFalharDepoisDaEscrita() {
+        var entrada = entrada("75.00");
+        var pedido = semearConfirmacaoControlada(entrada);
+        falha.armada.set(true);
+
+        assertThatThrownBy(() -> service.executar(entrada))
+                .isInstanceOf(IllegalStateException.class).hasMessage("falha apos recibo bloqueado");
+
+        assertThat(contar("criacao_bloqueada_recebimentos")).isZero();
+        assertThat(contar("processamentos")).isZero();
+        assertThat(contar("outbox_eventos")).isZero();
+        assertThat(contar("encerramentos")).isEqualTo(1);
+        assertThat(contar("outbox_encerramentos")).isEqualTo(1);
+        falha.armada.set(false);
+        assertThat(service.executar(entrada)).isEqualTo(new CriacaoBloqueadaRegistrada(entrada, pedido));
+        assertThat(contar("criacao_bloqueada_recebimentos")).isEqualTo(1);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void executar_deveAguardarLockEObservarCommitOuRollback_doSeedControlado(boolean confirmar)
+            throws Exception {
+        var entrada = entrada("75.00");
+        var pedido = UUID.randomUUID();
+        var entrou = new CountDownLatch(1);
+        var liberar = new CountDownLatch(1);
+        var executor = Executors.newFixedThreadPool(2);
+        Future<UUID> primeira = null;
+        Future<RecebimentoProcessamento> segunda = null;
+        try {
+            primeira = executor.submit(() -> new TransactionTemplate(transactionManager).execute(status -> {
+                processamentos.bloquearIdentidades(pedido, entrada.transactionId());
+                semearConfirmacaoControlada(entrada, pedido);
+                entrou.countDown();
+                try {
+                    if (!liberar.await(30, TimeUnit.SECONDS)) {
+                        throw new IllegalStateException("fixture nao liberou encerramento controlado");
+                    }
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("fixture interrompida", exception);
+                }
+                if (!confirmar) {
+                    status.setRollbackOnly();
+                }
+                return pedido;
+            }));
+            assertThat(entrou.await(10, TimeUnit.SECONDS)).isTrue();
+            segunda = executor.submit(() -> service.executar(entrada));
+            try {
+                aguardarLockEmEspera();
+            } finally {
+                liberar.countDown();
+            }
+            primeira.get(10, TimeUnit.SECONDS);
+            var recebido = segunda.get(10, TimeUnit.SECONDS);
+            if (confirmar) {
+                assertThat(recebido).isEqualTo(new CriacaoBloqueadaRegistrada(entrada, pedido));
+                assertThat(contar("criacao_bloqueada_recebimentos")).isEqualTo(1);
+                assertThat(contar("processamentos")).isZero();
+                assertThat(contar("outbox_eventos")).isZero();
+                assertThat(contar("encerramentos")).isEqualTo(1);
+                assertThat(contar("outbox_encerramentos")).isEqualTo(1);
+            } else {
+                assertThat(recebido).isInstanceOf(ProcessamentoRegistrado.class);
+                assertThat(contar("criacao_bloqueada_recebimentos")).isZero();
+                assertThat(contar("processamentos")).isEqualTo(1);
+                assertThat(contar("outbox_eventos")).isEqualTo(1);
+                assertThat(contar("encerramentos")).isZero();
+                assertThat(contar("outbox_encerramentos")).isZero();
+            }
+        } finally {
+            liberar.countDown();
+            if (primeira != null && !primeira.isDone()) {
+                primeira.cancel(true);
+            }
+            if (segunda != null && !segunda.isDone()) {
+                segunda.cancel(true);
+            }
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(10, TimeUnit.SECONDS))
+                    .withFailMessage("workers da fixture nao terminaram apos cleanup").isTrue();
+        }
+    }
+
+    private void aguardarLockEmEspera() {
+        var fim = System.nanoTime() + Duration.ofSeconds(5).toNanos();
+        while (System.nanoTime() < fim) {
+            Integer aguardando = jdbc.queryForObject("""
+                    SELECT count(*) FROM pg_locks WHERE locktype = 'advisory' AND NOT granted
+                      AND database = (SELECT oid FROM pg_database WHERE datname = current_database())
+                    """, Integer.class);
+            if (aguardando != null && aguardando > 0) {
+                return;
+            }
+            LockSupport.parkNanos(Duration.ofMillis(10).toNanos());
+        }
+        throw new AssertionError("criacao normal nao aguardou advisory lock do seed");
+    }
 
     @ParameterizedTest
     @EnumSource(CampoInvalido.class)
@@ -205,7 +336,10 @@ class CriacaoBloqueadaIntegrationTest {
     }
 
     private UUID semearConfirmacaoControlada(TransacaoCriadaRecebida entrada) {
-        var pedido = UUID.randomUUID();
+        return semearConfirmacaoControlada(entrada, UUID.randomUUID());
+    }
+
+    private UUID semearConfirmacaoControlada(TransacaoCriadaRecebida entrada, UUID pedido) {
         var resposta = UUID.randomUUID();
         new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
             jdbc.update("""
@@ -228,5 +362,57 @@ class CriacaoBloqueadaIntegrationTest {
 
     private int contar(String tabelaDaFixture) {
         return jdbc.queryForObject("SELECT count(*) FROM " + tabelaDaFixture, Integer.class);
+    }
+
+    @TestConfiguration(proxyBeanMethods = false)
+    static class ColaboradoresControlados {
+        @Bean @Primary
+        FalhaControlada reciboControlado(
+                @Qualifier("criacaoBloqueadaJdbcRepository") CriacaoBloqueadaRepository delegate) {
+            return new FalhaControlada(delegate);
+        }
+
+        @Bean @Primary RelogioContado relogioControlado() { return new RelogioContado(); }
+        @Bean @Primary GeradorContado geradorControlado() { return new GeradorContado(); }
+    }
+
+    static final class FalhaControlada implements CriacaoBloqueadaRepository {
+        private final CriacaoBloqueadaRepository delegate;
+        private final AtomicBoolean armada = new AtomicBoolean();
+
+        FalhaControlada(CriacaoBloqueadaRepository delegate) { this.delegate = delegate; }
+
+        @Override public Optional<BloqueioConfirmado> buscarPedidoConfirmadoPorTransactionId(UUID id) {
+            return delegate.buscarPedidoConfirmadoPorTransactionId(id);
+        }
+
+        @Override public Optional<CriacaoBloqueadaRegistrada> buscarRecebimentoPorEventId(UUID id) {
+            return delegate.buscarRecebimentoPorEventId(id);
+        }
+
+        @Override public void inserir(CriacaoBloqueadaRegistrada recibo) {
+            delegate.inserir(recibo);
+            if (armada.get()) {
+                throw new IllegalStateException("falha apos recibo bloqueado");
+            }
+        }
+    }
+
+    static final class RelogioContado extends Clock {
+        private final AtomicInteger chamadas = new AtomicInteger();
+        @Override public ZoneId getZone() { return ZoneOffset.UTC; }
+        @Override public Clock withZone(ZoneId zone) { return Clock.fixed(instant(), zone); }
+        @Override public Instant instant() {
+            chamadas.incrementAndGet();
+            return Instant.parse("2026-10-14T12:00:01.987654Z");
+        }
+    }
+
+    static final class GeradorContado implements GeradorEventIdSaida {
+        private final AtomicInteger chamadas = new AtomicInteger();
+        @Override public UUID gerar() {
+            chamadas.incrementAndGet();
+            return UUID.randomUUID();
+        }
     }
 }

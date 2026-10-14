@@ -268,4 +268,6 @@ B06.8b em validação final: schema preparatório V3/45 casos de roundtrip, unic
 
 B06.8b concluído na PR #139/5ad7e3d: seis gates finais verdes no head d80a899, processador177/8m30 e fixture45; revisão sem bloqueantes. Evidência final em spec9.85 substitui os estados preparatórios acima.
 
-**B06.8c — Arbitragem durável controlada — em execução.** Pedido validado, proteção da entrada normal e recibo bloqueado fazem parte da mesma entrega; confirmação positiva somente depois dessas proteções. Aceite: replay conserva resposta/IDs, vencedor financeiro intacto, rollback e corrida PostgreSQL real. Sem API/listener/transporte de encerramento; caso de uso registrado apenas nos testes. Desenho e riscos em spec9.86.
+**B06.8c — Proteção durável da criação normal — em execução.** Pedido validado, proteção de toda chamada normal e recibo bloqueado. Aceite: replay conserva recibo/IDs/snapshot, vencedor financeiro intacto, rollback e espera pelo lock PostgreSQL real. Confirmação somente semeada na fixture; nenhum writer operacional/API/listener/transporte. Desenho e riscos em spec9.86.
+
+**B06.8d — Registro controlado do pedido e resposta — depende de B06.8c.** Caso de uso somente registrado em testes, sob o mesmo lock, arbitra decisão existente versus bloqueio, persiste resposta/outbox própria atomicamente e conserva replay. Provar rollback e disputa real com processamento normal. Sem origem operacional ou transporte antes do aceite; usar regra pura/contrato e schema já existentes.

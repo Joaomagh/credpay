@@ -8,11 +8,11 @@
 
 ## Agora
 
-- [ ] B06.8c/PR #140 — Red real PostgreSQL comprovou aprovação indevida após seed positivo. Guard, retorno sealed e recibo V4 escritos depois da prova; local 99/28,429s verde. Green PostgreSQL pendente; replay/conflitos/rollback/corrida necessários antes de integrar. Writer de encerramento indisponível. Spec9.86.
+- [ ] B06.8c/PR #140 — Proteção normal/recibo V4 após três ciclos red/green PostgreSQL; foco12 aprovado. Caracterizações finais de rollback e espera pelo lock acrescentadas; etapa temporária retirada. Local99 verde, CI201/gates/revisão final necessários. Writer de encerramento indisponível. Spec9.86.
 
 ## Próximo
 
-- Completar replay, rollback e corrida sob lock compartilhado; integrar somente com suíte afetada, gates finais e revisão. Caso de encerramento registrado apenas em testes.
+- B06.8d: depois da proteção normal integrada, registrar pedido/resposta/outbox sob lock compartilhado; caso de uso somente nos testes. Provar vencedor, replay, rollback e corrida antes de transportar.
 
 ## Depois
 
