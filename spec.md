@@ -2496,6 +2496,8 @@ TDD do domínio em239d732: 41 testes focados, oito falhas esperadas/zero erros/s
 
 Primeiro cenário PostgreSQL: POST real via MockMvc, pedido real, confirmação positiva, GET FALHOU, histórico/recibo causais, fonte/outboxes e POST/Location originais preservados. Exclusão do recibo aplicado deve falhar pela FK específica. Caso scaffold ainda não escreve; precisa red de estado antes de V8/persistência. Fixture própria fecha pool antes do PostgreSQL e limpa somente sete tabelas nomeadas. Etapa focada temporária precede verify completo sem reduzir timeout/testes; sai no aceite.
 
+Red positivo em8edd4ac/run38635707815/job116098202786: um cenário/uma falha/zero erros/skips,15,22s (total25,070s), esperado FALHOU observado PENDENTE. Antes de V8, segunda fixture sem Spring usa conexões sem pool no PostgreSQL próprio, migra até V7, semeia por SQL registros APROVADA/REJEITADA e exige V8/backfill preservando cada coluna antiga e o INSERT financeiro anterior. Não é um novo fluxo financeiro real; prova compatibilidade física com dados existentes. Ambos os cenários focados devem estar red antes de alterar schema/aplicação.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
