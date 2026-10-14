@@ -1,6 +1,7 @@
 package br.com.credpay.transacoes.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -10,17 +11,22 @@ import java.util.UUID;
 
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -64,8 +70,15 @@ class RespostaEncerramentoIntegrationTest {
     @Autowired private RespostaEncerramentoRepository respostas;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private HikariDataSource dataSource;
+    @Autowired private PlatformTransactionManager transactionManager;
 
-    @BeforeEach void preparar() { poolDaFixture = dataSource; }
+    @BeforeEach void preparar() {
+        poolDaFixture = dataSource;
+        jdbc.execute("""
+                TRUNCATE respostas_encerramento_recebidas, outbox_pedidos_encerramento, pedidos_encerramento,
+                  historico_transacoes, outbox_eventos, idempotencias_transacao, transacoes
+                """);
+    }
 
     @ParameterizedTest
     @EnumSource(RespostaEncerramentoRecebida.Resultado.class)
@@ -96,11 +109,114 @@ class RespostaEncerramentoIntegrationTest {
                 .containsEntry("occurred_nano", 123456789)
                 .containsEntry("occurred_epoch_second", resposta.occurredAt().getEpochSecond());
         assertThat(respostas.buscarPorEvento(resposta.eventId())).contains(resposta);
+        assertThat(respostas.buscarPorEvento(UUID.randomUUID())).isEmpty();
         assertThat(jdbc.queryForMap("SELECT * FROM transacoes WHERE id = ?", original.id())).isEqualTo(transacao);
         assertThat(jdbc.queryForList("SELECT * FROM historico_transacoes WHERE transaction_id = ?", original.id()))
                 .isEqualTo(historico);
         assertThat(jdbc.queryForMap("SELECT * FROM pedidos_encerramento WHERE event_id = ?", pedido.eventId()))
                 .isEqualTo(snapshotPedido);
         assertThat(criar.executar(chave, new BigDecimal("75.0"), Currency.getInstance("BRL"))).isEqualTo(original);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"pedido_inexistente", "pedido", "transacao", "criacao", "tipo", "versao",
+            "correlacao", "nano_negativo", "nano_alto", "resultado", "saida_extra", "saida_ausente"})
+    void banco_deveRecusarVinculoOuEstruturaInvalidos_semAlterarRecibo(String campo) {
+        var original = prepararResposta(campo.equals("saida_ausente")
+                ? RespostaEncerramentoRecebida.Resultado.DECISAO_EXISTENTE
+                : RespostaEncerramentoRecebida.Resultado.CONFIRMADO);
+        var outra = prepararResposta(RespostaEncerramentoRecebida.Resultado.CONFIRMADO);
+        respostas.inserir(original);
+        var antes = jdbc.queryForMap("SELECT * FROM respostas_encerramento_recebidas");
+
+        assertThatThrownBy(() -> {
+            switch (campo) {
+                case "pedido_inexistente" -> jdbc.update(
+                        "UPDATE respostas_encerramento_recebidas SET causation_id = ?", UUID.randomUUID());
+                case "pedido" -> jdbc.update(
+                        "UPDATE respostas_encerramento_recebidas SET causation_id = ?", outra.causationId());
+                case "transacao" -> jdbc.update("""
+                        UPDATE respostas_encerramento_recebidas SET transaction_id = ?, correlation_id = ?
+                        """, outra.transactionId(), outra.transactionId());
+                case "criacao" -> jdbc.update(
+                        "UPDATE respostas_encerramento_recebidas SET creation_event_id = ?", outra.creationEventId());
+                case "tipo" -> jdbc.update("UPDATE respostas_encerramento_recebidas SET event_type = 'OUTRO'");
+                case "versao" -> jdbc.update("UPDATE respostas_encerramento_recebidas SET event_version = 2");
+                case "correlacao" -> jdbc.update(
+                        "UPDATE respostas_encerramento_recebidas SET correlation_id = ?", outra.transactionId());
+                case "nano_negativo" -> jdbc.update("UPDATE respostas_encerramento_recebidas SET occurred_nano = -1");
+                case "nano_alto" -> jdbc.update("UPDATE respostas_encerramento_recebidas SET occurred_nano = 1000000000");
+                case "resultado" -> jdbc.update("UPDATE respostas_encerramento_recebidas SET resultado = 'OUTRO'");
+                case "saida_extra" -> jdbc.update(
+                        "UPDATE respostas_encerramento_recebidas SET output_event_id = ?", UUID.randomUUID());
+                case "saida_ausente" -> jdbc.update("UPDATE respostas_encerramento_recebidas SET output_event_id = NULL");
+                default -> throw new IllegalArgumentException(campo);
+            }
+        }).isInstanceOf(DataIntegrityViolationException.class);
+
+        assertThat(jdbc.queryForMap("SELECT * FROM respostas_encerramento_recebidas")).isEqualTo(antes);
+        assertThat(respostas.buscarPorEvento(original.eventId())).contains(original);
+    }
+
+    @Test
+    void banco_deveRecusarNovaRespostaParaPedidoJaRespondido() {
+        var original = prepararResposta(RespostaEncerramentoRecebida.Resultado.CONFIRMADO);
+        respostas.inserir(original);
+
+        assertThatThrownBy(() -> jdbc.update("""
+                INSERT INTO respostas_encerramento_recebidas
+                  (event_id, transaction_id, creation_event_id, event_type, event_version, correlation_id,
+                   causation_id, occurred_epoch_second, occurred_nano, resultado, output_event_id)
+                SELECT ?, transaction_id, creation_event_id, event_type, event_version, correlation_id,
+                       causation_id, occurred_epoch_second, occurred_nano, resultado, output_event_id
+                FROM respostas_encerramento_recebidas
+                """, UUID.randomUUID())).isInstanceOf(DataIntegrityViolationException.class);
+
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM respostas_encerramento_recebidas", Integer.class))
+                .isEqualTo(1);
+        assertThat(respostas.buscarPorEvento(original.eventId())).contains(original);
+    }
+
+    @Test
+    void banco_devePreservarEventoOriginal_quandoIdentidadeDuplicar() {
+        var original = prepararResposta(RespostaEncerramentoRecebida.Resultado.CONFIRMADO);
+        respostas.inserir(original);
+
+        assertThatThrownBy(() -> respostas.inserir(original)).isInstanceOf(DataIntegrityViolationException.class);
+
+        assertThat(respostas.buscarPorEvento(original.eventId())).contains(original);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM respostas_encerramento_recebidas", Integer.class))
+                .isEqualTo(1);
+    }
+
+    @Test
+    void inserir_deveParticiparDoRollbackExterno_ePermitirNovaTentativa() {
+        var original = prepararResposta(RespostaEncerramentoRecebida.Resultado.CONFIRMADO);
+        var transacao = jdbc.queryForMap("SELECT * FROM transacoes");
+        var pedido = jdbc.queryForMap("SELECT * FROM pedidos_encerramento");
+        var tx = new TransactionTemplate(transactionManager);
+
+        assertThatThrownBy(() -> tx.execute(status -> {
+            respostas.inserir(original);
+            assertThat(respostas.buscarPorEvento(original.eventId())).contains(original);
+            throw new IllegalStateException("falha após recibo real");
+        })).isInstanceOf(IllegalStateException.class).hasMessage("falha após recibo real");
+
+        assertThat(respostas.buscarPorEvento(original.eventId())).isEmpty();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM respostas_encerramento_recebidas", Integer.class)).isZero();
+        assertThat(jdbc.queryForMap("SELECT * FROM transacoes")).isEqualTo(transacao);
+        assertThat(jdbc.queryForMap("SELECT * FROM pedidos_encerramento")).isEqualTo(pedido);
+        assertThat(jdbc.queryForList("SELECT * FROM historico_transacoes")).isEmpty();
+        respostas.inserir(original);
+        assertThat(respostas.buscarPorEvento(original.eventId())).contains(original);
+    }
+
+    private RespostaEncerramentoRecebida prepararResposta(RespostaEncerramentoRecebida.Resultado resultado) {
+        var transacao = criar.executar(UUID.randomUUID(), new BigDecimal("75.00"), Currency.getInstance("BRL"));
+        var pedido = solicitar.executar(UUID.randomUUID(), transacao.id(), UUID.randomUUID());
+        return new RespostaEncerramentoRecebida(UUID.randomUUID(), transacao.id(), pedido.creationEventId(),
+                Instant.parse("2026-10-14T18:00:00.123456789Z"), transacao.id(), pedido.eventId(), resultado,
+                resultado == RespostaEncerramentoRecebida.Resultado.DECISAO_EXISTENTE
+                        ? Optional.of(UUID.randomUUID()) : Optional.empty());
     }
 }

@@ -2476,6 +2476,8 @@ Menor preparação antes do aplicador: DTO próprio EncerramentoTransacaoRespond
 
 TDD puro: contrato sem validação90cf887 executou13/11falhas/0erros/0skips em11,883s; ausentes eram aceitos. Após guardas explícitas, contrato13 verde e verify185/28,793s/Checkstyle0. Primeiro teste PostgreSQL cobre ambos os resultados, envelope/epoch-nano123456789, releitura e estado/POST/histórico intactos; adapter scaffolding não escreve, V7 ainda ausente. Estrutura compila em11,066s. Etapa focada temporária antecede verify intacto; precisa red remoto antes do SQL/adapter real e será retirada antes do aceite. Sem nova dependência. Com V7, limpeza explícita da fixture de pedidos deverá incluir o novo recibo por causa da FK, sem CASCADE.
 
+Red PostgreSQL em4992da8/run38633292223/job116090048686:2cenários/2erros/0falhas/0skips,15,00s (total25,380s), relation respostas_encerramento_recebidas does not exist após pedido real. Implementação mínima V7/adapter passa a gravar/reler envelope semântico; campo de publicação do pedido e estado não são usados como autoridade. Próxima rodada17cenários inclui13 exigências ainda ausentes de vínculo/estrutura/unicidade; PK e rollback JDBC são caracterizações, sem red próprio alegado. Lista de limpeza explicitamente sete tabelas, também atualizada na fixture dos pedidos para suportar a FK futura.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
