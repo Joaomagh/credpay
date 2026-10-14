@@ -4,16 +4,16 @@
 
 ## Último incremento
 
-- Direção coordenada registrada e integrada na PR #136/adf318f; Scan do headb07699c verde, revisão/UTF-8/diff aprovados. Java inalterado; spec9.83.
+- Contrato de eventos/arbitragem integrado na PR #137/bbeab54 após Scan/revisão/UTF-8/diff. Direção: confirmação coordenada; João aprovou primeira prova controlada somente em teste, sem API. Spec9.83/9.84.
 
 ## Agora
 
-- [ ] B06.8 — Finalizar contrato da confirmação coordenada aprovada por João10/10: pedido mantém PENDENTE, bloqueio durável no processador, decisão existente preservada, confirmação causal antes de FALHOU. Envelopes/arbitragem refinados documentalmente em14/10, aguardam revisão. Autoridade/evidência de início e auditoria tardia ainda precisam definição antes de ativação. docs/CONFIRMACAO_FALHA.md; spec9.83.
+- [ ] B06.8a — Validar regra pura ArbitrarEncerramento: preservar decisão/saída, recusar identidades divergentes, ausência exige bloqueio. TDD8 e verify local90 verdes; CI132/gates e revisão ainda necessários. Sem bloqueio persistente ou FALHOU implementados. Spec9.84.
 
 ## Próximo
 
-- [ ] Primeira fatia TDD do bloqueio no processador, após contrato pronto; depois concorrência/atomicidade PostgreSQL real e transporte.
+- [ ] Bloqueio durável e recebimento/resposta/outbox atômicos sob lock compartilhado com processamento normal. TDD PostgreSQL: rollback, replay/conflito e disputa pedido/decisão; depois transporte.
 
 ## Depois
 
-- Painel, Kubernetes local, sandbox verificável, segurança e ensaio da demo continuam pendentes. PR #118 inativa exige direção específica. Estimativa global65%, sem conclusão por quantidade de PRs.
+- Autoridade/evidência de início operacional e auditoria tardia antes de ativação. Painel/Kubernetes/sandbox/segurança/ensaio continuam pendentes. Estimativa global65%, sem conclusão por quantidade de PRs.

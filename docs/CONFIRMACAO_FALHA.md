@@ -62,3 +62,7 @@ Este refinamento permite revisar identidades, vencedor e matriz TDD. Motivos/aut
 ## Estado e conclusão
 
 Contrato preliminar revisável, sem enum, migration, endpoint, AMQP ou dependência novos. B06.7 encerra observação de retornos; não conclui FALHOU, dashboard, Kubernetes ou sandbox. Percentual global permanece estimativa aproximada de 65%; critérios de saída governam a conclusão.
+
+## Primeira fatia controlada — 2026-10-14
+
+João aprovou começar somente por cenário controlado em teste descartável, mantendo operação indisponível à API. ArbitrarEncerramento modela a escolha pura: decisão APROVADA/REJEITADA correspondente devolve DECISAO_EXISTENTE com outputEventId original; identidade divergente é conflito seguro; ausência devolve BLOQUEIO_NECESSARIO, sem confirmação externa. Não está ligada ao listener/caso de uso persistente; não grava bloqueio/outbox nem habilita FALHOU. Autoridade/motivo operacional e evidência permanente continuam condicionados antes de qualquer ativação. A regra será usada sob lock pelo adapter durável seguinte.
