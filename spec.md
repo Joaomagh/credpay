@@ -2445,6 +2445,8 @@ Primeira implementação positiva escrita após red: três locks antes das escri
 
 Green positivo focado aprovado em42fc7f2/run38624734331/job116060894710, antes do próximo ciclo; verify completo intermediário não é aceite final. Próximo red: APROVADA e REJEITADA existentes devem gerar negativa com output original e preservar snapshot/outbox/replay financeiro; identidade de criação/transação incompatível deve conflitar antes de escrever. Fixture SAME_THREAD limpa explicitamente somente suas cinco tabelas descartáveis. Estrutura10,929s/Checkstyle0 aprovada; cinco casos agora aguardam red real.
 
+Red financeira/identidade5075814/run38625121988/job116062816739:5 casos/4falhas/0erros/skips,21,915s; duas confirmações indevidas versus DECISAO_EXISTENTE e duas identidades aceitas. Depois da prova, caso de uso consulta decisão sob os três locks, reutiliza ArbitrarEncerramento e conserva output original; transação já financeira com outra criação conflita sem escrita. Payload negativo inclui outputEventId, positivo continua sem esse campo via NON_NULL. Local100/28,198s/Checkstyle0 verde; import não utilizado corrigido antes dessa execução válida. Green5 remoto pendente; replay/atomicidade/corrida ainda não aceitos.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
