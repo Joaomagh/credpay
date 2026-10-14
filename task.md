@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- B06.8e integrado na PR #142/996942c: seis gates ee3b94a verdes, Trans319/2m56, fixture33 e revisão sem bloqueantes. Pedido auditável sem congelar TX, transporte ou aplicação de FALHOU. Spec9.88.
+- B06.8e integrado na PR #142/996942c: seis gates ee3b94a verdes, 319 testes de Transações em 2m56, fixture33 e revisão sem bloqueantes. Pedido auditável sem congelar TX, transporte ou aplicação de FALHOU. Spec9.88.
 
 ## Agora
 
-- [ ] B06.8f — Preparar contrato/recibo causal da resposta e V7 própria. Preservar envelope, nanos, saída negativa e vínculo pedido/TX/criação; sem aplicar estado/histórico. TDD começa pelo contrato puro. Spec9.89.
+- [ ] B06.8f — Preparar contrato/recibo causal da resposta e V7 própria. Preservar envelope, nanos, saída negativa e vínculo pedido/TX/criação; sem aplicar estado/histórico. Contrato13 e etapa PostgreSQL17 verdes (f7a60cd); foco temporário removido. Aguardam-se suíte349 e seis gates finais. Spec9.89.
 
 ## Próximo
 

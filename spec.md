@@ -2480,6 +2480,8 @@ Red PostgreSQL em4992da8/run38633292223/job116090048686:2cenários/2erros/0falha
 
 Red das restrições em633c042/run38633656160/job116091267019:17cenários/13falhas/0erros/0skips,16,00s (total27,109s); roundtrip positivo/negativo, PK e rollback passaram, vínculos/estrutura e segunda resposta eram aceitos. V7 agora adiciona FK tripla ao pedido/TX/criação, UK da causa e checks namespace/versão/correlação/nanos/resultado-saída. Testes exigem SQLSTATE e constraint específicos; PK isolada usa outro pedido válido para evitar duas violações simultâneas. Revisão do checkpoint sem bloqueantes, com esse fortalecimento de diagnóstico incorporado. Output financeiro não tem FK à outbox local: pertence ao processador e pode ainda não ter chegado. Green17/suíte/gates pendentes.
 
+Green focado: etapa dos 17 cenários concluída com sucesso em f7a60cd, run38634029240/job116092513642; verify completo iniciou. Local: 185 testes em 28,552 s, zero falhas/erros/skips e Checkstyle0. Revisão final sem bloqueantes; diff e UTF-8 válidos. Retirada a etapa temporária para aceite com verify padrão e timeout preservados. Aguardam-se 349 testes e os seis gates do último SHA. Recibo positivo isolado continua significando recebido: o futuro aplicador precisa verificar/concluir estado e histórico atomicamente antes de devolver aplicado.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
