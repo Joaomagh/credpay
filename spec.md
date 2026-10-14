@@ -2466,6 +2466,8 @@ Falha da fixture em b6dc8f5/run38630614199/job116081734377: oito erros no Before
 
 Red válido em7fc1b1b/run38631159414/job116082843308:26cenários,22falhas/3erros/0skips,16,25s (total27,517s). Positivo passou; recusas ausentes produziam NoSuchElementException/aceite indevido, replay colidia com PK e constraints permitiam corrupção. Implementação passa a reconhecer pedido antes de estado/Clock, recusar nova identidade pela mesma TX, exigir PENDENTE e criação v1 única; V6 adiciona vínculos e checks próprios. FK prova criação/TX, tipo/versão/unicidade de origem continuam responsabilidade da aplicação. Sete cenários adicionais caracterizam transação/locks já existentes (não se alega red próprio): segunda escrita real falha e retry, pedidos concorrentes, ordem pedido/resultado com commit/rollback nos dois sentidos. Decorators somente na fixture, gates depois do SQL, observação pg_locks antes de liberar, workers encerrados em finally. Green real pendente.
 
+Green focado emcdb9c65/run38631610722/job116084375510: etapa dos33cenários concluída com sucesso; verify completo iniciou. Local172/28,725s/Checkstyle0, revisão sem bloqueantes, diff/UTF-8 válidos. Removida a etapa temporária para o aceite final com verify padrão intacto; suíte319 e seis gates do SHA final ainda pendentes. Migrações anteriores e contratos financeiros preservados; caso não descoberto na aplicação real. Próximo após integração: preparar resposta/recibo causal e evolução do histórico único, antes de aplicar confirmação controlada; nenhum transporte entre etapas.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

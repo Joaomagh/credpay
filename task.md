@@ -8,11 +8,11 @@
 
 ## Agora
 
-- [ ] B06.8e — Pedido auditável em Transações: primeiro teste PostgreSQL exige pedido/intenção preservando PENDENTE, POST e histórico. Positivo verde; red válido26/22falhas3erros confirmou ausência de recusas/replay/constraints. Proteções implementadas e33cenários (incluindo caracterizações de rollback/concorrência) aguardam green real. Caso somente importado na fixture. Spec9.88.
+- [ ] B06.8e — Pedido auditável em Transações: primeiro teste PostgreSQL exige pedido/intenção preservando PENDENTE, POST e histórico. Positivo verde; red válido26/22falhas3erros confirmou ausência de recusas/replay/constraints. Proteções e etapa33cenários verdes no PostgreSQL (cdb9c65). Foco temporário removido; aceite final aguarda verify319 e seis gates/revisão do último SHA. Caso somente importado na fixture. Spec9.88.
 
 ## Próximo
 
-- Derivar criação original, persistir pedido/outbox própria, testar replay/conflito/recusa/rollback e disputa com resultado financeiro. Retirar etapa temporária antes do aceite.
+- Concluir gates e integrar PR #142; depois preparar resposta/recibo causal e evolução do histórico único (B06.8f), ainda sem transporte/ativação.
 
 ## Depois
 
