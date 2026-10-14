@@ -2380,6 +2380,8 @@ B06.7 integrado na PR #135/8c4bd8d após seis gates finais verdes em a7cdbe2: Fl
 ### 9.83 Direção de confirmação coordenada — B06.8
 
 João aprovou em2026-10-10 criar confirmação coordenada entre serviços. docs/CONFIRMACAO_FALHA.md registra contrato preliminar: pedido durável mantém PENDENTE; processador serializa com decisão normal, preserva vencedor existente ou grava bloqueio/confirmacao atomicamente; criação atrasada respeita bloqueio; transações só aplica FALHOU após confirmação causal. Coordenação impede decisão futura, sem fabricar prova física da causa irrecuperável. Critério/autoridade de início, envelopes, confirmação negativa e auditoria tardia devem ser fixados antes de implementação. Não há enum, migration, endpoint, listener ou dependência novos. Primeira fatia futura é regra do bloqueio e matriz TDD, seguida por concorrência/atomicidade no PostgreSQL real. Percentual global permanece estimado65%; painel/Kubernetes/sandbox/segurança/ensaio não concluídos por contadores.
+B06.8 direção preliminar integrada na PR #136/adf318f após Scan/run38020456146 verde no headb07699c, revisão e UTF-8/diff aprovados; filtros não exigiram suítes Java para documentos. Em14/10, refinamento documental propõe dois envelopes próprios, equivalência semântica e matriz de arbitragem sob o lock atual READ_COMMITTED. Decisão financeira existente vence; bloqueio anterior impede nova decisão; resposta original/replay e ACK após commit. Autoridade/motivo/evidência de início e auditoria tardia seguem sem definição, nenhum comportamento implementado.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
