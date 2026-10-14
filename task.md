@@ -4,16 +4,16 @@
 
 ## Último incremento
 
-- B06.8d integrado na PR #141/3d78e9c: seis gates4349a8d verdes, processador222/8m14, fixture20 e revisão sem bloqueantes. Registro/resposta controlados, sem transporte/ativação. Spec9.87.
+- B06.8e integrado na PR #142/996942c: seis gates ee3b94a verdes, 319 testes de Transações em 2m56, fixture33 e revisão sem bloqueantes. Pedido auditável sem congelar TX, transporte ou aplicação de FALHOU. Spec9.88.
 
 ## Agora
 
-- [ ] B06.8e — Pedido auditável em Transações: primeiro teste PostgreSQL exige pedido/intenção preservando PENDENTE, POST e histórico. Positivo verde; red válido26/22falhas3erros confirmou ausência de recusas/replay/constraints. Proteções e etapa33cenários verdes no PostgreSQL (cdb9c65). Foco temporário removido; aceite final aguarda verify319 e seis gates/revisão do último SHA. Caso somente importado na fixture. Spec9.88.
+- [ ] B06.8f — Preparar contrato/recibo causal da resposta e V7 própria. Preservar envelope, nanos, saída negativa e vínculo pedido/TX/criação; sem aplicar estado/histórico. Contrato13 e etapa PostgreSQL17 verdes (f7a60cd); foco temporário removido. Aguardam-se suíte349 e seis gates finais. Spec9.89.
 
 ## Próximo
 
-- Concluir gates e integrar PR #142; depois preparar resposta/recibo causal e evolução do histórico único (B06.8f), ainda sem transporte/ativação.
+- Provar roundtrip/constraints/rollback PostgreSQL e integrar após revisão/gates. Depois evoluir domínio/histórico único e aplicação controlada, incluindo negativa antes/depois do financeiro.
 
 ## Depois
 
-- Aplicação causal da confirmação e transporte controlado; autoridade/evidência operacional e auditoria tardia. Painel/Kubernetes/sandbox/segurança/ensaio pendentes. Estimativa global65%.
+- Transporte controlado; autoridade/evidência operacional e auditoria tardia. Painel/Kubernetes/sandbox/segurança/ensaio pendentes. Estimativa global65%.

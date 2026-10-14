@@ -101,7 +101,7 @@ class SolicitarEncerramentoIntegrationTest {
         controle.desarmar();
         controle.falharPedido.set(false);
         jdbc.execute("""
-                TRUNCATE outbox_pedidos_encerramento, pedidos_encerramento,
+                TRUNCATE respostas_encerramento_recebidas, outbox_pedidos_encerramento, pedidos_encerramento,
                   historico_transacoes, outbox_eventos, idempotencias_transacao, transacoes
                 """);
     }
