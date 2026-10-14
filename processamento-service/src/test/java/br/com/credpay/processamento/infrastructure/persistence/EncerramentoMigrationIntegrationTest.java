@@ -8,6 +8,8 @@ import java.sql.DriverManager;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.UUID;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.stream.Stream;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.flywaydb.core.Flyway;
@@ -219,6 +221,58 @@ class EncerramentoMigrationIntegrationTest {
                 .map(coluna -> Arguments.of("encerramentos", coluna)),
                 Stream.of("event_id", "aggregate_id", "event_type", "event_version", "payload", "occurred_at")
                         .map(coluna -> Arguments.of("outbox_encerramentos", coluna)));
+    }
+
+    @ParameterizedTest
+    @EnumSource(EnvelopeInvalido.class)
+    void persistir_deveRecusarEnvelopeInvalidoSemAlterarOriginal(EnvelopeInvalido caso) throws Exception {
+        gravarERelerPedidoEResposta();
+        try (var conexao = conectar(); var comando = conexao.createStatement()) {
+            var pedidoOriginal = snapshot(conexao, "encerramentos");
+            var outboxOriginal = snapshot(conexao, "outbox_encerramentos");
+            var falha = catchThrowable(() -> comando.executeUpdate(caso.sql));
+            assertThat(falha).withFailMessage("envelope inválido foi aceito ou falhou fora do PostgreSQL")
+                    .isInstanceOf(PSQLException.class);
+            var erro = (PSQLException) falha;
+            assertThat(erro.getSQLState()).withFailMessage("envelope não falhou por CHECK").isEqualTo("23514");
+            assertThat(erro.getServerErrorMessage().getConstraint())
+                    .withFailMessage("envelope não atingiu a constraint esperada").isEqualTo(caso.constraint);
+            assertThat(snapshot(conexao, "encerramentos")).withFailMessage("pedido original foi alterado").isEqualTo(pedidoOriginal);
+            assertThat(snapshot(conexao, "outbox_encerramentos")).withFailMessage("outbox original foi alterada").isEqualTo(outboxOriginal);
+        }
+    }
+
+    private Map<String, Object> snapshot(Connection conexao, String tabela) throws Exception {
+        try (var comando = conexao.createStatement(); var linhas = comando.executeQuery("SELECT * FROM " + tabela)) {
+            assertThat(linhas.next()).withFailMessage("snapshot não encontrou o registro esperado").isTrue();
+            var dados = new LinkedHashMap<String, Object>();
+            var metadata = linhas.getMetaData();
+            for (int coluna = 1; coluna <= metadata.getColumnCount(); coluna++) {
+                dados.put(metadata.getColumnLabel(coluna), linhas.getObject(coluna));
+            }
+            assertThat(linhas.next()).withFailMessage("snapshot encontrou registro adicional").isFalse();
+            return dados;
+        }
+    }
+
+    enum EnvelopeInvalido {
+        TIPO_PEDIDO("UPDATE encerramentos SET event_type = 'Outro'", "ck_encerramentos_event_type"),
+        VERSAO_PEDIDO("UPDATE encerramentos SET event_version = 2", "ck_encerramentos_event_version"),
+        NANO_NEGATIVO("UPDATE encerramentos SET request_occurred_nano = -1", "ck_encerramentos_occurred_nano"),
+        NANO_SUPERIOR("UPDATE encerramentos SET request_occurred_nano = 1000000000", "ck_encerramentos_occurred_nano"),
+        CORRELACAO("UPDATE encerramentos SET correlation_id = '04c58b10-bceb-4aef-9637-65fca5f733fd'", "ck_encerramentos_correlation"),
+        MOTIVO("UPDATE encerramentos SET motivo = 'OUTRO'", "ck_encerramentos_motivo"),
+        RESULTADO("UPDATE encerramentos SET resultado = 'OUTRO'", "ck_encerramentos_resultado_saida"),
+        CONFIRMADO_COM_SAIDA("UPDATE encerramentos SET output_event_id = '04c58b10-bceb-4aef-9637-65fca5f733fd'", "ck_encerramentos_resultado_saida"),
+        DECISAO_SEM_SAIDA("UPDATE encerramentos SET resultado = 'DECISAO_EXISTENTE'", "ck_encerramentos_resultado_saida"),
+        TIPO_OUTBOX("UPDATE outbox_encerramentos SET event_type = 'Outro'", "ck_outbox_encerramentos_event_type"),
+        VERSAO_OUTBOX("UPDATE outbox_encerramentos SET event_version = 2", "ck_outbox_encerramentos_event_version"),
+        PAYLOAD_ARRAY("UPDATE outbox_encerramentos SET payload = '[]'::jsonb", "ck_outbox_encerramentos_payload_object"),
+        PAYLOAD_JSON_NULL("UPDATE outbox_encerramentos SET payload = 'null'::jsonb", "ck_outbox_encerramentos_payload_object");
+
+        private final String sql;
+        private final String constraint;
+        EnvelopeInvalido(String sql, String constraint) { this.sql = sql; this.constraint = constraint; }
     }
 
     private void inserirPedido(Connection conexao) throws Exception {
