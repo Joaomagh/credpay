@@ -2420,6 +2420,8 @@ Objetivo e aceite: pedido interno validado, arbitragem sob o mesmo lock da entra
 
 PedidoEncerramentoRecebido: correlação divergente red2/1falha/13,266s (aceita sem exceção), green2/12,768s; campos obrigatórios red9/7falhas/10,964s (ausência aceita ou erro implícito sem nome), green9/9,585s, Checkstyle0. Preservação de snapshot/nanos é caracterização de record. Fixture nova semeia confirmação somente em banco descartável para provar primeiro a proteção da chamada direta normal; não constitui implementação de origem do pedido. Red de infraestrutura aguardado no CI; estrutura12,127s aprovada sem execução de containers local. Foco temporário antes do verify, suíte/timeout intactos; retirar antes do aceite final.
 
+Red real de criação bloqueada: a72f0e8/run38605703161/job115995890194, 1 caso/1falha,23,474s; PostgreSQL saudável, seed positivo commitado e pool fechado antes do banco. Observado ProcessamentoRegistrado/APROVADA em vez de CriacaoBloqueadaRegistrada. Após a prova, retorno sealed e guard sob lock existente, adapter JDBC e V4 de recibo próprio com FK composta ao pedido positivo/transação/criação. Nenhum writer de encerramento disponível. Fixtures que truncam pais incluem agora a nova tabela filha, sem CASCADE. Adaptação de consumidores do retorno exigiu corrigir compilação dos testes financeiros/constructor/Future; isso não conta como red TDD. Local99/28,429s, zero falhas/erros/skips e Checkstyle0; green PostgreSQL pendente. Replay/conflitos/rollback/corrida ainda não aceitos; não integrar este estágio.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

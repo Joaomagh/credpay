@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B06.8c — Arbitragem durável exclusivamente controlada. Pedido validado por TDD9; primeiro red de criação bloqueada no PostgreSQL ainda necessário. Proteger chamada direta normal e recibo antes de oferecer confirmação positiva. Sem API/listener/transporte de encerramento. Spec9.86.
+- [ ] B06.8c/PR #140 — Red real PostgreSQL comprovou aprovação indevida após seed positivo. Guard, retorno sealed e recibo V4 escritos depois da prova; local 99/28,429s verde. Green PostgreSQL pendente; replay/conflitos/rollback/corrida necessários antes de integrar. Writer de encerramento indisponível. Spec9.86.
 
 ## Próximo
 

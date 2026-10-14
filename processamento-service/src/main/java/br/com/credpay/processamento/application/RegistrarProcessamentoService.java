@@ -20,20 +20,23 @@ public class RegistrarProcessamentoService {
     private final GeradorEventIdSaida gerador;
     private final OutboxProcessamentoRepository outbox;
     private final ObjectMapper objectMapper;
+    private final CriacaoBloqueadaRepository bloqueados;
 
     public RegistrarProcessamentoService(ProcessamentoRepository repository,
             ProcessarTransacaoService decisor, Clock clock, GeradorEventIdSaida gerador,
-            OutboxProcessamentoRepository outbox, ObjectMapper objectMapper) {
+            OutboxProcessamentoRepository outbox, ObjectMapper objectMapper,
+            CriacaoBloqueadaRepository bloqueados) {
         this.repository = repository;
         this.decisor = decisor;
         this.clock = clock;
         this.gerador = gerador;
         this.outbox = outbox;
         this.objectMapper = objectMapper;
+        this.bloqueados = bloqueados;
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED)
-    public ProcessamentoRegistrado executar(TransacaoCriadaRecebida entrada) {
+    public RecebimentoProcessamento executar(TransacaoCriadaRecebida entrada) {
         Objects.requireNonNull(entrada, "entrada");
         repository.bloquearIdentidades(entrada.eventId(), entrada.transactionId());
         var existente = repository.buscarPorEventId(entrada.eventId());
@@ -45,6 +48,13 @@ public class RegistrarProcessamentoService {
         }
         if (repository.existePorTransactionId(entrada.transactionId())) {
             throw new ConflitoProcessamentoException("transacao ja processada");
+        }
+
+        var pedidoConfirmado = bloqueados.buscarPedidoConfirmadoPorTransactionId(entrada.transactionId());
+        if (pedidoConfirmado.isPresent()) {
+            var recebimento = new CriacaoBloqueadaRegistrada(entrada, pedidoConfirmado.orElseThrow());
+            bloqueados.inserir(recebimento);
+            return recebimento;
         }
 
         var decisao = decisor.executar(entrada.valor(), entrada.moeda());

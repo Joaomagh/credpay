@@ -71,7 +71,7 @@ class CriacaoBloqueadaIntegrationTest {
     @BeforeEach
     void limparBancoDescartavel() {
         poolDaFixture = dataSource;
-        jdbc.execute("TRUNCATE outbox_encerramentos, encerramentos, outbox_eventos, processamentos");
+        jdbc.execute("TRUNCATE criacao_bloqueada_recebimentos, outbox_encerramentos, encerramentos, outbox_eventos, processamentos");
     }
 
     @Test

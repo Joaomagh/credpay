@@ -34,7 +34,7 @@ class RegistrarProcessamentoServiceTest {
         var service = service(moeda -> new BigDecimal("100.00"),
                 Clock.fixed(processedAt, ZoneOffset.UTC), () -> outputId);
 
-        var resultado = service.executar(entrada(new BigDecimal("75.00")));
+        var resultado = (ProcessamentoRegistrado) service.executar(entrada(new BigDecimal("75.00")));
 
         assertThat(resultado.eventId()).isEqualTo(eventId);
         assertThat(resultado.transactionId()).isEqualTo(transactionId);
@@ -69,7 +69,7 @@ class RegistrarProcessamentoServiceTest {
             consultas.incrementAndGet();
             return new BigDecimal("100.00");
         }, Clock.fixed(processedAt, ZoneOffset.UTC), () -> outputId);
-        var original = service.executar(entrada(new BigDecimal("75.0")));
+        var original = (ProcessamentoRegistrado) service.executar(entrada(new BigDecimal("75.0")));
         var replay = service(moeda -> {
             throw new AssertionError("politica nao deve ser consultada no replay");
         }, new Clock() {
@@ -78,7 +78,7 @@ class RegistrarProcessamentoServiceTest {
             @Override public Instant instant() { throw new AssertionError("relogio nao deve ser consultado"); }
         }, () -> { throw new AssertionError("novo ID nao deve ser gerado"); });
 
-        var recebido = replay.executar(entrada(new BigDecimal("75.00")));
+        var recebido = (ProcessamentoRegistrado) replay.executar(entrada(new BigDecimal("75.00")));
 
         assertThat(recebido).isSameAs(original);
         assertThat(repository.registros).hasSize(1);
@@ -88,7 +88,7 @@ class RegistrarProcessamentoServiceTest {
     @ParameterizedTest
     @EnumSource(CampoDivergente.class)
     void executar_deveRejeitarMesmoEventoDivergenteSemSobrescrever(CampoDivergente campo) {
-        var original = service(moeda -> new BigDecimal("100.00"),
+        var original = (ProcessamentoRegistrado) service(moeda -> new BigDecimal("100.00"),
                 Clock.fixed(processedAt, ZoneOffset.UTC), () -> outputId)
                 .executar(entrada(new BigDecimal("75.00")));
         var replay = service(moeda -> { throw new AssertionError("politica consultada"); },
@@ -117,7 +117,7 @@ class RegistrarProcessamentoServiceTest {
 
     @Test
     void executar_deveRejeitarNovoEventoParaTransacaoJaProcessada() {
-        var original = service(moeda -> new BigDecimal("100.00"),
+        var original = (ProcessamentoRegistrado) service(moeda -> new BigDecimal("100.00"),
                 Clock.fixed(processedAt, ZoneOffset.UTC), () -> outputId)
                 .executar(entrada(new BigDecimal("75.00")));
         var replay = service(moeda -> { throw new AssertionError("politica consultada"); },
@@ -136,7 +136,7 @@ class RegistrarProcessamentoServiceTest {
             LimitesProcessamento limites, Clock clock, GeradorEventIdSaida gerador) {
         return new RegistrarProcessamentoService(repository,
                 new ProcessarTransacaoService(limites), clock, gerador,
-                new OutboxEmMemoria(), new ObjectMapper());
+                new OutboxEmMemoria(), new ObjectMapper(), repository);
     }
 
     private TransacaoCriadaRecebida entrada(BigDecimal valor) {
@@ -144,10 +144,19 @@ class RegistrarProcessamentoServiceTest {
                 transactionId, valor, Currency.getInstance("BRL"));
     }
 
-    private static final class RepositorioEmMemoria implements ProcessamentoRepository {
+    private static final class RepositorioEmMemoria
+            implements ProcessamentoRepository, CriacaoBloqueadaRepository {
         private final Map<UUID, ProcessamentoRegistrado> registros = new HashMap<>();
 
         @Override public void bloquearIdentidades(UUID eventId, UUID transactionId) { }
+
+        @Override public Optional<UUID> buscarPedidoConfirmadoPorTransactionId(UUID transactionId) {
+            return Optional.empty();
+        }
+
+        @Override public void inserir(CriacaoBloqueadaRegistrada recebimento) {
+            throw new AssertionError("cenario financeiro nao deve registrar criacao bloqueada");
+        }
 
         @Override public void inserir(ProcessamentoRegistrado processamento) {
             registros.put(processamento.eventId(), processamento);
