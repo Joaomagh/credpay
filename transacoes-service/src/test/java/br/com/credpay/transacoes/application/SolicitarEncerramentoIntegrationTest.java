@@ -3,9 +3,11 @@ package br.com.credpay.transacoes.application;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Currency;
 import java.util.UUID;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,11 +61,12 @@ class SolicitarEncerramentoIntegrationTest {
     @Autowired private SolicitarEncerramentoService solicitar;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private HikariDataSource dataSource;
+    @Autowired private ObjectMapper mapper;
 
     @BeforeEach void capturarPool() { poolDaFixture = dataSource; }
 
     @Test
-    void executar_deveGravarPedidoEIntencao_semMudarTransacaoOuRespostaOriginal() {
+    void executar_deveGravarPedidoEIntencao_semMudarTransacaoOuRespostaOriginal() throws Exception {
         var chave = UUID.randomUUID();
         var original = criar.executar(chave, new BigDecimal("75.00"), Currency.getInstance("BRL"));
         var transacao = jdbc.queryForMap("SELECT * FROM transacoes");
@@ -71,7 +74,8 @@ class SolicitarEncerramentoIntegrationTest {
         var historico = jdbc.queryForList("SELECT * FROM historico_transacoes");
         var pedido = UUID.randomUUID();
 
-        solicitar.executar(pedido, original.id(), UUID.randomUUID());
+        var evidencia = UUID.randomUUID();
+        var registrado = solicitar.executar(pedido, original.id(), evidencia);
 
         var quantidade = jdbc.queryForObject("SELECT count(*) FROM pedidos_encerramento WHERE event_id = ?",
                 Integer.class, pedido);
@@ -81,6 +85,27 @@ class SolicitarEncerramentoIntegrationTest {
                   ON o.event_id = p.event_id AND o.aggregate_id = p.transaction_id
                 WHERE p.event_id = ? AND o.published_at IS NULL
                 """, Integer.class, pedido)).isEqualTo(1);
+        var snapshot = jdbc.queryForMap("SELECT * FROM pedidos_encerramento WHERE event_id = ?", pedido);
+        assertThat(snapshot).containsEntry("transaction_id", original.id())
+                .containsEntry("creation_event_id", criacao.get("event_id"))
+                .containsEntry("correlation_id", original.id())
+                .containsEntry("motivo", "FALHA_PERMANENTE_CONTROLADA")
+                .containsEntry("evidence_ref", evidencia);
+        assertThat(Instant.ofEpochSecond(((Number) snapshot.get("occurred_epoch_second")).longValue(),
+                ((Number) snapshot.get("occurred_nano")).longValue())).isEqualTo(registrado.occurredAt());
+        var json = mapper.readTree(jdbc.queryForObject(
+                "SELECT payload::text FROM outbox_pedidos_encerramento WHERE event_id = ?", String.class, pedido));
+        assertThat(json.path("eventId").asText()).isEqualTo(pedido.toString());
+        assertThat(json.path("eventType").asText()).isEqualTo("EncerramentoTransacaoSolicitado");
+        assertThat(json.path("eventVersion").asInt()).isEqualTo(1);
+        assertThat(json.path("occurredAt").asText()).isEqualTo(registrado.occurredAt().toString());
+        assertThat(json.path("correlationId").asText()).isEqualTo(original.id().toString());
+        assertThat(json.path("causationId").asText()).isEqualTo(criacao.get("event_id").toString());
+        assertThat(json.path("data").size()).isEqualTo(4);
+        assertThat(json.path("data").path("transactionId").asText()).isEqualTo(original.id().toString());
+        assertThat(json.path("data").path("creationEventId").asText()).isEqualTo(criacao.get("event_id").toString());
+        assertThat(json.path("data").path("motivo").asText()).isEqualTo("FALHA_PERMANENTE_CONTROLADA");
+        assertThat(json.path("data").path("evidenceRef").asText()).isEqualTo(evidencia.toString());
         assertThat(jdbc.queryForMap("SELECT * FROM transacoes")).isEqualTo(transacao);
         assertThat(jdbc.queryForMap("SELECT * FROM outbox_eventos")).isEqualTo(criacao);
         assertThat(jdbc.queryForList("SELECT * FROM historico_transacoes")).isEqualTo(historico);

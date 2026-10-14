@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B06.8e — Pedido auditável em Transações: primeiro teste PostgreSQL exige pedido/intenção preservando PENDENTE, POST e histórico. Scaffolding não escreve; red remoto necessário antes da implementação. Caso somente importado na fixture. Spec9.88.
+- [ ] B06.8e — Pedido auditável em Transações: primeiro teste PostgreSQL exige pedido/intenção preservando PENDENTE, POST e histórico. Red PostgreSQL confirmado (relation pedidos_encerramento does not exist); implementação positiva mínima em validação, sem aceite de replay/recusas/constraints. Caso somente importado na fixture. Spec9.88.
 
 ## Próximo
 
