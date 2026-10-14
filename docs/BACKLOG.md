@@ -271,3 +271,5 @@ B06.8b concluído na PR #139/5ad7e3d: seis gates finais verdes no head d80a899, 
 **B06.8c — Proteção durável da criação normal — em execução.** Pedido validado, proteção de toda chamada normal e recibo bloqueado. Aceite: replay conserva recibo/IDs/snapshot, vencedor financeiro intacto, rollback e espera pelo lock PostgreSQL real. Confirmação somente semeada na fixture; nenhum writer operacional/API/listener/transporte. Desenho e riscos em spec9.86.
 
 **B06.8d — Registro controlado do pedido e resposta — depende de B06.8c.** Caso de uso somente registrado em testes, sob o mesmo lock, arbitra decisão existente versus bloqueio, persiste resposta/outbox própria atomicamente e conserva replay. Provar rollback e disputa real com processamento normal. Sem origem operacional ou transporte antes do aceite; usar regra pura/contrato e schema já existentes.
+
+B06.8c concluído na PR #140/f804fd4: seis gates27227c2 verdes, processador201/8m19 e fixture15, revisão final sem bloqueantes. B06.8d iniciado com scaffolding sem escrita e primeiro teste PostgreSQL pós-commit; red remoto necessário antes de implementar. Spec9.86–9.87. Nada operacional de encerramento exposto.
