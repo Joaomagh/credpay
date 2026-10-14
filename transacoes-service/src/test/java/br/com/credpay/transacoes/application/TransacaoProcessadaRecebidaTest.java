@@ -27,12 +27,13 @@ class TransacaoProcessadaRecebidaTest {
                 .isInstanceOf(NullPointerException.class);
     }
 
-    @Test
-    void construir_deveRecusarEstadoNaoFinal() {
+    @ParameterizedTest
+    @ValueSource(strings = {"PENDENTE", "FALHOU"})
+    void construir_deveRecusarEstadoNaoFinanceiro(String estado) {
         var id = UUID.randomUUID();
 
         assertThatThrownBy(() -> new TransacaoProcessadaRecebida(
-                UUID.randomUUID(), id, Instant.EPOCH, id, UUID.randomUUID(), StatusTransacao.PENDENTE))
+                UUID.randomUUID(), id, Instant.EPOCH, id, UUID.randomUUID(), StatusTransacao.valueOf(estado)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("resultado deve ser APROVADA ou REJEITADA");
     }

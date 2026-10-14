@@ -48,6 +48,13 @@ public final class Transacao {
         return new Transacao(id, valor, moeda, resultado);
     }
 
+    public Transacao confirmarFalhaTecnica() {
+        if (status != StatusTransacao.PENDENTE) {
+            throw new IllegalStateException("transação já concluída");
+        }
+        return new Transacao(id, valor, moeda, StatusTransacao.FALHOU);
+    }
+
     public UUID id() {
         return id;
     }

@@ -18,6 +18,41 @@ class TransacaoTest {
 
     private static final UUID ID = UUID.fromString("7b8b61c2-9f63-4d74-9f8d-89cb52de0ed9");
 
+    @Test
+    void confirmarFalhaTecnica_deveConcluirPreservandoDadosEOriginal() {
+        var pendente = Transacao.criar(ID, new BigDecimal("123.450"), Currency.getInstance("BRL"));
+
+        var falhada = pendente.confirmarFalhaTecnica();
+
+        assertThat(falhada.status()).isEqualTo(StatusTransacao.FALHOU);
+        assertThat(falhada.id()).isEqualTo(ID);
+        assertThat(falhada.valor()).isEqualTo(new BigDecimal("123.450"));
+        assertThat(falhada.moeda()).isEqualTo(Currency.getInstance("BRL"));
+        assertThat(pendente.status()).isEqualTo(StatusTransacao.PENDENTE);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = StatusTransacao.class, names = {"APROVADA", "REJEITADA"})
+    void confirmarFalhaTecnica_devePreservarResultadoFinanceiroAnterior(StatusTransacao estado) {
+        var finalizada = Transacao.criar(ID, new BigDecimal("10.00"), Currency.getInstance("BRL")).concluir(estado);
+
+        assertThatThrownBy(finalizada::confirmarFalhaTecnica)
+                .isInstanceOf(IllegalStateException.class).hasMessage("transação já concluída");
+        assertThat(finalizada.status()).isEqualTo(estado);
+    }
+
+    @ParameterizedTest
+    @EnumSource(StatusTransacao.class)
+    void confirmarFalhaTecnica_deveImpedirNovaConclusao(StatusTransacao novo) {
+        var falhada = Transacao.criar(ID, new BigDecimal("10.00"), Currency.getInstance("BRL"))
+                .confirmarFalhaTecnica();
+
+        assertThatThrownBy(() -> falhada.concluir(novo))
+                .isInstanceOf(IllegalStateException.class).hasMessage("transação já concluída");
+        assertThatThrownBy(falhada::confirmarFalhaTecnica)
+                .isInstanceOf(IllegalStateException.class).hasMessage("transação já concluída");
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"APROVADA", "REJEITADA"})
     void concluir_deveAplicarResultadoPreservandoDadosEOriginal(String resultado) {
@@ -52,7 +87,7 @@ class TransacaoTest {
 
     @ParameterizedTest
     @NullSource
-    @EnumSource(value = StatusTransacao.class, names = "PENDENTE")
+    @EnumSource(value = StatusTransacao.class, names = {"PENDENTE", "FALHOU"})
     void concluir_deveRecusarResultadoSemEstadoFinal(StatusTransacao resultado) {
         var pendente = Transacao.criar(ID, new BigDecimal("10.00"), Currency.getInstance("BRL"));
 

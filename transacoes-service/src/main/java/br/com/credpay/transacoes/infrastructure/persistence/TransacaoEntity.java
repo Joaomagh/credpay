@@ -44,6 +44,7 @@ class TransacaoEntity {
         var transacao = Transacao.criar(id, valor, Currency.getInstance(moeda));
         return switch (status) {
             case PENDENTE -> transacao;
+            case FALHOU -> transacao.confirmarFalhaTecnica();
             case APROVADA, REJEITADA -> transacao.concluir(status);
         };
     }

@@ -37,7 +37,7 @@ class AplicarResultadoServiceTest {
         var original = Transacao.criar(entrada.transactionId(), new BigDecimal("123.450"), Currency.getInstance("BRL"));
         when(transacoes.buscarPorId(entrada.transactionId())).thenReturn(Optional.of(original));
         when(historico.existeCriacao(entrada.causationId(), entrada.transactionId())).thenReturn(true);
-        var service = new AplicarResultadoService(transacoes, historico, Clock.fixed(APLICADO_EM, ZoneOffset.UTC));
+        var service = new AplicarResultadoService(transacoes, historico, mock(RespostaEncerramentoRepository.class), Clock.fixed(APLICADO_EM, ZoneOffset.UTC));
 
         var resultado = service.executar(entrada);
 
@@ -67,7 +67,7 @@ class AplicarResultadoServiceTest {
                 "processamento-service/TransacaoProcessada.v1", EVENTO_EM,
                 Instant.parse("2026-10-03T12:00:01.987654Z"));
         when(historico.buscarPorEvento(entrada.eventId())).thenReturn(Optional.of(original));
-        var service = new AplicarResultadoService(transacoes, historico, clock);
+        var service = new AplicarResultadoService(transacoes, historico, mock(RespostaEncerramentoRepository.class), clock);
 
         var resultado = service.executar(entrada);
 
@@ -95,7 +95,7 @@ class AplicarResultadoServiceTest {
                 campo.equals("causa") ? UUID.randomUUID() : original.causationId(),
                 campo.equals("status") ? StatusTransacao.REJEITADA : original.status());
         when(historico.buscarPorEvento(original.eventId())).thenReturn(Optional.of(registro));
-        var service = new AplicarResultadoService(transacoes, historico, clock);
+        var service = new AplicarResultadoService(transacoes, historico, mock(RespostaEncerramentoRepository.class), clock);
 
         assertThatThrownBy(() -> service.executar(divergente))
                 .isInstanceOf(ConflitoResultadoException.class);
@@ -115,7 +115,7 @@ class AplicarResultadoServiceTest {
                 .concluir(estado);
         when(transacoes.buscarPorId(entrada.transactionId())).thenReturn(Optional.of(original));
         when(historico.existeCriacao(entrada.causationId(), entrada.transactionId())).thenReturn(true);
-        var service = new AplicarResultadoService(transacoes, historico, clock);
+        var service = new AplicarResultadoService(transacoes, historico, mock(RespostaEncerramentoRepository.class), clock);
 
         assertThatThrownBy(() -> service.executar(entrada))
                 .isInstanceOf(ConflitoResultadoException.class);
@@ -136,7 +136,7 @@ class AplicarResultadoServiceTest {
             when(transacoes.buscarPorId(entrada.transactionId())).thenReturn(Optional.of(
                     Transacao.criar(entrada.transactionId(), new BigDecimal("123.450"), Currency.getInstance("BRL"))));
         }
-        var service = new AplicarResultadoService(transacoes, historico, clock);
+        var service = new AplicarResultadoService(transacoes, historico, mock(RespostaEncerramentoRepository.class), clock);
 
         assertThatThrownBy(() -> service.executar(entrada)).isInstanceOf(TransicaoRecusadaException.class);
 

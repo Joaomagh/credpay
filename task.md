@@ -4,15 +4,15 @@
 
 ## Último incremento
 
-- B06.8e integrado na PR #142/996942c: seis gates ee3b94a verdes, 319 testes de Transações em 2m56, fixture33 e revisão sem bloqueantes. Pedido auditável sem congelar TX, transporte ou aplicação de FALHOU. Spec9.88.
+- B06.8f integrado na PR #143/6cd8608: seis gates90e0fb4 verdes, 349 testes em3m00, recibo17 e contrato13. Recibo preserva causalidade; não aplica estado/histórico. Spec9.89.
 
 ## Agora
 
-- [ ] B06.8f — Preparar contrato/recibo causal da resposta e V7 própria. Preservar envelope, nanos, saída negativa e vínculo pedido/TX/criação; sem aplicar estado/histórico. Contrato13 e etapa PostgreSQL17 verdes (f7a60cd); foco temporário removido. Aguardam-se suíte349 e seis gates finais. Spec9.89.
+- [ ] B06.8g — Aplicação controlada da confirmação: FALHOU e histórico único atômicos com recibo positivo; negativa preserva vencedor financeiro em ambos os ordenamentos. Domínio195 e verify382 verdes; etapa36+upgrade verde. Revisão achou negativa pré-recebida sem validação financeira: red38/uma falha confirmado e correção implementada. Foco temporário retirado; falta aceite397/seis gates e revisão final. Caso somente importado em teste. Spec9.90.
 
 ## Próximo
 
-- Provar roundtrip/constraints/rollback PostgreSQL e integrar após revisão/gates. Depois evoluir domínio/histórico único e aplicação controlada, incluindo negativa antes/depois do financeiro.
+- TDD PostgreSQL para positivo causal, replay/recusa, negativo simétrico, rollback e corrida; provar migração/backfill e preservar GET/POST/contrato financeiro. Sem transporte/ativação.
 
 ## Depois
 

@@ -8,6 +8,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import br.com.credpay.transacoes.application.TransicaoRecebida;
+import br.com.credpay.transacoes.application.FalhaConfirmadaRepository;
 import br.com.credpay.transacoes.application.TransicaoRecusadaException;
 import br.com.credpay.transacoes.application.TransicaoRepository;
 import br.com.credpay.transacoes.domain.StatusTransacao;
@@ -16,7 +17,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Repository
-class TransicaoJdbcRepository implements TransicaoRepository {
+class TransicaoJdbcRepository implements TransicaoRepository, FalhaConfirmadaRepository {
 
     private final JdbcTemplate jdbc;
 
@@ -53,6 +54,26 @@ class TransicaoJdbcRepository implements TransicaoRepository {
         if (atualizadas != 1) {
             throw new TransicaoRecusadaException();
         }
+        inserirHistorico(transicao);
+    }
+
+    @Override
+    @Transactional
+    public void registrarFalhaConfirmada(TransicaoRecebida transicao) {
+        var atualizadas = jdbc.update("""
+                UPDATE transacoes SET status = 'FALHOU'
+                WHERE id = ? AND status = 'PENDENTE'
+                AND EXISTS (
+                    SELECT 1 FROM respostas_encerramento_recebidas
+                    WHERE event_id = ? AND transaction_id = transacoes.id AND causation_id = ?
+                      AND resultado = 'CONFIRMADO'
+                )
+                """, transicao.transactionId(), transicao.eventId(), transicao.causationId());
+        if (atualizadas != 1) { throw new TransicaoRecusadaException(); }
+        inserirHistorico(transicao);
+    }
+
+    private void inserirHistorico(TransicaoRecebida transicao) {
         jdbc.update("""
                 INSERT INTO historico_transacoes (
                     event_id, transaction_id, event_type, event_version, correlation_id, causation_id,
