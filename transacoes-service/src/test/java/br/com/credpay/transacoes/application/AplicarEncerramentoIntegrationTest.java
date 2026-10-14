@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -19,7 +20,15 @@ import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.Currency;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.LockSupport;
 
 import br.com.credpay.transacoes.domain.StatusTransacao;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,6 +42,7 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.postgresql.util.PSQLException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -98,11 +108,14 @@ class AplicarEncerramentoIntegrationTest {
     @Autowired private RelogioContado clock;
     @Autowired private CriarTransacao criar;
     @Autowired private AplicarResultadoService financeiro;
+    @Autowired private Controle controle;
 
     @BeforeEach void preparar() {
         poolDaFixture = dataSource;
         clock.instante = Instant.parse("2026-10-14T18:30:00.987654321Z");
         clock.chamadas.set(0);
+        controle.desarmar();
+        controle.falhar.set(null);
         jdbc.execute("""
                 TRUNCATE respostas_encerramento_recebidas, outbox_pedidos_encerramento, pedidos_encerramento,
                   historico_transacoes, outbox_eventos, idempotencias_transacao, transacoes
@@ -343,9 +356,254 @@ class AplicarEncerramentoIntegrationTest {
                 resposta.transactionId(), criacao, estado);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"ausente", "negativa"})
+    void banco_deveExigirReciboPositivo_paraHistoricoDeFalha(String cenario) {
+        var resposta = entrada(cenario.equals("negativa") ? RespostaEncerramentoRecebida.Resultado.DECISAO_EXISTENTE
+                : RespostaEncerramentoRecebida.Resultado.CONFIRMADO);
+        if (cenario.equals("negativa")) { respostas.inserir(resposta); }
+
+        var falha = catchThrowable(() -> jdbc.update("""
+                INSERT INTO historico_transacoes
+                  (event_id, transaction_id, event_type, event_version, correlation_id, causation_id,
+                   estado_anterior, estado_final, origem, occurred_at_epoch_second, occurred_at_nano, aplicado_em)
+                VALUES (?, ?, 'EncerramentoTransacaoRespondido', 1, ?, ?, 'PENDENTE', 'FALHOU',
+                        'processamento-service/EncerramentoTransacaoRespondido.v1', ?, ?, CURRENT_TIMESTAMP)
+                """, resposta.eventId(), resposta.transactionId(), resposta.correlationId(), resposta.causationId(),
+                resposta.occurredAt().getEpochSecond(), resposta.occurredAt().getNano()));
+
+        assertThat(falha).isInstanceOf(DataIntegrityViolationException.class);
+        var causa = ((DataIntegrityViolationException) falha).getMostSpecificCause();
+        assertThat(causa).isInstanceOf(PSQLException.class);
+        assertThat(((PSQLException) causa).getSQLState()).isEqualTo("23503");
+        assertThat(((PSQLException) causa).getServerErrorMessage().getConstraint())
+                .isEqualTo("fk_historico_resposta_confirmada");
+        assertThat(jdbc.queryForList("SELECT * FROM historico_transacoes")).isEmpty();
+        assertThat(buscar.executar(resposta.transactionId()).status()).isEqualTo(StatusTransacao.PENDENTE);
+    }
+
+    @Test
+    void executar_deveCompararSaidaFinanceira_noReplayDaNegativa() {
+        var resposta = entrada(RespostaEncerramentoRecebida.Resultado.DECISAO_EXISTENTE);
+        aplicar.executar(resposta);
+        var divergente = new RespostaEncerramentoRecebida(resposta.eventId(), resposta.transactionId(),
+                resposta.creationEventId(), resposta.occurredAt(), resposta.correlationId(), resposta.causationId(),
+                resposta.resultado(), Optional.of(UUID.randomUUID()));
+
+        assertThatThrownBy(() -> aplicar.executar(divergente)).isInstanceOf(ConfirmacaoEncerramentoRecusadaException.class)
+                .hasMessage("resposta de encerramento divergente");
+
+        assertThat(respostas.buscarPorEvento(resposta.eventId())).contains(resposta);
+        assertThat(buscar.executar(resposta.transactionId()).status()).isEqualTo(StatusTransacao.PENDENTE);
+        assertThat(jdbc.queryForList("SELECT * FROM historico_transacoes")).isEmpty();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"CONFIRMADO_RECIBO", "CONFIRMADO_CONFIRMACAO", "DECISAO_EXISTENTE_RECIBO"})
+    void executar_deveReverterEscritasReais_ePermitirRetry(String cenario) {
+        boolean negativa = cenario.startsWith("DECISAO_EXISTENTE");
+        var resposta = entrada(negativa ? RespostaEncerramentoRecebida.Resultado.DECISAO_EXISTENTE
+                : RespostaEncerramentoRecebida.Resultado.CONFIRMADO);
+        var antes = jdbc.queryForMap("SELECT * FROM transacoes");
+        controle.falhar.set(cenario.endsWith("CONFIRMACAO") ? Etapa.CONFIRMACAO : Etapa.RECIBO);
+
+        assertThatThrownBy(() -> aplicar.executar(resposta)).isInstanceOf(IllegalStateException.class)
+                .hasMessage("falha após SQL controlado");
+
+        assertThat(jdbc.queryForMap("SELECT * FROM transacoes")).isEqualTo(antes);
+        assertThat(jdbc.queryForList("SELECT * FROM historico_transacoes")).isEmpty();
+        assertThat(jdbc.queryForList("SELECT * FROM respostas_encerramento_recebidas")).isEmpty();
+        controle.falhar.set(null);
+        aplicar.executar(resposta);
+        assertThat(respostas.buscarPorEvento(resposta.eventId())).contains(resposta);
+        assertThat(buscar.executar(resposta.transactionId()).status())
+                .isEqualTo(negativa ? StatusTransacao.PENDENTE : StatusTransacao.FALHOU);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM historico_transacoes", Integer.class)).isEqualTo(negativa ? 0 : 1);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"financeiro_commit", "confirmacao_commit", "financeiro_rollback", "confirmacao_rollback"})
+    void executar_devePreservarVencedorNaDisputaComFinanceiro(String cenario) throws Exception {
+        var resposta = entrada(RespostaEncerramentoRecebida.Resultado.CONFIRMADO);
+        var processada = financeiro(resposta, StatusTransacao.APROVADA, UUID.randomUUID(), resposta.creationEventId());
+        boolean financeiroPrimeiro = cenario.startsWith("financeiro");
+        boolean reverter = cenario.endsWith("rollback");
+        Callable<?> confirmar = () -> aplicar.executar(resposta);
+        Callable<?> decidir = () -> financeiro.executar(processada);
+
+        var disputa = disputar(financeiroPrimeiro ? Etapa.FINANCEIRO : Etapa.CONFIRMACAO, reverter,
+                financeiroPrimeiro ? decidir : confirmar, financeiroPrimeiro ? confirmar : decidir);
+
+        if (reverter) {
+            assertThat(disputa.primeira().erro()).isInstanceOf(IllegalStateException.class)
+                    .hasMessage("rollback concorrente controlado");
+            assertThat(disputa.segunda().erro()).isNull();
+        } else {
+            assertThat(disputa.primeira().erro()).isNull();
+            assertThat(disputa.segunda().erro()).isInstanceOf(financeiroPrimeiro
+                    ? ConfirmacaoEncerramentoRecusadaException.class : ConflitoResultadoException.class);
+        }
+        boolean falhou = financeiroPrimeiro == reverter;
+        assertThat(buscar.executar(resposta.transactionId()).status())
+                .isEqualTo(falhou ? StatusTransacao.FALHOU : StatusTransacao.APROVADA);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM historico_transacoes", Integer.class)).isEqualTo(1);
+        assertThat(respostas.buscarPorEvento(resposta.eventId()).isPresent()).isEqualTo(falhou);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void executar_deveSerializarRespostasEquivalentesOuDivergentes(boolean equivalente) throws Exception {
+        var resposta = entrada(RespostaEncerramentoRecebida.Resultado.CONFIRMADO);
+        var segunda = new RespostaEncerramentoRecebida(equivalente ? resposta.eventId() : UUID.randomUUID(),
+                resposta.transactionId(), resposta.creationEventId(), resposta.occurredAt(), resposta.correlationId(),
+                resposta.causationId(), resposta.resultado(), resposta.outputEventId());
+        clock.chamadas.set(0);
+
+        var disputa = disputar(Etapa.CONFIRMACAO, false, () -> aplicar.executar(resposta), () -> aplicar.executar(segunda));
+
+        assertThat(disputa.primeira().erro()).isNull();
+        if (equivalente) {
+            assertThat(disputa.segunda().erro()).isNull();
+            assertThat(disputa.segunda().resultado()).isEqualTo(disputa.primeira().resultado());
+        } else {
+            assertThat(disputa.segunda().erro()).isInstanceOf(ConfirmacaoEncerramentoRecusadaException.class)
+                    .hasMessage("resposta de encerramento divergente");
+        }
+        assertThat(clock.chamadas.get()).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM historico_transacoes", Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM respostas_encerramento_recebidas", Integer.class)).isEqualTo(1);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void executar_deveConferirNegativaAposEsperaRealPeloOutroCommit(boolean financeiroPrimeiro) throws Exception {
+        var resposta = entrada(RespostaEncerramentoRecebida.Resultado.DECISAO_EXISTENTE);
+        var processada = financeiro(resposta, StatusTransacao.APROVADA,
+                financeiroPrimeiro ? resposta.outputEventId().orElseThrow() : UUID.randomUUID(), resposta.creationEventId());
+        Callable<?> receber = () -> aplicar.executar(resposta);
+        Callable<?> decidir = () -> financeiro.executar(processada);
+
+        var disputa = disputar(financeiroPrimeiro ? Etapa.FINANCEIRO : Etapa.RECIBO, false,
+                financeiroPrimeiro ? decidir : receber, financeiroPrimeiro ? receber : decidir);
+
+        assertThat(disputa.primeira().erro()).isNull();
+        if (financeiroPrimeiro) { assertThat(disputa.segunda().erro()).isNull(); }
+        else { assertThat(disputa.segunda().erro()).isInstanceOf(ConflitoResultadoException.class); }
+        assertThat(buscar.executar(resposta.transactionId()).status())
+                .isEqualTo(financeiroPrimeiro ? StatusTransacao.APROVADA : StatusTransacao.PENDENTE);
+        assertThat(respostas.buscarPorEvento(resposta.eventId())).contains(resposta);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM historico_transacoes", Integer.class))
+                .isEqualTo(financeiroPrimeiro ? 1 : 0);
+    }
+
+    private Disputa disputar(Etapa etapa, boolean reverter, Callable<?> primeiraChamada, Callable<?> segundaChamada)
+            throws Exception {
+        var porta = controle.armar(etapa, reverter);
+        var executor = Executors.newFixedThreadPool(2);
+        Future<?> primeira = null;
+        Future<?> segunda = null;
+        try {
+            primeira = executor.submit(primeiraChamada);
+            assertThat(porta.entrou().await(10, TimeUnit.SECONDS)).isTrue();
+            segunda = executor.submit(segundaChamada);
+            var fim = System.nanoTime() + Duration.ofSeconds(5).toNanos();
+            boolean aguardou = false;
+            while (System.nanoTime() < fim) {
+                var quantidade = jdbc.queryForObject("""
+                        SELECT count(*) FROM pg_locks WHERE locktype = 'advisory' AND NOT granted
+                          AND database = (SELECT oid FROM pg_database WHERE datname = current_database())
+                        """, Integer.class);
+                if (quantidade != null && quantidade > 0) { aguardou = true; break; }
+                LockSupport.parkNanos(Duration.ofMillis(10).toNanos());
+            }
+            assertThat(aguardou).withFailMessage("segunda chamada não aguardou advisory lock").isTrue();
+            porta.liberar().countDown();
+            return new Disputa(concluir(primeira), concluir(segunda));
+        } finally {
+            controle.desarmar();
+            if (primeira != null && !primeira.isDone()) { primeira.cancel(true); }
+            if (segunda != null && !segunda.isDone()) { segunda.cancel(true); }
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
+        }
+    }
+
+    private Chamada concluir(Future<?> futuro) throws Exception {
+        try { return new Chamada(futuro.get(10, TimeUnit.SECONDS), null); }
+        catch (ExecutionException exception) { return new Chamada(null, exception.getCause()); }
+    }
+
+    private enum Etapa { RECIBO, CONFIRMACAO, FINANCEIRO }
+    private record Porta(Etapa etapa, boolean reverter, CountDownLatch entrou, CountDownLatch liberar) { }
+    private record Chamada(Object resultado, Throwable erro) { }
+    private record Disputa(Chamada primeira, Chamada segunda) { }
+
+    static class Controle {
+        private final AtomicReference<Porta> atual = new AtomicReference<>();
+        private final AtomicReference<Etapa> falhar = new AtomicReference<>();
+        Porta armar(Etapa etapa, boolean reverter) {
+            var porta = new Porta(etapa, reverter, new CountDownLatch(1), new CountDownLatch(1));
+            atual.set(porta);
+            return porta;
+        }
+        void desarmar() {
+            var porta = atual.getAndSet(null);
+            if (porta != null) { porta.liberar().countDown(); }
+        }
+        void apos(Etapa etapa) {
+            var porta = atual.get();
+            if (porta != null && porta.etapa() == etapa) {
+                porta.entrou().countDown();
+                try {
+                    if (!porta.liberar().await(30, TimeUnit.SECONDS)) { throw new IllegalStateException("fixture não liberou SQL"); }
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("fixture interrompida", exception);
+                }
+                if (porta.reverter()) { throw new IllegalStateException("rollback concorrente controlado"); }
+            }
+            if (falhar.get() == etapa) { throw new IllegalStateException("falha após SQL controlado"); }
+        }
+    }
+
     @TestConfiguration(proxyBeanMethods = false)
     static class Configuracao {
         @Bean @Primary RelogioContado relogioContado() { return new RelogioContado(); }
+        @Bean Controle controle() { return new Controle(); }
+        @Bean @Primary RespostaEncerramentoRepository respostasControladas(
+                @Qualifier("respostaEncerramentoJdbcRepository") RespostaEncerramentoRepository real, Controle controle) {
+            return new RespostaEncerramentoRepository() {
+                @Override public void inserir(RespostaEncerramentoRecebida resposta) {
+                    real.inserir(resposta);
+                    controle.apos(Etapa.RECIBO);
+                }
+                @Override public Optional<RespostaEncerramentoRecebida> buscarPorEvento(UUID evento) {
+                    return real.buscarPorEvento(evento);
+                }
+                @Override public Optional<RespostaEncerramentoRecebida> buscarPorTransactionId(UUID transacao) {
+                    return real.buscarPorTransactionId(transacao);
+                }
+            };
+        }
+        @Bean @Primary FalhaConfirmadaRepository falhasControladas(
+                @Qualifier("transicaoJdbcRepository") FalhaConfirmadaRepository real, Controle controle) {
+            return transicao -> {
+                real.registrarFalhaConfirmada(transicao);
+                controle.apos(Etapa.CONFIRMACAO);
+            };
+        }
+        @Bean @Primary TransicaoRepository historicoControlado(
+                @Qualifier("transicaoJdbcRepository") TransicaoRepository real, Controle controle) {
+            return new TransicaoRepository() {
+                @Override public void bloquearIdentidades(UUID evento, UUID transacao) { real.bloquearIdentidades(evento, transacao); }
+                @Override public void registrar(TransicaoRecebida transicao) {
+                    real.registrar(transicao);
+                    controle.apos(Etapa.FINANCEIRO);
+                }
+                @Override public Optional<TransicaoRecebida> buscarPorEvento(UUID evento) { return real.buscarPorEvento(evento); }
+                @Override public boolean existeCriacao(UUID causa, UUID transacao) { return real.existeCriacao(causa, transacao); }
+            };
+        }
     }
 
     static class RelogioContado extends Clock {

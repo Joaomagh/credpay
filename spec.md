@@ -2502,6 +2502,8 @@ Red conjunto em3bdd4fd/run38636150999/job116099716533: dois cenários/duas falha
 
 Red das guardas em27f7226/run38636887434/job116102203096: aplicação22/15falhas6erros em15,54s e upgrade verde1/1,652s; total23/15falhas6erros/25,876s. Positivo causal/HTTP e migração passaram; faltavam replay, negativa e recusas específicas. Implementação reconhece equivalência antes de Clock, distingue positivo recebido/aplicado, valida pedido e saída financeira e protege AplicarResultado por recibo/TX. Consulta usa índices existentes de pedido/TX e causa, sem índice adicional. Testes financeiros mantidos, apenas expectativas dos nomes de constraints substituídas na V8 atualizadas. Primeira atualização local dos mocks usou diretório duplicado e a compilação recusou construtor antigo; corrigida sem contar como red. Verify195/29,168s/Checkstyle0 verde. Green real e caracterizações de rollback/concorrência ainda pendentes.
 
+Caracterizações finais preparadas: 36 cenários da aplicação, incluindo FK de histórico sem recibo/com negativa, saída divergente no replay negativo, rollback após recibo/histórico SQL com retry, corrida confirmação/financeiro em ambos os commits/rollbacks, respostas concorrentes e leitura da negativa após espera real. Gates de teste ficam depois do INSERT/UPDATE real, pg_locks comprova espera, finally libera/cancela/encerra workers; sem sleeps como prova e sem comportamento de produção adicional. São caracterizações das garantias transacionais/locks já implementadas, não novos reds artificiais. Estrutura compilou em10,574s/Checkstyle0. Aceite ainda aguarda execução real, suíte396 e revisão/gates finais.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
