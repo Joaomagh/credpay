@@ -10,8 +10,10 @@ CREATE TABLE criacao_bloqueada_recebimentos (
     event_occurred_nano integer NOT NULL CHECK (event_occurred_nano BETWEEN 0 AND 999999999),
     correlation_id uuid NOT NULL CHECK (correlation_id = transaction_id),
     input_status varchar(16) NOT NULL CHECK (input_status = 'PENDENTE'),
-    valor numeric NOT NULL CHECK (valor > 0),
-    moeda varchar(3) NOT NULL,
+    valor numeric NOT NULL CONSTRAINT ck_blocked_creation_valor_positivo_finito CHECK (
+        valor > 0 AND valor NOT IN ('NaN'::numeric, 'Infinity'::numeric, '-Infinity'::numeric)
+    ),
+    moeda varchar(3) NOT NULL CONSTRAINT ck_blocked_creation_moeda_formato CHECK (moeda ~ '^[A-Z]{3}$'),
     request_event_id uuid NOT NULL,
     closure_result varchar(32) NOT NULL CHECK (closure_result = 'CONFIRMADO'),
     CONSTRAINT fk_blocked_creation_positive_closure

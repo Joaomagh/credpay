@@ -2428,6 +2428,8 @@ Red de replay/conflitos d907410/run38606951740/job116000410530:7 casos/5falhas/1
 
 Green7 focado aprovado no head116a292/job116001631698; revisão sem bloqueantes na ordem e equivalência. Próximo ciclo alinha a proteção de dinheiro/moeda do novo recibo à baseline V1: PostgreSQL numeric aceita NaN/Infinity e valor>0 sozinho é insuficiente; varchar(3) sozinho aceita códigos malformados. Cinco controles negativos JDBC exigem erro23514/constraint e snapshot intacto. Literais/colunas são enum estático da fixture, nunca entrada externa.
 
+Red financeiro do recibo b5745a0/run38607646277/job116003000323:12 casos/5falhas/0erros,29,664s; cinco updates inválidos aceitos sem erro, sete comportamentos anteriores preservados. Após a prova, V4 adiciona CHECKs nomeados de finitude e moeda maiúscula de três letras, alinhados à V1. Green12 remoto pendente.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
