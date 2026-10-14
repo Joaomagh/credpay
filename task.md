@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B06.8d/PR #141 — Primeira escrita positiva aprovada no PostgreSQL em42fc7f2. Novos cinco casos exigem negativa financeira e conflito de identidade; red real pendente antes de implementar. Replay/atomicidade/corrida ainda faltam; caso de uso só na fixture, sem produção/API/transporte. Spec9.87.
+- [ ] B06.8d/PR #141 — Positiva/negativa/identidade aprovadas no PostgreSQL. Replay teve red12/5falhas/2erros e lookup foi escrito depois; local100/29,136s verde, green12 remoto pendente. Atomicidade/corrida ainda faltam. Caso de uso só na fixture, sem produção/API/transporte. Spec9.87.
 
 ## Próximo
 

@@ -2449,6 +2449,8 @@ Red financeira/identidade5075814/run38625121988/job116062816739:5 casos/4falhas/
 
 Green5 focado aprovado eme99629d/run38625722335/job116064238967. Próximo ciclo exige replay positivo/negativo com resposta original antes de Clock/UUID, publicação já marcada preservada, e cinco divergências de pedido sem sobrescrita. Replay positivo também chama criação normal após o writer real, exigindo recibo bloqueado sem saída financeira. Contadores e relógio alterado são apenas colaboradores da fixture; red12 remoto pendente antes de implementar lookup de pedido.
 
+Red replay313ed5b/run38626143763/job116066146258:12 casos/5falhas/2erros/0skips,22,732s; replays colidiram na PK e divergências retornaram DuplicateKeyException em vez de conflito permanente. Depois da prova, lookup recompõe o pedido/resultado original e compara o DTO inteiro antes de Clock/UUID; novo pedido na mesma transação conflita antes da arbitragem financeira. Publicação anterior não é modificada. Local100/29,136s/Checkstyle0 verde; green12 PostgreSQL pendente, atomicidade/corrida ainda exigidas.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

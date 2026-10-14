@@ -32,6 +32,17 @@ public class RegistrarEncerramentoService {
     @Transactional(isolation = Isolation.READ_COMMITTED)
     public EncerramentoRegistrado executar(PedidoEncerramentoRecebido pedido) {
         processamentos.bloquearIdentidades(pedido.eventId(), pedido.transactionId(), pedido.creationEventId());
+        var existente = encerramentos.buscarPorPedidoId(pedido.eventId());
+        if (existente.isPresent()) {
+            var original = existente.orElseThrow();
+            if (!original.pedido().equals(pedido)) {
+                throw new ConflitoProcessamentoException("pedido de encerramento divergente");
+            }
+            return original;
+        }
+        if (encerramentos.existePorTransactionId(pedido.transactionId())) {
+            throw new ConflitoProcessamentoException("pedido de encerramento divergente");
+        }
         var financeiro = processamentos.buscarPorEventId(pedido.creationEventId());
         if (financeiro.isEmpty() && processamentos.existePorTransactionId(pedido.transactionId())) {
             throw new ConflitoProcessamentoException("identidade do encerramento divergente");
