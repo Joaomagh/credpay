@@ -6,9 +6,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.time.Instant;
 import java.time.Clock;
 import java.time.ZoneOffset;
+import java.time.ZoneId;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 import java.math.BigDecimal;
 import java.util.Currency;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.zaxxer.hikari.HikariDataSource;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,6 +23,7 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -75,9 +80,14 @@ class RegistrarEncerramentoIntegrationTest {
     @Autowired private HikariDataSource dataSource;
     @Autowired private ObjectMapper objectMapper;
     @Autowired private RegistrarProcessamentoService financeiro;
+    @Autowired private RelogioContado relogio;
+    @Autowired private GeradorContado gerador;
 
     @BeforeEach void limparBancoDescartavel() {
         poolDaFixture = dataSource;
+        relogio.chamadas.set(0);
+        relogio.instante.set(Instant.parse("2026-10-14T12:00:01.987654321Z"));
+        gerador.chamadas.set(0);
         jdbc.execute("TRUNCATE criacao_bloqueada_recebimentos, outbox_encerramentos, encerramentos, outbox_eventos, processamentos");
     }
 
@@ -185,6 +195,69 @@ class RegistrarEncerramentoIntegrationTest {
 
     private enum IdentidadeDivergente { CRIACAO, TRANSACAO }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void executar_deveReutilizarRespostaSemNovosMetadados_quandoPedidoForEquivalente(boolean comDecisao) {
+        var entrada = entrada("75.00");
+        if (comDecisao) {
+            financeiro.executar(entrada);
+        }
+        var pedido = pedido(entrada.transactionId(), entrada.eventId());
+        var primeiro = service.executar(pedido);
+        if (!comDecisao) {
+            assertThat(financeiro.executar(entrada))
+                    .isEqualTo(new CriacaoBloqueadaRegistrada(entrada, pedido.eventId()));
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM processamentos", Integer.class)).isZero();
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM outbox_eventos", Integer.class)).isZero();
+        }
+        jdbc.update("UPDATE outbox_encerramentos SET published_at = TIMESTAMPTZ '2026-10-14 12:01:00Z'");
+        var snapshot = jdbc.queryForMap("SELECT * FROM encerramentos");
+        var saida = jdbc.queryForMap("SELECT * FROM outbox_encerramentos");
+        var chamadasRelogio = relogio.chamadas.get();
+        var chamadasGerador = gerador.chamadas.get();
+        relogio.instante.set(Instant.parse("2026-10-16T15:00:00Z"));
+        var equivalente = new PedidoEncerramentoRecebido(pedido.eventId(), pedido.transactionId(),
+                pedido.creationEventId(), OffsetDateTime.parse("2026-10-14T09:00:00.123456789-03:00").toInstant(),
+                pedido.correlationId(), pedido.motivo(), pedido.evidenceRef());
+
+        var replay = service.executar(equivalente);
+
+        assertThat(replay).isEqualTo(primeiro);
+        assertThat(relogio.chamadas.get()).isEqualTo(chamadasRelogio);
+        assertThat(gerador.chamadas.get()).isEqualTo(chamadasGerador);
+        assertThat(jdbc.queryForMap("SELECT * FROM encerramentos")).isEqualTo(snapshot);
+        assertThat(jdbc.queryForMap("SELECT * FROM outbox_encerramentos")).isEqualTo(saida);
+    }
+
+    @ParameterizedTest
+    @EnumSource(PedidoDivergente.class)
+    void executar_deveConflitarEPreservarPedidoOriginal_quandoPedidoDivergir(PedidoDivergente campo) {
+        var pedido = pedido(UUID.randomUUID(), UUID.randomUUID());
+        service.executar(pedido);
+        var snapshot = jdbc.queryForMap("SELECT * FROM encerramentos");
+        var saida = jdbc.queryForMap("SELECT * FROM outbox_encerramentos");
+        var chamadasRelogio = relogio.chamadas.get();
+        var chamadasGerador = gerador.chamadas.get();
+        var transacao = campo == PedidoDivergente.TRANSACAO ? UUID.randomUUID() : pedido.transactionId();
+        var outro = new PedidoEncerramentoRecebido(
+                campo == PedidoDivergente.NOVO_PEDIDO ? UUID.randomUUID() : pedido.eventId(), transacao,
+                campo == PedidoDivergente.CRIACAO ? UUID.randomUUID() : pedido.creationEventId(),
+                campo == PedidoDivergente.INSTANTE ? pedido.occurredAt().plusNanos(1) : pedido.occurredAt(),
+                transacao, pedido.motivo(),
+                campo == PedidoDivergente.EVIDENCIA ? UUID.randomUUID() : pedido.evidenceRef());
+
+        assertThatThrownBy(() -> service.executar(outro))
+                .isInstanceOf(ConflitoProcessamentoException.class).hasMessage("pedido de encerramento divergente");
+
+        assertThat(relogio.chamadas.get()).isEqualTo(chamadasRelogio);
+        assertThat(gerador.chamadas.get()).isEqualTo(chamadasGerador);
+        assertThat(jdbc.queryForMap("SELECT * FROM encerramentos")).isEqualTo(snapshot);
+        assertThat(jdbc.queryForMap("SELECT * FROM outbox_encerramentos")).isEqualTo(saida);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM processamentos", Integer.class)).isZero();
+    }
+
+    private enum PedidoDivergente { NOVO_PEDIDO, TRANSACAO, CRIACAO, INSTANTE, EVIDENCIA }
+
     private TransacaoCriadaRecebida entrada(String valor) {
         var transacao = UUID.randomUUID();
         return new TransacaoCriadaRecebida(UUID.randomUUID(), transacao,
@@ -200,8 +273,21 @@ class RegistrarEncerramentoIntegrationTest {
 
     @TestConfiguration(proxyBeanMethods = false)
     static class RelogioControlado {
-        @Bean @Primary Clock relogioEncerramento() {
-            return Clock.fixed(Instant.parse("2026-10-14T12:00:01.987654321Z"), ZoneOffset.UTC);
-        }
+        @Bean @Primary RelogioContado relogioEncerramento() { return new RelogioContado(); }
+        @Bean @Primary GeradorContado geradorEncerramento() { return new GeradorContado(); }
+    }
+
+    static final class RelogioContado extends Clock {
+        private final AtomicInteger chamadas = new AtomicInteger();
+        private final AtomicReference<Instant> instante = new AtomicReference<>(
+                Instant.parse("2026-10-14T12:00:01.987654321Z"));
+        @Override public ZoneId getZone() { return ZoneOffset.UTC; }
+        @Override public Clock withZone(ZoneId zone) { return Clock.fixed(instante.get(), zone); }
+        @Override public Instant instant() { chamadas.incrementAndGet(); return instante.get(); }
+    }
+
+    static final class GeradorContado implements GeradorEventIdSaida {
+        private final AtomicInteger chamadas = new AtomicInteger();
+        @Override public UUID gerar() { chamadas.incrementAndGet(); return UUID.randomUUID(); }
     }
 }
