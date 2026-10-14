@@ -1,6 +1,7 @@
 package br.com.credpay.transacoes.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -10,11 +11,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.Clock;
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import java.util.Currency;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -23,6 +26,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.postgresql.util.PSQLException;
@@ -90,6 +96,8 @@ class AplicarEncerramentoIntegrationTest {
     @Autowired private MockMvc mvc;
     @Autowired private ObjectMapper mapper;
     @Autowired private RelogioContado clock;
+    @Autowired private CriarTransacao criar;
+    @Autowired private AplicarResultadoService financeiro;
 
     @BeforeEach void preparar() {
         poolDaFixture = dataSource;
@@ -146,6 +154,193 @@ class AplicarEncerramentoIntegrationTest {
         assertThat(((PSQLException) causa).getSQLState()).isEqualTo("23503");
         assertThat(((PSQLException) causa).getServerErrorMessage().getConstraint())
                 .isEqualTo("fk_historico_resposta_confirmada");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"aplicada", "recebida"})
+    void executar_deveDistinguirRecebidoDeAplicado_eRepetirSemNovoRelogio(String etapa) {
+        var resposta = entrada(RespostaEncerramentoRecebida.Resultado.CONFIRMADO);
+        if (etapa.equals("recebida")) { respostas.inserir(resposta); }
+        else { aplicar.executar(resposta); }
+        var antes = historico.buscarPorEvento(resposta.eventId());
+        clock.chamadas.set(0);
+        clock.instante = clock.instante.plusSeconds(100);
+
+        var aplicada = aplicar.executar(resposta);
+
+        assertThat(buscar.executar(resposta.transactionId()).status()).isEqualTo(StatusTransacao.FALHOU);
+        assertThat(aplicada.resposta()).isEqualTo(resposta);
+        assertThat(aplicada.historico()).isPresent();
+        if (etapa.equals("aplicada")) {
+            assertThat(aplicada.historico()).isEqualTo(antes);
+            assertThat(clock.chamadas.get()).isZero();
+        } else { assertThat(clock.chamadas.get()).isEqualTo(1); }
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM historico_transacoes", Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM respostas_encerramento_recebidas", Integer.class)).isEqualTo(1);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"antes_APROVADA", "depois_APROVADA", "antes_REJEITADA", "depois_REJEITADA"})
+    void executar_deveReceberNegativaSemTransicao_ePreservarSaidaFinanceira(String cenario) {
+        var resposta = entrada(RespostaEncerramentoRecebida.Resultado.DECISAO_EXISTENTE);
+        var estado = StatusTransacao.valueOf(cenario.substring(cenario.indexOf('_') + 1));
+        var processada = financeiro(resposta, estado, resposta.outputEventId().orElseThrow(), resposta.creationEventId());
+        if (cenario.startsWith("depois")) { financeiro.executar(processada); }
+        var transacao = jdbc.queryForMap("SELECT * FROM transacoes");
+        var historicoAntes = jdbc.queryForList("SELECT * FROM historico_transacoes");
+        clock.chamadas.set(0);
+
+        var recebida = aplicar.executar(resposta);
+
+        assertThat(recebida).isEqualTo(new AplicacaoEncerramento(resposta, Optional.empty()));
+        assertThat(clock.chamadas.get()).isZero();
+        assertThat(jdbc.queryForMap("SELECT * FROM transacoes")).isEqualTo(transacao);
+        assertThat(jdbc.queryForList("SELECT * FROM historico_transacoes")).isEqualTo(historicoAntes);
+        if (cenario.startsWith("antes")) { financeiro.executar(processada); }
+        assertThat(buscar.executar(resposta.transactionId()).status()).isEqualTo(estado);
+        var registro = historico.buscarPorEvento(processada.eventId());
+        var chamadas = clock.chamadas.get();
+        clock.instante = clock.instante.plusSeconds(100);
+        assertThat(aplicar.executar(resposta)).isEqualTo(recebida);
+        assertThat(clock.chamadas.get()).isEqualTo(chamadas);
+        assertThat(historico.buscarPorEvento(processada.eventId())).isEqualTo(registro);
+        assertThat(respostas.buscarPorEvento(resposta.eventId())).contains(resposta);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"transacao", "criacao", "pedido", "instante", "resultado", "evento"})
+    void executar_deveRecusarRespostaDivergente_semAlterarAplicacaoOriginal(String campo) {
+        var original = entrada(RespostaEncerramentoRecebida.Resultado.CONFIRMADO);
+        var outra = entrada(RespostaEncerramentoRecebida.Resultado.CONFIRMADO);
+        aplicar.executar(original);
+        var historicoAntes = jdbc.queryForList("SELECT * FROM historico_transacoes");
+        var recibo = jdbc.queryForMap("SELECT * FROM respostas_encerramento_recebidas");
+        var transacoesAntes = jdbc.queryForList("SELECT * FROM transacoes ORDER BY id");
+        var divergente = new RespostaEncerramentoRecebida(campo.equals("evento") ? UUID.randomUUID() : original.eventId(),
+                campo.equals("transacao") ? outra.transactionId() : original.transactionId(),
+                campo.equals("criacao") ? outra.creationEventId() : original.creationEventId(),
+                campo.equals("instante") ? original.occurredAt().plusNanos(1) : original.occurredAt(),
+                campo.equals("transacao") ? outra.transactionId() : original.correlationId(),
+                campo.equals("pedido") ? outra.causationId() : original.causationId(),
+                campo.equals("resultado") ? RespostaEncerramentoRecebida.Resultado.DECISAO_EXISTENTE : original.resultado(),
+                campo.equals("resultado") ? Optional.of(UUID.randomUUID()) : Optional.empty());
+        var chamadas = clock.chamadas.get();
+
+        assertThatThrownBy(() -> aplicar.executar(divergente)).isInstanceOf(ConfirmacaoEncerramentoRecusadaException.class)
+                .hasMessage("resposta de encerramento divergente");
+
+        assertThat(clock.chamadas.get()).isEqualTo(chamadas);
+        assertThat(jdbc.queryForList("SELECT * FROM historico_transacoes")).isEqualTo(historicoAntes);
+        assertThat(jdbc.queryForMap("SELECT * FROM respostas_encerramento_recebidas")).isEqualTo(recibo);
+        assertThat(jdbc.queryForList("SELECT * FROM transacoes ORDER BY id")).isEqualTo(transacoesAntes);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"pedido_desconhecido", "transacao", "criacao"})
+    void executar_deveRecusarCausaIncompativel_antesDeEscrever(String campo) {
+        var original = entrada(RespostaEncerramentoRecebida.Resultado.CONFIRMADO);
+        var outra = entrada(RespostaEncerramentoRecebida.Resultado.CONFIRMADO);
+        var invalida = new RespostaEncerramentoRecebida(original.eventId(),
+                campo.equals("transacao") ? outra.transactionId() : original.transactionId(),
+                campo.equals("criacao") ? outra.creationEventId() : original.creationEventId(), original.occurredAt(),
+                campo.equals("transacao") ? outra.transactionId() : original.transactionId(),
+                campo.equals("pedido_desconhecido") ? UUID.randomUUID() : original.causationId(), original.resultado(),
+                Optional.empty());
+        var transacoesAntes = jdbc.queryForList("SELECT * FROM transacoes ORDER BY id");
+        clock.chamadas.set(0);
+
+        assertThatThrownBy(() -> aplicar.executar(invalida)).isInstanceOf(ConfirmacaoEncerramentoRecusadaException.class)
+                .hasMessage("pedido de encerramento desconhecido ou incompatível");
+
+        assertThat(clock.chamadas.get()).isZero();
+        assertThat(jdbc.queryForList("SELECT * FROM respostas_encerramento_recebidas")).isEmpty();
+        assertThat(jdbc.queryForList("SELECT * FROM historico_transacoes")).isEmpty();
+        assertThat(jdbc.queryForList("SELECT * FROM transacoes ORDER BY id")).isEqualTo(transacoesAntes);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = StatusTransacao.class, names = {"APROVADA", "REJEITADA"})
+    void executar_devePreservarFinanceiroAnterior_quandoConfirmacaoPositivaChegar(StatusTransacao estado) {
+        var resposta = entrada(RespostaEncerramentoRecebida.Resultado.CONFIRMADO);
+        financeiro.executar(financeiro(resposta, estado, UUID.randomUUID(), resposta.creationEventId()));
+        var antes = jdbc.queryForMap("SELECT * FROM transacoes");
+        var registro = jdbc.queryForMap("SELECT * FROM historico_transacoes");
+
+        assertThatThrownBy(() -> aplicar.executar(resposta)).isInstanceOf(ConfirmacaoEncerramentoRecusadaException.class)
+                .hasMessage("estado terminal incompatível com confirmação");
+
+        assertThat(jdbc.queryForMap("SELECT * FROM transacoes")).isEqualTo(antes);
+        assertThat(jdbc.queryForMap("SELECT * FROM historico_transacoes")).isEqualTo(registro);
+        assertThat(jdbc.queryForList("SELECT * FROM respostas_encerramento_recebidas")).isEmpty();
+    }
+
+    @Test
+    void executar_deveRecusarNegativaContraditoria_comFinanceiroJaAplicado() {
+        var resposta = entrada(RespostaEncerramentoRecebida.Resultado.DECISAO_EXISTENTE);
+        financeiro.executar(financeiro(resposta, StatusTransacao.APROVADA, UUID.randomUUID(), resposta.creationEventId()));
+        var antes = jdbc.queryForMap("SELECT * FROM transacoes");
+        var registro = jdbc.queryForMap("SELECT * FROM historico_transacoes");
+
+        assertThatThrownBy(() -> aplicar.executar(resposta)).isInstanceOf(ConfirmacaoEncerramentoRecusadaException.class)
+                .hasMessage("saída financeira incompatível com encerramento");
+
+        assertThat(jdbc.queryForMap("SELECT * FROM transacoes")).isEqualTo(antes);
+        assertThat(jdbc.queryForMap("SELECT * FROM historico_transacoes")).isEqualTo(registro);
+        assertThat(jdbc.queryForList("SELECT * FROM respostas_encerramento_recebidas")).isEmpty();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"evento", "criacao"})
+    void financeiro_deveExigirSaidaECriacaoRegistradasNaNegativa(String campo) {
+        var resposta = entrada(RespostaEncerramentoRecebida.Resultado.DECISAO_EXISTENTE);
+        respostas.inserir(resposta);
+        var criacao = resposta.creationEventId();
+        if (campo.equals("criacao")) {
+            criacao = UUID.randomUUID();
+            jdbc.update("""
+                    INSERT INTO outbox_eventos (event_id, aggregate_id, event_type, event_version, payload, occurred_at)
+                    SELECT ?, aggregate_id, event_type, event_version,
+                           jsonb_set(payload, '{eventId}', to_jsonb(CAST(? AS text))), occurred_at
+                    FROM outbox_eventos WHERE event_id = ?
+                    """, criacao, criacao.toString(), resposta.creationEventId());
+        }
+        var entrada = financeiro(resposta, StatusTransacao.APROVADA,
+                campo.equals("evento") ? UUID.randomUUID() : resposta.outputEventId().orElseThrow(), criacao);
+
+        assertThatThrownBy(() -> financeiro.executar(entrada)).isInstanceOf(ConflitoResultadoException.class);
+
+        assertThat(buscar.executar(resposta.transactionId()).status()).isEqualTo(StatusTransacao.PENDENTE);
+        assertThat(jdbc.queryForList("SELECT * FROM historico_transacoes")).isEmpty();
+        assertThat(respostas.buscarPorEvento(resposta.eventId())).contains(resposta);
+    }
+
+    @Test
+    void financeiro_deveRecusarDecisao_quandoConfirmacaoPositivaJaFoiRecebida() {
+        var resposta = entrada(RespostaEncerramentoRecebida.Resultado.CONFIRMADO);
+        respostas.inserir(resposta);
+        var entrada = financeiro(resposta, StatusTransacao.APROVADA, UUID.randomUUID(), resposta.creationEventId());
+
+        assertThatThrownBy(() -> financeiro.executar(entrada)).isInstanceOf(ConflitoResultadoException.class);
+
+        assertThat(buscar.executar(resposta.transactionId()).status()).isEqualTo(StatusTransacao.PENDENTE);
+        assertThat(jdbc.queryForList("SELECT * FROM historico_transacoes")).isEmpty();
+        aplicar.executar(resposta);
+        assertThat(buscar.executar(resposta.transactionId()).status()).isEqualTo(StatusTransacao.FALHOU);
+    }
+
+    private RespostaEncerramentoRecebida entrada(RespostaEncerramentoRecebida.Resultado resultado) {
+        var transacao = criar.executar(UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"));
+        var pedido = solicitar.executar(UUID.randomUUID(), transacao.id(), UUID.randomUUID());
+        return new RespostaEncerramentoRecebida(UUID.randomUUID(), transacao.id(), pedido.creationEventId(),
+                Instant.parse("2026-10-14T18:00:00.123456789Z"), transacao.id(), pedido.eventId(), resultado,
+                resultado == RespostaEncerramentoRecebida.Resultado.DECISAO_EXISTENTE
+                        ? Optional.of(UUID.randomUUID()) : Optional.empty());
+    }
+
+    private TransacaoProcessadaRecebida financeiro(RespostaEncerramentoRecebida resposta, StatusTransacao estado,
+            UUID evento, UUID criacao) {
+        return new TransacaoProcessadaRecebida(evento, resposta.transactionId(), resposta.occurredAt(),
+                resposta.transactionId(), criacao, estado);
     }
 
     @TestConfiguration(proxyBeanMethods = false)

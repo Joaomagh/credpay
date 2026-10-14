@@ -2498,6 +2498,8 @@ Primeiro cenário PostgreSQL: POST real via MockMvc, pedido real, confirmação 
 
 Red positivo em8edd4ac/run38635707815/job116098202786: um cenário/uma falha/zero erros/skips,15,22s (total25,070s), esperado FALHOU observado PENDENTE. Antes de V8, segunda fixture sem Spring usa conexões sem pool no PostgreSQL próprio, migra até V7, semeia por SQL registros APROVADA/REJEITADA e exige V8/backfill preservando cada coluna antiga e o INSERT financeiro anterior. Não é um novo fluxo financeiro real; prova compatibilidade física com dados existentes. Ambos os cenários focados devem estar red antes de alterar schema/aplicação.
 
+Red conjunto em3bdd4fd/run38636150999/job116099716533: dois cenários/duas falhas/zero erros/skips, total34,456s. Aplicação21,16s esperou FALHOU e observou PENDENTE; upgrade1,693s esperou versão8 e observou7. Implementação mínima acrescenta V8, porta específica de escrita técnica no adapter terminal e caso positivo transacional. INSERT financeiro foi apenas extraído para helper comum; sem novo histórico. Verify local195/29,294s/Checkstyle0. Guardas/replay/negativa ainda não implementados: nova rodada inclui22 casos da aplicação e upgrade, exigindo recusas causais, equivalência, negativo simétrico e proteção do financeiro posterior. Esses reds ainda precisam executar; não há aceite.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
