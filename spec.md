@@ -2460,6 +2460,8 @@ Objetivo: iniciar pedido interno identificado e intenção própria, derivando c
 
 Primeiro scaffolding não escreve; teste cria transação real, exige pedido/intenção após retorno e conserva snapshots/replay do POST. Red confirmado em b67c890, run38629501303/job116077182492: um cenário, zero falhas/um erro, 20,44s (total29,729s), PostgreSQL acusa relation pedidos_encerramento does not exist depois da criação real. Implementação mínima positiva acrescenta V6, portas próprias e envelope EncerramentoTransacaoSolicitado.v1 com motivo controlado; preserva nanos em epoch/nano. Replay, recusas, constraints e concorrência ainda não implementados/aceitos; etapa focada temporária precede verify com suíte/timeout preservados e será removida antes do aceite. Sem dependência nova, transporte, endpoint administrativo ou autoridade operacional implícita.
 
+Green positivo: 2a1287c, run38630413231/job116080296185, etapa focada concluída com sucesso antes do verify completo. Verify offline172/30,330s/Checkstyle0; integração completa ainda não aceita. Próximo red adiciona sete recusas de estado/origem: inexistente, APROVADA/REJEITADA e criação ausente/tipo/versão/ambiguidade. Estrutura compila em11,753s; sem implementação dessas recusas.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
