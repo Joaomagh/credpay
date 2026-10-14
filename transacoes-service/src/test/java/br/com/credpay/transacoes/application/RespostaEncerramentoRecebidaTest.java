@@ -7,6 +7,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -61,7 +62,7 @@ class RespostaEncerramentoRecebidaTest {
                 .hasMessage("outputEventId deve existir somente em DECISAO_EXISTENTE");
     }
 
-    @org.junit.jupiter.api.Test
+    @Test
     void construir_deveRecusarCorrelacaoDiferenteDaTransacao() {
         assertThatThrownBy(() -> new RespostaEncerramentoRecebida(eventId, transactionId, creationEventId,
                 instante, UUID.randomUUID(), pedidoId, RespostaEncerramentoRecebida.Resultado.CONFIRMADO,

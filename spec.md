@@ -2474,6 +2474,8 @@ Aceite B06.8e: PR #142 integrada em996942c após seis gates ee3b94a verdes. Tran
 
 Menor preparação antes do aplicador: DTO próprio EncerramentoTransacaoRespondido.v1 e persistência do envelope semântico completo, preservando nanos, resultado e outputEventId somente na negativa. V7 própria vincula resposta ao pedido/TX/criação, com unicidade por pedido; não altera V1–V6, estado, histórico, parser financeiro ou transporte. Adapter somente executado na fixture, nenhum caso de uso descoberto ou endpoint. Recebimento isolado não significa confirmação aplicada. Critérios: roundtrip após commit, causalidade/estrutura/unicidade e rollback real; testes pequenos red/green antes de comportamento. Sem dependência nova. Riscos: identidade cruzada, negativa sem saída financeira, perda de nanos e confusão entre receber e aplicar. Próxima fatia evoluirá domínio/histórico único e aplicador controlado com validação simétrica da negativa antes/depois do financeiro.
 
+TDD puro: contrato sem validação90cf887 executou13/11falhas/0erros/0skips em11,883s; ausentes eram aceitos. Após guardas explícitas, contrato13 verde e verify185/28,793s/Checkstyle0. Primeiro teste PostgreSQL cobre ambos os resultados, envelope/epoch-nano123456789, releitura e estado/POST/histórico intactos; adapter scaffolding não escreve, V7 ainda ausente. Estrutura compila em11,066s. Etapa focada temporária antecede verify intacto; precisa red remoto antes do SQL/adapter real e será retirada antes do aceite. Sem nova dependência. Com V7, limpeza explícita da fixture de pedidos deverá incluir o novo recibo por causa da FK, sem CASCADE.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
