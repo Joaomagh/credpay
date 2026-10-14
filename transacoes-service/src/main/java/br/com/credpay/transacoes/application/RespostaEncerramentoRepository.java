@@ -7,4 +7,6 @@ public interface RespostaEncerramentoRepository {
     void inserir(RespostaEncerramentoRecebida resposta);
 
     Optional<RespostaEncerramentoRecebida> buscarPorEvento(UUID eventId);
+
+    Optional<RespostaEncerramentoRecebida> buscarPorTransactionId(UUID transactionId);
 }

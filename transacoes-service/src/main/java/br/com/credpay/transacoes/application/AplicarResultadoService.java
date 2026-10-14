@@ -13,11 +13,14 @@ public class AplicarResultadoService {
 
     private final TransacaoRepository transacoes;
     private final TransicaoRepository historico;
+    private final RespostaEncerramentoRepository encerramentos;
     private final Clock clock;
 
-    public AplicarResultadoService(TransacaoRepository transacoes, TransicaoRepository historico, Clock clock) {
+    public AplicarResultadoService(TransacaoRepository transacoes, TransicaoRepository historico,
+            RespostaEncerramentoRepository encerramentos, Clock clock) {
         this.transacoes = transacoes;
         this.historico = historico;
+        this.encerramentos = encerramentos;
         this.clock = clock;
     }
 
@@ -35,6 +38,15 @@ public class AplicarResultadoService {
         var original = transacoes.buscarPorId(entrada.transactionId()).orElseThrow(TransicaoRecusadaException::new);
         if (original.status() != StatusTransacao.PENDENTE) {
             throw new ConflitoResultadoException();
+        }
+        var encerramento = encerramentos.buscarPorTransactionId(entrada.transactionId());
+        if (encerramento.isPresent()) {
+            var resposta = encerramento.orElseThrow();
+            if (resposta.resultado() == RespostaEncerramentoRecebida.Resultado.CONFIRMADO
+                    || !resposta.outputEventId().orElseThrow().equals(entrada.eventId())
+                    || !resposta.creationEventId().equals(entrada.causationId())) {
+                throw new ConflitoResultadoException();
+            }
         }
         if (!historico.existeCriacao(entrada.causationId(), entrada.transactionId())) {
             throw new TransicaoRecusadaException();

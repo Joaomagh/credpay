@@ -2500,6 +2500,8 @@ Red positivo em8edd4ac/run38635707815/job116098202786: um cenário/uma falha/zer
 
 Red conjunto em3bdd4fd/run38636150999/job116099716533: dois cenários/duas falhas/zero erros/skips, total34,456s. Aplicação21,16s esperou FALHOU e observou PENDENTE; upgrade1,693s esperou versão8 e observou7. Implementação mínima acrescenta V8, porta específica de escrita técnica no adapter terminal e caso positivo transacional. INSERT financeiro foi apenas extraído para helper comum; sem novo histórico. Verify local195/29,294s/Checkstyle0. Guardas/replay/negativa ainda não implementados: nova rodada inclui22 casos da aplicação e upgrade, exigindo recusas causais, equivalência, negativo simétrico e proteção do financeiro posterior. Esses reds ainda precisam executar; não há aceite.
 
+Red das guardas em27f7226/run38636887434/job116102203096: aplicação22/15falhas6erros em15,54s e upgrade verde1/1,652s; total23/15falhas6erros/25,876s. Positivo causal/HTTP e migração passaram; faltavam replay, negativa e recusas específicas. Implementação reconhece equivalência antes de Clock, distingue positivo recebido/aplicado, valida pedido e saída financeira e protege AplicarResultado por recibo/TX. Consulta usa índices existentes de pedido/TX e causa, sem índice adicional. Testes financeiros mantidos, apenas expectativas dos nomes de constraints substituídas na V8 atualizadas. Primeira atualização local dos mocks usou diretório duplicado e a compilação recusou construtor antigo; corrigida sem contar como red. Verify195/29,168s/Checkstyle0 verde. Green real e caracterizações de rollback/concorrência ainda pendentes.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

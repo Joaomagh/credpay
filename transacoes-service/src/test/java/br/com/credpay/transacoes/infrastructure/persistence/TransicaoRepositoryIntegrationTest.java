@@ -116,7 +116,7 @@ class TransicaoRepositoryIntegrationTest {
                 UPDATE historico_transacoes SET causation_id = ? WHERE event_id = ?
                 """, outra.causationId(), original.eventId()))
                 .isInstanceOf(DataIntegrityViolationException.class)
-                .hasStackTraceContaining("fk_historico_causa_transacao");
+                .hasStackTraceContaining("fk_historico_causa_criacao");
         assertThat(repository.buscarPorEvento(original.eventId())).contains(original);
     }
 
@@ -148,13 +148,13 @@ class TransicaoRepositoryIntegrationTest {
 
     static Stream<Arguments> camposInvalidos() {
         return Stream.of(
-                Arguments.of("event_type", "'Outro'", "ck_historico_tipo_versao"),
-                Arguments.of("event_version", "2", "ck_historico_tipo_versao"),
+                Arguments.of("event_type", "'Outro'", "ck_historico_tipo_estado_origem"),
+                Arguments.of("event_version", "2", "ck_historico_tipo_estado_origem"),
                 Arguments.of("correlation_id", "'9c29e2bb-c43d-41f2-94d2-37499799faca'::uuid", "ck_historico_correlacao"),
                 Arguments.of("estado_anterior", "'APROVADA'", "ck_historico_estado_anterior"),
-                Arguments.of("estado_final", "'PENDENTE'", "ck_historico_estado_final"),
-                Arguments.of("estado_final", "'FALHOU'", "ck_historico_estado_final"),
-                Arguments.of("origem", "'Outro'", "ck_historico_origem"),
+                Arguments.of("estado_final", "'PENDENTE'", "ck_historico_tipo_estado_origem"),
+                Arguments.of("estado_final", "'FALHOU'", "ck_historico_tipo_estado_origem"),
+                Arguments.of("origem", "'Outro'", "ck_historico_tipo_estado_origem"),
                 Arguments.of("occurred_at_nano", "-1", "ck_historico_nano"),
                 Arguments.of("occurred_at_nano", "1000000000", "ck_historico_nano"));
     }
