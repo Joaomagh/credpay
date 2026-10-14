@@ -4,16 +4,16 @@
 
 ## Último incremento
 
-- B06.8a integrado na PR #138/786d11e: seis gates436ce3a verdes, Proc132/8m03 e regra8. Arbitragem pura preserva decisão/saída, sem FALHOU operacional. Spec9.84.
+- B06.8b integrado na PR #139/5ad7e3d: seis gates verdes em d80a899, processador 177/8m30, fixture PostgreSQL 45. Schema preparatório, sem fence operacional. Spec9.85.
 
 ## Agora
 
-- [ ] B06.8b/PR #139 — Validar schema preparatório e45 casos PostgreSQL. TDD por ciclo, foco44 aprovado e rollback caracterizado; etapa temporária retirada. Local90/26,746s/Checkstyle0 e revisão aprovados; CI177 e gates finais necessários. Sem caso operacional/fence efetivo/API. Spec9.85.
+- [ ] B06.8c — Arbitragem durável exclusivamente controlada. Pedido validado por TDD9; primeiro red de criação bloqueada no PostgreSQL ainda necessário. Proteger chamada direta normal e recibo antes de oferecer confirmação positiva. Sem API/listener/transporte de encerramento. Spec9.86.
 
 ## Próximo
 
-- [ ] Adapter e arbitragem durável sob lock compartilhado, incluindo proteção do processamento normal. Provar replay/rollback/corrida e entrada atrasada antes de transportar confirmação positiva.
+- Completar replay, rollback e corrida sob lock compartilhado; integrar somente com suíte afetada, gates finais e revisão. Caso de encerramento registrado apenas em testes.
 
 ## Depois
 
-- Autoridade/evidência operacional e auditoria tardia antes de ativação. Painel/Kubernetes/sandbox/segurança/ensaio continuam pendentes. Estimativa global65%, sem conclusão por quantidade de PRs.
+- Transporte e aplicação causal no serviço de transações. Autoridade/evidência operacional e auditoria tardia antes de ativação. Painel/Kubernetes/sandbox/segurança/ensaio permanecem pendentes; estimativa global 65%.
