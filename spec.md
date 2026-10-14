@@ -2482,6 +2482,16 @@ Red das restrições em633c042/run38633656160/job116091267019:17cenários/13falh
 
 Green focado: etapa dos 17 cenários concluída com sucesso em f7a60cd, run38634029240/job116092513642; verify completo iniciou. Local: 185 testes em 28,552 s, zero falhas/erros/skips e Checkstyle0. Revisão final sem bloqueantes; diff e UTF-8 válidos. Retirada a etapa temporária para aceite com verify padrão e timeout preservados. Aguardam-se 349 testes e os seis gates do último SHA. Recibo positivo isolado continua significando recebido: o futuro aplicador precisa verificar/concluir estado e histórico atomicamente antes de devolver aplicado.
 
+Aceite B06.8f: PR #143 integrada em6cd8608 após seis gates90e0fb4 verdes. Transações349/3m00, recibo17/2,413s, contrato13 e Flow6/2m19, zero falhas/erros/skips/Checkstyle0. Transrun38634315971/job116093829806; Flow38634315985/job116093817718; Compose38634315959/job116093759124 confirmou três volumes/GET final/POST original/deltas2/2; Images38634316044/job116093467487; Scan38634315967/job116093454217. Inventory38634315961/job116093454475: quatroalvos79/222, mesmos3CVE, checkout54f94eb64a3dc6c8d60098bbb7855e9162f8db11, artifact11927257793, digest30188c73b9a0ea625f9ab4d2715bea955c088058e2d7b6aaf6eb6325cd4c14e8. Revisão sem bloqueantes e nenhuma revisão remota pendente; foco ausente, suíte/timeout intactos. Main sincronizada.
+
+### 9.90 Aplicação controlada da confirmação — B06.8g em TDD
+
+Objetivo: confirmar FALHOU e histórico terminal único no mesmo commit do recibo positivo, somente por caso importado em teste. Negativa preserva estado/histórico e confere saída financeira nos dois ordenamentos. Arquivos previstos: domínio/mapper, aplicação/portas, adapter terminal/recibo, migration V8 e testes. Riscos: divergência causal, recibo confundido com aplicação, disputa financeira e compatibilidade do evento financeiro. Não criar outro histórico, endpoint, listener ou transporte; nenhuma dependência nova.
+
+Desenho mínimo revisado: operação técnica explícita no domínio, concluir e TransacaoProcessada.v1 continuam APROVADA/REJEITADA. V8 preserva causa imediata e INSERT financeiro, propondo colunas geradas para causas criação/pedido e literal CONFIRMADO no ramo técnico; FKs condicionais e CHECK por tipo/versão/origem/final vinculam histórico FALHOU ao recibo positivo correspondente. [Colunas geradas do PostgreSQL17](https://www.postgresql.org/docs/17/ddl-generated-columns.html) orientam a proposta; suporte/roundtrip/backfill serão provados no banco pinado antes do aceite.
+
+Aplicador sob locks resposta/TX valida pedido e equivalência integral. Positivo recebido isolado ainda PENDENTE precisa concluir; positivo com histórico correspondente retorna antes de Clock; terminal incompatível conflita. Negativa confronta output/criação com financeiro existente. AplicarResultado consultará recibo por TX antes da nova conclusão: negativa exige saída/criação correspondentes, positiva impede contradição. Retorno deve distinguir resposta e histórico opcional. Primeira prova será domínio puro red/green, depois cenário positivo PostgreSQL antes da persistência/aplicação.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

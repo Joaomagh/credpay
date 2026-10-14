@@ -48,6 +48,10 @@ public final class Transacao {
         return new Transacao(id, valor, moeda, resultado);
     }
 
+    public Transacao confirmarFalhaTecnica() {
+        return this;
+    }
+
     public UUID id() {
         return id;
     }

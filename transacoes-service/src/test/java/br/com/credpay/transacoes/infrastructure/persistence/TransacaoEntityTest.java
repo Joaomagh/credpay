@@ -19,7 +19,9 @@ class TransacaoEntityTest {
         var valor = new BigDecimal("123.450");
         var moeda = Currency.getInstance("BRL");
         var transacao = Transacao.criar(id, valor, moeda);
-        if (status != StatusTransacao.PENDENTE) {
+        if (status == StatusTransacao.FALHOU) {
+            transacao = transacao.confirmarFalhaTecnica();
+        } else if (status != StatusTransacao.PENDENTE) {
             transacao = transacao.concluir(status);
         }
 
