@@ -19,7 +19,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -30,12 +30,12 @@ class CriarTransacaoConcorrenciaIntegrationTest {
     private static final AtomicReference<HikariDataSource> POOL_ORIGINAL = new AtomicReference<>();
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgresDaFixture()
+    static final PostgreSQLContainer POSTGRES = new PostgresDaFixture()
             .withDatabaseName("credpay_test")
             .withUsername("test")
             .withPassword("test");
 
-    private static final class PostgresDaFixture extends PostgreSQLContainer<PostgresDaFixture> {
+    private static final class PostgresDaFixture extends PostgreSQLContainer {
         private PostgresDaFixture() {
             super("postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0");
         }

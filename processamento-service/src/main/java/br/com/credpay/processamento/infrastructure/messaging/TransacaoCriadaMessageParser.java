@@ -1,9 +1,11 @@
 package br.com.credpay.processamento.infrastructure.messaging;
 
 import br.com.credpay.processamento.application.TransacaoCriadaRecebida;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.IOException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectReader;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.core.JacksonException;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
@@ -13,17 +15,17 @@ import org.springframework.amqp.core.Message;
 
 final class TransacaoCriadaMessageParser {
 
-    private final ObjectMapper objectMapper;
+    private final ObjectReader reader;
 
     TransacaoCriadaMessageParser(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+        this.reader = objectMapper.reader().with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
     }
 
     TransacaoCriadaRecebida parsear(Message message) {
         JsonNode root;
         try {
-            root = objectMapper.readTree(message.getBody());
-        } catch (IOException exception) {
+            root = reader.readTree(message.getBody());
+        } catch (JacksonException exception) {
             throw new IllegalArgumentException("JSON inválido");
         }
         if (root == null || !root.isObject()) {

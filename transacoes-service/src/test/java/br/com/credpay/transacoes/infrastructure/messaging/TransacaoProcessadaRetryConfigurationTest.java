@@ -17,11 +17,11 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.support.ListenerExecutionFailedException;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
-import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
+import org.springframework.boot.amqp.autoconfigure.RabbitAutoConfiguration;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.ApplicationContext;
 import org.springframework.dao.DataAccessResourceFailureException;
-import org.springframework.retry.interceptor.RetryOperationsInterceptor;
+import org.springframework.amqp.rabbit.config.StatelessRetryOperationsInterceptor;
 
 class TransacaoProcessadaRetryConfigurationTest {
 
@@ -98,7 +98,7 @@ class TransacaoProcessadaRetryConfigurationTest {
         proxy.setInterfaces(BiConsumer.class);
         BiConsumer<Object, Message> invocacaoContainer = (canal, mensagem) -> trabalho.accept(mensagem);
         proxy.setTarget(invocacaoContainer);
-        contexto.getBeansOfType(RetryOperationsInterceptor.class).values().forEach(proxy::addAdvice);
+        contexto.getBeansOfType(StatelessRetryOperationsInterceptor.class).values().forEach(proxy::addAdvice);
         var consumidor = (BiConsumer<Object, Message>) proxy.getProxy();
         return mensagem -> consumidor.accept(null, mensagem);
     }

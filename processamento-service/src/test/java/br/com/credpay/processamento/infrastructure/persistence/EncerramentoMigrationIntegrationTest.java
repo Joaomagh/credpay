@@ -12,12 +12,12 @@ import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Stream;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -42,7 +42,7 @@ class EncerramentoMigrationIntegrationTest {
     private static final Instant RESPOSTA_EM = Instant.parse("2026-10-14T12:00:01.987654Z");
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
+    static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer(
             "postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0")
             .withDatabaseName("credpay_encerramento_migration")
             .withUsername("test").withPassword("test");

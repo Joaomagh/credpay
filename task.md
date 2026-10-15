@@ -4,15 +4,15 @@
 
 ## Último incremento
 
-- B06.8i integrado na PR #147/5e3a73a: seis gatesd51947c verdes, processador339/8m07; parser117. README/demo e autorização restrita CI atualizados. Sem transporte; spec9.92.
+- B07.5a integrado na PR #148/9adf3d3: Kubernetes#5 e Scan234 verdes em5ec82ec; startup/probes/UID/PVCs e persistência comprovados. #118 substituída; spec9.93.
 
 ## Agora
 
-- [ ] B07.5a — Smoke Kubernetes#4/99356e4 comprovou startup/probes/UID/PVCs e persistência de migrations/exchanges; cleanup/Scan233 verdes. Finalizar registros/gates da PR #148 e integrar; spec9.93.
+- [ ] B08.6c — Migrar plataforma/imagem corrigidas autorizadas em15/10; baseline registrada antes da resolução em spec9.94. Preservar contratos e comprovar suítes/inventário completos.
 
 ## Próximo
 
-- Migração de plataforma/imagem corrigidas autorizada em15/10, baseline em análise. Depois preparo/fluxo Kubernetes e transporte de encerramento somente no cenário descartável aprovado.
+- Preparo/fluxo Kubernetes e transporte de encerramento somente no cenário descartável aprovado.
 
 ## Depois
 

@@ -11,8 +11,8 @@ import java.util.stream.Stream;
 
 import br.com.credpay.transacoes.application.RespostaEncerramentoRecebida;
 import br.com.credpay.transacoes.application.RespostaEncerramentoRecebida.Resultado;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -174,7 +174,8 @@ class EncerramentoTransacaoRespondidoMessageParserTest {
 
     @Test
     void parsear_devePreservarConfiguracaoCompartilhada_quandoRejeitaSufixo() throws Exception {
-        var mapper = new ObjectMapper();
+        var mapper = tools.jackson.databind.json.JsonMapper.builder()
+                .disable(tools.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS).build();
         var parserLocal = new EncerramentoTransacaoRespondidoMessageParser(mapper);
         var json = payload() + " {}";
 

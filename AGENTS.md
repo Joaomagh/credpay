@@ -58,7 +58,7 @@ Exceções que não exigem red prévio: documentação, configuração puramente
 
 ## 4. Estratégia de testes
 
-- JUnit 5 + AssertJ para comportamento; Mockito somente em fronteiras que dificultem um teste unitário.
+- JUnit Jupiter + AssertJ para comportamento; Mockito somente em fronteiras que dificultem um teste unitário. A migração de plataforma autorizada em2026-10-15 usa JUnit6 gerenciado por Boot4, preservando os cenários existentes; baseline/evidências em spec§9.94.
 - Evitar mockar entidades/value objects e evitar verificar detalhes internos sem necessidade.
 - `@WebMvcTest` para contrato HTTP isolado; teste unitário para domínio/serviço; Testcontainers para PostgreSQL/RabbitMQ.
 - Testes de integração provam migrations, constraints, serialização, publicação/consumo e falhas reais.

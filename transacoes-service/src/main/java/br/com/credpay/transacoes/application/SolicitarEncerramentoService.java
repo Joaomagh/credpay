@@ -4,8 +4,8 @@ import java.time.Clock;
 import java.util.UUID;
 
 import br.com.credpay.transacoes.domain.StatusTransacao;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,7 +63,7 @@ public class SolicitarEncerramentoService {
                     new Dados(transactionId, criacao, pedido.motivo(), evidenceRef));
             outbox.adicionar(new EventoOutbox(pedidoId, transactionId, "EncerramentoTransacaoSolicitado", 1,
                     mapper.writeValueAsString(payload), pedido.occurredAt()));
-        } catch (JsonProcessingException exception) {
+        } catch (JacksonException exception) {
             throw new IllegalStateException("não foi possível serializar EncerramentoTransacaoSolicitado", exception);
         }
         return pedido;

@@ -1,16 +1,16 @@
 package br.com.credpay.processamento.infrastructure.messaging;
 
-import java.io.IOException;
+import tools.jackson.core.JacksonException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.UUID;
 
 import br.com.credpay.processamento.application.PedidoEncerramentoRecebido;
 import br.com.credpay.processamento.application.PedidoEncerramentoRecebido.Motivo;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.fasterxml.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectReader;
+import tools.jackson.databind.DeserializationFeature;
 import org.springframework.amqp.core.Message;
 
 final class EncerramentoTransacaoSolicitadoMessageParser {
@@ -25,7 +25,7 @@ final class EncerramentoTransacaoSolicitadoMessageParser {
         JsonNode root;
         try {
             root = reader.readTree(message.getBody());
-        } catch (IOException exception) {
+        } catch (JacksonException exception) {
             throw new IllegalArgumentException("JSON inválido");
         }
         if (root == null || !root.isObject()) throw invalido("envelope");

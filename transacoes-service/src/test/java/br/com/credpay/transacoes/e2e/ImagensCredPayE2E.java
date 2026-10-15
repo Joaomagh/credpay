@@ -17,16 +17,16 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.containers.RabbitMQContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.testcontainers.rabbitmq.RabbitMQContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
@@ -97,14 +97,14 @@ class ImagensCredPayE2E {
         }
     }
 
-    private PostgreSQLContainer<?> banco(Network rede, String alias, String nome) {
-        return new PostgreSQLContainer<>(POSTGRES_IMAGE)
+    private PostgreSQLContainer banco(Network rede, String alias, String nome) {
+        return new PostgreSQLContainer(POSTGRES_IMAGE)
                 .withDatabaseName(nome).withUsername("test").withPassword("test")
                 .withNetwork(rede).withNetworkAliases(alias);
     }
 
     private GenericContainer<?> aplicativo(String servico, String tag, Network rede, String aliasBanco,
-                                           PostgreSQLContainer<?> banco, RabbitMQContainer broker, boolean topologia, boolean consumir) {
+                                           PostgreSQLContainer banco, RabbitMQContainer broker, boolean topologia, boolean consumir) {
         return new GenericContainer<>(DockerImageName.parse("credpay-" + servico + ":" + tag))
                 .withImagePullPolicy(imagem -> false)
                 .withNetwork(rede).withExposedPorts(8080)
@@ -242,7 +242,7 @@ class ImagensCredPayE2E {
         }
     }
 
-    private void conferirBancosProprios(PostgreSQLContainer<?> bancoTransacoes, PostgreSQLContainer<?> bancoProcessamento) {
+    private void conferirBancosProprios(PostgreSQLContainer bancoTransacoes, PostgreSQLContainer bancoProcessamento) {
         var transacoes = jdbc(bancoTransacoes);
         var processamento = jdbc(bancoProcessamento);
         assertThat(transacoes.queryForObject("SELECT to_regclass('public.transacoes')", String.class)).isEqualTo("transacoes");
@@ -251,7 +251,7 @@ class ImagensCredPayE2E {
         assertThat(processamento.queryForObject("SELECT to_regclass('public.transacoes')", String.class)).isNull();
     }
 
-    private JdbcTemplate jdbc(PostgreSQLContainer<?> banco) {
+    private JdbcTemplate jdbc(PostgreSQLContainer banco) {
         return new JdbcTemplate(new DriverManagerDataSource(banco.getJdbcUrl(), banco.getUsername(), banco.getPassword()));
     }
 
@@ -349,7 +349,7 @@ class ImagensCredPayE2E {
             assertThat(json).withFailMessage("JSON financeiro ausente").isNotNull();
             assertThat(json.isObject()).withFailMessage("JSON financeiro não é objeto").isTrue();
             return json;
-        } catch (java.io.IOException respostaInvalida) {
+        } catch (tools.jackson.core.JacksonException respostaInvalida) {
             throw new AssertionError("JSON financeiro inválido; conteúdo omitido");
         }
     }

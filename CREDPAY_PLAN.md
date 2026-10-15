@@ -82,10 +82,10 @@ O monorepo reduz manutenção para uma pessoa e facilita avaliação, sem elimin
 
 | Área | Escolha | Intenção |
 |---|---|---|
-| Aplicação | Java 21, Spring Boot 3, Maven | Consolidar stack de vagas Java |
+| Aplicação | Java 21, Spring Boot, Maven | Consolidar stack de vagas Java; migração Boot4 autorizada em15/10 para correções públicas de segurança, baseline em spec§9.94 |
 | Dados | PostgreSQL, Spring Data JPA, Flyway | Persistência real e migrations reproduzíveis |
 | Mensageria | RabbitMQ, Spring AMQP | Entrega assíncrona, retry e DLQ |
-| Testes | JUnit 5, AssertJ, Mockito, Testcontainers | Pirâmide de testes com infraestrutura real nas bordas |
+| Testes | JUnit Jupiter, AssertJ, Mockito, Testcontainers | Pirâmide de testes com infraestrutura real nas bordas; versões alinhadas à plataforma em spec§9.94 |
 | Contrato | Bean Validation, OpenAPI | API pequena e demonstrável |
 | Observabilidade | Actuator, Micrometer, Prometheus, Grafana, logs estruturados | Diagnóstico por evidência |
 | Plataforma | Docker Compose, Kubernetes local | Aprender deploy, configuração, probes e recursos |
