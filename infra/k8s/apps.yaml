@@ -1,0 +1,172 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: transacoes
+spec:
+  selector:
+    app: transacoes
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transacoes
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: transacoes
+  template:
+    metadata:
+      labels:
+        app: transacoes
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          image: credpay-transacoes:local
+          imagePullPolicy: Never
+          securityContext:
+            privileged: false
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          envFrom:
+            - configMapRef:
+                name: credpay-config
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://db-transacoes:5432/credpay_transacoes
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef: {name: credpay-demo, key: tx-user}
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: credpay-demo, key: tx-password}
+            - name: SPRING_RABBITMQ_USERNAME
+              valueFrom:
+                secretKeyRef: {name: credpay-demo, key: rabbit-user}
+            - name: SPRING_RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: credpay-demo, key: rabbit-password}
+          args:
+            - --credpay.transacoes.consumer.topology.enabled=false
+            - --credpay.transacoes.consumer.listener.enabled=false
+            - --credpay.outbox.publisher.enabled=false
+          ports:
+            - containerPort: 8080
+          startupProbe:
+            httpGet: {path: /actuator/health/liveness, port: 8080}
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+          livenessProbe:
+            httpGet: {path: /actuator/health/liveness, port: 8080}
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet: {path: /actuator/health/readiness, port: 8080}
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests: {cpu: 250m, memory: 384Mi}
+            limits: {cpu: "1", memory: 768Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: processamento
+spec:
+  selector:
+    app: processamento
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: processamento
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: processamento
+  template:
+    metadata:
+      labels:
+        app: processamento
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: app
+          image: credpay-processamento:local
+          imagePullPolicy: Never
+          securityContext:
+            privileged: false
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          envFrom:
+            - configMapRef:
+                name: credpay-config
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://db-processamento:5432/credpay_processamento
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef: {name: credpay-demo, key: proc-user}
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: credpay-demo, key: proc-password}
+            - name: SPRING_RABBITMQ_USERNAME
+              valueFrom:
+                secretKeyRef: {name: credpay-demo, key: rabbit-user}
+            - name: SPRING_RABBITMQ_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: credpay-demo, key: rabbit-password}
+          args:
+            - --credpay.processamento.limites.BRL=$(BRL_LIMIT)
+            - --credpay.processamento.consumer.topology.enabled=false
+            - --credpay.processamento.consumer.listener.enabled=false
+            - --credpay.outbox.publisher.enabled=false
+          ports:
+            - containerPort: 8080
+          startupProbe:
+            httpGet: {path: /actuator/health/liveness, port: 8080}
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 30
+          livenessProbe:
+            httpGet: {path: /actuator/health/liveness, port: 8080}
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet: {path: /actuator/health/readiness, port: 8080}
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests: {cpu: 250m, memory: 384Mi}
+            limits: {cpu: "1", memory: 768Mi}

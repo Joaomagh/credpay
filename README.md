@@ -82,7 +82,8 @@ O projeto está na fase de fluxo assíncrono confiável: os dois aplicativos rea
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
 | Documentado | contrato `TransacaoCriada` v1 e garantia de entrega pelo menos uma vez via outbox |
 | Documentado | baseline RabbitMQ com propriedade da topologia, confirms/returns, retry e DLQ |
-| Ainda não implementado | coordenação entre réplicas publicadoras, Kubernetes e CD com destino definido |
+| Comprovado no CI descartável | startup Kubernetes, probes, UID dos apps e persistência de migrations/exchanges após recriar Pods; [limites e roteiro](infra/k8s/README.md) |
+| Ainda não implementado | coordenação entre réplicas publicadoras, fluxo financeiro Kubernetes e CD com destino definido |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 
@@ -263,7 +264,7 @@ Fluxo financeiro comprovado:
 5. `transacoes-service` atualiza o estado consultável;
 6. sinais observáveis permitem acompanhar e diagnosticar o fluxo.
 
-Kubernetes e painel de diagnóstico permanecem em preparação. FALHOU tem aplicação causal comprovada somente em teste controlado; transporte da confirmação e início operacional continuam pendentes.
+Startup e persistência Kubernetes foram comprovados no CI descartável autorizado. Preparo/ativação do fluxo no cluster e painel de diagnóstico permanecem pendentes. FALHOU tem aplicação causal comprovada somente em teste controlado; transporte da confirmação e início operacional continuam pendentes.
 
 ## Práticas de engenharia
 
@@ -306,7 +307,7 @@ O sandbox ainda não foi implementado. Docker Desktop, daemon, VM, kernel/hyperv
 | 3 | regras de domínio em TDD e primeira integração PostgreSQL | concluída |
 | 4 | API, fluxo assíncrono, idempotência, outbox, retry e DLQ | fluxo principal comprovado; FALHOU causal em teste controlado, transporte/autoridade operacional pendentes |
 | 5 | experimentos de falha e resiliência | recuperação comprovada nos cenários documentados; fechamento de qualidade pendente |
-| 6 | Kubernetes local e observabilidade | proposta Kubernetes sem execução; observabilidade pendente |
+| 6 | Kubernetes local e observabilidade | startup/persistência comprovados no CI descartável; fluxo no cluster e observabilidade pendentes |
 | 7 | evolução do CI, CD e roteiro de demonstração | CI, imagens e Compose comprovados; roteiro disponível, ensaio e fechamento pendentes |
 
 O plano detalhado e os critérios de saída estão em [`CREDPAY_PLAN.md`](CREDPAY_PLAN.md).
