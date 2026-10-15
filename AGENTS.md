@@ -76,6 +76,10 @@ Exceções que não exigem red prévio: documentação, configuração puramente
 
 Se uma restrição não puder ser tecnicamente garantida, declarar a limitação; não simular segurança por instrução textual.
 
+### Exceção específica de Kubernetes no CI — autorizada em 2026-10-15
+
+João autorizou explicitamente a proposta da PR #118: executar o node kind e os componentes internos padrão da baseline proposta somente em runner GitHub CI hospedado e descartável. A exceção abrange os privilégios, rede e mounts internos padrão documentados no [README da proposta no SHA9a885cb](https://github.com/Joaomagh/credpay/blob/9a885cb42fbbc1c23d023839336e506af8e349c0/infra/k8s/README.md); os Pods CredPay permanecem sem privilégios. Não autoriza node privilegiado no computador de João, implantação externa, Docker socket nos apps, credenciais reais/do agente ou mounts adicionais de home/workspace/socket. Cluster/kubeconfig próprios e cleanup limitado ao cluster criado pelo job são obrigatórios. Runner, daemon e node continuam parte da base de confiança; isso não comprova AI-Jail ou allowlist de egress. Outras execuções continuam sujeitas à proibição geral acima.
+
 ## 6. Qualidade e escopo
 
 - Preferir a solução mais simples que satisfaça o teste atual.

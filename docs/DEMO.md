@@ -37,7 +37,7 @@ Por isso, idempotência existe em duas fronteiras. No HTTP, a mesma chave e pedi
 
 Valores usam BigDecimal. Equivalência monetária compara valor decimal, enquanto o snapshot conserva os dados originais. Instantes usam java.time; contratos que exigem nanos são persistidos com segundos e nanos, e o instante de aplicação do histórico é normalizado para micros do PostgreSQL. Precisão e equivalência têm regras explícitas.
 
-Os listeners retornam depois do commit, permitindo ack após dados duráveis. Rejeições permanentes seguem para DLQ e falhas operacionais recebem retry limitado a três tentativas. Esgotar retry não inventa uma decisão financeira: a transação pode continuar PENDENTE. A direção aprovada para FALHOU exige confirmação de falha técnica irrecuperável; o mecanismo e os testes ainda precisam ser definidos.
+Os listeners retornam depois do commit, permitindo ack após dados duráveis. Rejeições permanentes seguem para DLQ e falhas operacionais recebem retry limitado a três tentativas. Esgotar retry não inventa uma decisão financeira: a transação pode continuar PENDENTE. FALHOU exige confirmação causal: a aplicação atômica de recibo e histórico já foi comprovada em teste controlado, preservando a decisão financeira existente. Transporte e autoridade operacional ainda estão pendentes; a coordenação não demonstra sozinha irreversibilidade física da causa.
 
 O CI prova fluxo completo, duplicatas, rollback, reentrega e recuperação nos cenários documentados. Imagens comprovam estados finais e replay; Compose também comprova preservação após down/up. Essas provas não cobrem todo crash possível.
 
@@ -51,7 +51,7 @@ Uso uma réplica publicadora por serviço e broker de nó único; não alego alt
 | Por que POST replay retorna PENDENTE e GET retorna APROVADA? | Resposta original da operação versus estado atual do recurso; chave equivalente/conflito | spec §9.45, §9.52 e §9.62; Flow e Images preservam resposta/Location e registros |
 | Como impedir duas decisões concorrentes? | Locks por identidades, constraints, transação e replay/conflito explícitos | [RegistrarProcessamentoService](../processamento-service/src/main/java/br/com/credpay/processamento/application/RegistrarProcessamentoService.java), [AplicarResultadoService](../transacoes-service/src/main/java/br/com/credpay/transacoes/application/AplicarResultadoService.java) |
 | O que ocorre entre commit e ack? | Dados já duráveis; reentrega exige consumidor idempotente; janela testada não é exactly-once | spec §9.37 e §9.48 e runbook Flow; testes de listeners |
-| Por que DLQ não significa FALHOU? | Falha operacional e decisão financeira são distintas; direção aprovada preserva recuperação; confirmação irrecuperável ainda não implementada | spec §9.54; recuperação com limite corrigido e replay manual |
+| Por que DLQ não significa FALHOU? | Falha operacional e decisão financeira são distintas; recuperação permanece possível; aplicação causal controlada não autoriza encerramento operacional arbitrário | spec §9.54 e §9.90; recuperação e confirmação causal controlada |
 | Quais limites existem hoje? | Publicador de réplica única, broker sem HA, engine local ausente, observabilidade/sandbox pendentes | README, plano §6 e backlog |
 
 ## Critério de encerramento da apresentação

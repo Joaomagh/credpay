@@ -4,15 +4,15 @@
 
 ## Último incremento
 
-- B06.8h validado na PR #146: seis gates6433c6c verdes, 522 testes em3m02; parser125 e foco217/local320. Integração exige gates do último SHA. Sem transporte/ativação; spec9.91.
+- B06.8h integrado na PR #146/6b24e58: seis gates5e5d3ed verdes, 522 testes em3m02; parser125. Sem transporte/ativação; spec9.91.
 
 ## Agora
 
-- [ ] Após integrar #146, B06.8i — Parser do pedido EncerramentoTransacaoSolicitado.v1 no processador. Primeiro red antes da implementação; causa igual à criação, motivo controlado e evidenceRef opaco. Aceite/arquivos/riscos em docs/BACKLOG.md.
+- [ ] B06.8i — Parser do pedido em validação: TDD/foco146/local217/Checkstyle0 verdes; revisão sem bloqueantes. Falta CI339, gates finais e integração. Sem transporte; spec9.92.
 
 ## Próximo
 
-- Transporte somente no cenário descartável aprovado, com provas próprias; parser isolado não comprova entrega nem ACK.
+- Retomar Kubernetes #118 com exceção específica CI autorizada em15/10, sem privilégios nos Pods CredPay. Transporte de encerramento permanece somente em cenário descartável aprovado e exige provas próprias.
 
 ## Depois
 
