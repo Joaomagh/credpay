@@ -238,9 +238,9 @@ A aplicação não possui fallback volátil: sem DataSource válido ela falha ao
 
 O scheduler da outbox vem desligado. Para ativá-lo em uma única réplica, configure `CREDPAY_OUTBOX_PUBLISHER_ENABLED=true`; `CREDPAY_OUTBOX_PUBLISHER_INTERVAL` aceita uma duração como `PT1S`. O produtor declara apenas sua exchange; fila e binding pertencem ao processador e só são declarados com opt-in próprio. Enquanto não houver rota, os eventos permanecem pendentes. A presença do RabbitMQ também participa do health do Actuator quando a publicação é ligada.
 
-## Arquitetura planejada
+## Arquitetura atual
 
-O monorepo possui dois aplicativos Spring Boot independentes, cada um responsável por seu build, configuração e banco. O `processamento-service` já possui resultado idempotente, schema e outbox próprios, publicação opt-in e listener testado em sucesso, replay, erros permanentes e retry limitado. A perda de conexão entre commit/ack, a configuração operacional e a integração ponta a ponta ainda estão pendentes.
+O monorepo possui dois aplicativos Spring Boot independentes, cada um responsável por seu build, configuração e banco. O `processamento-service` possui resultado idempotente, schema e outbox próprios, publicação opt-in e listener testado em sucesso, replay, erros permanentes e retry limitado. A perda de conexão entre commit/ack, a preparação operacional e o fluxo ponta a ponta APROVADA/REJEITADA já foram comprovados nos cenários registrados em `spec.md` e nos runbooks.
 
 ```text
 Cliente
@@ -254,7 +254,7 @@ transacoes-service ───── PostgreSQL
 RabbitMQ ───────────► processamento-service ───── PostgreSQL
 ```
 
-Fluxo planejado da v1:
+Fluxo financeiro comprovado:
 
 1. `transacoes-service` valida e persiste uma transação `PENDENTE`;
 2. publica `TransacaoCriada` de forma confiável;
@@ -263,7 +263,7 @@ Fluxo planejado da v1:
 5. `transacoes-service` atualiza o estado consultável;
 6. sinais observáveis permitem acompanhar e diagnosticar o fluxo.
 
-Essa arquitetura ainda é um alvo. O projeto não apresenta componentes planejados como se já estivessem prontos.
+Kubernetes e painel de diagnóstico permanecem em preparação. FALHOU tem aplicação causal comprovada somente em teste controlado; transporte da confirmação e início operacional continuam pendentes.
 
 ## Práticas de engenharia
 
@@ -283,7 +283,7 @@ Os ciclos já executados e suas falhas esperadas estão registrados em [`spec.md
 
 O workflow atual executa Maven `verify` em pull requests relevantes e em mudanças do serviço na `main`. Ele valida compilação, testes e geração do JAR num runner Linux com Java 21. Também usa cache Maven, timeout, cancelamento de execuções obsoletas, permissões somente de leitura e actions externas fixadas por SHA.
 
-O `verify` inclui PostgreSQL/Testcontainers, aplicação das migrations Flyway, round-trip do repository e testes da constraint monetária. O CI crescerá quando surgirem riscos concretos: novas falhas de persistência, RabbitMQ, contratos, qualidade estática e imagem de container. CD ainda não existe; será definido apenas quando houver uma imagem, um ambiente de destino e uma estratégia de rollback.
+O `verify` inclui PostgreSQL/RabbitMQ com Testcontainers, migrations, constraints, rollback, concorrência, contratos e listeners. Checkstyle e detecção de segredos são gates; workflows próprios comprovam fluxo dos aplicativos, imagens e Compose, e geram inventário de vulnerabilidades. Os achados restantes estão em triagem. CD externo continua condicionado a destino, rollback e autorização específicos.
 
 ### Documentação como evidência
 
@@ -304,7 +304,7 @@ O sandbox ainda não foi implementado. Docker Desktop, daemon, VM, kernel/hyperv
 | 1 | governança, threat model e contrato do sandbox | documentação concluída; sandbox pendente |
 | 2 | fundação reproduzível e CI mínimo | dois serviços com build e CI independentes; processador já tem decisão por limite e validação de entradas em domínio puro |
 | 3 | regras de domínio em TDD e primeira integração PostgreSQL | concluída |
-| 4 | API, fluxo assíncrono, idempotência, outbox, retry e DLQ | fluxo principal comprovado; regra de FALHOU pendente |
+| 4 | API, fluxo assíncrono, idempotência, outbox, retry e DLQ | fluxo principal comprovado; FALHOU causal em teste controlado, transporte/autoridade operacional pendentes |
 | 5 | experimentos de falha e resiliência | recuperação comprovada nos cenários documentados; fechamento de qualidade pendente |
 | 6 | Kubernetes local e observabilidade | proposta Kubernetes sem execução; observabilidade pendente |
 | 7 | evolução do CI, CD e roteiro de demonstração | CI, imagens e Compose comprovados; roteiro disponível, ensaio e fechamento pendentes |
