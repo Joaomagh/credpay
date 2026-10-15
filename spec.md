@@ -2548,6 +2548,10 @@ Atualização operacional: autenticação Read existente no host; PG/Rabbit pina
 
 Verificação local: Parser PowerShell0 erros, Kustomize13 recursos com kubeconfig explícito no workspace e sem acesso a servidor. Configuração operacional não exige red artificial de negócio. Revisão assistida sem bloqueante para primeiro CI, risco de cache identificado acima; prova real/gates ainda pendentes. João também escolheu explicitamente migrar plataforma/imagem corrigidas com baseline revisada e testes completos antes de fechar v1; não houve aceite temporário dos três achados. Migração é próximo incremento separado, ainda sem dependência/imagem substituída.
 
+**Experimentos CI:** run38793287359/head500433a carregou imagens, mas as três referências de infraestrutura @digest ficaram ErrImageNeverPull/PVCsBound. Correção mínima: aliases locais derivados das fontes pinadas, sem mudar conteúdo/Never; verify-image-cache compara IDs fonte/alias/CRI. Run38794494002/head00f8169 comprovou igualdade dos dois IDs e cinco PodsRunning/trêsPVCsBound, mas falhou em exec antes do aceite. Diagnóstico fixo adicionado sem saída/argumentos sensíveis; run38795369580/head5bfff25 localizou id/exit1. Cleanup dos clusters passou.
+
+**Causa do exec e experimento mínimo:** PowerShell consome o token -- sem aspas ao vincular argumentos da função Kube. Reprodução local com função que serializa somente argumentos fictícios observou exec/example/id/-u, sem separador; usando '--' preservou exec/example/--/id/-u. Corrigidas as quatro chamadas exec (UID, curl, Rabbit e SQL) com literal entre aspas. Imagens não alteradas, nenhuma instalação/limite/teste removido. Próximo CI deve comprovar startup/persistência completos; PodsRunning e cache correto não equivalem ao aceite.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

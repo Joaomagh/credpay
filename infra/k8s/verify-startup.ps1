@@ -61,7 +61,7 @@ function WaitPod([string]$Name, [string]$OldUid = '') {
     throw 'Pod não convergiu Ready com identidade esperada.'
 }
 function Rabbit {
-    return (Json (Kube exec rabbit-0 -- rabbitmqctl --timeout 10 --quiet --formatter=json @args))
+    return (Json (Kube exec rabbit-0 '--' rabbitmqctl --timeout 10 --quiet --formatter=json @args))
 }
 function CheckBroker {
     Require (@(Rabbit list_consumers -p /).Count -eq 0) 'Startup não deve ativar consumidores.'
@@ -75,7 +75,7 @@ function CheckBroker {
 function MigrationSnapshot([string]$Service) {
     $database = if ($Service -ceq 'transacoes') { 'credpay_transacoes' } else { 'credpay_processamento' }
     $user = if ($Service -ceq 'transacoes') { 'credpay_tx' } else { 'credpay_proc' }
-    $snapshot = Kube exec "db-$Service-0" -- psql -U $user -d $database -tA -c 'SELECT md5(string_agg(installed_rank::text || version || installed_on::text, chr(10) ORDER BY installed_rank)) FROM flyway_schema_history'
+    $snapshot = Kube exec "db-$Service-0" '--' psql -U $user -d $database -tA -c 'SELECT md5(string_agg(installed_rank::text || version || installed_on::text, chr(10) ORDER BY installed_rank)) FROM flyway_schema_history'
     Require ($snapshot -cmatch '^[0-9a-f]{32}$') 'Histórico de migrations ausente.'
     return $snapshot
 }
@@ -102,12 +102,13 @@ foreach ($service in @('transacoes', 'processamento')) {
     $pod = $podList.items[0]
     Require ($pod.spec.automountServiceAccountToken -eq $false -and @($pod.spec.volumes).Where({$null -ne $_}).Count -eq 0) 'Aplicativo recebeu mount/token inesperado.'
     Require ($pod.spec.securityContext.runAsNonRoot -eq $true -and $pod.spec.securityContext.runAsUser -eq 10001) 'Usuário configurado divergente.'
-    Require ((Kube exec $pod.metadata.name -- id -u) -ceq '10001') 'UID efetivo divergente.'
+    # Funções PowerShell consomem -- sem aspas; o kubectl precisa receber esse argumento literal.
+    Require ((Kube exec $pod.metadata.name '--' id -u) -ceq '10001') 'UID efetivo divergente.'
     $container = $pod.spec.containers[0]
     Require ($container.image -ceq "credpay-${service}:$($env:CREDPAY_IMAGE_TAG)" -and $container.imagePullPolicy -ceq 'Never') 'Imagem do app não corresponde ao checkout local.'
     Require ($container.securityContext.privileged -eq $false -and $container.securityContext.allowPrivilegeEscalation -eq $false) 'Privilégios do app divergentes.'
     foreach ($group in @('liveness', 'readiness')) {
-        $health = Json (Kube exec $pod.metadata.name -- curl --fail --silent --max-time 10 "http://localhost:8080/actuator/health/$group")
+        $health = Json (Kube exec $pod.metadata.name '--' curl --fail --silent --max-time 10 "http://localhost:8080/actuator/health/$group")
         Require ($health.status -ceq 'UP') 'Grupo health não está UP.'
     }
 }
