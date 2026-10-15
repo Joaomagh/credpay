@@ -94,6 +94,8 @@ jobs:
         run: |
           docker pull postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
           docker pull rabbitmq:4.3.5-management-alpine@sha256:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1
+          docker tag postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0 credpay-postgres:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
+          docker tag rabbitmq:4.3.5-management-alpine@sha256:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1 credpay-rabbit:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1
       - name: Create only the disposable CI cluster
         run: |
           [[ "$CREDPAY_CLUSTER" =~ ^credpay-ci-[0-9]+-[0-9]+$ ]]
@@ -104,7 +106,10 @@ jobs:
           printf '%s' "$CREDPAY_CLUSTER" > ".local/k8s/$CREDPAY_CLUSTER.created"
           .local/bin/kind create cluster --name "$CREDPAY_CLUSTER" --kubeconfig "$PWD/.local/k8s/$CREDPAY_CLUSTER.yaml" --image kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed --wait 180s
           .local/bin/kind load docker-image "credpay-transacoes:$CREDPAY_IMAGE_TAG" "credpay-processamento:$CREDPAY_IMAGE_TAG" --name "$CREDPAY_CLUSTER"
-          .local/bin/kind load docker-image postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0 rabbitmq:4.3.5-management-alpine@sha256:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1 --name "$CREDPAY_CLUSTER"
+          .local/bin/kind load docker-image credpay-postgres:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0 credpay-rabbit:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1 --name "$CREDPAY_CLUSTER"
+      - name: Verify pinned source, alias and runtime image identities
+        shell: pwsh
+        run: ./infra/k8s/verify-image-cache.ps1 -Cluster $env:CREDPAY_CLUSTER
       - name: Verify startup and recreation of owned Pods
         shell: pwsh
         run: |
