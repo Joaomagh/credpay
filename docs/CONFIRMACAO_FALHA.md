@@ -1,6 +1,6 @@
 # Confirmação coordenada de encerramento técnico
 
-Direção aprovada por João em 2026-10-10. Contrato em refinamento; ainda não implementado. Referências: spec.md §9.70 e §9.83.
+Direção aprovada por João em 2026-10-10. Casos controlados implementados até a PR #144; transporte e início operacional pendentes. Referências: spec.md §9.70 e §9.83–9.90.
 
 ## Objetivo e limite
 

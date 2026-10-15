@@ -1,6 +1,6 @@
 # CredPay — Backlog do MVP
 
-Atualizado em 2026-10-09. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos e evidências: [spec](../spec.md). Uma única ação executável: [task](../task.md). Papéis: [P.O.](roles/product-owner.md), [dev sênior](roles/senior-developer.md) e [Scrum Master](roles/scrum-master.md).
+Atualizado em 2026-10-15. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos e evidências: [spec](../spec.md). Uma única ação executável: [task](../task.md). Papéis: [P.O.](roles/product-owner.md), [dev sênior](roles/senior-developer.md) e [Scrum Master](roles/scrum-master.md).
 
 ## Prioridades
 
@@ -11,7 +11,7 @@ Atualizado em 2026-10-09. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos
 | B03 | Saída `TransacaoProcessada` confiável | contrato versionado, resultado + outbox atômicos, publicação confirmada e reenvio com a mesma identidade | B02 | Concluído; B03.1–B03.10 comprovados |
 | B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | Concluído; B04.1–B04.12 comprovados, ativação manual exige conferência |
 | B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | Concluído; PR #106 integrada após checks do SHA final |
-| B06 | Recuperação e diagnóstico demonstráveis | queda, atraso e duplicação testados; correlação, retry/DLQ e replay operacional observáveis | B05; refinar política de `FALHOU` | B06.1/2 concluídos; direção FALHOU aprovada em 08/10; mecanismo e demais falhas a refinar |
+| B06 | Recuperação e diagnóstico demonstráveis | queda, atraso e duplicação testados; correlação, retry/DLQ e replay operacional observáveis | B05; refinar política de `FALHOU` | Recuperação/diagnóstico e aplicação controlada de FALHOU integrados até PR #144; transporte controlado pendente |
 | B07 | Ambiente local reproduzível | imagens/Compose e depois Kubernetes local com probes e recursos; roteiro demonstra fluxo e falha | B05 e B06 | B07.1–4 integrados; B07.5a proposto na PR #118, aguardando direção |
 | B08 | Entrega e portfólio verificáveis | CI cobre riscos e imagens; CD só com destino/rollback definidos; README e demo coerentes | B07 e critérios do plano | Refinamento |
 
@@ -19,9 +19,23 @@ Não é uma promessa de uma PR por linha nem um cronograma. Itens grandes serão
 
 ## Caminho de conclusão da v1
 
-Em2026-10-04, João pediu o balanço por etapas e prioridade em terminar o projeto. Estimativa de escopo aproximada:65% concluído/35% restante, não medição automática, contagem de PRs/testes ou prazo. Avaliação das sete fases do plano: governança/sandbox30%, fundação90%, primeiro TDD100%, fluxo95%, qualidade/resiliência75%, Kubernetes/observabilidade5%, entrega/portfólio60%; maior peso para fluxo/plataforma. Critérios de saída, não o percentual, autorizam conclusão.
+Posição em2026-10-15: aplicação controlada de FALHOU integrada na PR #144, seis checks verdes e397 testes em Transações. O fluxo financeiro e a demo Compose já existem; não repetir essas entregas como trabalho futuro. Estimativa global permanece aproximadamente65%/35%, por julgamento de escopo; não é prazo, velocidade ou contagem de testes.
 
-Sequência finita: integrar imagens → preparação/fluxo nos containers → Compose → Kubernetes local/observabilidade útil → sandbox verificável/qualidade/revisão de publicação → demo e explicação de três minutos. Refinar somente o próximo incremento dessa sequência; dívidas são priorizadas quando comprometem reprodução ou diagnóstico. Direção FALHOU aprovada pelo Navigator em 2026-10-08: esgotamento mantém PENDENTE recuperável; encerrar exige confirmação de falha irrecuperável. Mecanismo e testes ainda precisam ser refinados. CD externo continua condicionado a destino/rollback/autorização, sem requisito automático de deploy para demo local. A v1 mantém as exclusões do plano.
+### Cinco marcos restantes e condição de encerramento
+
+| Ordem | Marco | Aceite que encerra o marco | Limite / dependência |
+|---|---|---|---|
+| 1 | Confirmação coordenada controlada | Pedido → processador → resposta → GET FALHOU com bancos próprios e RabbitMQ reais; replay, decisão anterior, criação atrasada, falha/recuperação e commit antes do ACK comprovados | Próximo B06.8h parser; depois somente transporte necessário. Pedido originado na fixture descartável, sem endpoint administrativo; autoridade operacional permanece bloqueada |
+| 2 | Kubernetes local reproduzível | Revisar proposta PR #118 e obter direção pendente; executar preparo, probes/recursos, fluxo, falha e persistência em cluster local com roteiro reproduzível | Infraestrutura real disponível e autorização aplicável; sem implantação externa presumida |
+| 3 | Observabilidade útil | Painel local mostra sinais do fluxo e permite diagnosticar uma falha reproduzida; limites dos sinais documentados | Reutilizar métricas existentes; adicionar somente sinais necessários ao aceite do plano, sem catálogo aberto de dashboards |
+| 4 | Segurança e qualidade de saída | Sandbox com testes negativos de acesso/privilégios/rede, revisão de publicação/logs/artefatos e triagem dos achados restantes com política explícita | Não afirmar isolamento nem corrigir scanner por exclusão ampla. Dependência de host e decisões de risco/suporte/upgrade são bloqueios visíveis, não aceite implícito |
+| 5 | Ensaio e portfólio | Quickstart seguido por João, demo de sucesso/falha/recuperação, README fiel, explicação de3min e perguntas respondidas por ele | Aprendizado exige participação de João; CD externo só se houver destino/rollback e autorização próprios |
+
+Regra de corte: refinar apenas a próxima ação do primeiro marco executável. Criar novos itens na v1 somente para falha observada ou critério de saída ainda não atendido; registrar problema, aceite e vínculo ao marco. Melhorias sem esse vínculo ficam fora da v1. Não transformar testes adicionais ou refatorações opcionais em requisito automático de conclusão. Manter uma frente; bloqueio externo é registrado e permite avaliar outro marco independente sem declarar o bloqueado concluído.
+
+A v1 termina quando os cinco aceites e os critérios do plano forem demonstrados, não quando o backlog estiver vazio. Pagamentos reais, frontend, autenticação de usuários, alta disponibilidade e deploy externo continuam fora do compromisso atual. O início operacional de FALHOU não foi aprovado: a primeira entrega permanece o cenário controlado aceito por João. Caso o escopo seja reduzido, registrar decisão explícita com ele, sem reclassificar trabalho ausente como entregue.
+
+A tabela abaixo conserva a estimativa por fases; os marcos acima orientam a execução atual. As seções posteriores mantêm o histórico de incrementos e evidências, cujos estados preparatórios são substituídos pelos respectivos aceites finais.
 
 Revisão em 2026-10-05 após integrar Compose: estimativa global permanece **aproximadamente 65% concluído / 35% restante**. Pesos abaixo são julgamento de escopo para explicar o balanço, não medição de esforço, horas, velocidade ou prazo. Preparação sem execução não encerra Kubernetes; apps non-root não encerram sandbox do agente.
 
@@ -30,7 +44,7 @@ Revisão em 2026-10-05 após integrar Compose: estimativa global permanece **apr
 | 1. Governança e sandbox | 10% | 30% | 70% | Sandbox do agente executável; bloqueios de acesso, privilégios, credenciais e rede comprovados |
 | 2. Fundação reproduzível | 10% | 95% | 5% | Confirmar quickstart no ambiente de João quando o engine Linux estiver disponível |
 | 3. Primeiro incremento TDD | 5% | 100% | 0% | Saída atendida com red/green/refactor e PostgreSQL real |
-| 4. Fluxo assíncrono confiável | 30% | 95% | 5% | Definir o mecanismo de confirmação irrecuperável e implementar/testar FALHOU |
+| 4. Fluxo assíncrono confiável | 30% | 95% | 5% | Conectar e provar confirmação controlada entre serviços; aplicação causal já integrada na PR #144 |
 | 5. Qualidade e resiliência | 15% | 75% | 25% | Encerrar dívida relevante e consolidar relatório de falhas/recuperação e limites |
 | 6. Kubernetes e observabilidade | 20% | 5% | 95% | Cluster real, preparo/fluxo/persistência, painel e diagnóstico de falha |
 | 7. Entrega e portfólio | 10% | 65% | 35% | Tratar achados de dependências/imagens e definir política de bloqueio, revisão de publicação e ensaio da demo |
@@ -280,4 +294,6 @@ B06.8d concluído na PR #141/3d78e9c: seis gates4349a8d verdes, processador222/8
 
 **B06.8f — Recibo causal da resposta — concluído.** PR #143/6cd8608: seis gates90e0fb4 verdes, 349 testes/3m00, recibo17 e contrato13. FK pedido/TX/criação e saída negativa preservadas; recebimento não significa aplicação. Sem estado/histórico/transporte/API alterados. Spec9.89.
 
-**B06.8g — Aplicação controlada da confirmação — em validação na PR #144.** FALHOU e histórico terminal único atômicos com recibo positivo; negativa exige saída correspondente antes/depois do financeiro. Replay distingue recebido/aplicado, preserva causa imediata e terminais anteriores. Domínio195/verify382 e caracterizações verdes; revisão corrigida após red38/uma falha. Foco temporário retirado, falta aceite397/seis gates. Caso somente importado na fixture; sem transporte ou ativação. Spec9.90.
+**B06.8g — Aplicação controlada da confirmação — concluído na PR #144/3e666e6.** Seis gates14ebf15 verdes; verify397/2m58, aplicação37 e upgrade1. Positivo causal aplica FALHOU atomicamente; negativo confronta financeiro também no replay pré-recebido. Rollback, disputa e compatibilidade comprovados; revisão sem bloqueantes. Sem transporte/ativação. Spec9.90.
+
+**B06.8h — Parser da resposta de encerramento — pronto.** Problema: recibo tipado existe, mas falta tradução validada da mensagem produzida pelo processador. Menor entrega: parser próprio package-private em Transações, sem componente/listener, seguindo o parser financeiro existente sem abstração comum. Aceite TDD: envelope v1, UUIDs canônicos, Instant/nanos, correlação igual à TX, causa do pedido, CONFIRMADO sem output e DECISAO_EXISTENTE com output; propriedades AMQP correspondentes, erro sanitizado e recusa de JSON inválido/trailing tokens/campos obrigatórios. Preservar TransacaoProcessada.v1. Arquivos: novo parser/teste e task/spec/backlog; nenhuma dependência nova. Riscos: negativa incompleta, confusão pedido/criação ou anúncio prematuro de transporte. Parser isolado não comprova broker, ACK ou aplicação. Depois, cenário descartável integra serviços com provas próprias.

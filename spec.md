@@ -2484,7 +2484,7 @@ Green focado: etapa dos 17 cenários concluída com sucesso em f7a60cd, run38634
 
 Aceite B06.8f: PR #143 integrada em6cd8608 após seis gates90e0fb4 verdes. Transações349/3m00, recibo17/2,413s, contrato13 e Flow6/2m19, zero falhas/erros/skips/Checkstyle0. Transrun38634315971/job116093829806; Flow38634315985/job116093817718; Compose38634315959/job116093759124 confirmou três volumes/GET final/POST original/deltas2/2; Images38634316044/job116093467487; Scan38634315967/job116093454217. Inventory38634315961/job116093454475: quatroalvos79/222, mesmos3CVE, checkout54f94eb64a3dc6c8d60098bbb7855e9162f8db11, artifact11927257793, digest30188c73b9a0ea625f9ab4d2715bea955c088058e2d7b6aaf6eb6325cd4c14e8. Revisão sem bloqueantes e nenhuma revisão remota pendente; foco ausente, suíte/timeout intactos. Main sincronizada.
 
-### 9.90 Aplicação controlada da confirmação — B06.8g em TDD
+### 9.90 Aplicação controlada da confirmação — B06.8g concluído
 
 Objetivo: confirmar FALHOU e histórico terminal único no mesmo commit do recibo positivo, somente por caso importado em teste. Negativa preserva estado/histórico e confere saída financeira nos dois ordenamentos. Arquivos previstos: domínio/mapper, aplicação/portas, adapter terminal/recibo, migration V8 e testes. Riscos: divergência causal, recibo confundido com aplicação, disputa financeira e compatibilidade do evento financeiro. Não criar outro histórico, endpoint, listener ou transporte; nenhuma dependência nova.
 
@@ -2509,6 +2509,10 @@ Green em49f4715/run38637394661/job116103934914: foco23/24,515s e verify completo
 Revisão final identificou lacuna em negativo pré-recebido: replay equivalente retornava antes de confrontar financeiro já aplicado. Novo teste semeia recibo negativo após financeiro com outra saída, exige conflito/Clock0 e preservação integral. Precisa red antes da correção; os 36 cenários anteriores e upgrade concluíram etapa focada verde emca9fa7e/run38637854706/job116105515879. Novo total esperado397 (aplicação37 e upgrade1). Feature continua sem aceite até tratar o achado.
 
 Red da revisão em1f3d001/run38638187873/job116106864434: 38 cenários/uma falha/zero erros/skips, total1m38; aplicação37/86,74s. A única falha era a negativa pré-recebida contraditória aceita. Correção elimina o retorno antecipado: negativa equivalente também valida pedido/estado/saída e só evita novo INSERT. Foco temporário retirado; o green será avaliado diretamente no verify padrão397, que inclui o teste novo e toda a suíte afetada. Nenhum teste/timeout reduzido. Aceite final e revisão da correção pendentes.
+
+Aceite final: PR #144 integrada em3e666e6002b4082c7008903d0c693e98f85ae49e após os seis gates do head14ebf15 verdes. Verify run38638819720/job116108800150:397 testes/zero falhas/erros/skips em2m58, Checkstyle0; aplicação37/3,983s e upgrade1/1,620s. Flow38638818830/job116108796312:6 testes verdes/2m17. Compose38638818858/job116109053772 confirmou deltas2/2 e três volumes/GET final/POST original preservados no down/up. Images38638819290 e Scan38638818845 verdes. Revisão final sem bloqueantes; foco temporário retirado.
+
+Inventory38638819120/job116108797123 mantém quatro alvos79/222 e três IDs conhecidos47884/47890/84782; sem aprovação global de segurança. Checkoutf3dc54e1fb89da6852db922499a0233137369e1d; artifact11929182832, SHA256241515b9f279ebd754c2fa745a5b9be7480cdfe759a89d670ef850db4e3625b5. PostgreSQL real comprovou V8/backfill/constraints. Preparações e pendências acima são histórico; aplicador somente importado em teste, sem transporte, endpoint ou início operacional.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
