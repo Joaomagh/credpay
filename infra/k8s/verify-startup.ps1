@@ -36,8 +36,13 @@ function Kube {
     $requestTimeout = switch ($args[0]) { 'rollout' { '190s' } 'delete' { '70s' } default { '30s' } }
     $output = & kubectl --kubeconfig $kubeconfig --context "kind-$Cluster" --namespace credpay "--request-timeout=$requestTimeout" @args 2>&1 | Out-String
     if ($LASTEXITCODE -ne 0) {
+        $exitCode = $LASTEXITCODE
+        # Somente tokens de comandos fixos; nunca argumentos, mensagens, env ou saída do processo.
+        $operation = if ($args[0] -ceq 'exec' -and $args.Count -ge 4) {
+            @($args | Where-Object { $_ -cin @('id', 'curl', 'rabbitmqctl', 'list_consumers', 'list_queues', 'list_exchanges', 'psql') }) -join '/'
+        } else { [string]$args[0] }
         WriteStateDiagnostics
-        throw "kubectl falhou em '$($args[0])'; saída omitida, sem exportar configuração/logs."
+        throw "kubectl falhou em '$operation', exit=$exitCode; saída omitida, sem exportar configuração/logs."
     }
     return $output.Trim()
 }
