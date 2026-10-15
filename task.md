@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B07.5a — Retomada Kubernetes #118 na base atual: startup/probes/UID/PVCs e persistência de migrations/exchanges no CI descartável autorizado. Configuração/revisão e prova real em andamento; spec9.93.
+- [ ] B07.5a — Smoke Kubernetes#4/99356e4 comprovou startup/probes/UID/PVCs e persistência de migrations/exchanges; cleanup/Scan233 verdes. Finalizar registros/gates da PR #148 e integrar; spec9.93.
 
 ## Próximo
 

@@ -2552,6 +2552,8 @@ Verificação local: Parser PowerShell0 erros, Kustomize13 recursos com kubeconf
 
 **Causa do exec e experimento mínimo:** PowerShell consome o token -- sem aspas ao vincular argumentos da função Kube. Reprodução local com função que serializa somente argumentos fictícios observou exec/example/id/-u, sem separador; usando '--' preservou exec/example/--/id/-u. Corrigidas as quatro chamadas exec (UID, curl, Rabbit e SQL) com literal entre aspas. Imagens não alteradas, nenhuma instalação/limite/teste removido. Próximo CI deve comprovar startup/persistência completos; PodsRunning e cache correto não equivalem ao aceite.
 
+**Green real:** Kubernetes #4/run38795937792/job116632220007 em99356e4 passou o smoke completo e cleanup. Marcadores: identidade fonte/alias/CRI iguais; cinco serviços Ready, UID10001/mounts0/probesUP/PVCs3Bound; novas UIDs dos três Pods com mesmos PVC/PV e hashes Flyway; exchanges recuperadas com apps ausentes. Smoke~82s, sem teste/timeout reduzido. Scan233/run38795937845 verde. Revisão assistida confirmou quatro separadores literais e demais argumentos preservados. Documentação pública atualizada ao resultado; gates do último SHA ainda necessários antes do merge. Fluxo financeiro no cluster não foi executado.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
