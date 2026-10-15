@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B06.8h — Parser da resposta EncerramentoTransacaoRespondido.v1 em Transações. Primeiro teste red antes da implementação. Sem listener ou ativação. Aceite/arquivos/riscos em docs/BACKLOG.md.
+- [ ] B06.8h — Parser da resposta EncerramentoTransacaoRespondido.v1 em validação. TDD e foco217/local320/Checkstyle0 verdes; revisão sem bloqueantes. Falta CI completo e integração. Sem listener/ativação; spec9.91.
 
 ## Próximo
 

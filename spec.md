@@ -2,7 +2,7 @@
 
 > Fonte de verdade do sistema que existe hoje. Preencher somente com decisão tomada, contrato aceito ou comportamento comprovado. Planos futuros ficam em `CREDPAY_PLAN.md`; próximas ações ficam em `task.md`.
 
-**Última atualização:** 2026-10-14
+**Última atualização:** 2026-10-15
 
 **Fase atual:** conclusão da v1 — qualidade, ambiente reproduzível e preparação de Kubernetes; observabilidade e sandbox ainda pendentes.
 
@@ -2513,6 +2513,14 @@ Red da revisão em1f3d001/run38638187873/job116106864434: 38 cenários/uma falha
 Aceite final: PR #144 integrada em3e666e6002b4082c7008903d0c693e98f85ae49e após os seis gates do head14ebf15 verdes. Verify run38638819720/job116108800150:397 testes/zero falhas/erros/skips em2m58, Checkstyle0; aplicação37/3,983s e upgrade1/1,620s. Flow38638818830/job116108796312:6 testes verdes/2m17. Compose38638818858/job116109053772 confirmou deltas2/2 e três volumes/GET final/POST original preservados no down/up. Images38638819290 e Scan38638818845 verdes. Revisão final sem bloqueantes; foco temporário retirado.
 
 Inventory38638819120/job116108797123 mantém quatro alvos79/222 e três IDs conhecidos47884/47890/84782; sem aprovação global de segurança. Checkoutf3dc54e1fb89da6852db922499a0233137369e1d; artifact11929182832, SHA256241515b9f279ebd754c2fa745a5b9be7480cdfe759a89d670ef850db4e3625b5. PostgreSQL real comprovou V8/backfill/constraints. Preparações e pendências acima são histórico; aplicador somente importado em teste, sem transporte, endpoint ou início operacional.
+
+### 9.91 Parser da resposta de encerramento — B06.8h em TDD
+
+Decisão: parser próprio package-private EncerramentoTransacaoRespondidoMessageParser, sem bean/listener. Traduz envelope v1 e propriedades AMQP para RespostaEncerramentoRecebida; causa é o pedido, creationEventId é a criação original. Conferência com pedido durável permanece no aplicador. CONFIRMADO omite outputEventId (inclusive null explícito é recusado); DECISAO_EXISTENTE exige UUID de saída financeira. Sem dependência nova, transporte, alteração do parser financeiro ou ativação operacional. Riscos: negativa incompleta, IDs confundidos e conteúdo externo em erros.
+
+TDD local offline: primeiro cenário executou1/1falha/0erros/0skips em33,852s, pois o scaffold retornava null; implementação mínima passou1/28,911s. Negativa executou2/1falha/0erros/0skips em29,488s, recebendo CONFIRMADO/sem output indevidamente; mapeamento mínimo passou2/27,230s. Matriz executou121/118falhas/0erros/0skips em26,979s antes das guardas; após validações passou121/29,172s. ObjectReader local rejeita conteúdo após envelope sem alterar ObjectMapper compartilhado; erros fixos por campo/JSON/AMQP sem causa. Caracterizações adicionais cobrem extras/UUIDs hexadecimais maiúsculos/offset equivalente, output válido recusado no positivo e mapper preservado; não se alega novo red nesses casos já implementados. Logs ignorados .local/evidence/b068h-*. Revisão somente leitura sem bloqueante no código, recomendação de saída válida no positivo incorporada. Foco final/regressão e gates completos ainda pendentes; parser isolado não prova broker, ACK, aplicação ou irreversibilidade da causa. Limites de tamanho e política de chaves JSON duplicadas não são definidos por este incremento, como no parser financeiro.
+
+Validação local final: foco125 novos +79 financeiros +13 DTO =217 testes em26,469s; verify offline com seletor da seção11 passou320/42,220s, zero falhas/erros/skips e Checkstyle0, JAR gerado. Compila toda a infraestrutura sem executá-la. Aviso CDS permanece visível, sem agente dinâmico; nenhuma supressão. UTF-8 estrito dos cinco arquivos e git diff --check passaram; avisos LF/CRLF são normalização do checkout. Revisão assistida final somente leitura sem bloqueantes, incluindo as quatro caracterizações finais. Suíte completa522 e seis gates remotos ainda exigidos antes de integrar; nenhum teste temporário ou workflow alterado.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
