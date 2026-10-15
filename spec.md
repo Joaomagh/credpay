@@ -2536,6 +2536,18 @@ Validação local final: verify offline com seletor da seção11 passou217/49,68
 
 João autorizou em15/10 a exceção da PR #118 somente para node kind e componentes internos padrão em runner CI hospedado/descartável. Limites registrados em AGENTS§5; nenhuma autorização local ou externa. Revisão somente leitura confirmou baseline oficial kind0.33.0/kubectl1.36.4/node1.36.4 e hashes propostos; execução continua pendente. Retomar a proposta na main atual após integrar o parser, incluindo autenticação Read já aprovada e cargas por host/cluster, sem recuperar documentos antigos da branch.
 
+Aceite final B06.8i: PR #147 integrada em5e3a73a6b47d5f68537513f10a465b8e0011a3f8 após seis gatesd51947c verdes. Processador233/run38791206100/job116615919804 passou339/8m07, zero falhas/erros/skips/Checkstyle e warnings Hikari/agente dinâmico; parser117/0,098s. Flow141/run38791206141 passou6/1m50; Images108/run38791206135 passou1/69,38s; Compose108/run38791206130 e Scan228/run38791206081 verdes. Inventory97/run38791206150 mantém79/222 e mesmos3CVE; checkout9334a9922eead5e456e5a98b41a3557ad2bb48ba/artifact11999723581/SHA2566393b5c6bd68bb2e80d08dc4f7569b86d8706007e82bd42d89d7c482855faf13. Revisão sem bloqueantes e nenhum review/solicitação pendente. README/demo corrigidos, exceçãoCI registrada; main sincronizada. Preparações acima são históricas, transporte continua pendente.
+
+### 9.93 Kubernetes startup e persistência no CI — B07.5a em validação
+
+Após autorização específica de João em15/10, retomados somente arquivos infra/k8s da proposta9a885cb/PR118 na main atual. Novo workflow ativo em .github/workflows/credpay-kubernetes-ci.yml, sem recuperar documentos antigos. Mesma baseline kind0.33.0/kubectl1.36.4/node1.36.4 e hashes, metadados oficiais reconferidos em15/10 antes de downloads. Necessidade: Kubernetes local reproduzível previsto no plano; binários baixados só no workspace CI, checksums exigidos antes da execução, nenhuma instalação global/local. Nenhuma mudança de Java, dependência dos serviços ou imagem baseline por este incremento.
+
+Aceite:13recursos/cinco serviços Ready, apps UID10001/mounts/token0/sem privilégios, probes UP e três PVCs Bound; recriar Pods PG/Rabbit conserva histórico Flyway/exchanges e mesmos PVC/PV. Apps desligados durante recuperação Rabbit impedem redeclaração de mascarar perda. Não prova fluxo financeiro, ativação de consumidor, HA ou sandbox. ExceçãoCI/mounts internos/cleanup e riscos em AGENTS§5 e infra/k8s/README.md.
+
+Atualização operacional: autenticação Read existente no host; PG/Rabbit pinados puxados no host e carregados com apps no kind, sem credencial no node. imagePullPolicy Never nas cinco imagens torna cache/ref incorretos falha explícita; primeiro smoke precisa provar compatibilidade das referências @digest com o runtime. Kubeconfig/contexto próprios, marcador só após verificar cluster ausente e cleanup só desse nome run/attempt. Chamadas kubectl/curl limitadas; diagnóstico sanitizado somente de nomes/estados/razões. Riscos: identidade de cache, startup/persistência e limites de recursos; nenhum teste/timeout reduzido preventivamente.
+
+Verificação local: Parser PowerShell0 erros, Kustomize13 recursos com kubeconfig explícito no workspace e sem acesso a servidor. Configuração operacional não exige red artificial de negócio. Revisão assistida sem bloqueante para primeiro CI, risco de cache identificado acima; prova real/gates ainda pendentes. João também escolheu explicitamente migrar plataforma/imagem corrigidas com baseline revisada e testes completos antes de fechar v1; não houve aceite temporário dos três achados. Migração é próximo incremento separado, ainda sem dependência/imagem substituída.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
