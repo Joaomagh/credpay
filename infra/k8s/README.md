@@ -12,6 +12,10 @@ Réplica1 e estratégia Recreate evitam sobreposição de publicadores; inicialm
 
 O roteiro aplica infraestrutura e aguarda Ready antes dos apps. Exige health dos dois grupos/UID/mounts/imagem correta, exchanges produtoras e zero filas/consumidores. Depois recria somente os três Pods da infraestrutura desse cluster descartável: identidade nova dos Pods, mesmos PVC/PV e snapshot hash do histórico Flyway (incluindo installed_on) dos dois bancos. Apps são escalados a zero/aguardados ausentes antes de recriar Rabbit e conferir exchanges recuperadas; assim RabbitAdmin não pode reconstruí-las. Depois os apps voltam a uma réplica/Ready. SQL somente leitura; nenhum evento ou resultado financeiro fabricado. Não prova POST/GET, política consumidor, crash em todas as janelas ou HA; quorum de nó único não é alta disponibilidade.
 
+## Fluxo da aplicação — em TDD
+
+Depois do startup/persistência, `verify-flow.ps1` usa o mesmo cluster próprio e port-forward filho somente em127.0.0.1. Primeiro teste: POST201/PENDENTE e GET esperadoAPROVADA com ativação ainda ausente, para observar PENDENTE antes de implementar preparo e consumo. A prova real desse red no CI ainda está pendente. Próximos passos do incremento: conferir políticas/topologias antes de ativar, APROVADA/REJEITADA/replay e parada/recuperação causal do processador. Não executar cluster localmente; não anuncia esses cenários como concluídos.
+
 ## Baseline proposta, sem instalação local
 
 Necessidade concreta dentro do plano: criar cluster Kubernetes reproduzível no CI, manipular somente seus recursos e carregar imagens locais. Kind/kubectl novos entram somente nesse workspace descartável do job; sem instalação global/sudo, upgrade dos serviços ou gasto externo. Baselines consultadas em2026-10-04:

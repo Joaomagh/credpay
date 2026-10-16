@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B07.5b — Completar preparo, POST/GET e falha/recuperação no Kubernetes CI já autorizado. Reutilizar cluster, imagens e políticas existentes; nenhuma dependência ou implantação externa nova.
+- [ ] B07.5b — Primeiro red do fluxo no cluster existente: POST201/PENDENTE e GET esperadoAPROVADA/observadoPENDENTE com flags ainda desligadas. Depois preparo/políticas antes de ativar, replay e falha/recuperação. Sem nova dependência/implantação; spec9.97.
 
 ## Próximo
 

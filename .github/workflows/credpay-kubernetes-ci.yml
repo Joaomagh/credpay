@@ -9,6 +9,7 @@ on:
       - "processamento-service/**"
       - "infra/k8s/**"
       - "infra/compose/json.ps1"
+      - "infra/rabbitmq/*-policies.json"
       - ".github/workflows/credpay-kubernetes-ci.yml"
   push:
     branches: [main]
@@ -17,6 +18,7 @@ on:
       - "processamento-service/**"
       - "infra/k8s/**"
       - "infra/compose/json.ps1"
+      - "infra/rabbitmq/*-policies.json"
       - ".github/workflows/credpay-kubernetes-ci.yml"
 
 permissions:
@@ -115,6 +117,9 @@ jobs:
         run: |
           $env:PATH = "$(Get-Location)/.local/bin$([IO.Path]::PathSeparator)$env:PATH"
           ./infra/k8s/verify-startup.ps1 -Cluster $env:CREDPAY_CLUSTER
+      - name: Verify application flow in the owned cluster
+        shell: pwsh
+        run: ./infra/k8s/verify-flow.ps1 -Cluster $env:CREDPAY_CLUSTER
       - name: Remove only the cluster created by this job
         if: always()
         run: |

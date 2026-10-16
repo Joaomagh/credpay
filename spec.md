@@ -2634,6 +2634,16 @@ Red final19f580a/Flow151/run38972875640/job117215230481: doze casos/três falhas
 
 Inventory109 archive12077229224/SHA256dbba7dd011b306b8c9fed14a473b3ff7d52214d0c7ca9f0aeb8a00de27153bfb validado: quatro alvos completos100/236, HIGH0/CRITICAL0/UNKNOWN0; MEDIUM3/JAR e32/imagem/LOW22imagem preservados. Aumento25→32MEDIUMimagem com base atualizada fica visível. Auditoria disponível da candidata: oito logs finais e delta80/80 revistos no corte de enumeração2026-10-16T22:07:07Z, observação final22:18:33Z; zero matches nas seis regex declaradas e zero indicadores de corpos financeiros no delta, não prova universal de ausência. Histórico1188/1189logs revistos e89/94ZIPs; delta9ZIPs adicionais conferidos. Um log com TRANSPORT_CLOSED e cinco artifacts sem conteúdo revisto continuam lacunas; B08.1 permanece aberto. Nenhum novo ciclo automático em main ou redução de escopo por essas lacunas. Próxima implementação: B07.5b, fluxo no cluster descartável existente.
 
+### 9.97 Fluxo no cluster descartável existente — B07.5b
+
+Objetivo/aceite antes de editar: depois do startup/persistência já comprovado, preparar e conferir políticas/topologias antes de ativar consumo, provar POST/GET APROVADA/REJEITADA e replay, depois indisponibilidade do processador conserva PENDENTE e a criação até a recuperação causal. Sem Java, dependência, imagem, privilégio ou destino novo. Mesma exceção CI e limites de AGENTS§5; nenhuma execução de node no computador de João.
+
+Primeiro ciclo TDD: novo verify-flow.ps1 parte dos apps reais com flagsfalse e prepara apenas guard/port-forward/HTTP. A chamada de preparo ainda vazia deve produzir POST201/PENDENTE e GET esperadoAPROVADA/observadoPENDENTE antes da implementação de ativação. Não simular HTTP/resultado ou fabricar SQL. Depois conectar preparo existente das políticas, rollout explícito, conferências de consumidores/bancos e os demais cenários incrementais.
+
+Arquivos previstos: novo infra/k8s/verify-flow.ps1, workflow Kubernetes, README do roteiro e task/spec/backlog. Guards exigem GitHub CI, nome run/attempt, kubeconfig/marker próprios no workspace e contexto correspondente; todas as chamadas kubectl levam namespace/contexto explícitos. Port-forward filho próprio somente127.0.0.1, argumentos separados, stdout/stderr drenados sem publicação e encerramento limitado ao filho no finally. Cleanup do cluster existente preservado. Riscos: separador PowerShell '--', política importada com consumidores ativos, contexto errado, ACK/contagens e vazamento de corpo/Secret; reaproveitar as conferências já existentes em Compose e diagnósticos fixos. Baseline e timeout20min atuais preservados; parser/guards locais não substituem CI real.
+
+Referências visuais integradas na PR #151/1bb2cde após Scan248/run38975299070 verde em27b776a. Incremento exclusivamente documental: hashes/UTF8/diff-check/Gitleaks/revisão passaram; filtros não dispararam buildJava/infra. Não houve implementação frontend. Próximo resultado continua B07.5b.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
