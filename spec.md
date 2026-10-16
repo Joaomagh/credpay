@@ -2626,6 +2626,8 @@ Green ACK b0e06c6/Flow150/run38972227826/job117213094608: nove casos/zero falhas
 
 Próximo red de integração: três casos descrevem criação atrasada bloqueada e decisão financeira anterior APROVADA/REJEITADA preservada. Pedido nasce ainda PENDENTE; a decisão deve ser tomada pelo caso real do processador, nunca semeada. Transporte financeiro próprio da fixture começa vazio: espera-se recibo bloqueado1/observado0 e DECISAO_EXISTENTE/observadoCONFIRMADO, não falha de protocolo/SQL. Só depois conectar outboxes/parsers/casos financeiros existentes em filas próprias; seis cenários operacionais financeiros permanecem intactos. Arquivos: as três fixtures, task/spec/backlog. Risco: mascarar criação atrasada como decisão ou substituir saída original; snapshots incluem todos os recibos de bloqueio.
 
+Red final19f580a/Flow151/run38972875640/job117215230481: doze casos/três falhas esperadas/zero erros/skips/3m25; financeiro6/135,4s, encerramento6/64,94s. Nove anteriores verdes. Criação atrasada esperava recibo1/observou0; ambos valores financeiros esperavam DECISAO_EXISTENTE/observaramCONFIRMADO. Só depois os comandos financeiros da fixture foram ligados às outboxes reais, propriedades recebidas/parsers e casos proxy existentes; filas quorum próprias, sem nova tabela/bean de produção/dependência ou decisão financeira inserida por SQL.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

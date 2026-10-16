@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B06.8j/PR #150 — Flow150: nove casos verdes, commit externo/queda antes ACK/reinício/replay estável nos dois consumidores. Próximo red prova criação atrasada bloqueada e decisão financeira anterior APROVADA/REJEITADA preservada. Sem API operacional; spec9.96.
+- [ ] B06.8j/PR #150 — Flow151 confirmou três reds de negócio (recibo atrasado ausente/decisão anterior não transportada), nove casos anteriores verdes. Comandos da fixture agora usam outboxes/parsers/casos financeiros reais; aguardando green de doze casos e gates finais. Sem API operacional; spec9.96.
 
 ## Próximo
 

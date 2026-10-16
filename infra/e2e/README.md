@@ -1,6 +1,6 @@
 # Fluxo dos aplicativos reais
 
-O workflow `CredPay Application Flow CI` compila os dois JARs do mesmo checkout e executa `FluxoCredPayE2E` no módulo de transações. O teste inicia dois processos Java independentes, dois PostgreSQL próprios e um RabbitMQ descartáveis, nas versões/digests já aprovadas. Não importa código Java do processador nem insere resultados por SQL; só lê evidências JDBC e envia HTTP ao primeiro aplicativo.
+O workflow `CredPay Application Flow CI` compila os dois JARs do mesmo checkout e executa `FluxoCredPayE2E` e `EncerramentoCredPayE2E` no módulo de transações. Cada cenário inicia processos Java independentes, dois PostgreSQL próprios e um RabbitMQ descartáveis, nas versões/digests já aprovadas. O coordenador não importa código Java do processador nem insere resultados por SQL; lê evidências JDBC e envia HTTP ao primeiro aplicativo. As fixtures de encerramento abaixo acrescentam comandos locais de teste.
 
 As suítes completas dos módulos continuam em seus workflows. O nome `FluxoCredPayE2E` fica fora da descoberta padrão do Surefire porque exige ambos JARs; o workflow dedicado o seleciona explicitamente. `-DskipTests package` só prepara os artefatos naquele job, sem substituir as verificações dos módulos. Não há skip automático por ausência de Docker/JAR: isso é falha de ambiente.
 
@@ -34,7 +34,7 @@ Java 21 e Docker Linux acessível são necessários. Em cada módulo, preparar o
 Depois, em `transacoes-service`:
 
 ```powershell
-.\mvnw.cmd --batch-mode --no-transfer-progress -Dtest=FluxoCredPayE2E test
+.\mvnw.cmd --batch-mode --no-transfer-progress '-Dtest=FluxoCredPayE2E,EncerramentoCredPayE2E' test
 ```
 
 Linux usa `./mvnw`. O teste resolve os dois JARs em seus diretórios `target` dentro do workspace. O [CI vertical #4](https://github.com/Joaomagh/credpay/actions/runs/37160110175) passou os dois estados finais, duplicatas e replay pelos aplicativos reais, com preparação conferida e snapshots preservados. Compilação local não substitui execução com containers.
@@ -42,3 +42,15 @@ Linux usa `./mvnw`. O teste resolve os dois JARs em seus diretórios `target` de
 ## Diagnóstico de retornos sem rota
 
 Os JARs da fixture usam o perfil diagnostics. Antes dos cenários de reinício, dois casos adicionais retiram um binding do broker descartável e consultam outcome:returned por HTTP no produtor correspondente. Exigem transação PENDENTE, intenção ainda não publicada e snapshots íntegros; restauram o binding em finally e verificam recuperação causal do mesmo evento e registros únicos. O total passa de quatro para seis casos; os seis casos passaram no Flow CI84/run38019765157, sem falhas/erros/skips. O perfil padrão dos aplicativos permanece inalterado.
+
+## Encerramento controlado entre JARs reais
+
+`EncerramentoCredPayE2E` mantém os seis casos financeiros acima e acrescenta seis próprios: confirmação positiva/replay; queda entre commit e ACK em cada consumidor; criação atrasada bloqueada; decisão financeira anterior APROVADA/REJEITADA preservada. Evidências red/green e estado de aceite em spec9.96. As suítes completas dos módulos continuam obrigatórias.
+
+As mains de teste não têm estereótipo Spring nem entram nos JARs publicados. O coordenador copia somente a classe permitida para um diretório exclusivo e usa PropertiesLauncher para executar a aplicação original com os casos controlados registrados antes do refresh. Cada processo recebe apenas seu banco e exige proxies transacionais; nenhum endpoint administrativo é criado.
+
+Comandos stdin limitados usam UUIDs canônicos e respostas fixas. As mensagens vêm das outboxes reais, com propriedades AMQP originais, confirmação positiva sem retorno antes da marcação e parsers reais antes dos casos de uso. As quatro filas quorum `credpay.fixture.*` são próprias; listeners/publicadores operacionais ficam desligados. Não se insere decisão financeira por SQL nem se interpreta evidenceRef como autorização.
+
+Na janela de queda, o teste consulta o commit por conexão independente e exige ready0/unacked1 antes de encerrar somente seu processo filho. Depois exige ready1/unacked0, reinicia no mesmo banco/broker e compara snapshots completos após a reentrega. A resposta negativa pode chegar antes do resultado financeiro: mantém PENDENTE até a saída original concluir APROVADA/REJEITADA. Criação posterior à confirmação deve gerar apenas recibo bloqueado.
+
+Isso é uma prova descartável de integração. Não ativa encerramento operacional, replay administrativo, autorização de operador, deploy externo, HA ou sandbox do agente. Logs dos filhos continuam ignorados em `.local/e2e/closure-*`, sem upload; falhas imprimem diagnóstico fixo, sem corpos/snapshots.

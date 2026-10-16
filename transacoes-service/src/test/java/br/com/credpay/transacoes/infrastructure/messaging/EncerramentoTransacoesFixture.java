@@ -14,6 +14,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.support.DefaultMessagePropertiesConverter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import br.com.credpay.transacoes.TransacoesServiceApplication;
+import br.com.credpay.transacoes.application.AplicarResultadoService;
 import br.com.credpay.transacoes.application.SolicitarEncerramentoService;
 import br.com.credpay.transacoes.application.AplicarEncerramentoService;
 import tools.jackson.databind.ObjectMapper;
@@ -44,6 +45,7 @@ public final class EncerramentoTransacoesFixture {
                 throw new IllegalStateException();
             }
             prepararTransporte(contexto);
+            if (!AopUtils.isAopProxy(contexto.getBean(AplicarResultadoService.class))) throw new IllegalStateException();
             System.out.println("CREDPAY_FIXTURE READY");
             var leitor = new InputStreamReader(System.in, StandardCharsets.UTF_8);
             String linha;
@@ -77,11 +79,11 @@ public final class EncerramentoTransacoesFixture {
             return;
         }
         if (partes.length == 2 && "PUBLICAR_CRIACAO".equals(partes[0])) {
-            uuid(partes[1]);
-            // Scaffolding: ainda não transporta o evento financeiro neste cenário.
+            publicar(contexto, uuid(partes[1]), true);
             return;
         }
         if (partes.length == 1 && "CONSUMIR_FINANCEIRO".equals(partes[0])) {
+            consumir(contexto, leitor, false, true);
             return;
         }
         throw new IllegalArgumentException();
@@ -97,13 +99,20 @@ public final class EncerramentoTransacoesFixture {
             canal.exchangeDeclare("credpay.fixture.encerramento.v1", "direct", true);
             canal.queueDeclare("credpay.fixture.resposta.v1", true, false, false, Map.of("x-queue-type", "quorum"));
             canal.queueBind("credpay.fixture.resposta.v1", "credpay.fixture.encerramento.v1", "resposta");
+            canal.queueDeclare("credpay.fixture.financeiro.v1", true, false, false, Map.of("x-queue-type", "quorum"));
+            canal.queueBind("credpay.fixture.financeiro.v1", "credpay.fixture.encerramento.v1", "financeiro");
         }
     }
 
     private static void publicar(ConfigurableApplicationContext contexto, UUID transactionId) throws Exception {
+        publicar(contexto, transactionId, false);
+    }
+
+    private static void publicar(ConfigurableApplicationContext contexto, UUID transactionId, boolean fluxoFinanceiro) throws Exception {
         var jdbc = contexto.getBean(JdbcTemplate.class);
+        var tabela = fluxoFinanceiro ? "outbox_eventos" : "outbox_pedidos_encerramento";
         var evento = jdbc.queryForMap(
-                "SELECT event_id, event_type, payload::text AS payload, published_at FROM outbox_pedidos_encerramento WHERE aggregate_id = ?",
+                "SELECT event_id, event_type, payload::text AS payload, published_at FROM " + tabela + " WHERE aggregate_id = ?",
                 transactionId);
         var propriedades = new MessageProperties();
         propriedades.setContentType(MessageProperties.CONTENT_TYPE_JSON);
@@ -115,26 +124,36 @@ public final class EncerramentoTransacoesFixture {
         var correlacao = new CorrelationData(evento.get("event_id").toString());
         var rabbit = contexto.getBean(RabbitTemplate.class);
         rabbit.setMandatory(true);
-        rabbit.send("credpay.fixture.encerramento.v1", "pedido",
+        rabbit.send("credpay.fixture.encerramento.v1", fluxoFinanceiro ? "criacao" : "pedido",
                 new Message(evento.get("payload").toString().getBytes(StandardCharsets.UTF_8), propriedades), correlacao);
         if (!correlacao.getFuture().get(5, TimeUnit.SECONDS).ack() || correlacao.getReturned() != null) {
             throw new IllegalStateException();
         }
         int alterados = jdbc.update(
-                "UPDATE outbox_pedidos_encerramento SET published_at = CURRENT_TIMESTAMP WHERE event_id = ? AND published_at IS NULL",
+                "UPDATE " + tabela + " SET published_at = CURRENT_TIMESTAMP WHERE event_id = ? AND published_at IS NULL",
                 evento.get("event_id"));
         if (evento.get("published_at") == null && alterados != 1) throw new IllegalStateException();
     }
 
     private static void consumir(ConfigurableApplicationContext contexto, InputStreamReader leitor, boolean pausar) throws Exception {
+        consumir(contexto, leitor, pausar, false);
+    }
+
+    private static void consumir(ConfigurableApplicationContext contexto, InputStreamReader leitor,
+            boolean pausar, boolean fluxoFinanceiro) throws Exception {
         try (var conexao = novaConexao(contexto); var canal = conexao.createChannel()) {
-            var entrega = canal.basicGet("credpay.fixture.resposta.v1", false);
+            var entrega = canal.basicGet(fluxoFinanceiro ? "credpay.fixture.financeiro.v1" : "credpay.fixture.resposta.v1", false);
             if (entrega == null) throw new IllegalStateException();
             var propriedades = new DefaultMessagePropertiesConverter()
                     .toMessageProperties(entrega.getProps(), entrega.getEnvelope(), StandardCharsets.UTF_8.name());
             var mensagem = new Message(entrega.getBody(), propriedades);
-            var parser = new EncerramentoTransacaoRespondidoMessageParser(contexto.getBean(ObjectMapper.class));
-            contexto.getBean(AplicarEncerramentoService.class).executar(parser.parsear(mensagem));
+            if (fluxoFinanceiro) {
+                var parser = new TransacaoProcessadaMessageParser(contexto.getBean(ObjectMapper.class));
+                contexto.getBean(AplicarResultadoService.class).executar(parser.parsear(mensagem));
+            } else {
+                var parser = new EncerramentoTransacaoRespondidoMessageParser(contexto.getBean(ObjectMapper.class));
+                contexto.getBean(AplicarEncerramentoService.class).executar(parser.parsear(mensagem));
+            }
             // O proxy retornou: commit concluído antes de confirmar a entrega.
             if (pausar) {
                 System.out.println("CREDPAY_FIXTURE COMMITTED");
