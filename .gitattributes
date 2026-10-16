@@ -1,1 +1,3 @@
 .githooks/* text eol=lf
+# Referências preservam bytes e hashes também em clones com autocrlf habilitado.
+docs/frontend/references/** -text

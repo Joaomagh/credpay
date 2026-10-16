@@ -1,6 +1,6 @@
 # CredPay — Backlog do MVP
 
-Atualizado em 2026-10-15. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos e evidências: [spec](../spec.md). Uma única ação executável: [task](../task.md). Papéis: [P.O.](roles/product-owner.md), [dev sênior](roles/senior-developer.md) e [Scrum Master](roles/scrum-master.md).
+Atualizado em 2026-10-16. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos e evidências: [spec](../spec.md). Uma única ação executável: [task](../task.md). Papéis: [P.O.](roles/product-owner.md), [dev sênior](roles/senior-developer.md) e [Scrum Master](roles/scrum-master.md).
 
 ## Prioridades
 
@@ -11,7 +11,7 @@ Atualizado em 2026-10-15. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos
 | B03 | Saída `TransacaoProcessada` confiável | contrato versionado, resultado + outbox atômicos, publicação confirmada e reenvio com a mesma identidade | B02 | Concluído; B03.1–B03.10 comprovados |
 | B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | Concluído; B04.1–B04.12 comprovados, ativação manual exige conferência |
 | B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | Concluído; PR #106 integrada após checks do SHA final |
-| B06 | Recuperação e diagnóstico demonstráveis | queda, atraso e duplicação testados; correlação, retry/DLQ e replay operacional observáveis | B05; refinar política de `FALHOU` | Recuperação/diagnóstico e aplicação controlada de FALHOU integrados até PR #144; transporte controlado pendente |
+| B06 | Recuperação e diagnóstico demonstráveis | queda, atraso e duplicação testados; correlação, retry/DLQ e replay operacional observáveis | B05; refinar política de `FALHOU` | Recuperação/diagnóstico, aplicação e transporte controlados de FALHOU comprovados até PR #150; autoridade operacional fora da API |
 | B07 | Ambiente local reproduzível | imagens/Compose e depois Kubernetes local com probes e recursos; roteiro demonstra fluxo e falha | B05 e B06 | B07.1–4 integrados; B07.5a integrado na PR #148 após Kubernetes#5/Scan234 verdes; fluxo no cluster pendente |
 | B08 | Entrega e portfólio verificáveis | CI cobre riscos e imagens; CD só com destino/rollback definidos; README e demo coerentes | B07 e critérios do plano | Refinamento |
 
@@ -19,13 +19,13 @@ Não é uma promessa de uma PR por linha nem um cronograma. Itens grandes serão
 
 ## Caminho de conclusão da v1
 
-Posição em2026-10-15: aplicação controlada de FALHOU e parsers integrados até PR #147; startup/persistência Kubernetes na PR #148; plataforma/imagens corrigidas na PR #149 após oito gates finais verdes e Inventory101 HIGH0/CRITICAL0. O fluxo financeiro e a demo Compose já existem; não repetir essas entregas como trabalho futuro. Estimativa global revisada para aproximadamente70%/30%, por julgamento de escopo; não é prazo, velocidade ou contagem de testes.
+Posição em2026-10-16: marco1 controlado concluído na PR #150 após oito gates finais verdes e doze cenários entre JARs reais; startup/persistência Kubernetes na PR #148 e migração corrigida na PR #149. Inventory109 preserva HIGH0/CRITICAL0 e demais achados visíveis. O fluxo financeiro e a demo Compose já existem; não repetir essas entregas como trabalho futuro. Estimativa global permanece aproximadamente70%/30%, por julgamento aproximado de escopo; não é prazo, velocidade ou contagem de testes.
 
-### Cinco marcos restantes e condição de encerramento
+### Cinco marcos da v1 e condição de encerramento
 
 | Ordem | Marco | Aceite que encerra o marco | Limite / dependência |
 |---|---|---|---|
-| 1 | Confirmação coordenada controlada | Pedido → processador → resposta → GET FALHOU com bancos próprios e RabbitMQ reais; replay, decisão anterior, criação atrasada, falha/recuperação e commit antes do ACK comprovados | Parsers concluídos; implementar somente transporte necessário. Pedido originado na fixture descartável, sem endpoint administrativo; autoridade operacional permanece bloqueada |
+| 1 | Confirmação coordenada controlada — concluído | PR #150/feb0ab6: pedido → processador → resposta → GET FALHOU; replay, decisão anterior, criação atrasada, queda/recuperação e commit externo antes ACK comprovados em doze casos | Pedido somente na fixture descartável, sem endpoint administrativo; autoridade operacional permanece bloqueada. Spec9.96 |
 | 2 | Kubernetes local reproduzível | Após startup/persistência da PR #148, executar preparo, fluxo e falha em cluster descartável com roteiro reproduzível | Exceção CI autorizada em15/10; sem implantação externa presumida |
 | 3 | Observabilidade útil | Painel local mostra sinais do fluxo e permite diagnosticar uma falha reproduzida; limites dos sinais documentados | Reutilizar métricas existentes; adicionar somente sinais necessários ao aceite do plano, sem catálogo aberto de dashboards |
 | 4 | Segurança e qualidade de saída | Sandbox com testes negativos de acesso/privilégios/rede, revisão de publicação/logs/artefatos e triagem dos achados restantes com política explícita | Não afirmar isolamento nem corrigir scanner por exclusão ampla. Dependência de host e decisões de risco/suporte/upgrade são bloqueios visíveis, não aceite implícito |
@@ -37,14 +37,14 @@ A v1 termina quando os cinco aceites e os critérios do plano forem demonstrados
 
 A tabela abaixo conserva a estimativa por fases; os marcos acima orientam a execução atual. As seções posteriores mantêm o histórico de incrementos e evidências, cujos estados preparatórios são substituídos pelos respectivos aceites finais.
 
-Revisão em2026-10-15 após startup/persistência Kubernetes e migração corrigida: **aproximadamente70% concluído / 30% restante** (soma ponderada69,75%, arredondada). Pesos abaixo são julgamento de escopo para explicar o balanço, não medição de esforço, horas, velocidade ou prazo. Startup/persistência não encerram o fluxo Kubernetes; apps non-root não encerram sandbox do agente.
+Revisão em2026-10-16 após confirmação controlada entre serviços, startup/persistência Kubernetes e migração corrigida: **aproximadamente70% concluído / 30% restante**. Pesos e valores abaixo são julgamento aproximado de escopo para explicar o balanço, não medição de esforço, horas, velocidade ou prazo. Startup/persistência não encerram o fluxo Kubernetes; apps non-root não encerram sandbox do agente.
 
 | Fase do plano | Peso aproximado | Concluído | Restante | Saída ainda necessária |
 |---|---:|---:|---:|---|
 | 1. Governança e sandbox | 10% | 30% | 70% | Sandbox do agente executável; bloqueios de acesso, privilégios, credenciais e rede comprovados |
 | 2. Fundação reproduzível | 10% | 95% | 5% | Confirmar quickstart no ambiente de João quando o engine Linux estiver disponível |
 | 3. Primeiro incremento TDD | 5% | 100% | 0% | Saída atendida com red/green/refactor e PostgreSQL real |
-| 4. Fluxo assíncrono confiável | 30% | 95% | 5% | Conectar e provar confirmação controlada entre serviços; aplicação causal já integrada na PR #144 |
+| 4. Fluxo assíncrono confiável | 30% | 100% | 0% | Fluxo financeiro e confirmação controlada entre serviços comprovados; autoridade operacional não integra esse aceite |
 | 5. Qualidade e resiliência | 15% | 75% | 25% | Encerrar dívida relevante e consolidar relatório de falhas/recuperação e limites |
 | 6. Kubernetes e observabilidade | 20% | 25% | 75% | Após startup/persistência comprovados, preparo/fluxo no cluster, painel e diagnóstico de falha |
 | 7. Entrega e portfólio | 10% | 75% | 25% | Após migração corrigida, consolidar política de triagem, revisão de publicação e ensaio da demo |
@@ -304,4 +304,6 @@ B06.8d concluído na PR #141/3d78e9c: seis gates4349a8d verdes, processador222/8
 
 **B08.6c — Migração de plataforma/imagem corrigidas — concluído na PR #149/7e58bde.** Baseline/riscos em spec9.94: Boot4.0.8/Framework7.0.9/Tomcat11.0.27/Jackson3.1.7/Jackson2.21.7/TC2/JUnit6 e Temurin21Noble pinada; Java21/Rabbit5.34 preservados. Oito gates finais4d41dca verdes, processador340/8m29; Inventory101 quatroalvos completos100/236/HIGH0/CRITICAL0. Images112 comprovou ReleaseUbuntu completo corrigido nos dois apps. MEDIUM/LOW permanecem visíveis; revisão sem bloqueantes. Não conclui sandbox/auditoria/ensaio; frontend somente briefing adiado.
 
-**B06.8j — Transporte no cenário controlado — em TDD.** Aceite inicial POST PENDENTE→pedido/outbox→Rabbit→resposta/outbox→Rabbit→GET FALHOU, dois JARs/bancos próprios, causalidade e commit antes do ACK. Depois replay/recuperação/decisão anterior. Fixtures test-only sem endpoint/bean operacional/dependência nova; preserva seis cenários financeiros. Desenho, arquivos e riscos em spec9.96; red comportamental no CI antes do transporte.
+**B06.8j — Transporte no cenário controlado — concluído na PR #150/feb0ab6.** Oito gates0c36163 verdes; Trans522/2m37, Proc340/8m31, Flow12/3m08. Seis casos próprios comprovam confirmação positiva/replay completo, queda após commit antes ACK nos dois consumidores, criação atrasada bloqueada e decisão anterior APROVADA/REJEITADA preservada. Seis financeiros anteriores mantidos, três ciclos red/green observados, revisão sem bloqueantes; spec9.96. Sem endpoint/bean operacional/dependência nova. Marco1 encerrado no recorte aprovado; próximo B07.5b.
+
+Referências visuais fornecidas em16/10 preservadas em docs/frontend/references, sem implementação de frontend. Quatro arquivos PNG originais, dois válidos e dois inválidos de28bytes; origem/hashes/normalização dos HTMLs registrados. Frontend permanece para depois do backend, conforme João.

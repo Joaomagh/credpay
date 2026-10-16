@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="pt-BR"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_standard" name="shell-type"/><title>CredPay - Console de Operações</title><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{"primary":"#00685f","surface":"#f8f9ff","error-container":"#ffdad6","on-secondary":"#ffffff","on-primary":"#ffffff","primary-fixed-dim":"#6bd8cb","surface-bright":"#f8f9ff","on-secondary-fixed-variant":"#3f465c","secondary-fixed":"#dae2fd","surface-variant":"#d3e4fe","surface-container-lowest":"#ffffff","on-error":"#ffffff","surface-container-low":"#eff4ff","surface-container-highest":"#d3e4fe","on-tertiary":"#ffffff","on-primary-fixed":"#00201d","secondary-container":"#dae2fd","on-surface":"#0b1c30","outline":"#6d7a77","on-primary-fixed-variant":"#005049","on-secondary-fixed":"#131b2e","surface-dim":"#cbdbf5","tertiary-container":"#007bb9","secondary":"#565e74","surface-container":"#e5eeff","on-error-container":"#93000a","on-primary-container":"#f4fffc","primary-container":"#008378","tertiary-fixed":"#cce5ff","on-background":"#0b1c30","outline-variant":"#bcc9c6","on-secondary-container":"#5c647a","inverse-primary":"#6bd8cb","tertiary-fixed-dim":"#93ccff","on-tertiary-fixed-variant":"#004b73","primary-fixed":"#89f5e7","surface-container-high":"#dce9ff","on-tertiary-fixed":"#001d31","error":"#ba1a1a","background":"#f8f9ff","on-surface-variant":"#3d4947","inverse-on-surface":"#eaf1ff","on-tertiary-container":"#fdfcff","tertiary":"#006194","surface-tint":"#006a61","inverse-surface":"#213145","secondary-fixed-dim":"#bec6e0"},borderRadius:{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},spacing:{"space-xs":"0.25rem","space-sm":"0.5rem","space-md":"1rem","space-lg":"1.5rem","space-xl":"2rem","margin-mobile":"1rem","gutter-mobile":"1rem","gutter":"1.5rem","margin":"2rem"},fontFamily:{"headline-lg-mobile":["Inter"],"headline-lg":["Inter"],"body-md":["Inter"],"display-lg":["Inter"],"label-md":["JetBrains Mono"],"label-lg":["JetBrains Mono"],"body-sm":["Inter"],"display-lg-mobile":["Inter"],"label-sm":["JetBrains Mono"],"headline-md":["Inter"],"headline-sm":["Inter"],"body-lg":["Inter"]},fontSize:{"headline-lg-mobile":["24px",{"lineHeight":"32px","fontWeight":"600"}],"headline-lg":["30px",{"lineHeight":"38px","fontWeight":"600"}],"body-md":["14px",{"lineHeight":"20px","fontWeight":"400"}],"display-lg":["36px",{"lineHeight":"44px","fontWeight":"700"}],"label-md":["12px",{"lineHeight":"16px","fontWeight":"500"}],"label-lg":["14px",{"lineHeight":"20px","fontWeight":"500"}],"body-sm":["12px",{"lineHeight":"16px","fontWeight":"400"}],"display-lg-mobile":["28px",{"lineHeight":"36px","fontWeight":"700"}],"label-sm":["11px",{"lineHeight":"14px","fontWeight":"400"}],"headline-md":["22px",{"lineHeight":"28px","fontWeight":"600"}],"headline-sm":["18px",{"lineHeight":"24px","fontWeight":"600"}],"body-lg":["16px",{"lineHeight":"24px","fontWeight":"400"}]}}}};</script></head><body class="min-h-full bg-background font-body-md text-on-surface flex flex-col antialiased selection:bg-secondary-container selection:text-on-secondary-fixed"><header class="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-md shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 max-w-7xl mx-auto px-margin-mobile md:px-margin flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-sm"><img alt="CredPay Logo" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1WRHgPPujb7u1C66DrnTNBgOfJaihgJdHbytYMx9tdFMfzYF-TCGBZkKvSQYFZFHFDt5W7hKH_dFzHdw-P2SXPhFRhzPq456hW1ujK8J9b3p967kCDpjK9E46cbnBYTjhC1dNldUYo6Udy79BAVN8Uk8pViJOKprPkl41r6WdYXHulTgfHM_uTt9goeow3w33C5Z4E2IUvvuyKYvvlkiFI7xDnoYgomEqkhNf9rP7DetA"/><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">CredPay</span></div><div class="hidden sm:inline-flex items-center gap-space-xs px-2.5 py-1 rounded-full bg-surface-container-high text-on-surface-variant"><span class="material-symbols-outlined text-[15px] text-primary">info</span><span class="font-label-sm text-label-sm tracking-tight">Ambiente de demonstração — dados fictícios</span></div></div><div class="flex items-center gap-space-md"><nav class="flex items-center gap-space-xs bg-surface-container-low p-1 rounded-xl" data-active-classes="bg-primary-container text-on-primary-container font-semibold shadow-sm"><a class="px-space-md py-1.5 rounded-lg font-body-md text-body-md text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-path="nova-transacao" href="#">Nova transação</a><a aria-current="page" class="px-space-md py-1.5 rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary bg-primary-container text-on-primary-container font-semibold shadow-sm" data-path="consultar" href="#">Consultar</a></nav><div aria-hidden="true" class="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div><div class="sm:hidden flex items-center justify-center gap-space-xs py-1 px-margin-mobile bg-surface-container-high text-on-surface-variant text-center"><span class="material-symbols-outlined text-[14px] text-primary">info</span><span class="font-label-sm text-label-sm">Ambiente de demonstração — dados fictícios</span></div></header><main class="flex-1 w-full pt-16 bg-surface"><div class="max-w-7xl mx-auto px-margin-mobile md:px-margin py-space-lg"><div class="flex flex-col w-full">
+<div class="flex flex-col gap-space-lg">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-space-md">
+<div class="flex flex-col gap-space-xs">
+<div class="flex items-center gap-space-xs">
+<span class="font-label-sm text-label-sm text-tertiary uppercase tracking-wider">Gateway Assíncrono</span>
+<span class="text-outline-variant font-label-sm text-label-sm">•</span>
+<span class="font-label-sm text-label-sm text-secondary">v2.4.0-snapshot</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Consulta de Transação</h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">
+          Consulte o estado de liquidação do processador assíncrono informando o identificador universal (UUID). Os dados refletem pontualmente a fila transacional.
+        </p>
+</div>
+<div class="flex items-center gap-space-sm bg-surface-container-high px-space-md py-space-sm rounded-xl">
+<span aria-hidden="true" class="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface">Cluster Fila BRL</span>
+<span class="font-label-sm text-label-sm text-secondary">Latência média: 18ms</span>
+</div>
+</div>
+</div>
+<!-- FORMULÁRIO DE BUSCA POR UUID -->
+<section aria-labelledby="search-section-heading" class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm">
+<h2 class="sr-only" id="search-section-heading">Buscar transação por UUID</h2>
+<form class="flex flex-col md:flex-row items-end gap-space-md" id="tx-search-form" onsubmit="handleTxSearch(event)">
+<div class="flex-1 w-full flex flex-col gap-space-xs">
+<label class="font-body-md text-body-md font-semibold text-on-surface flex items-center justify-between" for="uuid-input">
+<span>Identificador da transação (UUID)</span>
+<span class="font-label-sm text-label-sm text-secondary font-normal">Formato RFC 4122</span>
+</label>
+<div class="relative w-full">
+<span aria-hidden="true" class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary text-[20px] pointer-events-none">fingerprint</span>
+<input aria-describedby="uuid-helper" class="w-full h-11 pl-11 pr-space-md rounded-lg bg-surface-container-low text-on-surface font-label-md text-label-md transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest placeholder:text-outline" id="uuid-input" name="transactionId" pattern="^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" placeholder="Ex: f47ac10b-58cc-4372-a567-0e02b2c3d479" required="" type="text" value="f47ac10b-58cc-4372-a567-0e02b2c3d479"/>
+</div>
+<span class="font-body-sm text-body-sm text-secondary" id="uuid-helper">
+            Insira o identificador canônico de 36 caracteres gerado na criação da transação.
+          </span>
+</div>
+<div class="flex items-center gap-space-sm w-full md:w-auto">
+<button class="w-full md:w-auto h-11 px-space-xl rounded-lg bg-primary text-on-primary font-headline-sm text-headline-sm hover:bg-primary-container active:scale-[0.98] transition-all flex items-center justify-center gap-space-xs shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-fixed-dim" id="btn-submit" type="submit">
+<span class="material-symbols-outlined text-[20px]">search</span>
+<span>Consultar</span>
+</button>
+<button class="h-11 px-space-md rounded-lg bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" onclick="clearSearchInput()" title="Limpar formulário" type="button">
+<span class="material-symbols-outlined text-[20px]">backspace</span>
+</button>
+</div>
+</form>
+</section>
+<!-- PAINEL DE VISUALIZAÇÃO DE ESTADOS OPERACIONAIS & CONTROLE INTERATIVO -->
+<div class="flex flex-col gap-space-md">
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm pb-space-xs">
+<div>
+<span class="font-label-sm text-label-sm uppercase tracking-wider text-secondary">Ambiente de Teste &amp; Demonstração</span>
+<h2 class="font-headline-md text-headline-md text-on-surface">Simulador de Resposta do Ledger</h2>
+</div>
+<!-- Seletor de visualização de estados exigidos -->
+<div class="flex items-center gap-1 bg-surface-container-low p-1 rounded-xl self-start sm:self-auto overflow-x-auto max-w-full">
+<button class="view-pill px-3 py-1.5 rounded-lg font-label-sm text-label-sm text-on-surface transition-all bg-surface-container-lowest shadow-sm font-semibold" id="tab-aprovada" onclick="switchView('success-aprovada')">APROVADA</button>
+<button class="view-pill px-3 py-1.5 rounded-lg font-label-sm text-label-sm text-on-surface-variant transition-all hover:bg-surface-container" id="tab-pendente" onclick="switchView('success-pendente')">PENDENTE</button>
+<button class="view-pill px-3 py-1.5 rounded-lg font-label-sm text-label-sm text-on-surface-variant transition-all hover:bg-surface-container" id="tab-rejeitada" onclick="switchView('success-rejeitada')">REJEITADA</button>
+<button class="view-pill px-3 py-1.5 rounded-lg font-label-sm text-label-sm text-on-surface-variant transition-all hover:bg-surface-container" id="tab-falhou" onclick="switchView('success-falhou')">FALHOU</button>
+<span aria-hidden="true" class="w-px h-4 bg-outline-variant mx-1"></span>
+<button class="view-pill px-3 py-1.5 rounded-lg font-label-sm text-label-sm text-on-surface-variant transition-all hover:bg-surface-container flex items-center gap-1" id="tab-loading" onclick="switchView('loading')">
+<span class="material-symbols-outlined text-[14px]">progress_activity</span>Loading
+          </button>
+<button class="view-pill px-3 py-1.5 rounded-lg font-label-sm text-label-sm text-on-surface-variant transition-all hover:bg-surface-container flex items-center gap-1" id="tab-not-found" onclick="switchView('not-found')">
+<span class="material-symbols-outlined text-[14px]">search_off</span>Não achou
+          </button>
+<button class="view-pill px-3 py-1.5 rounded-lg font-label-sm text-label-sm text-on-surface-variant transition-all hover:bg-surface-container flex items-center gap-1" id="tab-network-error" onclick="switchView('network-error')">
+<span class="material-symbols-outlined text-[14px]">cloud_off</span>Erro
+          </button>
+</div>
+</div>
+<!-- CONTAINER DINÂMICO DE APRESENTAÇÃO DOS ESTADOS -->
+<div class="relative w-full min-h-[260px] bg-surface-container-low rounded-xl p-space-md md:p-space-lg flex items-center justify-center">
+<!-- 1. ESTADO DE CARREGAMENTO (LOADING) -->
+<div aria-live="polite" class="state-panel hidden flex flex-col items-center justify-center text-center py-space-xl max-w-md mx-auto" id="view-loading" role="status">
+<div class="relative w-14 h-14 mb-space-md flex items-center justify-center">
+<div class="w-14 h-14 rounded-full border-4 border-surface-container-highest border-t-primary animate-spin" style="border-width: 4px; border-style: solid; border-color: #d3e4fe; border-top-color: #00685f;"></div>
+<span aria-hidden="true" class="material-symbols-outlined text-primary text-[24px] absolute inset-0 flex items-center justify-center animate-pulse">sync_alt</span>
+</div>
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold mb-space-xs">Consultando fila transacional...</span>
+<p class="font-body-md text-body-md text-on-surface-variant">Aguardando resposta assíncrona do cluster de processamento financeiro.</p>
+<div class="mt-space-md px-space-md py-1 rounded-full bg-surface-container-high font-label-sm text-label-sm text-secondary font-mono">
+            UUID: <span id="loading-uuid-indicator">f47ac10b-58cc-4372-a567-0e02b2c3d479</span>
+</div>
+</div>
+<!-- 2. ESTADO NÃO ENCONTRADA -->
+<div class="state-panel hidden w-full max-w-lg bg-surface-container-lowest p-space-lg rounded-xl shadow-sm text-center flex flex-col items-center" id="view-not-found">
+<div class="w-12 h-12 rounded-full bg-surface-container-high flex items-center justify-center text-secondary mb-space-md">
+<span class="material-symbols-outlined text-[28px]">search_off</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold mb-space-xs">Transação não encontrada</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-space-lg">
+            Transação não encontrada. Verifique o identificador UUID informado.
+          </p>
+<div class="bg-surface-container-low w-full p-space-md rounded-lg flex items-center justify-between text-left mb-space-md">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-secondary uppercase">UUID pesquisado</span>
+<span class="font-label-md text-label-md text-on-surface break-all font-mono">00000000-0000-0000-0000-000000000000</span>
+</div>
+<button class="p-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface transition-all" onclick="document.getElementById('uuid-input').focus()" title="Editar UUID">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</div>
+<button class="font-label-sm text-label-sm text-primary font-semibold hover:underline" onclick="resetToExample()" type="button">
+            Carregar UUID de exemplo da demonstração
+          </button>
+</div>
+<!-- 3. ESTADO ERRO DE COMUNICAÇÃO -->
+<div class="state-panel hidden w-full max-w-lg bg-surface-container-lowest p-space-lg rounded-xl shadow-sm flex flex-col items-center text-center" id="view-network-error">
+<div class="w-12 h-12 rounded-full bg-error-container flex items-center justify-center text-on-error-container mb-space-md">
+<span class="material-symbols-outlined text-[28px]">wifi_off</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold mb-space-xs">Erro de comunicação</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-space-lg max-w-sm">
+            Não foi possível estabelecer contato com a fila de liquidação assíncrona. Verifique sua conexão de rede ou tente novamente.
+          </p>
+<div class="flex items-center gap-space-sm w-full sm:w-auto">
+<button class="flex-1 sm:flex-initial h-10 px-space-lg rounded-lg bg-primary text-on-primary font-headline-sm text-headline-sm hover:bg-primary-container active:scale-[0.98] transition-all flex items-center justify-center gap-space-xs shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" onclick="triggerRetrySearch()" type="button">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+<span>Tentar novamente</span>
+</button>
+<button class="h-10 px-space-md rounded-lg bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all font-body-md text-body-md" onclick="switchView('success-aprovada')" type="button">
+              Cancelar
+            </button>
+</div>
+</div>
+<!-- 4. CARTÃO DE RESULTADO: APROVADA -->
+<div class="state-panel w-full max-w-2xl bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-lg" id="view-success-aprovada">
+<div class="flex items-center justify-between pb-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">receipt_long</span>
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Resultado da Consulta</span>
+</div>
+<!-- STATUS BADGE WCAG: Cor + Ícone + Texto -->
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 font-label-md text-label-md font-semibold" style="background-color: #d1fae5; color: #047857;">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span>APROVADA</span>
+</div>
+</div>
+<!-- APENAS DADOS RETORNADOS PELA API: VALOR, MOEDA E STATUS -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md bg-surface-container-low p-space-md rounded-xl">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-secondary uppercase mb-0.5">Valor</span>
+<span class="font-display-lg text-display-lg text-on-surface tracking-tight font-semibold">250,00</span>
+<span class="font-label-sm text-label-sm text-secondary">Quantia transacionada</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-secondary uppercase mb-0.5">Moeda</span>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="px-2 py-0.5 rounded bg-surface-container-high font-label-lg text-label-lg font-bold text-on-surface">BRL</span>
+<span class="font-body-md text-body-md text-on-surface-variant">Real Brasileiro</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary mt-1">Padrão ISO 4217</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-secondary uppercase mb-0.5">Status</span>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="material-symbols-outlined text-emerald-700 text-[20px]" style="color: #047857; font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-label-lg text-label-lg font-bold" style="color: #047857;">APROVADA</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary mt-1">Fila concluída com sucesso</span>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm pt-space-xs">
+<div class="flex items-center gap-space-xs text-secondary font-label-sm text-label-sm font-mono truncate">
+<span>UUID:</span>
+<span class="text-on-surface truncate">f47ac10b-58cc-4372-a567-0e02b2c3d479</span>
+</div>
+<button class="inline-flex items-center gap-1 text-primary hover:text-primary-container font-label-sm text-label-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded" onclick="copyCurrentUuid('f47ac10b-58cc-4372-a567-0e02b2c3d479')" type="button">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+<span>Copiar UUID</span>
+</button>
+</div>
+</div>
+<!-- 5. CARTÃO DE RESULTADO: PENDENTE -->
+<div class="state-panel hidden w-full max-w-2xl bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-lg" id="view-success-pendente">
+<div class="flex items-center justify-between pb-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">receipt_long</span>
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Resultado da Consulta</span>
+</div>
+<!-- STATUS BADGE WCAG: Cor + Ícone + Texto -->
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-label-md text-label-md font-semibold" style="background-color: #fef3c7; color: #b45309;">
+<span class="material-symbols-outlined text-[16px] animate-pulse" style="font-variation-settings: 'FILL' 1;">hourglass_top</span>
+<span>PENDENTE</span>
+</div>
+</div>
+<!-- APENAS DADOS RETORNADOS PELA API: VALOR, MOEDA E STATUS -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md bg-surface-container-low p-space-md rounded-xl">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-secondary uppercase mb-0.5">Valor</span>
+<span class="font-display-lg text-display-lg text-on-surface tracking-tight font-semibold">250,00</span>
+<span class="font-label-sm text-label-sm text-secondary">Quantia transacionada</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-secondary uppercase mb-0.5">Moeda</span>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="px-2 py-0.5 rounded bg-surface-container-high font-label-lg text-label-lg font-bold text-on-surface">BRL</span>
+<span class="font-body-md text-body-md text-on-surface-variant">Real Brasileiro</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary mt-1">Padrão ISO 4217</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-secondary uppercase mb-0.5">Status</span>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="material-symbols-outlined text-[20px]" style="color: #b45309; font-variation-settings: 'FILL' 1;">schedule</span>
+<span class="font-label-lg text-label-lg font-bold" style="color: #b45309;">PENDENTE</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary mt-1">Em processamento assíncrono</span>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm pt-space-xs">
+<div class="flex items-center gap-space-xs text-secondary font-label-sm text-label-sm font-mono truncate">
+<span>UUID:</span>
+<span class="text-on-surface truncate">9a7dc381-12ec-4874-9f20-80a1d4b6a831</span>
+</div>
+<button class="inline-flex items-center gap-1 text-primary hover:text-primary-container font-label-sm text-label-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded" onclick="copyCurrentUuid('9a7dc381-12ec-4874-9f20-80a1d4b6a831')" type="button">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+<span>Copiar UUID</span>
+</button>
+</div>
+</div>
+<!-- 6. CARTÃO DE RESULTADO: REJEITADA -->
+<div class="state-panel hidden w-full max-w-2xl bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-lg" id="view-success-rejeitada">
+<div class="flex items-center justify-between pb-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">receipt_long</span>
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Resultado da Consulta</span>
+</div>
+<!-- STATUS BADGE WCAG: Cor + Ícone + Texto -->
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-label-md text-label-md font-semibold" style="background-color: #fee2e2; color: #b91c1c;">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">cancel</span>
+<span>REJEITADA</span>
+</div>
+</div>
+<!-- APENAS DADOS RETORNADOS PELA API: VALOR, MOEDA E STATUS -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md bg-surface-container-low p-space-md rounded-xl">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-secondary uppercase mb-0.5">Valor</span>
+<span class="font-display-lg text-display-lg text-on-surface tracking-tight font-semibold">250,00</span>
+<span class="font-label-sm text-label-sm text-secondary">Quantia transacionada</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-secondary uppercase mb-0.5">Moeda</span>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="px-2 py-0.5 rounded bg-surface-container-high font-label-lg text-label-lg font-bold text-on-surface">BRL</span>
+<span class="font-body-md text-body-md text-on-surface-variant">Real Brasileiro</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary mt-1">Padrão ISO 4217</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-secondary uppercase mb-0.5">Status</span>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="material-symbols-outlined text-[20px]" style="color: #b91c1c; font-variation-settings: 'FILL' 1;">block</span>
+<span class="font-label-lg text-label-lg font-bold" style="color: #b91c1c;">REJEITADA</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary mt-1">Recusada pelo emissor/regra</span>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm pt-space-xs">
+<div class="flex items-center gap-space-xs text-secondary font-label-sm text-label-sm font-mono truncate">
+<span>UUID:</span>
+<span class="text-on-surface truncate">c81de402-49aa-4c28-98e3-0c14f5e71842</span>
+</div>
+<button class="inline-flex items-center gap-1 text-primary hover:text-primary-container font-label-sm text-label-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded" onclick="copyCurrentUuid('c81de402-49aa-4c28-98e3-0c14f5e71842')" type="button">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+<span>Copiar UUID</span>
+</button>
+</div>
+</div>
+<!-- 7. CARTÃO DE RESULTADO: FALHOU -->
+<div class="state-panel hidden w-full max-w-2xl bg-surface-container-lowest rounded-xl p-space-lg shadow-sm flex flex-col gap-space-lg" id="view-success-falhou">
+<div class="flex items-center justify-between pb-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[20px]">receipt_long</span>
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-wider">Resultado da Consulta</span>
+</div>
+<!-- STATUS BADGE WCAG: Cor + Ícone + Texto (FALHA TÉCNICA ASSÍNCRONA) -->
+<div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-label-md text-label-md font-semibold bg-rose-100 text-rose-900" style="background-color: #ffe4e6; color: #881337;">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">error</span>
+<span>FALHOU</span>
+</div>
+</div>
+<!-- APENAS DADOS RETORNADOS PELA API: VALOR, MOEDA E STATUS -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-space-md bg-surface-container-low p-space-md rounded-xl">
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-secondary uppercase mb-0.5">Valor</span>
+<span class="font-display-lg text-display-lg text-on-surface tracking-tight font-semibold">250,00</span>
+<span class="font-label-sm text-label-sm text-secondary">Quantia transacionada</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-secondary uppercase mb-0.5">Moeda</span>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="px-2 py-0.5 rounded bg-surface-container-high font-label-lg text-label-lg font-bold text-on-surface">BRL</span>
+<span class="font-body-md text-body-md text-on-surface-variant">Real Brasileiro</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary mt-1">Padrão ISO 4217</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-sm text-label-sm text-secondary uppercase mb-0.5">Status</span>
+<div class="flex items-center gap-1.5 mt-1">
+<span class="material-symbols-outlined text-[20px]" style="color: #881337; font-variation-settings: 'FILL' 1;">report_problem</span>
+<span class="font-label-lg text-label-lg font-bold" style="color: #881337;">FALHOU</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary mt-1">Falha técnica assíncrona do sistema</span>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-space-sm pt-space-xs">
+<div class="flex items-center gap-space-xs text-secondary font-label-sm text-label-sm font-mono truncate">
+<span>UUID:</span>
+<span class="text-on-surface truncate">e28cb950-31fb-4899-b1d3-7d52a6a1240f</span>
+</div>
+<button class="inline-flex items-center gap-1 text-primary hover:text-primary-container font-label-sm text-label-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded" onclick="copyCurrentUuid('e28cb950-31fb-4899-b1d3-7d52a6a1240f')" type="button">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+<span>Copiar UUID</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- MATRIZ COMPARATIVA DE STATUS DA API (DADOS REAIS DA RESPOSTA) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-space-md mt-space-sm">
+<!-- CARD PENDENTE -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-secondary font-mono">01 • PENDENTE</span>
+<span class="material-symbols-outlined text-[18px]" style="color: #b45309;">hourglass_empty</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">R$ 250,00</span>
+<span class="font-label-sm text-label-sm text-secondary">Moeda: BRL</span>
+</div>
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-sm font-semibold w-fit" style="background-color: #fef3c7; color: #b45309;">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span>PENDENTE</span>
+</div>
+</div>
+<!-- CARD APROVADA -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-secondary font-mono">02 • APROVADA</span>
+<span class="material-symbols-outlined text-[18px]" style="color: #047857;">task_alt</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">R$ 250,00</span>
+<span class="font-label-sm text-label-sm text-secondary">Moeda: BRL</span>
+</div>
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-sm font-semibold w-fit" style="background-color: #d1fae5; color: #047857;">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span>APROVADA</span>
+</div>
+</div>
+<!-- CARD REJEITADA -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-secondary font-mono">03 • REJEITADA</span>
+<span class="material-symbols-outlined text-[18px]" style="color: #b91c1c;">block</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">R$ 250,00</span>
+<span class="font-label-sm text-label-sm text-secondary">Moeda: BRL</span>
+</div>
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-sm font-semibold w-fit" style="background-color: #fee2e2; color: #b91c1c;">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">cancel</span>
+<span>REJEITADA</span>
+</div>
+</div>
+<!-- CARD FALHOU -->
+<div class="bg-surface-container-lowest p-space-md rounded-xl shadow-sm flex flex-col justify-between gap-space-sm">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-secondary font-mono">04 • FALHOU</span>
+<span class="material-symbols-outlined text-[18px]" style="color: #881337;">error_outline</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">R$ 250,00</span>
+<span class="font-label-sm text-label-sm text-secondary">Moeda: BRL</span>
+</div>
+<div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-sm font-semibold w-fit" style="background-color: #ffe4e6; color: #881337;">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">error</span>
+<span>FALHOU</span>
+</div>
+</div>
+</div>
+<!-- GUIA VISUAL COMPACTO PARA IMPLEMENTAÇÃO ANGULAR -->
+<section aria-labelledby="angular-guidelines-heading" class="bg-surface-container-lowest p-space-lg rounded-xl shadow-sm mt-space-sm">
+<div class="flex items-center gap-space-xs mb-space-sm">
+<span class="material-symbols-outlined text-primary text-[20px]">integration_instructions</span>
+<h2 class="font-headline-sm text-headline-sm text-on-surface font-semibold" id="angular-guidelines-heading">
+          Especificação Técnica para Frontend Angular
+        </h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+<!-- Tokenização e Cores -->
+<div class="bg-surface-container-low p-space-md rounded-xl flex flex-col gap-space-xs">
+<span class="font-label-sm text-label-sm uppercase font-semibold text-primary">01. Tokens e Paleta</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            Uso obrigatório das cores institucionais:
+          </p>
+<ul class="font-label-sm text-label-sm text-on-surface flex flex-col gap-1 mt-1 font-mono">
+<li><span class="text-primary font-bold">#00685f / #0D9488</span> : Primária / Ação teal</li>
+<li><span class="text-on-surface font-bold">#0B1C30 / #0F172A</span> : Superfície grafite</li>
+<li><span class="font-bold" style="color: #047857;">#047857 / #D1FAE5</span> : Status Aprovada</li>
+<li><span class="font-bold" style="color: #b45309;">#B45309 / #FEF3C7</span> : Status Pendente</li>
+<li><span class="font-bold" style="color: #b91c1c;">#B91C1C / #FEE2E2</span> : Status Rejeitada</li>
+<li><span class="font-bold" style="color: #881337;">#881337 / #FFE4E6</span> : Status Falhou</li>
+</ul>
+</div>
+<!-- Acessibilidade e WCAG -->
+<div class="bg-surface-container-low p-space-md rounded-xl flex flex-col gap-space-xs">
+<span class="font-label-sm text-label-sm uppercase font-semibold text-primary">02. Acessibilidade WCAG 2.1 AA</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            Regras de conformidade obrigatórias nos templates:
+          </p>
+<ul class="font-body-sm text-body-sm text-on-surface flex flex-col gap-1 mt-1">
+<li>• <strong>Informação multifatorial:</strong> Nunca depender exclusivamente da cor para status; obrigatório combinar ícone + rótulo textual explícito.</li>
+<li>• <strong>Live Region:</strong> Anunciar estados assíncronos (carregamento e erro) via <code class="font-label-sm text-label-sm bg-surface-container px-1 py-0.5 rounded">aria-live="polite"</code>.</li>
+<li>• <strong>Foco:</strong> Anéis de foco contrastantes em 2px para navegação via teclado tab.</li>
+</ul>
+</div>
+<!-- Tipografia e Modelo Reativo -->
+<div class="bg-surface-container-low p-space-md rounded-xl flex flex-col gap-space-xs">
+<span class="font-label-sm text-label-sm uppercase font-semibold text-primary">03. Contrato de Dados (DTO)</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+            Estrutura canônica estrita para o componente de resposta:
+          </p>
+<pre class="bg-surface-container p-2.5 rounded text-label-sm font-label-sm text-on-surface overflow-x-auto leading-relaxed"><code>interface TransactionResponse {
+  valor: number;
+  moeda: 'BRL';
+  status: 'PENDENTE' |
+          'APROVADA' |
+          'REJEITADA' |
+          'FALHOU';
+}</code></pre>
+</div>
+</div>
+</section>
+<!-- NOTIFICAÇÃO TOAST PARA COPIAR UUID -->
+<div class="fixed bottom-6 right-6 bg-on-surface text-surface-container-lowest px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none z-50" id="toast-copied">
+<span class="material-symbols-outlined text-[18px] text-primary-fixed">check_circle</span>
+<span class="font-body-md text-body-md">Identificador UUID copiado com sucesso!</span>
+</div>
+</div>
+<script>
+    // Ativa a aba "Consultar" no cabeçalho do shell global
+    (function highlightNavTab() {
+      const consultarLink = document.querySelector('nav a[data-path="consultar"]');
+      const novaTransacaoLink = document.querySelector('nav a[data-path="nova-transacao"]');
+      if (consultarLink) {
+        consultarLink.classList.remove('text-on-surface-variant', 'hover:bg-surface-container');
+        consultarLink.classList.add('bg-primary-container', 'text-on-primary-container', 'font-semibold', 'shadow-sm');
+      }
+      if (novaTransacaoLink) {
+        novaTransacaoLink.classList.remove('bg-primary-container', 'text-on-primary-container', 'font-semibold', 'shadow-sm');
+        novaTransacaoLink.classList.add('text-on-surface-variant');
+      }
+    })();
+
+    // Alternador interativo de estados para teste
+    function switchView(viewId) {
+      // Oculta todos os painéis
+      const panels = document.querySelectorAll('.state-panel');
+      panels.forEach(p => p.classList.add('hidden'));
+
+      // Exibe o painel selecionado
+      const target = document.getElementById('view-' + viewId);
+      if (target) {
+        target.classList.remove('hidden');
+      }
+
+      // Atualiza botões do seletor
+      const pills = document.querySelectorAll('.view-pill');
+      pills.forEach(btn => {
+        btn.classList.remove('bg-surface-container-lowest', 'shadow-sm', 'font-semibold', 'text-on-surface');
+        btn.classList.add('text-on-surface-variant');
+      });
+
+      const activeBtnId = 'tab-' + viewId.replace('success-', '');
+      const activeBtn = document.getElementById(activeBtnId);
+      if (activeBtn) {
+        activeBtn.classList.remove('text-on-surface-variant');
+        activeBtn.classList.add('bg-surface-container-lowest', 'shadow-sm', 'font-semibold', 'text-on-surface');
+      }
+    }
+
+    // Manipula a submissão do formulário com simulação assíncrona
+    function handleTxSearch(e) {
+      e.preventDefault();
+      const input = document.getElementById('uuid-input');
+      const uuid = input.value.trim().toLowerCase();
+
+      const loadingUuid = document.getElementById('loading-uuid-indicator');
+      if (loadingUuid) loadingUuid.innerText = uuid;
+
+      // Ativa loading
+      switchView('loading');
+
+      // Simula resolução da fila
+      setTimeout(() => {
+        if (uuid.startsWith('00000000') || uuid.includes('notfound')) {
+          switchView('not-found');
+        } else if (uuid.includes('error') || uuid.includes('falha-rede')) {
+          switchView('network-error');
+        } else if (uuid.startsWith('9a7') || uuid.includes('pend')) {
+          switchView('success-pendente');
+        } else if (uuid.startsWith('c81') || uuid.includes('rej')) {
+          switchView('success-rejeitada');
+        } else if (uuid.startsWith('e28') || uuid.includes('fail')) {
+          switchView('success-falhou');
+        } else {
+          switchView('success-aprovada');
+        }
+      }, 700);
+    }
+
+    function triggerRetrySearch() {
+      const form = document.getElementById('tx-search-form');
+      if (form) {
+        form.dispatchEvent(new Event('submit', { cancelable: true }));
+      }
+    }
+
+    function resetToExample() {
+      const input = document.getElementById('uuid-input');
+      if (input) {
+        input.value = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+        triggerRetrySearch();
+      }
+    }
+
+    function clearSearchInput() {
+      const input = document.getElementById('uuid-input');
+      if (input) {
+        input.value = '';
+        input.focus();
+      }
+    }
+
+    function copyCurrentUuid(uuid) {
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(uuid).then(showToast);
+      } else {
+        showToast();
+      }
+    }
+
+    function showToast() {
+      const toast = document.getElementById('toast-copied');
+      if (toast) {
+        toast.classList.remove('translate-y-20', 'opacity-0');
+        toast.classList.add('translate-y-0', 'opacity-100');
+        setTimeout(() => {
+          toast.classList.add('translate-y-20', 'opacity-0');
+          toast.classList.remove('translate-y-0', 'opacity-100');
+        }, 2500);
+      }
+    }
+  </script>
+</div></div></main><footer class="w-full bg-surface-container-low py-space-lg"><div class="max-w-7xl mx-auto px-margin-mobile md:px-margin flex flex-col sm:flex-row items-center justify-between gap-space-sm text-center sm:text-left"><div class="flex items-center gap-space-xs text-on-surface-variant"><span class="font-body-sm text-body-sm">Ambiente restrito de testes e simulação assíncrona. Sem movimentação financeira real.</span></div><div class="font-label-sm text-label-sm text-secondary">© CredPay Soluções em Pagamentos S.A. Operação simulada.</div></div></footer></body></html>
