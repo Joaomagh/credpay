@@ -156,6 +156,145 @@ function WaitFinal([string]$Location, [string]$Expected) {
     } while ([DateTime]::UtcNow -lt $deadline)
     throw "GET esperado=$Expected, observado=$status."
 }
+function CreateTransaction([string]$Value) {
+    $key = [Guid]::NewGuid().ToString('D')
+    $postBody = '{"valor":' + $Value + ',"moeda":"BRL"}'
+    $created = Request POST '/transacoes' $key $postBody
+    Require ($created.StatusCode -eq 201) 'Criação real deve retornar HTTP201.'
+    $transaction = Json $created.Content
+    $identity = [Guid]::Empty
+    Require ([Guid]::TryParseExact([string]$transaction.id, 'D', [ref]$identity)) 'Identidade da transação inválida.'
+    Require ($identity.ToString('D') -ceq [string]$transaction.id) 'Identidade deve ser UUID canônico.'
+    Require ($transaction.status -ceq 'PENDENTE') 'POST real deve retornar PENDENTE.'
+    $location = [string]$created.Headers.Location[0]
+    Require ($location -ceq "/transacoes/$identity") 'Location não corresponde à transação.'
+    return @{Id=$identity.ToString('D'); Key=$key; Location=$location; Value=$Value; Body=$postBody; Original=(ResponseText $created.Content)}
+}
+function ResponseText($Content) {
+    if ($Content -is [string]) { return $Content }
+    try { return [Text.UTF8Encoding]::new($false, $true).GetString([byte[]]$Content) }
+    catch { throw 'Resposta não é UTF8 válido; conteúdo omitido.' }
+}
+function Sql([string]$Service, [string]$Query) {
+    Require ($Service -cin @('transacoes', 'processamento')) 'Banco fora do roteiro.'
+    $user = if ($Service -ceq 'transacoes') { 'credpay_tx' } else { 'credpay_proc' }
+    return (Kube exec "db-$Service-0" '--' psql -X -v ON_ERROR_STOP=1 -U $user -d "credpay_$Service" -tA -c $Query)
+}
+function CheckCausality($Record, [string]$Status) {
+    $id = $Record.Id
+    $key = $Record.Key
+    $value = $Record.Value
+    $creation = Sql transacoes "SELECT event_id FROM outbox_eventos WHERE aggregate_id='$id'::uuid;"
+    $output = Sql processamento "SELECT output_event_id FROM processamentos WHERE transaction_id='$id'::uuid;"
+    foreach ($event in @($creation, $output)) {
+        $parsed = [Guid]::Empty
+        Require ([Guid]::TryParseExact($event, 'D', [ref]$parsed)) 'Evento causal ausente ou duplicado.'
+    }
+    $txQuery = @"
+SELECT count(*) FROM transacoes t
+JOIN idempotencias_transacao i ON i.transacao_id=t.id
+JOIN outbox_eventos o ON o.aggregate_id=t.id
+JOIN historico_transacoes h ON h.transaction_id=t.id AND h.causation_id=o.event_id
+WHERE t.id='$id'::uuid AND i.chave='$key'::uuid AND t.status='$Status'
+AND t.valor=$value AND t.moeda='BRL' AND o.event_id='$creation'::uuid
+AND o.published_at IS NOT NULL AND o.event_type='TransacaoCriada' AND o.event_version=1
+AND o.payload->>'correlationId'=t.id::text AND h.event_id='$output'::uuid
+AND h.estado_final=t.status AND h.estado_anterior='PENDENTE';
+"@
+    Require ((Sql transacoes $txQuery) -ceq '1') 'Causalidade da criação/histórico divergente.'
+    $procQuery = @"
+SELECT count(*) FROM processamentos p JOIN outbox_eventos o ON o.event_id=p.output_event_id
+WHERE p.transaction_id='$id'::uuid AND p.event_id='$creation'::uuid
+AND p.output_event_id='$output'::uuid AND p.valor=$value AND p.moeda='BRL'
+AND p.limite_aplicado=100 AND p.input_status='PENDENTE' AND p.resultado='$Status'
+AND o.aggregate_id=p.transaction_id AND o.published_at IS NOT NULL
+AND o.payload->>'causationId'=p.event_id::text AND o.payload->>'correlationId'=p.transaction_id::text;
+"@
+    Require ((Sql processamento $procQuery) -ceq '1') 'Causalidade da decisão/outbox divergente.'
+}
+function WaitDrained {
+    $deadline = [DateTime]::UtcNow.AddSeconds(15)
+    do {
+        $queues = @(Rabbit list_queues -p / name messages_ready messages_unacknowledged)
+        $valid = $queues.Count -eq 4
+        foreach ($name in $queueNames) {
+            $queue = Named $queues $name
+            $valid = $valid -and $queue.messages_ready -eq 0 -and $queue.messages_unacknowledged -eq 0
+        }
+        if ($valid) { return }
+        Start-Sleep -Milliseconds 300
+    } while ([DateTime]::UtcNow -lt $deadline)
+    throw 'Filas não drenaram; nenhuma mensagem será removida pelo teste.'
+}
+function Snapshot($Record) {
+    $id = $Record.Id
+    $tx = Sql transacoes @"
+SELECT md5(jsonb_build_object(
+'tx',(SELECT jsonb_agg(t ORDER BY id) FROM transacoes t WHERE id='$id'::uuid),
+'key',(SELECT jsonb_agg(i ORDER BY chave) FROM idempotencias_transacao i WHERE transacao_id='$id'::uuid),
+'outbox',(SELECT jsonb_agg(o ORDER BY event_id) FROM outbox_eventos o WHERE aggregate_id='$id'::uuid),
+'history',(SELECT jsonb_agg(h ORDER BY event_id) FROM historico_transacoes h WHERE transaction_id='$id'::uuid))::text);
+"@
+    $proc = Sql processamento @"
+SELECT md5(jsonb_build_object(
+'processing',(SELECT jsonb_agg(p ORDER BY event_id) FROM processamentos p WHERE transaction_id='$id'::uuid),
+'outbox',(SELECT jsonb_agg(o ORDER BY event_id) FROM outbox_eventos o WHERE aggregate_id='$id'::uuid))::text);
+"@
+    return "$tx/$proc"
+}
+function CheckCompleted($Record, [string]$Status) {
+    $final = WaitFinal $Record.Location $Status
+    Require ($final.id -ceq $Record.Id -and $final.moeda -ceq 'BRL' -and
+        [decimal]$final.valor -eq [decimal]::Parse($Record.Value, [Globalization.CultureInfo]::InvariantCulture)) 'GET alterou dados.'
+    WaitDrained
+    # Confirmações do broker precedem a marca published_at; esperar persistência, sem alterar dados.
+    $deadline = [DateTime]::UtcNow.AddSeconds(15)
+    do {
+        $pendingTx = Sql transacoes "SELECT count(*) FROM outbox_eventos WHERE aggregate_id='$($Record.Id)'::uuid AND published_at IS NULL;"
+        $pendingProc = Sql processamento "SELECT count(*) FROM outbox_eventos WHERE aggregate_id='$($Record.Id)'::uuid AND published_at IS NULL;"
+        if ($pendingTx -ceq '0' -and $pendingProc -ceq '0') { break }
+        Start-Sleep -Milliseconds 200
+    } while ([DateTime]::UtcNow -lt $deadline)
+    CheckCausality $Record $Status
+    $before = Snapshot $Record
+    $replay = Request POST '/transacoes' $Record.Key $Record.Body
+    Require ($replay.StatusCode -eq 201 -and (ResponseText $replay.Content) -ceq $Record.Original -and
+        [string]$replay.Headers.Location[0] -ceq $Record.Location) 'Replay alterou POST original.'
+    WaitDrained
+    Require ((Snapshot $Record) -ceq $before) 'Replay alterou snapshot persistido.'
+    Write-Host "Kubernetes fluxo: GET=$Status, causa criação/decisão/histórico e replay estáveis."
+}
+function StopProcessor {
+    $null = Kube scale deployment/processamento --replicas=0
+    $deadline = [DateTime]::UtcNow.AddSeconds(60)
+    do {
+        $pods = Json (Kube get pods -l app=processamento -o json)
+        $consumers = @(Rabbit list_consumers -p /)
+        if (@($pods.items).Count -eq 0 -and $consumers.Count -eq 1 -and
+            $consumers[0].queue_name -ceq $queueNames[2]) { return }
+        Start-Sleep -Milliseconds 300
+    } while ([DateTime]::UtcNow -lt $deadline)
+    throw 'Processador não parou ou consumidor restante divergente.'
+}
+function CheckPending($Record) {
+    $id = $Record.Id
+    $deadline = [DateTime]::UtcNow.AddSeconds(15)
+    do {
+        $queue = Named @(Rabbit list_queues -p / name messages_ready messages_unacknowledged) $queueNames[0]
+        $published = Sql transacoes "SELECT count(*) FROM outbox_eventos WHERE aggregate_id='$id'::uuid AND published_at IS NOT NULL;"
+        if ($published -ceq '1' -and $queue.messages_ready -eq 1 -and $queue.messages_unacknowledged -eq 0) { break }
+        Start-Sleep -Milliseconds 200
+    } while ([DateTime]::UtcNow -lt $deadline)
+    Require ($published -ceq '1' -and $queue.messages_ready -eq 1 -and $queue.messages_unacknowledged -eq 0) 'Criação não ficou preservada na fila.'
+    foreach ($attempt in 1..3) {
+        $response = Request GET $Record.Location
+        Require ($response.StatusCode -eq 200 -and (Json $response.Content).status -ceq 'PENDENTE') 'Falha do processador deve conservar PENDENTE.'
+        Require ((Sql processamento "SELECT (SELECT count(*) FROM processamentos WHERE transaction_id='$id'::uuid)+(SELECT count(*) FROM outbox_eventos WHERE aggregate_id='$id'::uuid);") -ceq '0') 'Resultado fabricado durante parada.'
+        Require ((Sql transacoes "SELECT count(*) FROM historico_transacoes WHERE transaction_id='$id'::uuid;") -ceq '0') 'Histórico fabricado durante parada.'
+        Start-Sleep -Milliseconds 300
+    }
+    Write-Host 'Kubernetes fluxo: processador ausente, PENDENTE preservado, criação ready1/unacked0 e nenhuma decisão/histórico.'
+}
 
 Require ($env:GITHUB_ACTIONS -ceq 'true') 'Fluxo autorizado somente no GitHub CI descartável.'
 Require (Test-Path -LiteralPath $kubeconfig) 'Kubeconfig próprio ausente; contexto padrão nunca será usado.'
@@ -193,18 +332,20 @@ try {
     $forwardError = $script:forward.StandardError.ReadToEndAsync()
     WaitHealth
 
-    $key = [Guid]::NewGuid().ToString('D')
-    $created = Request POST '/transacoes' $key '{"valor":50.000,"moeda":"BRL"}'
-    Require ($created.StatusCode -eq 201) 'Criação real deve retornar HTTP201.'
-    $transaction = Json $created.Content
-    $identity = [Guid]::Empty
-    Require ([Guid]::TryParseExact([string]$transaction.id, 'D', [ref]$identity)) 'Identidade da transação inválida.'
-    Require ($identity.ToString('D') -ceq [string]$transaction.id) 'Identidade deve ser UUID canônico.'
-    Require ($transaction.status -ceq 'PENDENTE') 'POST real deve retornar PENDENTE.'
-    $location = [string]$created.Headers.Location[0]
-    Require ($location -ceq "/transacoes/$identity") 'Location não corresponde à transação.'
-    $null = WaitFinal $location 'APROVADA'
-    Write-Host 'Kubernetes fluxo: POST201/PENDENTE e GET APROVADA comprovados.'
+    foreach ($case in @(@{Value='50.000';Status='APROVADA'}, @{Value='150.000';Status='REJEITADA'})) {
+        $record = CreateTransaction $case.Value
+        CheckCompleted $record $case.Status
+    }
+    try {
+        StopProcessor
+        $record = CreateTransaction '75.000'
+        CheckPending $record
+    } finally {
+        $null = Kube scale deployment/processamento --replicas=1
+        $null = Kube rollout status deployment/processamento --timeout=180s
+    }
+    CheckCompleted $record 'APROVADA'
+    Write-Host 'Kubernetes fluxo: recuperação causal concluída e filas drenadas.'
 } finally {
     if ($null -ne $script:forward) {
         try {

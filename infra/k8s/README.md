@@ -14,7 +14,7 @@ O roteiro aplica infraestrutura e aguarda Ready antes dos apps. Exige health dos
 
 ## Fluxo da aplicação — em TDD
 
-Depois do startup/persistência, `verify-flow.ps1` usa o mesmo cluster próprio e port-forward filho somente em127.0.0.1. Primeiro teste: POST201/PENDENTE e GET esperadoAPROVADA com ativação ainda ausente, para observar PENDENTE antes de implementar preparo e consumo. A prova real desse red no CI ainda está pendente. Próximos passos do incremento: conferir políticas/topologias antes de ativar, APROVADA/REJEITADA/replay e parada/recuperação causal do processador. Não executar cluster localmente; não anuncia esses cenários como concluídos.
+Depois do startup/persistência, `verify-flow.ps1` usa o mesmo cluster próprio e port-forward filho somente em127.0.0.1. Red63b65f9/Kubernetes19 observou GET PENDENTE antes da ativação. Greenb39a2b9/Kubernetes20 comprovou preparo das quatro filas quorum/políticas/bindings antes de consumo, dois consumidores com ACK/prefetch10/1 e POST201/PENDENTE→GET APROVADA. As verificações complementares de REJEITADA/replay e parada/recuperação causal estão preparadas e aguardam CI; não são anunciadas como concluídas. Não executar cluster localmente.
 
 ## Baseline proposta, sem instalação local
 

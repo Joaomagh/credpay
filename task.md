@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B07.5b — Red real63b65f9/Kubernetes19 comprovou POST201/PENDENTE→GET esperadoAPROVADA/observadoPENDENTE, cleanupOK. Validar green do preparo/políticas antes de ativar; depois REJEITADA/replay e falha/recuperação. Sem nova dependência/implantação; PR #152/spec9.97.
+- [ ] B07.5b — Red63b65f9/Kubernetes19 e greenb39a2b9/Kubernetes20 comprovados: preparo antes de consumo e POST201/PENDENTE→GET APROVADA. Validar REJEITADA/replay e parada/recuperação causal no mesmo roteiro. Sem nova dependência/implantação; PR #152/spec9.97.
 
 ## Próximo
 
