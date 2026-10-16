@@ -4,15 +4,15 @@
 
 ## Último incremento
 
-- B07.5a integrado na PR #148/9adf3d3: Kubernetes#5 e Scan234 verdes em5ec82ec; startup/probes/UID/PVCs e persistência comprovados. #118 substituída; spec9.93.
+- B08.6c integrado na PR #149/7e58bde: oito gates finais verdes em4d41dca; Inventory101 HIGH0/CRITICAL0 e ReleaseUbuntu corrigido comprovado nos dois apps. MEDIUM/LOW continuam visíveis; spec9.94.
 
 ## Agora
 
-- [ ] B08.6c — Oito gatesa089e5c verdes, processador340/8m40 e Inventory100 HIGH0/CRITICAL0. Prova complementar do ReleaseUbuntu/últimos registros requer CI do head final da PR #149 antes de integrar; spec9.94.
+- [ ] B06.8j — Provar transporte de encerramento no cenário controlado com dois JARs reais, PostgreSQLs próprios e RabbitMQ. Primeiro red: POST PENDENTE permanece PENDENTE sem transporte; green deve consultar FALHOU e conferir cadeia causal. Depois replay/recuperação/decisão anterior. Sem API operacional; spec9.96.
 
 ## Próximo
 
-- Após segurança: transporte de encerramento no cenário controlado e demo observável, conforme backlog. Brief frontend preservado em docs/FRONTEND_BRIEF.md, implementação adiada.
+- Concluir cenário controlado e demo observável, conforme backlog. Brief frontend preservado em docs/FRONTEND_BRIEF.md, implementação adiada.
 
 ## Depois
 

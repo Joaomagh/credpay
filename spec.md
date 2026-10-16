@@ -2598,11 +2598,21 @@ Archive100 teve hash e seis arquivos permitidos conferidos; os98JARs BOOT-INF/li
 
 **Green completo a089e5c:** oito gates passaram: Transações243/run38827148468, Processador236/run38827148232, Flow144/run38827148307, Images111/run38827148263, Compose111/run38827148322, Kubernetes8/run38827148309, Inventory100/run38827148221 e Scan237/run38827148324. Processador340/zero falhas/erros/skips/8m40, fixtureTopology4/370,2s; helper agora observa DLQ cheia/recuperação real, Hikari0/dynamic-agent0/Checkstyle0. Nenhum prazo/cenário reduzido. Prova dpkg complementar e documentação exigem nova rodada do head final antes de merge; verde acima não é transferido automaticamente.
 
+**Aceite final B08.6c:** PR #149 integrada em7e58bde, head4d41dca com oito gates verdes: Trans244/run38828265713, Proc237/run38828265651/job116740744007 (340 testes, zero falhas/erros/skips,8m29, Checkstyle0; topology4/371,4s), Flow145/run38828265671, Images112/run38828265652, Compose112/run38828265614, K8s9/run38828265556, Inventory101/run38828265557 e Scan238/run38828265674. Images112 comprovou nos dois apps o ReleaseUbuntu completo libssl3t64/openssl3.0.13-0ubuntu3.16, três fases, teste1/75,20s. Inventory101 archive12015653544/SHA256a19f3a29da6c2dd958d777c230ff7428e4945c233b1d3b672f375a354de722e0/checkoutdb7308bc02b8cedbfb6a6b74d2fc4f15b8eb32b0 conferido: seis arquivos, quatro relatórios completos100/236, HIGH0/CRITICAL0/UNKNOWN0, demais achados preservados. Scanner0.75.0/DB2026-10-15T19:09:25Z. Revisão sem bloqueantes, nenhuma revisão remota pendente, main sincronizada. Não conclui v1/sandbox/auditoria nem autoriza implantação.
+
 ### 9.95 Interface de demonstração Angular — briefing preservado, implementação adiada
 
 Em15/10 João considerou frontend Angular e depois pediu priorizar o backlog, mantendo somente o briefing para outra etapa. docs/FRONTEND_BRIEF.md preserva jornada, prompt visual e contratos conferidos no controller. API atual expõe somente POST/transacoes e GET/transacoes/{id}, sem lista/estatísticas/histórico; design não deve fabricar essas fontes. Frontend não integra o fechamento da v1 atual.
 
 Documentação/brief verificados por UTF-8 estrito e diff-check, sem red artificial. Nenhum Angular/Node/pacote instalado, tela gerada no Stitch ou serviço publicado. Busca de plugins não retornou integração Stitch; não se afirma indisponibilidade universal. Baseline/implementação ficam para etapa posterior; uma frente de código no backlog atual.
+
+### 9.96 Transporte de encerramento em cenário controlado — B06.8j
+
+Objetivo/aceite inicial: dois JARs reais, bancos próprios e RabbitMQ descartável devem transformar POST PENDENTE em GET FALHOU mediante pedido/resposta reais e conferir causalidade após commit. Primeiro teste executará transportes ainda vazios para observar PENDENTE em vez de FALHOU; só depois entra a implementação. Próximas provas: replay, recuperação e decisão financeira anterior, sem semear resultado financeiro. Os seis cenários financeiros existentes permanecem no mesmo workflow.
+
+Decisão antes de editar: novas mains somente em src/test dos dois módulos, sem estereótipo Spring, registram programaticamente os casos controlados antes do refresh e exigem proxies transacionais. PropertiesLauncher recebe cópia explícita somente dessas classes; fixtures ausentes do JAR publicado. Novo EncerramentoCredPayE2E coordena processos via stdin limitado/saídas fixas, não endpoint HTTP. Aplicativos recebem somente credenciais do próprio banco. Transporte manual da fixture usa outbox real, parsers reais e confirmação/retorno antes de marcar publicação, commit antes de ACK. Filas próprias não ativam listener operacional nem concedem autoridade de encerramento a evidenceRef. Sem dependência nova.
+
+Arquivos previstos: duas mains test-only, novo E2E, workflow de fluxo, task/spec/backlog. Riscos: fixture descoberta indevidamente, classloaders diferentes, transação ignorada, ACK antecipado, publicação marcada sem rota e dados em logs. Mitigações verificadas por ausência no JAR/cópia allowlist, bootstrap e proxy reais, consultas externas e cenários incrementais; diagnóstico fixo sem corpos. Docker indisponível localmente: compilação/checkstyle local e red/green comportamental no CI real, sem alegar execução local.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
