@@ -1,0 +1,134 @@
+[
+  {
+    "archive": "stitch_console_credpay_transa_es_ass_ncronas.zip",
+    "source_entry": "code.html",
+    "saved_as": "code.html",
+    "bytes": 33745,
+    "sha256": "0d2472d9062e28191d450e364329ad418292e7b70742d4c359e38df385ab852a",
+    "png_header_valid": null,
+    "source_sha256": "0d2472d9062e28191d450e364329ad418292e7b70742d4c359e38df385ab852a",
+    "transformation": "none",
+    "source_bytes": 33745
+  },
+  {
+    "archive": "stitch_console_credpay_transa_es_ass_ncronas.zip",
+    "source_entry": "screen.png",
+    "saved_as": "mobile-consulta.png",
+    "bytes": 203695,
+    "sha256": "51978b090a4fa55dded694bd18b07bf452c5b0b36d41263d262130a7f60f9229",
+    "png_header_valid": true,
+    "source_sha256": "51978b090a4fa55dded694bd18b07bf452c5b0b36d41263d262130a7f60f9229",
+    "transformation": "none",
+    "source_bytes": 203695
+  },
+  {
+    "archive": "stitch_console_credpay_transa_es_ass_ncronas.zip",
+    "source_entry": "DESIGN.md",
+    "saved_as": "DESIGN.md",
+    "bytes": 11974,
+    "sha256": "2dd9319f35f9b9676fec76c61c26f13aa8b687e4d9ef0ccc33ecda123f49cdea",
+    "png_header_valid": null,
+    "source_sha256": "2dd9319f35f9b9676fec76c61c26f13aa8b687e4d9ef0ccc33ecda123f49cdea",
+    "transformation": "none",
+    "source_bytes": 11974
+  },
+  {
+    "archive": "stitch_console_credpay_transa_es_ass_ncronas (1).zip",
+    "source_entry": "code.html",
+    "saved_as": "export-02/code.html",
+    "bytes": 22749,
+    "sha256": "da701fe0f9b081140f309898ca107ccc690d61f194ade5b40e75a1f50ddfb6ca",
+    "png_header_valid": null,
+    "source_sha256": "5bc6971359032f781307b8a10753b080cfb28e830605dedddff9564c063d19c0",
+    "transformation": "trailing-whitespace-removed",
+    "source_bytes": 22757
+  },
+  {
+    "archive": "stitch_console_credpay_transa_es_ass_ncronas (1).zip",
+    "source_entry": "screen.png",
+    "saved_as": "export-02/screen.png",
+    "bytes": 191703,
+    "sha256": "b0ee89aed93ccb95a7b00baf038e64ce0af3b962aa00c7d2e4e913da230afa13",
+    "png_header_valid": true,
+    "source_sha256": "b0ee89aed93ccb95a7b00baf038e64ce0af3b962aa00c7d2e4e913da230afa13",
+    "transformation": "none",
+    "source_bytes": 191703
+  },
+  {
+    "archive": "stitch_console_credpay_transa_es_ass_ncronas (1).zip",
+    "source_entry": "DESIGN.md",
+    "saved_as": "DESIGN.md",
+    "bytes": 11974,
+    "sha256": "2dd9319f35f9b9676fec76c61c26f13aa8b687e4d9ef0ccc33ecda123f49cdea",
+    "png_header_valid": null,
+    "source_sha256": "2dd9319f35f9b9676fec76c61c26f13aa8b687e4d9ef0ccc33ecda123f49cdea",
+    "transformation": "none",
+    "source_bytes": 11974
+  },
+  {
+    "archive": "stitch_console_credpay_transa_es_ass_ncronas (2).zip",
+    "source_entry": "code.html",
+    "saved_as": "export-03/code.html",
+    "bytes": 30570,
+    "sha256": "54e04e3cb6b6ccce64417f17766a56747f042a421a5779f4033254a82f1dfd69",
+    "png_header_valid": null,
+    "source_sha256": "42e909b7df82830195146b2988dde28cb204bb8cfc23b0b112742e74bc955cc8",
+    "transformation": "trailing-whitespace-removed",
+    "source_bytes": 30588
+  },
+  {
+    "archive": "stitch_console_credpay_transa_es_ass_ncronas (2).zip",
+    "source_entry": "screen.png",
+    "saved_as": "export-03/screen.png",
+    "bytes": 28,
+    "sha256": "6c9a02e2605929162392587c714f045251761b8a72c4bced6d4cbc2e4303ef8b",
+    "png_header_valid": false,
+    "source_sha256": "6c9a02e2605929162392587c714f045251761b8a72c4bced6d4cbc2e4303ef8b",
+    "transformation": "none",
+    "source_bytes": 28
+  },
+  {
+    "archive": "stitch_console_credpay_transa_es_ass_ncronas (2).zip",
+    "source_entry": "DESIGN.md",
+    "saved_as": "DESIGN.md",
+    "bytes": 11974,
+    "sha256": "2dd9319f35f9b9676fec76c61c26f13aa8b687e4d9ef0ccc33ecda123f49cdea",
+    "png_header_valid": null,
+    "source_sha256": "2dd9319f35f9b9676fec76c61c26f13aa8b687e4d9ef0ccc33ecda123f49cdea",
+    "transformation": "none",
+    "source_bytes": 11974
+  },
+  {
+    "archive": "stitch_console_credpay_transa_es_ass_ncronas (3).zip",
+    "source_entry": "code.html",
+    "saved_as": "export-04/code.html",
+    "bytes": 42262,
+    "sha256": "5cfaa9b6a7770684642430e42c1a3f0b49af336931f7f73171914df794d3764f",
+    "png_header_valid": null,
+    "source_sha256": "4a2955c55d1ca75a94d9a908868c31dcd80f790d9e40eb2f272da07a79739649",
+    "transformation": "trailing-whitespace-removed",
+    "source_bytes": 42271
+  },
+  {
+    "archive": "stitch_console_credpay_transa_es_ass_ncronas (3).zip",
+    "source_entry": "screen.png",
+    "saved_as": "export-04/screen.png",
+    "bytes": 28,
+    "sha256": "6c9a02e2605929162392587c714f045251761b8a72c4bced6d4cbc2e4303ef8b",
+    "png_header_valid": false,
+    "source_sha256": "6c9a02e2605929162392587c714f045251761b8a72c4bced6d4cbc2e4303ef8b",
+    "transformation": "none",
+    "source_bytes": 28
+  },
+  {
+    "archive": "stitch_console_credpay_transa_es_ass_ncronas (3).zip",
+    "source_entry": "DESIGN.md",
+    "saved_as": "DESIGN.md",
+    "bytes": 11974,
+    "sha256": "2dd9319f35f9b9676fec76c61c26f13aa8b687e4d9ef0ccc33ecda123f49cdea",
+    "png_header_valid": null,
+    "source_sha256": "2dd9319f35f9b9676fec76c61c26f13aa8b687e4d9ef0ccc33ecda123f49cdea",
+    "transformation": "none",
+    "source_bytes": 11974
+  }
+]
