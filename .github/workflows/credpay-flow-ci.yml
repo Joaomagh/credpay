@@ -74,4 +74,4 @@ jobs:
         run: ./mvnw --batch-mode --no-transfer-progress -DskipTests package
       - name: Verify both real applications
         working-directory: transacoes-service
-        run: ./mvnw --batch-mode --no-transfer-progress -Dtest=FluxoCredPayE2E test
+        run: ./mvnw --batch-mode --no-transfer-progress -Dtest=FluxoCredPayE2E,EncerramentoCredPayE2E test

@@ -1,6 +1,6 @@
 # Confirmação coordenada de encerramento técnico
 
-Direção aprovada por João em 2026-10-10. Casos controlados implementados até a PR #144; transporte e início operacional pendentes. Referências: spec.md §9.70 e §9.83–9.90.
+Direção aprovada por João em 2026-10-10. Casos controlados implementados até a PR #144, parsers nas PRs #146/#147 e transporte restrito à fixture descartável na PR #150. Início operacional permanece pendente. Evidências e limites atuais: spec.md §9.83–9.96.
 
 ## Objetivo e limite
 
@@ -8,7 +8,7 @@ Aplicar FALHOU somente depois de uma confirmação durável do processador que i
 
 O início do pedido exige critério de falha técnica irrecuperável e evidência auditável ainda a definir. Até esse critério, não expor operação administrativa nem oferecer comando SQL. A aprovação da direção não aprova encerramento arbitrário de transações recuperáveis.
 
-## Protocolo mínimo proposto
+## Protocolo controlado
 
 1. Transações persiste pedido identificado e intenção de envio no mesmo commit; permanece PENDENTE e preserva a resposta original do POST.
 2. Processador serializa pedido e processamento normal pelo mesmo transactionId. Se uma decisão já existe, conserva decisão/outbox e não confirma encerramento; o resultado anterior prevalece.
@@ -16,20 +16,20 @@ O início do pedido exige critério de falha técnica irrecuperável e evidênci
 4. Uma criação atrasada verifica o bloqueio sob o mesmo lock. Não pode produzir aprovação/rejeição; recebimento equivalente tem resultado durável explícito antes do ack, e identidade incompatível é conflito.
 5. Transações aceita somente confirmação causal correspondente ao pedido/criação. Estado FALHOU, histórico e recebimento são atômicos e idempotentes. Pedido sem confirmação permanece PENDENTE; aprovação/rejeição já aplicada nunca é sobrescrita.
 
-Pedido e confirmação terão eventos próprios versionados. TransacaoProcessada.v1 conserva seu contrato. Não compartilhar banco entre serviços nem interpretar silêncio como confirmação. Constraints de histórico e causalidade atuais precisam avaliação/migration própria antes de transportar nova confirmação.
+Pedido e confirmação têm eventos próprios versionados. TransacaoProcessada.v1 conserva seu contrato. Cada serviço mantém banco próprio; silêncio não é confirmação. Migrations próprias protegem histórico, causalidade e recebimentos; a fixture de transporte não altera esses schemas.
 
-## Critérios antes de implementação
+## Critérios para ativação operacional
 
 - Fixar nomes, envelopes, motivos permitidos e identidade/equivalência/conflito de pedido/confirmação.
 - Definir quem autoriza o pedido e qual evidência satisfaz irreversibilidade; não usar idade da transação ou DLQ isoladamente.
 - Definir confirmação negativa quando já há decisão, resultado de criação atrasada e auditoria de resultado tardio incompatível.
 - Provar que todas as entradas do processamento respeitam o mesmo bloqueio/lock.
 
-Primeira fatia futura: regra de bloqueio no domínio/aplicação do processador, sem listener ou endpoint. TDD: bloqueio impede primeira decisão; decisão existente impede confirmação positiva; replay conserva identidades; conflito preserva vencedor. Depois PostgreSQL real cobre corrida pedido/processamento, atomicidade bloqueio/outbox e rollback. Só após essas provas entra transporte.
+Sequência executada nas fatias controladas: regra de bloqueio em domínio/aplicação, depois persistência/concorrência/rollback em PostgreSQL real, pedido/recibo/aplicação causal e parsers antes do transporte. A fixture usa os casos existentes e os envelopes reais; não cria listener ou endpoint operacional. Evidências de cada red/green estão no spec.
 
 ## Envelopes e arbitragem propostos — 2026-10-14
 
-Dois eventos próprios, versão1; os nomes abaixo são proposta de contrato, ainda sem transporte. UUIDs não nulos e Instant preservado com nanos seguem a semântica atual. correlationId deve ser igual a transactionId.
+Dois eventos próprios, versão1, com parsers e transporte somente na fixture. UUIDs canônicos não nulos; o pedido preserva nanos, enquanto a resposta gerada é normalizada a micros antes de persistir/serializar. O recebimento conserva exatamente o instante do envelope. correlationId deve ser igual a transactionId.
 
 | Campo | EncerramentoTransacaoSolicitado | EncerramentoTransacaoRespondido |
 |---|---|---|
@@ -38,7 +38,7 @@ Dois eventos próprios, versão1; os nomes abaixo são proposta de contrato, ain
 | occurredAt | instante original do pedido | instante persistido da resposta |
 | data.transactionId | transação alvo | mesma transação |
 | data.creationEventId | criação original, igual à causa | mesma criação original |
-| data.motivo / evidenceRef | código permitido e referência opaca; definição pendente | não copiar texto livre de evidência |
+| data.motivo / evidenceRef | FALHA_PERMANENTE_CONTROLADA e UUID opaco no cenário descartável; não são autorização operacional | não copiar texto livre de evidência |
 | data.resultado | ausente | CONFIRMADO ou DECISAO_EXISTENTE |
 | data.outputEventId | ausente | obrigatório somente em DECISAO_EXISTENTE; saída financeira já persistida |
 
@@ -61,7 +61,7 @@ Criação atrasada equivalente exige recebimento bloqueado durável com sua sem�
 Este refinamento permite revisar identidades, vencedor e matriz TDD. Motivos/autoridade/evidência de início continuam impedindo ativação operacional; nenhum comando do operador prova sozinho irreversibilidade.
 ## Estado e conclusão
 
-Contrato controlado implementado em fatias: arbitragem, persistência/bloqueio no processador, pedido auditável e recibo em Transações. A PR #144 demonstra aplicação causal de FALHOU em teste descartável: recibo e histórico terminal único no mesmo commit, GET final e POST original preservados. Negativa conserva o estado e exige saída financeira correspondente nos dois ordenamentos. Recebido não significa aplicado: replay positivo exige histórico correspondente ou conclui a aplicação ainda pendente. Ainda não há pedido operacional, confirmação transportada ou endpoint de encerramento. Dashboard, Kubernetes, sandbox e demais critérios permanecem pendentes; estimativa global65%.
+Contrato controlado implementado em fatias: arbitragem, persistência/bloqueio no processador, pedido auditável e recibo em Transações. A PR #144 demonstra aplicação causal de FALHOU: recibo e histórico terminal único no mesmo commit, GET final e POST original preservados. Negativa conserva o estado e exige saída financeira correspondente nos dois ordenamentos. Recebido não significa aplicado: replay positivo exige histórico correspondente ou conclui a aplicação ainda pendente. A PR #150 acrescenta transporte entre JARs reais somente em teste, com bancos próprios e RabbitMQ; seus gates e resultados estão em spec9.96. Não há pedido operacional nem endpoint de encerramento. Painel, fluxo Kubernetes, sandbox e demais critérios seguem no [backlog](BACKLOG.md), que centraliza a estimativa de conclusão.
 
 ## Primeira fatia controlada — 2026-10-14
 

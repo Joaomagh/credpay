@@ -19,7 +19,7 @@ Não é uma promessa de uma PR por linha nem um cronograma. Itens grandes serão
 
 ## Caminho de conclusão da v1
 
-Posição em2026-10-15: aplicação controlada de FALHOU e parsers dos dois envelopes integrados até PR #147; processador339 testes/seis gates finais verdes. Startup/persistência Kubernetes integrados na PR #148 após Kubernetes#5/Scan234 verdes. O fluxo financeiro e a demo Compose já existem; não repetir essas entregas como trabalho futuro. Estimativa global permanece aproximadamente65%/35%, por julgamento de escopo; não é prazo, velocidade ou contagem de testes.
+Posição em2026-10-15: aplicação controlada de FALHOU e parsers integrados até PR #147; startup/persistência Kubernetes na PR #148; plataforma/imagens corrigidas na PR #149 após oito gates finais verdes e Inventory101 HIGH0/CRITICAL0. O fluxo financeiro e a demo Compose já existem; não repetir essas entregas como trabalho futuro. Estimativa global revisada para aproximadamente70%/30%, por julgamento de escopo; não é prazo, velocidade ou contagem de testes.
 
 ### Cinco marcos restantes e condição de encerramento
 
@@ -37,7 +37,7 @@ A v1 termina quando os cinco aceites e os critérios do plano forem demonstrados
 
 A tabela abaixo conserva a estimativa por fases; os marcos acima orientam a execução atual. As seções posteriores mantêm o histórico de incrementos e evidências, cujos estados preparatórios são substituídos pelos respectivos aceites finais.
 
-Revisão em 2026-10-05 após integrar Compose: estimativa global permanece **aproximadamente 65% concluído / 35% restante**. Pesos abaixo são julgamento de escopo para explicar o balanço, não medição de esforço, horas, velocidade ou prazo. Preparação sem execução não encerra Kubernetes; apps non-root não encerram sandbox do agente.
+Revisão em2026-10-15 após startup/persistência Kubernetes e migração corrigida: **aproximadamente70% concluído / 30% restante** (soma ponderada69,75%, arredondada). Pesos abaixo são julgamento de escopo para explicar o balanço, não medição de esforço, horas, velocidade ou prazo. Startup/persistência não encerram o fluxo Kubernetes; apps non-root não encerram sandbox do agente.
 
 | Fase do plano | Peso aproximado | Concluído | Restante | Saída ainda necessária |
 |---|---:|---:|---:|---|
@@ -46,8 +46,8 @@ Revisão em 2026-10-05 após integrar Compose: estimativa global permanece **apr
 | 3. Primeiro incremento TDD | 5% | 100% | 0% | Saída atendida com red/green/refactor e PostgreSQL real |
 | 4. Fluxo assíncrono confiável | 30% | 95% | 5% | Conectar e provar confirmação controlada entre serviços; aplicação causal já integrada na PR #144 |
 | 5. Qualidade e resiliência | 15% | 75% | 25% | Encerrar dívida relevante e consolidar relatório de falhas/recuperação e limites |
-| 6. Kubernetes e observabilidade | 20% | 5% | 95% | Cluster real, preparo/fluxo/persistência, painel e diagnóstico de falha |
-| 7. Entrega e portfólio | 10% | 65% | 35% | Tratar achados de dependências/imagens e definir política de bloqueio, revisão de publicação e ensaio da demo |
+| 6. Kubernetes e observabilidade | 20% | 25% | 75% | Após startup/persistência comprovados, preparo/fluxo no cluster, painel e diagnóstico de falha |
+| 7. Entrega e portfólio | 10% | 75% | 25% | Após migração corrigida, consolidar política de triagem, revisão de publicação e ensaio da demo |
 
 Fluxo principal está demonstrado em CI. Execução local ainda depende da infraestrutura; CD externo continua condicionado. João conseguir explicar as decisões exige validação com ele, não pode ser declarado por um teste automatizado.
 
@@ -302,4 +302,6 @@ B06.8d concluído na PR #141/3d78e9c: seis gates4349a8d verdes, processador222/8
 
 **B07.5a — Startup/persistência Kubernetes — concluído na PR #148/9adf3d3.** Proposta#118 portada sem documentos antigos; workflow CI descartável autorizado, fontes pinadas/aliases/CRI conferidos e imagens Never. Kubernetes#4/run38795937792 em99356e4 passou13recursos, cinco serviçosReady, appsUID10001/mounts0/probes/PVCs3 e recriaçãoPG/Rabbit mantémmigrations/exchanges/PVCs comappsdesligados duranteRabbit; cleanup passou, Scan233 verde. Final Kubernetes#5/run38796555607 e Scan234 verdes em5ec82ec antes do merge, revisão sem bloqueantes, spec9.93. SemPOSTGET/consumo/HA/sandbox. Próximo após integração: baseline/migração coerente para plataforma/imagem corrigidas autorizada por João, sem aceite de risco temporário.
 
-**B08.6c — Migração de plataforma/imagem corrigidas — validação final na PR #149, autorizada por João em15/10.** Baseline pré-resolução/riscos em spec9.94: Boot4.0.8/Framework7.0.9/Jackson3.1.7/AMQP4, Tomcat11.0.27, Jackson2.21.7 transitivo, TC2/JUnit6 e Temurin21Noble pinada. Java21/Rabbit5.34.0 preservados. Oito gatesa089e5c verdes, processador340/8m40; Inventory100 quatroalvos completos100/236/HIGH0/CRITICAL0, CVEsoriginais/complementares ausentes e98libs reconhecidas. MEDIUM/LOW permanecem visíveis. Prova complementar dpkg ReleaseUbuntu/últimosregistros exigeCIheadfinal antes de integrar. Não reduz escopo do sandbox/auditoria/ensaio; frontend somente briefing adiado.
+**B08.6c — Migração de plataforma/imagem corrigidas — concluído na PR #149/7e58bde.** Baseline/riscos em spec9.94: Boot4.0.8/Framework7.0.9/Tomcat11.0.27/Jackson3.1.7/Jackson2.21.7/TC2/JUnit6 e Temurin21Noble pinada; Java21/Rabbit5.34 preservados. Oito gates finais4d41dca verdes, processador340/8m29; Inventory101 quatroalvos completos100/236/HIGH0/CRITICAL0. Images112 comprovou ReleaseUbuntu completo corrigido nos dois apps. MEDIUM/LOW permanecem visíveis; revisão sem bloqueantes. Não conclui sandbox/auditoria/ensaio; frontend somente briefing adiado.
+
+**B06.8j — Transporte no cenário controlado — em TDD.** Aceite inicial POST PENDENTE→pedido/outbox→Rabbit→resposta/outbox→Rabbit→GET FALHOU, dois JARs/bancos próprios, causalidade e commit antes do ACK. Depois replay/recuperação/decisão anterior. Fixtures test-only sem endpoint/bean operacional/dependência nova; preserva seis cenários financeiros. Desenho, arquivos e riscos em spec9.96; red comportamental no CI antes do transporte.
