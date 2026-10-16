@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B07.5b — Completar preparo, POST/GET e falha/recuperação no Kubernetes CI já autorizado. Reutilizar cluster, imagens e políticas existentes; nenhuma dependência ou implantação externa nova.
+- [ ] Integrar B07.5b/PR #152 após gates finais: Kubernetes21/Scan252 verdes em03e6f8c comprovam preparo, APROVADA/REJEITADA/replay e parada/recuperação causal com filas drenadas. Revisão sem bloqueantes; atualização final documental em validação. Spec9.97.
 
 ## Próximo
 
