@@ -69,14 +69,11 @@ public final class EncerramentoTransacoesFixture {
             return;
         }
         if (partes.length == 1 && "CONSUMIR".equals(partes[0])) {
-            consumir(contexto);
+            consumir(contexto, leitor, false);
             return;
         }
         if (partes.length == 1 && "CONSUMIR_PAUSADO".equals(partes[0])) {
-            // Scaffolding do red: o consumo atual ainda confirma antes da janela observável.
-            consumir(contexto);
-            System.out.println("CREDPAY_FIXTURE COMMITTED");
-            if (!"ACK".equals(lerLimitado(leitor))) throw new IllegalArgumentException();
+            consumir(contexto, leitor, true);
             return;
         }
         throw new IllegalArgumentException();
@@ -121,7 +118,7 @@ public final class EncerramentoTransacoesFixture {
         if (evento.get("published_at") == null && alterados != 1) throw new IllegalStateException();
     }
 
-    private static void consumir(ConfigurableApplicationContext contexto) throws Exception {
+    private static void consumir(ConfigurableApplicationContext contexto, InputStreamReader leitor, boolean pausar) throws Exception {
         try (var conexao = novaConexao(contexto); var canal = conexao.createChannel()) {
             var entrega = canal.basicGet("credpay.fixture.resposta.v1", false);
             if (entrega == null) throw new IllegalStateException();
@@ -131,6 +128,10 @@ public final class EncerramentoTransacoesFixture {
             var parser = new EncerramentoTransacaoRespondidoMessageParser(contexto.getBean(ObjectMapper.class));
             contexto.getBean(AplicarEncerramentoService.class).executar(parser.parsear(mensagem));
             // O proxy retornou: commit concluído antes de confirmar a entrega.
+            if (pausar) {
+                System.out.println("CREDPAY_FIXTURE COMMITTED");
+                if (!"ACK".equals(lerLimitado(leitor))) throw new IllegalArgumentException();
+            }
             canal.basicAck(entrega.getEnvelope().getDeliveryTag(), false);
         }
     }

@@ -2620,6 +2620,8 @@ Primeiro green35574ad/Flow148/run38830308007/job116747329571: sete casos, zero f
 
 Próximo red: dois casos parametrizados (processador/transações) consultam commit por conexão independente e exigem ready0/unacked1 antes de encerrar somente o filho consumidor. Scaffolding CONSUMIR_PAUSADO ainda executa consumo/ACK antigo antes de emitir COMMITTED, portanto deve observar unacked0. Leitor limitado espera ACK do coordenador para liberar protocolo também no finally da falha. Após red, mover ACK para depois dessa janela, forçar queda e provar ready1/unacked0/reentrega com snapshot completo preservado no reinício. Caracterizações complementares do primeiro positivo conferem nanos completos do pedido, micros da resposta, chave/dados originais, publicações e replay de pedido/resposta/POST; não se inventa red para regras já implementadas em TDD.
 
+Red ACK observado146222d/Flow149/run38831027757/job116749587901: nove casos, duas falhas esperadas, zero erros/skips,3m15. Seis financeiros e positivo causal/replay passaram. Ambos casos parametrizados leram commit externamente, mas exigiram ready0/unacked1 e observaram ready0/unacked0 (pedido e resposta). Somente depois, CONSUMIR_PAUSADO passa a manter canal/entrega abertos entre retorno do proxy e ACK explícito no mesmo leitor. Próximo green deve observar reentrega real após término forçado do filho e snapshots estáveis.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

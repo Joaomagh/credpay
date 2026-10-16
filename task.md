@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B06.8j/PR #150 — Red Flow147 e green Flow148 comprovam POST→pedido→resposta→GET FALHOU com sete casos verdes. Próximo red exige commit externo e mensagem ainda unacked nos dois consumidores antes de testar queda/reinício/replay estável. Sem API operacional; spec9.96.
+- [ ] B06.8j/PR #150 — Flow148 comprovou primeiro green. Red ACK Flow149: dois commits externos observados, mas filas unacked0 em vez de1; demais sete casos verdes. Pausa antes do ACK implementada após red, aguardando prova de queda/reinício e snapshots estáveis. Sem API operacional; spec9.96.
 
 ## Próximo
 
