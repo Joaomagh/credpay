@@ -16,9 +16,13 @@ O projeto estará pronto para portfólio quando João conseguir:
 
 ### Fora do escopo da v1
 
-- frontend, autenticação de usuários, PIX real, cartão real, antifraude real e dinheiro real;
+- implementação de frontend, autenticação de usuários, PIX real, cartão real, antifraude real e dinheiro real;
 - transação distribuída/2PC, multi-região e alta disponibilidade de produção;
 - padrões ou ferramentas adicionados apenas para aumentar a lista do portfólio.
+
+### Briefing de frontend para etapa posterior — 2026-10-15
+
+João considerou uma interface Angular com design explorado no Google Stitch e depois pediu priorizar o backlog, preservando somente o briefing. `docs/FRONTEND_BRIEF.md` guarda o recorte futuro: criar transação, acompanhar estado e consultar por ID usando contratos existentes. Frontend não é critério para encerrar esta v1; nenhuma dependência, tela externa ou aplicação foi criada. Retomar sua implementação em etapa posterior, sem ampliar o backlog atual.
 
 ## 2. Fluxo de negócio v1
 
@@ -82,10 +86,10 @@ O monorepo reduz manutenção para uma pessoa e facilita avaliação, sem elimin
 
 | Área | Escolha | Intenção |
 |---|---|---|
-| Aplicação | Java 21, Spring Boot 3, Maven | Consolidar stack de vagas Java |
+| Aplicação | Java 21, Spring Boot, Maven | Consolidar stack de vagas Java; migração Boot4 autorizada em15/10 para correções públicas de segurança, baseline em spec§9.94 |
 | Dados | PostgreSQL, Spring Data JPA, Flyway | Persistência real e migrations reproduzíveis |
 | Mensageria | RabbitMQ, Spring AMQP | Entrega assíncrona, retry e DLQ |
-| Testes | JUnit 5, AssertJ, Mockito, Testcontainers | Pirâmide de testes com infraestrutura real nas bordas |
+| Testes | JUnit Jupiter, AssertJ, Mockito, Testcontainers | Pirâmide de testes com infraestrutura real nas bordas; versões alinhadas à plataforma em spec§9.94 |
 | Contrato | Bean Validation, OpenAPI | API pequena e demonstrável |
 | Observabilidade | Actuator, Micrometer, Prometheus, Grafana, logs estruturados | Diagnóstico por evidência |
 | Plataforma | Docker Compose, Kubernetes local | Aprender deploy, configuração, probes e recursos |

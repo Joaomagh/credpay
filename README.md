@@ -17,13 +17,13 @@ Para entender o produto, os problemas técnicos e as escolhas, leia [Entenda o C
 
 ## Status atual
 
-O inventário de dependências e imagens está ativo; as atualizações compatíveis de Tomcat, Jackson, RabbitMQ/Netty e PostgreSQL JDBC passaram as regressões. Ainda existem achados Spring e OpenSSL em triagem. CI verde não significa aprovação de segurança ou prontidão para produção; consulte a [triagem atual](infra/security/TRIAGE.md).
+O inventário de dependências e imagens está ativo. A migração para Spring Boot4 e runtime Ubuntu Noble removeu os três achados Spring/OpenSSL originais; o [Inventory #100](https://github.com/Joaomagh/credpay/actions/runs/38827148221) reconheceu os quatro alvos completos sem HIGH/CRITICAL. Achados MEDIUM/LOW e critérios de saída permanecem documentados; consulte a [triagem atual](infra/security/TRIAGE.md). CI verde não significa aprovação geral de segurança ou prontidão para produção.
 
 O projeto está na fase de fluxo assíncrono confiável: os dois aplicativos reais já comprovaram POST → duas outboxes → GET APROVADA/REJEITADA, com bancos próprios e histórico causal único. Duplicatas dos dois eventos e replay do POST preservam registros completos, resposta original e GET final no fluxo real. Parada controlada do processador mantém PENDENTE e mensagem pronta; reinício no mesmo banco/broker recupera a transação pela causa original. Ambos os listeners opt-in têm ack após commit, rejeições permanentes e retry limitado testados em PostgreSQL/RabbitMQ reais. Reentrega pós-commit e retenção/recuperação sob recusa da DLQ foram comprovadas no processador. Flags permanecem desligadas por padrão e ativação manual exige conferência operacional pelos runbooks. Replay manual no broker descartável após corrigir limite ausente recupera a transação; tentativa sem rota conserva a DLQ. Esgotar retry mantém a recuperação possível. A aplicação causal de FALHOU foi demonstrada em cenário controlado de teste, com recibo e histórico atômicos, GET final e POST original preservado. O pedido e o aplicador permanecem fora da API; transporte da confirmação e critérios de início operacional continuam pendentes. Veja o [protocolo e seus limites](docs/CONFIRMACAO_FALHA.md). Ambiente local, observabilidade e demais critérios de portfólio continuam no backlog.
 
 | Estado | Entrega |
 |---|---|
-| Implementado | `transacoes-service` com Java 21, Spring Boot 3.5.16 e Maven Wrapper 3.9.16 |
+| Implementado | `transacoes-service` com Java 21, Spring Boot 4.0.8 e Maven Wrapper 3.9.16 |
 | Implementado | scaffolding independente do `processamento-service`, com as mesmas versões verificadas |
 | Implementado | primeiro comportamento do processador: valor positivo menor ou igual ao limite resulta em `APROVADA` |
 | Implementado | valor acima do limite resulta em `REJEITADA`, com comparação decimal por `BigDecimal` |

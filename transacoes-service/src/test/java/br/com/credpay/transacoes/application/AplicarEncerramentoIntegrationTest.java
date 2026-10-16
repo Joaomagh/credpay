@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
 import br.com.credpay.transacoes.domain.StatusTransacao;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,7 +43,8 @@ import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.postgresql.util.PSQLException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.MockMvcPrint;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -56,12 +57,12 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(print = MockMvcPrint.NONE)
 @Import({SolicitarEncerramentoService.class, AplicarEncerramentoService.class,
         AplicarEncerramentoIntegrationTest.Configuracao.class})
 @Testcontainers
@@ -72,10 +73,10 @@ class AplicarEncerramentoIntegrationTest {
     private static HikariDataSource poolDaFixture;
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgresDaFixture()
+    static final PostgreSQLContainer POSTGRES = new PostgresDaFixture()
             .withDatabaseName("credpay_aplicar_encerramento").withUsername("test").withPassword("test");
 
-    private static final class PostgresDaFixture extends PostgreSQLContainer<PostgresDaFixture> {
+    private static final class PostgresDaFixture extends PostgreSQLContainer {
         private PostgresDaFixture() {
             super("postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0");
         }

@@ -3,9 +3,9 @@ package br.com.credpay.processamento.application;
 import java.time.Clock;
 import java.util.UUID;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import tools.jackson.core.JacksonException;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,7 +69,7 @@ public class RegistrarEncerramentoService {
             return new EventoSaidaPendente(registro.responseEventId(), pedido.transactionId(),
                     "EncerramentoTransacaoRespondido", 1, objectMapper.writeValueAsString(payload),
                     registro.respondedAt());
-        } catch (JsonProcessingException exception) {
+        } catch (JacksonException exception) {
             throw new IllegalStateException("nao foi possivel serializar resposta de encerramento", exception);
         }
     }

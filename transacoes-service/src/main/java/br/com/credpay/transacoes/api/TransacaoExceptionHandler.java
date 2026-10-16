@@ -1,5 +1,7 @@
 package br.com.credpay.transacoes.api;
 
+import java.net.URI;
+
 import br.com.credpay.transacoes.application.ConflitoIdempotenciaException;
 import br.com.credpay.transacoes.application.TransacaoNaoEncontradaException;
 import org.springframework.http.HttpStatus;
@@ -17,6 +19,7 @@ class TransacaoExceptionHandler {
         var problem = ProblemDetail.forStatusAndDetail(
                 HttpStatus.BAD_REQUEST, exception.getMessage());
         problem.setTitle("Requisição inválida");
+        problem.setType(URI.create("about:blank"));
         return problem;
     }
 
@@ -25,6 +28,7 @@ class TransacaoExceptionHandler {
         var problem = ProblemDetail.forStatusAndDetail(
                 HttpStatus.CONFLICT, exception.getMessage());
         problem.setTitle("Conflito de idempotência");
+        problem.setType(URI.create("about:blank"));
         return problem;
     }
 
@@ -33,6 +37,7 @@ class TransacaoExceptionHandler {
         var problem = ProblemDetail.forStatusAndDetail(
                 HttpStatus.BAD_REQUEST, "id deve ser um UUID válido");
         problem.setTitle("Requisição inválida");
+        problem.setType(URI.create("about:blank"));
         return problem;
     }
 
@@ -41,6 +46,7 @@ class TransacaoExceptionHandler {
         var problem = ProblemDetail.forStatusAndDetail(
                 HttpStatus.NOT_FOUND, exception.getMessage());
         problem.setTitle("Transação não encontrada");
+        problem.setType(URI.create("about:blank"));
         return problem;
     }
 
@@ -50,6 +56,7 @@ class TransacaoExceptionHandler {
                 HttpStatus.BAD_REQUEST,
                 "corpo deve conter um JSON válido com valor numérico e moeda textual");
         problem.setTitle("Requisição inválida");
+        problem.setType(URI.create("about:blank"));
         return problem;
     }
 
@@ -58,6 +65,7 @@ class TransacaoExceptionHandler {
         var problem = ProblemDetail.forStatusAndDetail(
                 HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage());
         problem.setTitle("Transação inválida");
+        problem.setType(URI.create("about:blank"));
         return problem;
     }
 }

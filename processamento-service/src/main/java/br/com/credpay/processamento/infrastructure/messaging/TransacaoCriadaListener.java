@@ -3,7 +3,7 @@ package br.com.credpay.processamento.infrastructure.messaging;
 import br.com.credpay.processamento.application.ConflitoProcessamentoException;
 import br.com.credpay.processamento.application.RegistrarProcessamentoService;
 import br.com.credpay.processamento.application.TransacaoCriadaRecebida;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

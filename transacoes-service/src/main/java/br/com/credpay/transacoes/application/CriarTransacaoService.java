@@ -7,8 +7,8 @@ import java.util.UUID;
 
 import br.com.credpay.transacoes.domain.Transacao;
 import br.com.credpay.transacoes.domain.StatusTransacao;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -75,7 +75,7 @@ class CriarTransacaoService implements CriarTransacao {
                     1,
                     objectMapper.writeValueAsString(payload),
                     occurredAt);
-        } catch (JsonProcessingException exception) {
+        } catch (JacksonException exception) {
             throw new IllegalStateException("não foi possível serializar TransacaoCriada", exception);
         }
     }

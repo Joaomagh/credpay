@@ -4,8 +4,8 @@ import java.time.Clock;
 import java.util.Objects;
 import java.util.UUID;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -90,7 +90,7 @@ public class RegistrarProcessamentoService {
             return new EventoSaidaPendente(resultado.outputEventId(), resultado.transactionId(),
                     "TransacaoProcessada", 1, objectMapper.writeValueAsString(payload),
                     resultado.processedAt());
-        } catch (JsonProcessingException exception) {
+        } catch (JacksonException exception) {
             throw new IllegalStateException("nao foi possivel serializar TransacaoProcessada", exception);
         }
     }

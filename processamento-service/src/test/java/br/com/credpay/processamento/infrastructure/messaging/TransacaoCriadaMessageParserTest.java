@@ -10,7 +10,7 @@ import java.util.Currency;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -23,6 +23,20 @@ class TransacaoCriadaMessageParserTest {
     private static final UUID EVENT_ID = UUID.fromString("11111111-1111-4111-8111-111111111111");
     private static final UUID TRANSACTION_ID = UUID.fromString("22222222-2222-4222-8222-222222222222");
     private final TransacaoCriadaMessageParser parser = new TransacaoCriadaMessageParser(new ObjectMapper());
+
+    @Test
+    void parsear_deveRejeitarSufixoSemAlterarMapper_quandoMapperCompartilhadoEhPermissivo() {
+        var mapper = tools.jackson.databind.json.JsonMapper.builder()
+                .disable(tools.jackson.databind.DeserializationFeature.FAIL_ON_TRAILING_TOKENS).build();
+        var original = mensagem("1");
+        var json = new String(original.getBody(), StandardCharsets.UTF_8) + " {}";
+        var comSufixo = new Message(json.getBytes(StandardCharsets.UTF_8), original.getMessageProperties());
+        var parserLocal = new TransacaoCriadaMessageParser(mapper);
+
+        assertThatThrownBy(() -> parserLocal.parsear(comSufixo))
+                .isInstanceOf(IllegalArgumentException.class).hasMessage("JSON inválido").hasNoCause();
+        assertThat(mapper.readTree(json).path("eventType").stringValue()).isEqualTo("TransacaoCriada");
+    }
 
     @Test
     void parsear_deveMapearEvento_quandoEnvelopeEPropriedadesSaoValidos() {

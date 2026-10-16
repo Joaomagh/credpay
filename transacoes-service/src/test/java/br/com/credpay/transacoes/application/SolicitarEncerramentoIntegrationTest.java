@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 
 import br.com.credpay.transacoes.domain.StatusTransacao;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,7 +45,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -59,10 +59,10 @@ class SolicitarEncerramentoIntegrationTest {
     private static HikariDataSource poolDaFixture;
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgresDaFixture()
+    static final PostgreSQLContainer POSTGRES = new PostgresDaFixture()
             .withDatabaseName("credpay_solicitar_encerramento").withUsername("test").withPassword("test");
 
-    private static final class PostgresDaFixture extends PostgreSQLContainer<PostgresDaFixture> {
+    private static final class PostgresDaFixture extends PostgreSQLContainer {
         private PostgresDaFixture() {
             super("postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0");
         }

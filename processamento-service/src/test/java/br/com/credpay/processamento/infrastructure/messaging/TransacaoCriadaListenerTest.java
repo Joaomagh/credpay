@@ -7,7 +7,7 @@ import static org.mockito.Mockito.mock;
 
 import br.com.credpay.processamento.application.ConflitoProcessamentoException;
 import br.com.credpay.processamento.application.RegistrarProcessamentoService;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;

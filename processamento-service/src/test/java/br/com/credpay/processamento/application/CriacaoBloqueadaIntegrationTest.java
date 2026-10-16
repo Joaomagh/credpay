@@ -45,7 +45,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -57,13 +57,13 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 class CriacaoBloqueadaIntegrationTest {
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgresDaFixture()
+    static final PostgreSQLContainer POSTGRES = new PostgresDaFixture()
             .withDatabaseName("credpay_criacao_bloqueada")
             .withUsername("test").withPassword("test");
 
     private static HikariDataSource poolDaFixture;
 
-    private static final class PostgresDaFixture extends PostgreSQLContainer<PostgresDaFixture> {
+    private static final class PostgresDaFixture extends PostgreSQLContainer {
         private PostgresDaFixture() {
             super("postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0");
         }

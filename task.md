@@ -4,16 +4,16 @@
 
 ## Último incremento
 
-- B06.8i integrado na PR #147/5e3a73a: seis gatesd51947c verdes, processador339/8m07; parser117. README/demo e autorização restrita CI atualizados. Sem transporte; spec9.92.
+- B07.5a integrado na PR #148/9adf3d3: Kubernetes#5 e Scan234 verdes em5ec82ec; startup/probes/UID/PVCs e persistência comprovados. #118 substituída; spec9.93.
 
 ## Agora
 
-- [ ] B07.5a — Smoke Kubernetes#4/99356e4 comprovou startup/probes/UID/PVCs e persistência de migrations/exchanges; cleanup/Scan233 verdes. Finalizar registros/gates da PR #148 e integrar; spec9.93.
+- [ ] B08.6c — Oito gatesa089e5c verdes, processador340/8m40 e Inventory100 HIGH0/CRITICAL0. Prova complementar do ReleaseUbuntu/últimos registros requer CI do head final da PR #149 antes de integrar; spec9.94.
 
 ## Próximo
 
-- Migração de plataforma/imagem corrigidas autorizada em15/10, baseline em análise. Depois preparo/fluxo Kubernetes e transporte de encerramento somente no cenário descartável aprovado.
+- Após segurança: transporte de encerramento no cenário controlado e demo observável, conforme backlog. Brief frontend preservado em docs/FRONTEND_BRIEF.md, implementação adiada.
 
 ## Depois
 
-- Autoridade/evidência operacional e auditoria tardia. Painel/Kubernetes/sandbox/segurança/ensaio pendentes. Estimativa global65%.
+- Fluxo Kubernetes, painel, sandbox/auditoria e ensaio. Frontend fora do fechamento atual; nenhuma instalação ou publicação externa autorizada por esse briefing.

@@ -37,7 +37,7 @@ Outbox não elimina duplicatas: uma queda entre publicar e marcar a intenção p
 
 | Aplicado | Papel no projeto |
 |---|---|
-| Java 21 / Spring Boot 3 / Maven | Implementar, configurar e empacotar os dois aplicativos backend |
+| Java 21 / Spring Boot 4 / Maven | Implementar, configurar e empacotar os dois aplicativos backend |
 | Dois serviços, com dados próprios | Separar entrada/consulta da decisão; praticar fronteiras e comunicação distribuída |
 | PostgreSQL/JPA/JDBC/Flyway | Persistir dados reais, proteger invariantes e evoluir schema por migrations versionadas |
 | BigDecimal e java.time | Representar dinheiro e instantes com regras explícitas de precisão |

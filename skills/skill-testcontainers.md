@@ -3,19 +3,22 @@
 Pré-requisito: Docker disponível. Fixe versões das imagens no build; não use `latest`. Prefira um teste base compartilhado somente após surgir repetição real.
 
 ```java
+import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.testcontainers.rabbitmq.RabbitMQContainer;
+
 @Testcontainers
 @SpringBootTest
 class FluxoIntegracaoTest {
     @Container
-    static PostgreSQLContainer<?> postgres =
-        new PostgreSQLContainer<>("postgres:16-alpine")
+    static PostgreSQLContainer postgres =
+        new PostgreSQLContainer("postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0")
             .withDatabaseName("credpay")
             .withUsername("test")
             .withPassword("test");
 
     @Container
     static RabbitMQContainer rabbit =
-        new RabbitMQContainer("rabbitmq:3.13-management-alpine");
+        new RabbitMQContainer("rabbitmq:4.3.5-management-alpine@sha256:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1");
 
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
@@ -34,7 +37,7 @@ class FluxoIntegracaoTest {
 }
 ```
 
-Dependências de teste: `org.testcontainers:junit-jupiter`, `postgresql` e `rabbitmq`, usando o BOM do Testcontainers para alinhar versões.
+Dependências de teste na baseline Testcontainers2: `org.testcontainers:testcontainers-junit-jupiter`, `testcontainers-postgresql` e `testcontainers-rabbitmq`, alinhadas pelo BOM gerenciado no Spring Boot4. O PostgreSQLContainer dessa linha não é genérico. Demais imports usuais foram omitidos do recorte; as fixtures executáveis estão em src/test dos serviços.
 
 Checklist de um teste útil:
 

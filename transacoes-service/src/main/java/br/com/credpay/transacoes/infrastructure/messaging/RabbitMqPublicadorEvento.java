@@ -68,8 +68,8 @@ class RabbitMqPublicadorEvento implements PublicadorEvento {
             throw excecao;
         }
         var outcome = correlacao.getReturned() != null ? "returned"
-                : confirmacao.isAck() ? "confirmed" : "nacked";
+                : confirmacao.ack() ? "confirmed" : "nacked";
         meterRegistry.counter("credpay.messaging.publish.attempts", "outcome", outcome).increment();
-        return confirmacao.isAck() && correlacao.getReturned() == null;
+        return confirmacao.ack() && correlacao.getReturned() == null;
     }
 }

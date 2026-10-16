@@ -10,14 +10,14 @@ import java.util.stream.Stream;
 
 import br.com.credpay.transacoes.application.TransacaoProcessadaRecebida;
 import br.com.credpay.transacoes.domain.StatusTransacao;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.Test;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.ObjectNode;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 

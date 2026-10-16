@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,7 +28,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -42,12 +42,12 @@ class RegistrarProcessamentoOutboxIntegrationTest {
     private static final List<HikariDataSource> POOLS_ORIGINAIS = new ArrayList<>();
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgresDaFixture()
+    static final PostgreSQLContainer POSTGRES = new PostgresDaFixture()
             .withDatabaseName("credpay_processamento_atomic_test")
             .withUsername("test")
             .withPassword("test");
 
-    private static final class PostgresDaFixture extends PostgreSQLContainer<PostgresDaFixture> {
+    private static final class PostgresDaFixture extends PostgreSQLContainer {
         private PostgresDaFixture() {
             super("postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0");
         }

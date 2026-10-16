@@ -2,9 +2,9 @@ package br.com.credpay.transacoes.api;
 
 import java.math.BigDecimal;
 
-import com.fasterxml.jackson.databind.cfg.CoercionAction;
-import com.fasterxml.jackson.databind.cfg.CoercionInputShape;
-import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
+import tools.jackson.databind.cfg.CoercionAction;
+import tools.jackson.databind.cfg.CoercionInputShape;
+import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -12,16 +12,16 @@ import org.springframework.context.annotation.Configuration;
 class JacksonConfiguration {
 
     @Bean
-    Jackson2ObjectMapperBuilderCustomizer rejeitarNumeroOuBooleanoComoTexto() {
-        return builder -> builder.postConfigurer(mapper -> mapper.coercionConfigFor(String.class)
+    JsonMapperBuilderCustomizer rejeitarNumeroOuBooleanoComoTexto() {
+        return builder -> builder.withCoercionConfig(String.class, coercion -> coercion
                 .setCoercion(CoercionInputShape.Integer, CoercionAction.Fail)
                 .setCoercion(CoercionInputShape.Float, CoercionAction.Fail)
                 .setCoercion(CoercionInputShape.Boolean, CoercionAction.Fail));
     }
 
     @Bean
-    Jackson2ObjectMapperBuilderCustomizer rejeitarTextoComoBigDecimal() {
-        return builder -> builder.postConfigurer(mapper -> mapper.coercionConfigFor(BigDecimal.class)
+    JsonMapperBuilderCustomizer rejeitarTextoComoBigDecimal() {
+        return builder -> builder.withCoercionConfig(BigDecimal.class, coercion -> coercion
                 .setCoercion(CoercionInputShape.String, CoercionAction.Fail)
                 .setCoercion(CoercionInputShape.EmptyString, CoercionAction.Fail));
     }

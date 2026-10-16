@@ -1,4 +1,4 @@
-FROM eclipse-temurin:21.0.12.1_1-jre-jammy@sha256:f04fb34e053148344e83317976114ec3f37e4b830ec8bdab5a2fe3cecd7d010b
+FROM eclipse-temurin:21.0.12.1_1-jre-noble@sha256:000fd431958bc81a24abe1e8e5f0f0fd3ae365a594bd50aadb20696805f9408c
 
 WORKDIR /app
 COPY target/processamento-service-0.0.1-SNAPSHOT.jar /app/app.jar

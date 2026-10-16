@@ -34,13 +34,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.retry.interceptor.RetryOperationsInterceptor;
+import org.springframework.amqp.rabbit.config.StatelessRetryOperationsInterceptor;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.annotation.DirtiesContext;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.containers.RabbitMQContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.testcontainers.rabbitmq.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -56,7 +56,7 @@ import org.testcontainers.utility.DockerImageName;
 class TransacaoCriadaListenerIntegrationTest {
 
     @Container
-    static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>(
+    static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer(
             "postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0")
             .withDatabaseName("credpay_processamento_listener_test")
             .withUsername("test")
@@ -87,7 +87,7 @@ class TransacaoCriadaListenerIntegrationTest {
     @Autowired private CachingConnectionFactory connectionFactory;
     @Autowired
     @Qualifier("transacaoCriadaRetryInterceptor")
-    private RetryOperationsInterceptor retry;
+    private StatelessRetryOperationsInterceptor retry;
 
     @Test
     void deveManterEntregaSemAckAteResultadoEOutboxConfirmarem() throws Exception {

@@ -22,9 +22,9 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.StreamSupport;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -47,8 +47,8 @@ import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.containers.RabbitMQContainer;
+import org.testcontainers.postgresql.PostgreSQLContainer;
+import org.testcontainers.rabbitmq.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -68,9 +68,9 @@ class FluxoCredPayE2E {
             "credpay.processamento.transacao-criada.dlq.v1", "credpay.transacoes.transacao-processada.v1",
             "credpay.transacoes.transacao-processada.dlq.v1");
 
-    @Container static final PostgreSQLContainer<?> TRANSACOES = new PostgreSQLContainer<>(POSTGRES_IMAGE)
+    @Container static final PostgreSQLContainer TRANSACOES = new PostgreSQLContainer(POSTGRES_IMAGE)
             .withDatabaseName("credpay_transacoes_e2e").withUsername("test").withPassword("test");
-    @Container static final PostgreSQLContainer<?> PROCESSAMENTO = new PostgreSQLContainer<>(POSTGRES_IMAGE)
+    @Container static final PostgreSQLContainer PROCESSAMENTO = new PostgreSQLContainer(POSTGRES_IMAGE)
             .withDatabaseName("credpay_processamento_e2e").withUsername("test").withPassword("test");
     @Container static final RabbitMQContainer RABBIT = new RabbitMQContainer(DockerImageName.parse(
             "rabbitmq:4.3.5-management-alpine@sha256:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1")
@@ -334,7 +334,7 @@ class FluxoCredPayE2E {
     private JsonNode jsonHttpSeguro(String corpo) {
         try {
             return JSON.readTree(corpo);
-        } catch (JsonProcessingException invalido) {
+        } catch (JacksonException invalido) {
             throw new AssertionError("Resposta HTTP JSON inválida; corpo omitido.");
         }
     }
@@ -599,7 +599,7 @@ class FluxoCredPayE2E {
         properties.setCorrelationId(evento.get("aggregate_id").toString());
         var correlacao = new CorrelationData(evento.get("event_id").toString());
         rabbit.send(exchange, rota, new Message(evento.get("payload").toString().getBytes(StandardCharsets.UTF_8), properties), correlacao);
-        assertThat(correlacao.getFuture().get(10, TimeUnit.SECONDS).isAck()).as("duplicata confirmada pelo broker").isTrue();
+        assertThat(correlacao.getFuture().get(10, TimeUnit.SECONDS).ack()).as("duplicata confirmada pelo broker").isTrue();
         assertThat(correlacao.getReturned()).withFailMessage("duplicata retornada por ausência de rota").isNull();
     }
 
@@ -627,7 +627,7 @@ class FluxoCredPayE2E {
         aguardarHealth(segundo, portaProcessamento, "processamento");
     }
 
-    private Process iniciar(String servico, PostgreSQLContainer<?> banco, int porta, boolean topologia,
+    private Process iniciar(String servico, PostgreSQLContainer banco, int porta, boolean topologia,
             boolean consumirEPublicar, String... ajustes) throws Exception {
         var modulo = servico + "-service";
         var jar = RAIZ.resolve(modulo + "/target/" + modulo + "-0.0.1-SNAPSHOT.jar").normalize();
@@ -816,7 +816,7 @@ class FluxoCredPayE2E {
         assertThat(banco.queryForObject("SELECT COUNT(*) FROM " + tabela + " WHERE " + coluna + " = ?", Integer.class, id)).isEqualTo(1);
     }
 
-    private JdbcTemplate jdbc(PostgreSQLContainer<?> container) {
+    private JdbcTemplate jdbc(PostgreSQLContainer container) {
         return new JdbcTemplate(new DriverManagerDataSource(container.getJdbcUrl(), container.getUsername(), container.getPassword()));
     }
 

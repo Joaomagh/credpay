@@ -23,7 +23,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.RabbitMQContainer;
+import org.testcontainers.rabbitmq.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
@@ -219,15 +219,15 @@ class RabbitMqEntradaTopologyIntegrationTest {
 
     private void aguardarOcupacaoDlq(int esperado) throws InterruptedException {
         var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-        Object quantidade;
+        Number quantidade;
         do {
-            quantidade = admin.getQueueProperties(dlq.getName()).get("QUEUE_MESSAGE_COUNT");
-            if (Integer.valueOf(esperado).equals(quantidade)) {
+            quantidade = (Number) admin.getQueueProperties(dlq.getName()).get("QUEUE_MESSAGE_COUNT");
+            if (quantidade.longValue() == esperado) {
                 return;
             }
             TimeUnit.MILLISECONDS.sleep(50);
         } while (System.nanoTime() < prazo);
-        assertThat(quantidade).isEqualTo(esperado);
+        assertThat(quantidade.longValue()).isEqualTo(esperado);
     }
 
     private void aguardarRecusaDoWorker() throws Exception {
