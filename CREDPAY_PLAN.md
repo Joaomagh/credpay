@@ -16,9 +16,13 @@ O projeto estará pronto para portfólio quando João conseguir:
 
 ### Fora do escopo da v1
 
-- frontend, autenticação de usuários, PIX real, cartão real, antifraude real e dinheiro real;
+- implementação de frontend, autenticação de usuários, PIX real, cartão real, antifraude real e dinheiro real;
 - transação distribuída/2PC, multi-região e alta disponibilidade de produção;
 - padrões ou ferramentas adicionados apenas para aumentar a lista do portfólio.
+
+### Briefing de frontend para etapa posterior — 2026-10-15
+
+João considerou uma interface Angular com design explorado no Google Stitch e depois pediu priorizar o backlog, preservando somente o briefing. `docs/FRONTEND_BRIEF.md` guarda o recorte futuro: criar transação, acompanhar estado e consultar por ID usando contratos existentes. Frontend não é critério para encerrar esta v1; nenhuma dependência, tela externa ou aplicação foi criada. Retomar sua implementação em etapa posterior, sem ampliar o backlog atual.
 
 ## 2. Fluxo de negócio v1
 

@@ -12,8 +12,8 @@
 
 ## Próximo
 
-- Preparo/fluxo Kubernetes e transporte de encerramento somente no cenário descartável aprovado.
+- Após segurança: transporte de encerramento no cenário controlado e demo observável, conforme backlog. Brief frontend preservado em docs/FRONTEND_BRIEF.md, implementação adiada.
 
 ## Depois
 
-- Autoridade/evidência operacional e auditoria tardia. Painel/Kubernetes/sandbox/segurança/ensaio pendentes. Estimativa global65%.
+- Fluxo Kubernetes, painel, sandbox/auditoria e ensaio. Frontend fora do fechamento atual; nenhuma instalação ou publicação externa autorizada por esse briefing.
