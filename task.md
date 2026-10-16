@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.6c — Migrar plataforma/imagem corrigidas autorizadas em15/10; baseline registrada antes da resolução em spec9.94. Preservar contratos e comprovar suítes/inventário completos.
+- [ ] B08.6c — Oito gatesa089e5c verdes, processador340/8m40 e Inventory100 HIGH0/CRITICAL0. Prova complementar do ReleaseUbuntu/últimos registros requer CI do head final da PR #149 antes de integrar; spec9.94.
 
 ## Próximo
 

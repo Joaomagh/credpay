@@ -28,6 +28,6 @@ O escopo inclui somente dependências empacotadas e as duas imagens dos apps. Po
 
 ## Proposta de bloqueio da entrega externa
 
-A [triagem atual](TRIAGE.md) registra três IDs HIGH/CRITICAL remanescentes. A proposta é impedir entrega externa enquanto houver achado sem correção ou disposição explícita aprovada pelo Navigator. Uma disposição teria de identificar CVE, componente/versão, condições, evidências e lacunas, alcance, responsável, prazo e revisão; nenhuma está aprovada neste incremento.
+A [triagem atual](TRIAGE.md) registra a correção dos três IDs HIGH/CRITICAL originais e a validação da migração B08.6c. Inventory100 reconheceu os quatro alvos completos com HIGH0/CRITICAL0, preservando MEDIUM/LOW. A proposta é impedir entrega externa enquanto houver HIGH/CRITICAL sem correção ou disposição explícita aprovada pelo Navigator. Uma disposição teria de identificar CVE, componente/versão, condições, evidências e lacunas, alcance, responsável, prazo e revisão; nenhuma foi aprovada.
 
 O workflow continua validando e publicando o inventário; não existe gate automatizado de severidade implementado. Sua conclusão verde comprova execução, identidade e cobertura, sem liberar produção. A implementação de um gate separado exige política definida e controles de bloqueio/aprovação técnica; não se altera o relatório bruto para passar. Implantação externa continua exigindo autorização específica.

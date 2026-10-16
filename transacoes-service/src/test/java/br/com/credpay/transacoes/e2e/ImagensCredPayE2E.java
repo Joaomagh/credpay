@@ -147,6 +147,12 @@ class ImagensCredPayE2E {
         assertThat(info.getConfig().getUser()).as("usuário configurado: " + servico).isEqualTo("10001:10001");
         assertThat(info.getMounts()).as("nenhum mount no aplicativo: " + servico).isEmpty();
         assertThat(info.getHostConfig().getPrivileged()).as("sem modo privilegiado: " + servico).isFalse();
+        var pacotes = aplicativo.execInContainer("dpkg-query", "-W", "-f=${Package}=${Version}\\n",
+                "libssl3t64", "openssl");
+        assertThat(pacotes.getExitCode()).as("consulta de pacotes da imagem: " + servico).isZero();
+        assertThat(pacotes.getStdout().lines()).as("baseline OpenSSL corrigida: " + servico)
+                .containsExactlyInAnyOrder("libssl3t64=3.0.13-0ubuntu3.16", "openssl=3.0.13-0ubuntu3.16");
+        System.out.println("ImagensCredPayE2E: " + servico + " OpenSSL/libssl3t64=3.0.13-0ubuntu3.16");
         System.out.println("ImagensCredPayE2E: " + servico + " uid=10001, mounts=0, privileged=false, health=UP");
     }
 
