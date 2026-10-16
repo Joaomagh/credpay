@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B06.8j/PR #150 — Flow148 comprovou primeiro green. Red ACK Flow149: dois commits externos observados, mas filas unacked0 em vez de1; demais sete casos verdes. Pausa antes do ACK implementada após red, aguardando prova de queda/reinício e snapshots estáveis. Sem API operacional; spec9.96.
+- [ ] B06.8j/PR #150 — Flow150: nove casos verdes, commit externo/queda antes ACK/reinício/replay estável nos dois consumidores. Próximo red prova criação atrasada bloqueada e decisão financeira anterior APROVADA/REJEITADA preservada. Sem API operacional; spec9.96.
 
 ## Próximo
 

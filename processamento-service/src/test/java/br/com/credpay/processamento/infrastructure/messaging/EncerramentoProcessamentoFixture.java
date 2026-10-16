@@ -68,6 +68,14 @@ public final class EncerramentoProcessamentoFixture {
             consumir(contexto, leitor, true);
             return;
         }
+        if (partes.length == 2 && "PUBLICAR_FINANCEIRO".equals(partes[0])) {
+            uuid(partes[1]);
+            // Scaffolding: ainda não transporta o evento financeiro neste cenário.
+            return;
+        }
+        if (partes.length == 1 && "CONSUMIR_CRIACAO".equals(partes[0])) {
+            return;
+        }
         throw new IllegalArgumentException();
     }
 

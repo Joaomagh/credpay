@@ -2622,6 +2622,10 @@ Próximo red: dois casos parametrizados (processador/transações) consultam com
 
 Red ACK observado146222d/Flow149/run38831027757/job116749587901: nove casos, duas falhas esperadas, zero erros/skips,3m15. Seis financeiros e positivo causal/replay passaram. Ambos casos parametrizados leram commit externamente, mas exigiram ready0/unacked1 e observaram ready0/unacked0 (pedido e resposta). Somente depois, CONSUMIR_PAUSADO passa a manter canal/entrega abertos entre retorno do proxy e ACK explícito no mesmo leitor. Próximo green deve observar reentrega real após término forçado do filho e snapshots estáveis.
 
+Green ACK b0e06c6/Flow150/run38972227826/job117213094608: nove casos/zero falhas/erros/skips/2m56; financeiro6/120,5s e encerramento3/51,90s. Ambos consumidores provaram commit por conexão externa, ready0/unacked1, término forçado do filho, ready1/unacked0, reinício no mesmo banco/broker e consumo equivalente sem alterar snapshots completos. Revisão sem bloqueantes; local antes do push19,281s/15,214s/Checkstyle0. Não afirma recuperação operacional de produção.
+
+Próximo red de integração: três casos descrevem criação atrasada bloqueada e decisão financeira anterior APROVADA/REJEITADA preservada. Pedido nasce ainda PENDENTE; a decisão deve ser tomada pelo caso real do processador, nunca semeada. Transporte financeiro próprio da fixture começa vazio: espera-se recibo bloqueado1/observado0 e DECISAO_EXISTENTE/observadoCONFIRMADO, não falha de protocolo/SQL. Só depois conectar outboxes/parsers/casos financeiros existentes em filas próprias; seis cenários operacionais financeiros permanecem intactos. Arquivos: as três fixtures, task/spec/backlog. Risco: mascarar criação atrasada como decisão ou substituir saída original; snapshots incluem todos os recibos de bloqueio.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

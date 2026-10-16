@@ -33,6 +33,7 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.junit.jupiter.Container;
@@ -248,6 +249,94 @@ class EncerramentoCredPayE2E {
         }
     }
 
+    @Test
+    @Timeout(value = 2, unit = TimeUnit.MINUTES)
+    void criacaoAtrasadaDepoisDaConfirmacao_deveRegistrarBloqueioSemDecisaoFinanceira() throws Exception {
+        var id = criarPendente();
+        var pedido = UUID.randomUUID();
+        var criacao = transacoes.queryForObject("SELECT event_id FROM outbox_eventos WHERE aggregate_id = ?", UUID.class, id);
+        comando(aplicativoTransacoes, respostasTransacoes, "SOLICITAR " + pedido + " " + id + " " + UUID.randomUUID());
+        comando(aplicativoTransacoes, respostasTransacoes, "PUBLICAR " + id);
+        comando(aplicativoProcessamento, respostasProcessamento, "CONSUMIR");
+        comando(aplicativoProcessamento, respostasProcessamento, "PUBLICAR " + id);
+        comando(aplicativoTransacoes, respostasTransacoes, "CONSUMIR");
+        comando(aplicativoTransacoes, respostasTransacoes, "PUBLICAR_CRIACAO " + id);
+        comando(aplicativoProcessamento, respostasProcessamento, "CONSUMIR_CRIACAO");
+        assertThat(processamento.queryForObject("""
+                SELECT COUNT(*) FROM criacao_bloqueada_recebimentos WHERE event_id = ? AND transaction_id = ?
+                    AND request_event_id = ? AND closure_result = 'CONFIRMADO' AND correlation_id = ?
+                    AND input_status = 'PENDENTE' AND valor = 50 AND moeda = 'BRL'
+                """, Integer.class, criacao, id, pedido, id)).as("criação atrasada deve produzir recibo bloqueado").isEqualTo(1);
+        var payload = transacoes.queryForObject("SELECT payload::text FROM outbox_eventos WHERE event_id = ?", String.class, criacao);
+        var instante = java.time.Instant.parse(JSON.readTree(payload).path("occurredAt").asText());
+        assertThat(processamento.queryForObject("""
+                SELECT COUNT(*) FROM criacao_bloqueada_recebimentos WHERE event_id = ?
+                    AND event_occurred_epoch_second = ? AND event_occurred_nano = ?
+                """, Integer.class, criacao, instante.getEpochSecond(), instante.getNano())).isEqualTo(1);
+        assertThat(processamento.queryForObject("SELECT COUNT(*) FROM processamentos WHERE transaction_id = ?",
+                Integer.class, id)).isZero();
+        assertThat(processamento.queryForObject("SELECT COUNT(*) FROM outbox_eventos WHERE aggregate_id = ?",
+                Integer.class, id)).isZero();
+        var antes = bancoInteiro();
+        comando(aplicativoTransacoes, respostasTransacoes, "PUBLICAR_CRIACAO " + id);
+        comando(aplicativoProcessamento, respostasProcessamento, "CONSUMIR_CRIACAO");
+        assertThat(bancoInteiro()).withFailMessage("replay da criação bloqueada alterou registros").isEqualTo(antes);
+        assertThat(JSON.readTree(enviar(HttpRequest.newBuilder(uri("/transacoes/" + id)).GET()).body())
+                .path("status").asText()).isEqualTo("FALHOU");
+        aguardarFila("criacao", 0, 0);
+        System.out.println("Encerramento controlado: criação atrasada bloqueada sem decisão financeira; replay estável.");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"50.00,APROVADA", "150.00,REJEITADA"})
+    @Timeout(value = 2, unit = TimeUnit.MINUTES)
+    void decisaoAnteriorAoPedidoConsumido_devePreservarSaidaFinanceiraOriginal(String valor, String status) throws Exception {
+        var id = criarPendente(valor);
+        var pedido = UUID.randomUUID();
+        var criacao = transacoes.queryForObject("SELECT event_id FROM outbox_eventos WHERE aggregate_id = ?", UUID.class, id);
+        comando(aplicativoTransacoes, respostasTransacoes, "SOLICITAR " + pedido + " " + id + " " + UUID.randomUUID());
+        comando(aplicativoTransacoes, respostasTransacoes, "PUBLICAR_CRIACAO " + id);
+        comando(aplicativoProcessamento, respostasProcessamento, "CONSUMIR_CRIACAO");
+        comando(aplicativoTransacoes, respostasTransacoes, "PUBLICAR " + id);
+        comando(aplicativoProcessamento, respostasProcessamento, "CONSUMIR");
+        comando(aplicativoProcessamento, respostasProcessamento, "PUBLICAR " + id);
+        comando(aplicativoTransacoes, respostasTransacoes, "CONSUMIR");
+        assertThat(processamento.queryForObject("SELECT resultado FROM encerramentos WHERE request_event_id = ?",
+                String.class, pedido)).as("decisão anterior exige resposta negativa ao encerramento").isEqualTo("DECISAO_EXISTENTE");
+        var financeiro = processamento.queryForMap("SELECT * FROM processamentos WHERE transaction_id = ?", id);
+        var saida = (UUID) financeiro.get("output_event_id");
+        assertThat(financeiro.get("event_id")).isEqualTo(criacao);
+        assertThat(financeiro.get("resultado")).isEqualTo(status);
+        assertThat(processamento.queryForObject("""
+                SELECT COUNT(*) FROM encerramentos e JOIN outbox_eventos o ON o.event_id = e.output_event_id
+                WHERE e.request_event_id = ? AND e.output_event_id = ? AND o.aggregate_id = ? AND o.published_at IS NULL
+                """, Integer.class, pedido, saida, id)).isEqualTo(1);
+        assertThat(transacoes.queryForObject("""
+                SELECT COUNT(*) FROM respostas_encerramento_recebidas WHERE transaction_id = ? AND causation_id = ?
+                    AND creation_event_id = ? AND resultado = 'DECISAO_EXISTENTE' AND output_event_id = ?
+                """, Integer.class, id, pedido, criacao, saida)).isEqualTo(1);
+        assertThat(transacoes.queryForObject("SELECT status FROM transacoes WHERE id = ?", String.class, id)).isEqualTo("PENDENTE");
+        assertThat(transacoes.queryForObject("SELECT COUNT(*) FROM historico_transacoes WHERE transaction_id = ?",
+                Integer.class, id)).isZero();
+        comando(aplicativoProcessamento, respostasProcessamento, "PUBLICAR_FINANCEIRO " + id);
+        comando(aplicativoTransacoes, respostasTransacoes, "CONSUMIR_FINANCEIRO");
+        var consulta = enviar(HttpRequest.newBuilder(uri("/transacoes/" + id)).GET());
+        assertThat(consulta.statusCode()).isEqualTo(200);
+        assertThat(JSON.readTree(consulta.body()).path("status").asText()).isEqualTo(status);
+        assertThat(transacoes.queryForObject("""
+                SELECT COUNT(*) FROM historico_transacoes WHERE transaction_id = ? AND event_id = ?
+                    AND causation_id = ? AND estado_final = ? AND event_type = 'TransacaoProcessada'
+                """, Integer.class, id, saida, criacao, status)).isEqualTo(1);
+        var antes = bancoInteiro();
+        comando(aplicativoProcessamento, respostasProcessamento, "PUBLICAR " + id);
+        comando(aplicativoTransacoes, respostasTransacoes, "CONSUMIR");
+        comando(aplicativoProcessamento, respostasProcessamento, "PUBLICAR_FINANCEIRO " + id);
+        comando(aplicativoTransacoes, respostasTransacoes, "CONSUMIR_FINANCEIRO");
+        assertThat(bancoInteiro()).withFailMessage("replay substituiu decisão financeira anterior").isEqualTo(antes);
+        aguardarFila("financeiro", 0, 0);
+        System.out.println("Encerramento controlado: decisão financeira " + status + " e saída original preservadas.");
+    }
+
     private void conferirInstantesEPedido(UUID id, UUID pedido, UUID evidencia, UUID resposta) {
         assertThat(transacoes.queryForObject("""
                 SELECT COUNT(*) FROM pedidos_encerramento p JOIN outbox_pedidos_encerramento o ON o.event_id = p.event_id
@@ -286,9 +375,14 @@ class EncerramentoCredPayE2E {
     }
 
     private UUID criarPendente() throws Exception {
+        return criarPendente("50.00");
+    }
+
+    private UUID criarPendente(String valor) throws Exception {
         var criada = enviar(HttpRequest.newBuilder(uri("/transacoes"))
                 .header("Content-Type", "application/json").header("Idempotency-Key", UUID.randomUUID().toString())
-                .POST(HttpRequest.BodyPublishers.ofString("{\"valor\":50.00,\"moeda\":\"BRL\"}")));
+                .POST(HttpRequest.BodyPublishers.ofString("{\"valor\":" + new java.math.BigDecimal(valor).toPlainString()
+                        + ",\"moeda\":\"BRL\"}")));
         assertThat(criada.statusCode()).isEqualTo(201);
         var corpo = JSON.readTree(criada.body());
         assertThat(corpo.path("status").asText()).isEqualTo("PENDENTE");
