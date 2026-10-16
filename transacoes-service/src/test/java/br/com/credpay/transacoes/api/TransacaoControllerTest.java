@@ -23,11 +23,14 @@ import br.com.credpay.transacoes.domain.StatusTransacao;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.MockMvcPrint;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(TransacaoController.class)
+@AutoConfigureMockMvc(print = MockMvcPrint.NONE)
 class TransacaoControllerTest {
 
     private static final UUID TRANSACAO_ID = UUID.fromString("7b8b61c2-9f63-4d74-9f8d-89cb52de0ed9");

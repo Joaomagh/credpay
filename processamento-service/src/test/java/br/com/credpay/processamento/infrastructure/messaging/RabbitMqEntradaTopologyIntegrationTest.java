@@ -219,15 +219,15 @@ class RabbitMqEntradaTopologyIntegrationTest {
 
     private void aguardarOcupacaoDlq(int esperado) throws InterruptedException {
         var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-        Object quantidade;
+        Number quantidade;
         do {
-            quantidade = admin.getQueueProperties(dlq.getName()).get("QUEUE_MESSAGE_COUNT");
-            if (Integer.valueOf(esperado).equals(quantidade)) {
+            quantidade = (Number) admin.getQueueProperties(dlq.getName()).get("QUEUE_MESSAGE_COUNT");
+            if (quantidade.longValue() == esperado) {
                 return;
             }
             TimeUnit.MILLISECONDS.sleep(50);
         } while (System.nanoTime() < prazo);
-        assertThat(quantidade).isEqualTo(esperado);
+        assertThat(quantidade.longValue()).isEqualTo(esperado);
     }
 
     private void aguardarRecusaDoWorker() throws Exception {
