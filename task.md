@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B07.5b — Primeiro red do fluxo no cluster existente: POST201/PENDENTE e GET esperadoAPROVADA/observadoPENDENTE com flags ainda desligadas. Depois preparo/políticas antes de ativar, replay e falha/recuperação. Sem nova dependência/implantação; spec9.97.
+- [ ] B07.5b — Red real63b65f9/Kubernetes19 comprovou POST201/PENDENTE→GET esperadoAPROVADA/observadoPENDENTE, cleanupOK. Validar green do preparo/políticas antes de ativar; depois REJEITADA/replay e falha/recuperação. Sem nova dependência/implantação; PR #152/spec9.97.
 
 ## Próximo
 

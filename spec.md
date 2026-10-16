@@ -2644,6 +2644,8 @@ Arquivos previstos: novo infra/k8s/verify-flow.ps1, workflow Kubernetes, README 
 
 Referências visuais integradas na PR #151/1bb2cde após Scan248/run38975299070 verde em27b776a. Incremento exclusivamente documental: hashes/UTF8/diff-check/Gitleaks/revisão passaram; filtros não dispararam buildJava/infra. Não houve implementação frontend. Próximo resultado continua B07.5b.
 
+Red real63b65f9, Kubernetes19/run38975857929/job117225010370: startup/persistência passaram; POST201/PENDENTE e UUID/Location válidos chegaram à consulta, que falhou em15s com `GET esperado=APROVADA, observado=PENDENTE.` Cleanup passou. Não foi falha de sintaxe/infra. Green mínimo conecta topologia com consumo/publicação false, verifica ausência de consumidores/políticas concorrentes, importa os dois JSONs existentes, confere quatro filas quorum/políticas/bindings e só então ativa. Exige dois consumidores com ACK/prefetch10/1; falha de preparo escala apenas os dois apps próprios a zero antes do cleanup. AST/diff-check locais passaram; green real ainda pendente.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
