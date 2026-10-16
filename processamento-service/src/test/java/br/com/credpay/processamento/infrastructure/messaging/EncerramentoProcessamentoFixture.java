@@ -3,6 +3,16 @@ package br.com.credpay.processamento.infrastructure.messaging;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.MessageDeliveryMode;
+import org.springframework.amqp.core.MessageProperties;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.rabbit.support.DefaultMessagePropertiesConverter;
+import org.springframework.jdbc.core.JdbcTemplate;
 import br.com.credpay.processamento.ProcessamentoServiceApplication;
 import br.com.credpay.processamento.application.RegistrarEncerramentoService;
 import tools.jackson.databind.ObjectMapper;
@@ -29,6 +39,7 @@ public final class EncerramentoProcessamentoFixture {
             if (parser.getClass().getClassLoader() != ProcessamentoServiceApplication.class.getClassLoader()) {
                 throw new IllegalStateException();
             }
+            prepararTransporte(contexto);
             System.out.println("CREDPAY_FIXTURE READY");
             var leitor = new InputStreamReader(System.in, StandardCharsets.UTF_8);
             String linha;
@@ -42,19 +53,71 @@ public final class EncerramentoProcessamentoFixture {
         }
     }
 
-    private static void executar(ConfigurableApplicationContext contexto, String linha) {
+    private static void executar(ConfigurableApplicationContext contexto, String linha) throws Exception {
         var partes = linha.split(" ", -1);
 
         if (partes.length == 2 && "PUBLICAR".equals(partes[0])) {
-            uuid(partes[1]);
-            // Scaffolding do primeiro red: transporte ainda não implementado.
+            publicar(contexto, uuid(partes[1]));
             return;
         }
         if (partes.length == 1 && "CONSUMIR".equals(partes[0])) {
-            // Scaffolding do primeiro red: nenhuma resposta aplicada.
+            consumir(contexto);
             return;
         }
         throw new IllegalArgumentException();
+    }
+
+    private static com.rabbitmq.client.Connection novaConexao(ConfigurableApplicationContext contexto) throws Exception {
+        var factory = contexto.getBean(CachingConnectionFactory.class).getRabbitConnectionFactory();
+        return factory.newConnection("encerramento-fixture");
+    }
+
+    private static void prepararTransporte(ConfigurableApplicationContext contexto) throws Exception {
+        try (var conexao = novaConexao(contexto); var canal = conexao.createChannel()) {
+            canal.exchangeDeclare("credpay.fixture.encerramento.v1", "direct", true);
+            canal.queueDeclare("credpay.fixture.pedido.v1", true, false, false, Map.of("x-queue-type", "quorum"));
+            canal.queueBind("credpay.fixture.pedido.v1", "credpay.fixture.encerramento.v1", "pedido");
+        }
+    }
+
+    private static void publicar(ConfigurableApplicationContext contexto, UUID transactionId) throws Exception {
+        var jdbc = contexto.getBean(JdbcTemplate.class);
+        var evento = jdbc.queryForMap(
+                "SELECT event_id, event_type, payload::text AS payload, published_at FROM outbox_encerramentos WHERE aggregate_id = ?",
+                transactionId);
+        var propriedades = new MessageProperties();
+        propriedades.setContentType(MessageProperties.CONTENT_TYPE_JSON);
+        propriedades.setContentEncoding(StandardCharsets.UTF_8.name());
+        propriedades.setDeliveryMode(MessageDeliveryMode.PERSISTENT);
+        propriedades.setMessageId(evento.get("event_id").toString());
+        propriedades.setType(evento.get("event_type").toString());
+        propriedades.setCorrelationId(transactionId.toString());
+        var correlacao = new CorrelationData(evento.get("event_id").toString());
+        var rabbit = contexto.getBean(RabbitTemplate.class);
+        rabbit.setMandatory(true);
+        rabbit.send("credpay.fixture.encerramento.v1", "resposta",
+                new Message(evento.get("payload").toString().getBytes(StandardCharsets.UTF_8), propriedades), correlacao);
+        if (!correlacao.getFuture().get(5, TimeUnit.SECONDS).ack() || correlacao.getReturned() != null) {
+            throw new IllegalStateException();
+        }
+        int alterados = jdbc.update(
+                "UPDATE outbox_encerramentos SET published_at = CURRENT_TIMESTAMP WHERE event_id = ? AND published_at IS NULL",
+                evento.get("event_id"));
+        if (evento.get("published_at") == null && alterados != 1) throw new IllegalStateException();
+    }
+
+    private static void consumir(ConfigurableApplicationContext contexto) throws Exception {
+        try (var conexao = novaConexao(contexto); var canal = conexao.createChannel()) {
+            var entrega = canal.basicGet("credpay.fixture.pedido.v1", false);
+            if (entrega == null) throw new IllegalStateException();
+            var propriedades = new DefaultMessagePropertiesConverter()
+                    .toMessageProperties(entrega.getProps(), entrega.getEnvelope(), StandardCharsets.UTF_8.name());
+            var mensagem = new Message(entrega.getBody(), propriedades);
+            var parser = new EncerramentoTransacaoSolicitadoMessageParser(contexto.getBean(ObjectMapper.class));
+            contexto.getBean(RegistrarEncerramentoService.class).executar(parser.parsear(mensagem));
+            // O proxy retornou: commit concluído antes de confirmar a entrega.
+            canal.basicAck(entrega.getEnvelope().getDeliveryTag(), false);
+        }
     }
 
     private static UUID uuid(String texto) {

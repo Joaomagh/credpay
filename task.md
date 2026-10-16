@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B06.8j — Provar transporte de encerramento no cenário controlado com dois JARs reais, PostgreSQLs próprios e RabbitMQ. Primeiro red: POST PENDENTE permanece PENDENTE sem transporte; green deve consultar FALHOU e conferir cadeia causal. Depois replay/recuperação/decisão anterior. Sem API operacional; spec9.96.
+- [ ] B06.8j/PR #150 — Red real Flow147: seis cenários financeiros verdes e novo GET esperadoFALHOU/observadoPENDENTE. Transporte mínimo implementado após red, compila nos dois módulos/Checkstyle0; aguardando primeiro green e depois replay/recuperação/decisão anterior. Sem API operacional; spec9.96.
 
 ## Próximo
 

@@ -19,7 +19,7 @@ Não é uma promessa de uma PR por linha nem um cronograma. Itens grandes serão
 
 ## Caminho de conclusão da v1
 
-Posição em2026-10-15: aplicação controlada de FALHOU e parsers dos dois envelopes integrados até PR #147; processador339 testes/seis gates finais verdes. Startup/persistência Kubernetes integrados na PR #148 após Kubernetes#5/Scan234 verdes. O fluxo financeiro e a demo Compose já existem; não repetir essas entregas como trabalho futuro. Estimativa global permanece aproximadamente65%/35%, por julgamento de escopo; não é prazo, velocidade ou contagem de testes.
+Posição em2026-10-15: aplicação controlada de FALHOU e parsers integrados até PR #147; startup/persistência Kubernetes na PR #148; plataforma/imagens corrigidas na PR #149 após oito gates finais verdes e Inventory101 HIGH0/CRITICAL0. O fluxo financeiro e a demo Compose já existem; não repetir essas entregas como trabalho futuro. Estimativa global revisada para aproximadamente70%/30%, por julgamento de escopo; não é prazo, velocidade ou contagem de testes.
 
 ### Cinco marcos restantes e condição de encerramento
 
@@ -37,7 +37,7 @@ A v1 termina quando os cinco aceites e os critérios do plano forem demonstrados
 
 A tabela abaixo conserva a estimativa por fases; os marcos acima orientam a execução atual. As seções posteriores mantêm o histórico de incrementos e evidências, cujos estados preparatórios são substituídos pelos respectivos aceites finais.
 
-Revisão em 2026-10-05 após integrar Compose: estimativa global permanece **aproximadamente 65% concluído / 35% restante**. Pesos abaixo são julgamento de escopo para explicar o balanço, não medição de esforço, horas, velocidade ou prazo. Preparação sem execução não encerra Kubernetes; apps non-root não encerram sandbox do agente.
+Revisão em2026-10-15 após startup/persistência Kubernetes e migração corrigida: **aproximadamente70% concluído / 30% restante** (soma ponderada69,75%, arredondada). Pesos abaixo são julgamento de escopo para explicar o balanço, não medição de esforço, horas, velocidade ou prazo. Startup/persistência não encerram o fluxo Kubernetes; apps non-root não encerram sandbox do agente.
 
 | Fase do plano | Peso aproximado | Concluído | Restante | Saída ainda necessária |
 |---|---:|---:|---:|---|
@@ -46,8 +46,8 @@ Revisão em 2026-10-05 após integrar Compose: estimativa global permanece **apr
 | 3. Primeiro incremento TDD | 5% | 100% | 0% | Saída atendida com red/green/refactor e PostgreSQL real |
 | 4. Fluxo assíncrono confiável | 30% | 95% | 5% | Conectar e provar confirmação controlada entre serviços; aplicação causal já integrada na PR #144 |
 | 5. Qualidade e resiliência | 15% | 75% | 25% | Encerrar dívida relevante e consolidar relatório de falhas/recuperação e limites |
-| 6. Kubernetes e observabilidade | 20% | 5% | 95% | Cluster real, preparo/fluxo/persistência, painel e diagnóstico de falha |
-| 7. Entrega e portfólio | 10% | 65% | 35% | Tratar achados de dependências/imagens e definir política de bloqueio, revisão de publicação e ensaio da demo |
+| 6. Kubernetes e observabilidade | 20% | 25% | 75% | Após startup/persistência comprovados, preparo/fluxo no cluster, painel e diagnóstico de falha |
+| 7. Entrega e portfólio | 10% | 75% | 25% | Após migração corrigida, consolidar política de triagem, revisão de publicação e ensaio da demo |
 
 Fluxo principal está demonstrado em CI. Execução local ainda depende da infraestrutura; CD externo continua condicionado. João conseguir explicar as decisões exige validação com ele, não pode ser declarado por um teste automatizado.
 

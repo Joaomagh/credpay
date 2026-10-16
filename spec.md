@@ -2614,6 +2614,8 @@ Decisão antes de editar: novas mains somente em src/test dos dois módulos, sem
 
 Arquivos previstos: duas mains test-only, novo E2E, workflow de fluxo, task/spec/backlog. Riscos: fixture descoberta indevidamente, classloaders diferentes, transação ignorada, ACK antecipado, publicação marcada sem rota e dados em logs. Mitigações verificadas por ausência no JAR/cópia allowlist, bootstrap e proxy reais, consultas externas e cenários incrementais; diagnóstico fixo sem corpos. Docker indisponível localmente: compilação/checkstyle local e red/green comportamental no CI real, sem alegar execução local.
 
+Red observado aa9eb0f/Flow147/run38829757314/job116745569144: seis casos financeiros verdes/143,6s; novo cenário1/1falha/0erros/skips/19,48s, GET esperadoFALHOU observadoPENDENTE. Sete totais/1falha/2m49. Bootstrap/proxies/classloader e pedido real funcionaram, sem erro de compilação/ambiente mascarando o red. Só depois implementado transporte mínimo nas fixtures: filas quorum duráveis próprias, mensagens persistentes lidas da outbox, confirmações correlacionadas sem retorno antes de marcar published_at, conversão das propriedades recebidas/parser real/caso proxy antes do ACK. Replay/recuperação e prova externa antes de ACK ainda pendentes.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
