@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B07.5b — Red63b65f9/Kubernetes19 e greenb39a2b9/Kubernetes20 comprovados: preparo antes de consumo e POST201/PENDENTE→GET APROVADA. Validar REJEITADA/replay e parada/recuperação causal no mesmo roteiro. Sem nova dependência/implantação; PR #152/spec9.97.
+- [ ] Integrar B07.5b/PR #152 após gates finais: Kubernetes21/Scan252 verdes em03e6f8c comprovam preparo, APROVADA/REJEITADA/replay e parada/recuperação causal com filas drenadas. Revisão sem bloqueantes; atualização final documental em validação. Spec9.97.
 
 ## Próximo
 

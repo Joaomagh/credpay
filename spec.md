@@ -2650,6 +2650,8 @@ Aceites complementares preparados depois do red: criação50.000/APROVADA e150.0
 
 Green mínimo b39a2b9, Kubernetes20/run38976391554/job117226750200 passou: filas/políticas/bindings antes de consumo, dois consumidores ACK/prefetch10/1 e POST201/PENDENTE→GET APROVADA; cleanup passou. Scan251 verde. Revisão sem bloqueantes; request-timeout do rollout alinhado a190s como no startup, sem alterar prazo180s de rollout/timeout20min do job. Novos aceites: AST/guarda local/UTF8/diff-check passaram, Gitleaks8.30.1 em infra/k8s sem achados; não substituem CI real.
 
+03e6f8c: Kubernetes21/run38977046373/job117228901257 e Scan252 verdes. Os três fluxos reais passaram: APROVADA, REJEITADA e APROVADA após indisponibilidade; cada um com cadeia causal e replay estáveis. Parada comprovou Pod/consumidor ausentes, PENDENTE, criação publicada ready1/unacked0 e zero decisão/outbox de resultado/histórico. Restauração concluiu a mesma identidade e drenou filas; cleanup passou. Revisão sem bloqueantes. Nenhum contrato/Java/dependência/baseline alterado; gates aplicáveis foram Kubernetes e Scan pelos filtros. Marco2 tem aceite técnico comprovado no CI autorizado; execução local e sandbox continuam limites distintos. Atualização documental final ainda aguarda gates antes de integrar PR #152.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

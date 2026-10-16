@@ -12,21 +12,21 @@ Atualizado em 2026-10-16. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos
 | B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | Concluído; B04.1–B04.12 comprovados, ativação manual exige conferência |
 | B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | Concluído; PR #106 integrada após checks do SHA final |
 | B06 | Recuperação e diagnóstico demonstráveis | queda, atraso e duplicação testados; correlação, retry/DLQ e replay operacional observáveis | B05; refinar política de `FALHOU` | Recuperação/diagnóstico, aplicação e transporte controlados de FALHOU comprovados até PR #150; autoridade operacional fora da API |
-| B07 | Ambiente local reproduzível | imagens/Compose e depois Kubernetes local com probes e recursos; roteiro demonstra fluxo e falha | B05 e B06 | B07.1–4 integrados; B07.5a integrado na PR #148 após Kubernetes#5/Scan234 verdes; fluxo no cluster pendente |
+| B07 | Ambiente local reproduzível | imagens/Compose e depois Kubernetes local com probes e recursos; roteiro demonstra fluxo e falha | B05 e B06 | B07.1–4 e startup/persistência integrados; fluxo/replay/parada/recuperação comprovados em Kubernetes21, PR #152 em validação final |
 | B08 | Entrega e portfólio verificáveis | CI cobre riscos e imagens; CD só com destino/rollback definidos; README e demo coerentes | B07 e critérios do plano | Refinamento |
 
 Não é uma promessa de uma PR por linha nem um cronograma. Itens grandes serão divididos por comportamento, mantendo dependências e evidências. Nenhum percentual de conclusão é inferido do número de PRs.
 
 ## Caminho de conclusão da v1
 
-Posição em2026-10-16: marco1 controlado concluído na PR #150 após oito gates finais verdes e doze cenários entre JARs reais; startup/persistência Kubernetes na PR #148 e migração corrigida na PR #149. Inventory109 preserva HIGH0/CRITICAL0 e demais achados visíveis. O fluxo financeiro e a demo Compose já existem; não repetir essas entregas como trabalho futuro. Estimativa global permanece aproximadamente70%/30%, por julgamento aproximado de escopo; não é prazo, velocidade ou contagem de testes.
+Posição em2026-10-16: marco1 controlado concluído na PR #150; Kubernetes21 comprovou preparo/fluxo/replay/parada/recuperação na PR #152 em validação final. Migração corrigida na PR #149; Inventory109 preserva HIGH0/CRITICAL0 e demais achados visíveis. O fluxo financeiro e a demo Compose já existem; não repetir essas entregas como trabalho futuro. Estimativa global aproximadamente75%/25%, por julgamento aproximado de escopo; não é prazo, velocidade ou contagem de testes.
 
 ### Cinco marcos da v1 e condição de encerramento
 
 | Ordem | Marco | Aceite que encerra o marco | Limite / dependência |
 |---|---|---|---|
 | 1 | Confirmação coordenada controlada — concluído | PR #150/feb0ab6: pedido → processador → resposta → GET FALHOU; replay, decisão anterior, criação atrasada, queda/recuperação e commit externo antes ACK comprovados em doze casos | Pedido somente na fixture descartável, sem endpoint administrativo; autoridade operacional permanece bloqueada. Spec9.96 |
-| 2 | Kubernetes local reproduzível | Após startup/persistência da PR #148, executar preparo, fluxo e falha em cluster descartável com roteiro reproduzível | Exceção CI autorizada em15/10; sem implantação externa presumida |
+| 2 | Kubernetes — aceite técnico comprovado, integração pendente | Kubernetes21/03e6f8c comprovou preparo, APROVADA/REJEITADA/replay e parada/recuperação, além do startup/persistência anterior; PR #152 em validação final | Somente CI descartável autorizado; execução no computador de João não foi comprovada nem autorizada por essa exceção |
 | 3 | Observabilidade útil | Painel local mostra sinais do fluxo e permite diagnosticar uma falha reproduzida; limites dos sinais documentados | Reutilizar métricas existentes; adicionar somente sinais necessários ao aceite do plano, sem catálogo aberto de dashboards |
 | 4 | Segurança e qualidade de saída | Sandbox com testes negativos de acesso/privilégios/rede, revisão de publicação/logs/artefatos e triagem dos achados restantes com política explícita | Não afirmar isolamento nem corrigir scanner por exclusão ampla. Dependência de host e decisões de risco/suporte/upgrade são bloqueios visíveis, não aceite implícito |
 | 5 | Ensaio e portfólio | Quickstart seguido por João, demo de sucesso/falha/recuperação, README fiel, explicação de3min e perguntas respondidas por ele | Brief frontend preservado, implementação adiada por João em15/10 e fora do aceite atual. Aprendizado exige participação de João; CD externo só se houver destino/rollback e autorização próprios |
@@ -37,7 +37,7 @@ A v1 termina quando os cinco aceites e os critérios do plano forem demonstrados
 
 A tabela abaixo conserva a estimativa por fases; os marcos acima orientam a execução atual. As seções posteriores mantêm o histórico de incrementos e evidências, cujos estados preparatórios são substituídos pelos respectivos aceites finais.
 
-Revisão em2026-10-16 após confirmação controlada entre serviços, startup/persistência Kubernetes e migração corrigida: **aproximadamente70% concluído / 30% restante**. Pesos e valores abaixo são julgamento aproximado de escopo para explicar o balanço, não medição de esforço, horas, velocidade ou prazo. Startup/persistência não encerram o fluxo Kubernetes; apps non-root não encerram sandbox do agente.
+Revisão em2026-10-16 após confirmação controlada entre serviços, fluxo/falha/recuperação Kubernetes e migração corrigida: **aproximadamente75% concluído / 25% restante**. Pesos e valores abaixo são julgamento aproximado de escopo para explicar o balanço, não medição de esforço, horas, velocidade ou prazo. Fluxo Kubernetes não encerra painel/diagnóstico; apps non-root não encerram sandbox do agente.
 
 | Fase do plano | Peso aproximado | Concluído | Restante | Saída ainda necessária |
 |---|---:|---:|---:|---|
@@ -46,7 +46,7 @@ Revisão em2026-10-16 após confirmação controlada entre serviços, startup/pe
 | 3. Primeiro incremento TDD | 5% | 100% | 0% | Saída atendida com red/green/refactor e PostgreSQL real |
 | 4. Fluxo assíncrono confiável | 30% | 100% | 0% | Fluxo financeiro e confirmação controlada entre serviços comprovados; autoridade operacional não integra esse aceite |
 | 5. Qualidade e resiliência | 15% | 75% | 25% | Encerrar dívida relevante e consolidar relatório de falhas/recuperação e limites |
-| 6. Kubernetes e observabilidade | 20% | 25% | 75% | Após startup/persistência comprovados, preparo/fluxo no cluster, painel e diagnóstico de falha |
+| 6. Kubernetes e observabilidade | 20% | 50% | 50% | Fluxo/falha/recuperação no CI comprovados; painel e diagnóstico de falha ainda pendentes |
 | 7. Entrega e portfólio | 10% | 75% | 25% | Após migração corrigida, consolidar política de triagem, revisão de publicação e ensaio da demo |
 
 Fluxo principal está demonstrado em CI. Execução local ainda depende da infraestrutura; CD externo continua condicionado. João conseguir explicar as decisões exige validação com ele, não pode ser declarado por um teste automatizado.
@@ -308,4 +308,4 @@ B06.8d concluído na PR #141/3d78e9c: seis gates4349a8d verdes, processador222/8
 
 Referências visuais fornecidas em16/10 preservadas em docs/frontend/references, sem implementação de frontend. Quatro arquivos PNG originais, dois válidos e dois inválidos de28bytes; origem/hashes/normalização dos HTMLs registrados. Frontend permanece para depois do backend, conforme João.
 
-**B07.5b — Fluxo no cluster existente — em TDD.** Preparo/políticas antes de consumo, POST/GET APROVADA/REJEITADA/replay e parada/recuperação do processador causalmente conferidos. Primeiro red real exige GET APROVADA com apps ainda desativados, observando PENDENTE antes de implementar ativação. Novo roteiro após startup/persistência intactos no mesmo job/cluster; sem dependência/imagem/serviço Java novos. Desenho, arquivos e riscos em spec9.97; somente CI já autorizado.
+**B07.5b — Fluxo no cluster existente — aceite comprovado, integração em validação.** PR #152: red63b65f9/Kubernetes19 observou GET PENDENTE antes de ativação; greenb39a2b9/Kubernetes20 e aceite completo03e6f8c/Kubernetes21+Scan252 verdes. Preparo/políticas antes de consumo, POST/GET APROVADA/REJEITADA/replay e parada/recuperação do processador com causa e snapshots dos dois bancos estáveis, filas drenadas e cleanupOK. Startup/persistência anteriores preservados; sem dependência/imagem/serviço Java novos. Revisão sem bloqueantes; spec9.97. Gates finais documentais antes de integrar; depois painel/diagnóstico local.
