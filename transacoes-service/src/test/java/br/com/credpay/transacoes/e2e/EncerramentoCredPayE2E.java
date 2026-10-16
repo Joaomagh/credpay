@@ -13,18 +13,26 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.JarFile;
+import java.util.stream.StreamSupport;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.junit.jupiter.Container;
@@ -36,6 +44,7 @@ import tools.jackson.databind.ObjectMapper;
 
 @Testcontainers
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Execution(ExecutionMode.SAME_THREAD)
 class EncerramentoCredPayE2E {
 
     private static final Path RAIZ = Path.of("..").toAbsolutePath().normalize();
@@ -53,13 +62,14 @@ class EncerramentoCredPayE2E {
 
     private final Path arquivos = RAIZ.resolve(".local/e2e/closure-" + UUID.randomUUID());
     private final List<Process> processos = new ArrayList<>();
-    private final LinkedBlockingQueue<String> respostasTransacoes = new LinkedBlockingQueue<>();
-    private final LinkedBlockingQueue<String> respostasProcessamento = new LinkedBlockingQueue<>();
+    private LinkedBlockingQueue<String> respostasTransacoes = new LinkedBlockingQueue<>();
+    private LinkedBlockingQueue<String> respostasProcessamento = new LinkedBlockingQueue<>();
     private Process aplicativoTransacoes;
     private Process aplicativoProcessamento;
     private JdbcTemplate transacoes;
     private JdbcTemplate processamento;
     private int porta;
+    private int portaProcessamento;
 
     @BeforeAll
     @Timeout(value = 4, unit = TimeUnit.MINUTES)
@@ -69,12 +79,11 @@ class EncerramentoCredPayE2E {
             transacoes = jdbc(TRANSACOES);
             processamento = jdbc(PROCESSAMENTO);
             porta = portaLivre();
-            int outraPorta;
-            do { outraPorta = portaLivre(); } while (outraPorta == porta);
+            do { portaProcessamento = portaLivre(); } while (portaProcessamento == porta);
             aplicativoTransacoes = iniciar("transacoes", "EncerramentoTransacoesFixture",
                     TRANSACOES, porta, respostasTransacoes);
             aplicativoProcessamento = iniciar("processamento", "EncerramentoProcessamentoFixture",
-                    PROCESSAMENTO, outraPorta, respostasProcessamento);
+                    PROCESSAMENTO, portaProcessamento, respostasProcessamento);
             aguardar(respostasTransacoes, "READY", 90);
             aguardar(respostasProcessamento, "READY", 90);
             assertThat(transacoes.queryForObject("SELECT to_regclass('public.processamentos')", String.class)).isNull();
@@ -143,7 +152,184 @@ class EncerramentoCredPayE2E {
                 Integer.class, id)).isZero();
         assertThat(processamento.queryForObject("SELECT COUNT(*) FROM outbox_eventos WHERE aggregate_id = ?",
                 Integer.class, id)).isZero();
+        assertThat(transacoes.queryForObject("""
+                SELECT COUNT(*) FROM transacoes t JOIN idempotencias_transacao i ON i.transacao_id = t.id
+                WHERE t.id = ? AND i.chave = ? AND t.status = 'FALHOU' AND t.valor = 50 AND scale(t.valor) = 3 AND t.moeda = 'BRL'
+                """, Integer.class, id, chave)).as("dados e chave originais preservados").isEqualTo(1);
+        conferirInstantesEPedido(id, pedido, evidencia, resposta);
+        aguardarFila("pedido", 0, 0);
+        aguardarFila("resposta", 0, 0);
+        var antes = bancoInteiro();
+        comando(aplicativoTransacoes, respostasTransacoes, "SOLICITAR " + pedido + " " + id + " " + evidencia);
+        comando(aplicativoTransacoes, respostasTransacoes, "PUBLICAR " + id);
+        comando(aplicativoProcessamento, respostasProcessamento, "CONSUMIR");
+        comando(aplicativoProcessamento, respostasProcessamento, "PUBLICAR " + id);
+        comando(aplicativoTransacoes, respostasTransacoes, "CONSUMIR");
+        var replay = enviar(HttpRequest.newBuilder(uri("/transacoes"))
+                .header("Content-Type", "application/json").header("Idempotency-Key", chave.toString())
+                .POST(HttpRequest.BodyPublishers.ofString("{\"valor\":50,\"moeda\":\"BRL\"}")));
+        assertThat(replay.statusCode()).isEqualTo(201);
+        assertThat(replay.body()).withFailMessage("replay POST alterou resposta original").isEqualTo(criada.body());
+        assertThat(bancoInteiro()).withFailMessage("replay alterou snapshot completo dos bancos").isEqualTo(antes);
+        assertThat(JSON.readTree(enviar(HttpRequest.newBuilder(uri("/transacoes/" + id)).GET()).body())
+                .path("status").asText()).isEqualTo("FALHOU");
+        aguardarFila("pedido", 0, 0);
+        aguardarFila("resposta", 0, 0);
         System.out.println("Encerramento controlado: POST/PEDIDO/RESPOSTA/GET FALHOU e causalidade comprovados.");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"processamento", "transacoes"})
+    @Timeout(value = 3, unit = TimeUnit.MINUTES)
+    void quedaDepoisDoCommitAntesDoAck_deveReentregarSemAlterarSnapshot(String servico) throws Exception {
+        aguardarFila("pedido", 0, 0);
+        aguardarFila("resposta", 0, 0);
+        var id = criarPendente();
+        var pedido = UUID.randomUUID();
+        comando(aplicativoTransacoes, respostasTransacoes, "SOLICITAR " + pedido + " " + id + " " + UUID.randomUUID());
+        comando(aplicativoTransacoes, respostasTransacoes, "PUBLICAR " + id);
+        boolean processador = "processamento".equals(servico);
+        if (!processador) {
+            comando(aplicativoProcessamento, respostasProcessamento, "CONSUMIR");
+            comando(aplicativoProcessamento, respostasProcessamento, "PUBLICAR " + id);
+        }
+        var alvo = processador ? aplicativoProcessamento : aplicativoTransacoes;
+        var protocolo = processador ? respostasProcessamento : respostasTransacoes;
+        var fila = processador ? "pedido" : "resposta";
+        escrever(alvo, "CONSUMIR_PAUSADO");
+        aguardar(protocolo, "COMMITTED", 20);
+        try {
+            if (processador) {
+                assertThat(processamento.queryForObject("""
+                        SELECT COUNT(*) FROM encerramentos e JOIN outbox_encerramentos o
+                        ON o.event_id = e.response_event_id AND o.aggregate_id = e.transaction_id
+                        WHERE e.request_event_id = ? AND e.transaction_id = ? AND o.published_at IS NULL
+                        """, Integer.class, pedido, id)).as("commit externo de registro e outbox").isEqualTo(1);
+            } else {
+                assertThat(transacoes.queryForObject("""
+                        SELECT COUNT(*) FROM transacoes t JOIN historico_transacoes h ON h.transaction_id = t.id
+                        JOIN respostas_encerramento_recebidas r ON r.event_id = h.event_id
+                        WHERE t.id = ? AND t.status = 'FALHOU' AND r.causation_id = ?
+                        """, Integer.class, id, pedido)).as("commit externo de estado, recibo e histórico").isEqualTo(1);
+            }
+            aguardarFila(fila, 0, 1);
+            var antes = bancoInteiro();
+            alvo.destroyForcibly();
+            assertThat(alvo.waitFor(10, TimeUnit.SECONDS)).as("somente filho da fixture encerrado").isTrue();
+            aguardarFila(fila, 1, 0);
+            if (processador) {
+                respostasProcessamento = new LinkedBlockingQueue<>();
+                aplicativoProcessamento = iniciar("processamento", "EncerramentoProcessamentoFixture",
+                        PROCESSAMENTO, portaProcessamento, respostasProcessamento);
+                aguardar(respostasProcessamento, "READY", 90);
+                comando(aplicativoProcessamento, respostasProcessamento, "CONSUMIR");
+            } else {
+                respostasTransacoes = new LinkedBlockingQueue<>();
+                aplicativoTransacoes = iniciar("transacoes", "EncerramentoTransacoesFixture",
+                        TRANSACOES, porta, respostasTransacoes);
+                aguardar(respostasTransacoes, "READY", 90);
+                comando(aplicativoTransacoes, respostasTransacoes, "CONSUMIR");
+            }
+            aguardarFila(fila, 0, 0);
+            assertThat(bancoInteiro()).withFailMessage("reentrega após queda alterou snapshot completo").isEqualTo(antes);
+            if (processador) {
+                comando(aplicativoProcessamento, respostasProcessamento, "PUBLICAR " + id);
+                comando(aplicativoTransacoes, respostasTransacoes, "CONSUMIR");
+            }
+            var consulta = enviar(HttpRequest.newBuilder(uri("/transacoes/" + id)).GET());
+            assertThat(consulta.statusCode()).isEqualTo(200);
+            assertThat(JSON.readTree(consulta.body()).path("status").asText()).isEqualTo("FALHOU");
+            System.out.println("Encerramento controlado: commit externo, queda antes ACK e replay estável em " + servico);
+        } finally {
+            if (alvo.isAlive()) {
+                escrever(alvo, "ACK");
+                aguardar(protocolo, "DONE", 20);
+            }
+        }
+    }
+
+    private void conferirInstantesEPedido(UUID id, UUID pedido, UUID evidencia, UUID resposta) {
+        assertThat(transacoes.queryForObject("""
+                SELECT COUNT(*) FROM pedidos_encerramento p JOIN outbox_pedidos_encerramento o ON o.event_id = p.event_id
+                WHERE p.event_id = ? AND p.transaction_id = ? AND p.evidence_ref = ? AND p.correlation_id = p.transaction_id
+                    AND o.published_at IS NOT NULL AND o.payload->>'causationId' = p.creation_event_id::text
+                """, Integer.class, pedido, id, evidencia)).as("pedido e outbox causal publicados").isEqualTo(1);
+        var instantePedido = transacoes.queryForMap(
+                "SELECT occurred_epoch_second, occurred_nano FROM pedidos_encerramento WHERE event_id = ?", pedido);
+        var payloadPedido = transacoes.queryForObject(
+                "SELECT payload::text FROM outbox_pedidos_encerramento WHERE event_id = ?", String.class, pedido);
+        assertThat(java.time.Instant.parse(JSON.readTree(payloadPedido).path("occurredAt").asText()))
+                .isEqualTo(java.time.Instant.ofEpochSecond(((Number) instantePedido.get("occurred_epoch_second")).longValue(),
+                        ((Number) instantePedido.get("occurred_nano")).longValue()));
+        var recebido = processamento.queryForMap(
+                "SELECT request_occurred_epoch_second, request_occurred_nano FROM encerramentos WHERE request_event_id = ?", pedido);
+        assertThat(recebido.get("request_occurred_epoch_second")).isEqualTo(instantePedido.get("occurred_epoch_second"));
+        assertThat(recebido.get("request_occurred_nano")).isEqualTo(instantePedido.get("occurred_nano"));
+        var payload = processamento.queryForObject(
+                "SELECT payload::text FROM outbox_encerramentos WHERE event_id = ? AND published_at IS NOT NULL",
+                String.class, resposta);
+        var instante = java.time.Instant.parse(JSON.readTree(payload).path("occurredAt").asText());
+        assertThat(JSON.readTree(payload).path("data").has("outputEventId")).isFalse();
+        assertThat(processamento.queryForObject("""
+                SELECT COUNT(*) FROM encerramentos e JOIN outbox_encerramentos o ON o.event_id = e.response_event_id
+                WHERE e.response_event_id = ? AND o.occurred_at = e.responded_at
+                """, Integer.class, resposta)).isEqualTo(1);
+        assertThat(processamento.queryForObject(
+                "SELECT responded_at FROM encerramentos WHERE response_event_id = ?", java.sql.Timestamp.class, resposta).toInstant())
+                .isEqualTo(instante);
+        assertThat(transacoes.queryForObject("""
+                SELECT COUNT(*) FROM respostas_encerramento_recebidas r JOIN historico_transacoes h ON h.event_id = r.event_id
+                WHERE r.event_id = ? AND r.occurred_epoch_second = ? AND r.occurred_nano = ?
+                    AND h.occurred_at_epoch_second = r.occurred_epoch_second AND h.occurred_at_nano = r.occurred_nano
+                """, Integer.class, resposta, instante.getEpochSecond(), instante.getNano()))
+                .as("instante da resposta preservado no recibo e histórico").isEqualTo(1);
+    }
+
+    private UUID criarPendente() throws Exception {
+        var criada = enviar(HttpRequest.newBuilder(uri("/transacoes"))
+                .header("Content-Type", "application/json").header("Idempotency-Key", UUID.randomUUID().toString())
+                .POST(HttpRequest.BodyPublishers.ofString("{\"valor\":50.00,\"moeda\":\"BRL\"}")));
+        assertThat(criada.statusCode()).isEqualTo(201);
+        var corpo = JSON.readTree(criada.body());
+        assertThat(corpo.path("status").asText()).isEqualTo("PENDENTE");
+        return UUID.fromString(corpo.path("id").asText());
+    }
+
+    private Map<String, List<String>> bancoInteiro() {
+        var snapshot = new LinkedHashMap<String, List<String>>();
+        for (var tabela : List.of("transacoes", "idempotencias_transacao", "outbox_eventos", "pedidos_encerramento",
+                "outbox_pedidos_encerramento", "respostas_encerramento_recebidas", "historico_transacoes")) {
+            snapshot.put("transacoes/" + tabela,
+                    transacoes.queryForList("SELECT to_jsonb(t)::text FROM " + tabela + " t ORDER BY to_jsonb(t)::text", String.class));
+        }
+        for (var tabela : List.of("processamentos", "outbox_eventos", "encerramentos", "criacao_bloqueada_recebimentos")) {
+            snapshot.put("processamento/" + tabela,
+                    processamento.queryForList("SELECT to_jsonb(t)::text FROM " + tabela + " t ORDER BY to_jsonb(t)::text", String.class));
+        }
+        snapshot.put("processamento/outbox_encerramentos", processamento.queryForList(
+                "SELECT to_jsonb(t)::text FROM outbox_encerramentos t ORDER BY to_jsonb(t)::text", String.class));
+        return snapshot;
+    }
+
+    private void aguardarFila(String rota, int ready, int unacked) throws Exception {
+        int ultimoReady = -1;
+        int ultimoUnacked = -1;
+        var prazo = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+        do {
+            var resultado = RABBIT.execInContainer("rabbitmqctl", "--timeout", "5", "--quiet", "--formatter=json",
+                    "list_queues", "name", "messages_ready", "messages_unacknowledged");
+            assertThat(resultado.getExitCode()).as("consulta de contadores do broker").isZero();
+            var filas = JSON.readTree(resultado.getStdout());
+            var encontrados = StreamSupport.stream(filas.spliterator(), false)
+                    .filter(linha -> ("credpay.fixture." + rota + ".v1").equals(linha.path("name").asText())).toList();
+            assertThat(encontrados).as("fila exata da fixture").hasSize(1);
+            ultimoReady = encontrados.getFirst().path("messages_ready").asInt(-1);
+            ultimoUnacked = encontrados.getFirst().path("messages_unacknowledged").asInt(-1);
+            if (ultimoReady == ready && ultimoUnacked == unacked) return;
+            TimeUnit.MILLISECONDS.sleep(200);
+        } while (System.nanoTime() < prazo);
+        throw new AssertionError("fila " + rota + ": esperado ready=" + ready + "/unacked=" + unacked
+                + ", observado ready=" + ultimoReady + "/unacked=" + ultimoUnacked);
     }
 
     private Process iniciar(String servico, String classe, PostgreSQLContainer banco, int httpPort,
@@ -155,7 +341,7 @@ class EncerramentoCredPayE2E {
         var selecionadas = arquivos.resolve(servico);
         var destino = selecionadas.resolve(relativa);
         Files.createDirectories(destino.getParent());
-        Files.copy(RAIZ.resolve(modulo + "/target/test-classes/" + relativa), destino);
+        Files.copy(RAIZ.resolve(modulo + "/target/test-classes/" + relativa), destino, StandardCopyOption.REPLACE_EXISTING);
         try (var entradas = Files.walk(selecionadas); var zip = new JarFile(jar.toFile())) {
             assertThat(entradas.filter(Files::isRegularFile).toList()).containsExactly(destino);
             assertThat(zip.stream().anyMatch(e -> e.getName().contains(classe))).as("fixture ausente do JAR").isFalse();
@@ -178,9 +364,10 @@ class EncerramentoCredPayE2E {
         ambiente.put("SPRING_RABBITMQ_VIRTUAL_HOST", "/");
         var processo = builder.redirectErrorStream(true).start();
         processos.add(processo);
+        var arquivoLog = arquivos.resolve(servico + "-" + processos.size() + ".log");
         Thread.ofPlatform().daemon().start(() -> {
             try (var leitor = new BufferedReader(new InputStreamReader(processo.getInputStream(), StandardCharsets.UTF_8));
-                    var log = Files.newBufferedWriter(arquivos.resolve(servico + ".log"), StandardCharsets.UTF_8)) {
+                    var log = Files.newBufferedWriter(arquivoLog, StandardCharsets.UTF_8)) {
                 String linha;
                 while ((linha = leitor.readLine()) != null) {
                     if (linha.startsWith("CREDPAY_FIXTURE ")) respostas.offer(linha.substring(16));
@@ -194,11 +381,15 @@ class EncerramentoCredPayE2E {
     }
 
     private void comando(Process processo, LinkedBlockingQueue<String> respostas, String comando) throws Exception {
+        escrever(processo, comando);
+        aguardar(respostas, "DONE", 20);
+    }
+
+    private void escrever(Process processo, String comando) throws java.io.IOException {
         assertThat(processo.isAlive()).as("fixture ativa").isTrue();
         var escritor = new OutputStreamWriter(processo.getOutputStream(), StandardCharsets.UTF_8);
         escritor.write(comando + "\n");
         escritor.flush();
-        aguardar(respostas, "DONE", 20);
     }
 
     private void aguardar(LinkedBlockingQueue<String> respostas, String esperado, int segundos) throws InterruptedException {

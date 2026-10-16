@@ -2616,6 +2616,10 @@ Arquivos previstos: duas mains test-only, novo E2E, workflow de fluxo, task/spec
 
 Red observado aa9eb0f/Flow147/run38829757314/job116745569144: seis casos financeiros verdes/143,6s; novo cenário1/1falha/0erros/skips/19,48s, GET esperadoFALHOU observadoPENDENTE. Sete totais/1falha/2m49. Bootstrap/proxies/classloader e pedido real funcionaram, sem erro de compilação/ambiente mascarando o red. Só depois implementado transporte mínimo nas fixtures: filas quorum duráveis próprias, mensagens persistentes lidas da outbox, confirmações correlacionadas sem retorno antes de marcar published_at, conversão das propriedades recebidas/parser real/caso proxy antes do ACK. Replay/recuperação e prova externa antes de ACK ainda pendentes.
 
+Primeiro green35574ad/Flow148/run38830308007/job116747329571: sete casos, zero falhas/erros/skips,2m40; seis financeiros135,8s e encerramento1/19,05s. POST/PEDIDO/RESPOSTA/GETFALHOU causal comprovados. Compilações locais anteriores16,937s/13,090s/Checkstyle0, revisão sem bloqueantes. Não transfere esse green para mudanças posteriores.
+
+Próximo red: dois casos parametrizados (processador/transações) consultam commit por conexão independente e exigem ready0/unacked1 antes de encerrar somente o filho consumidor. Scaffolding CONSUMIR_PAUSADO ainda executa consumo/ACK antigo antes de emitir COMMITTED, portanto deve observar unacked0. Leitor limitado espera ACK do coordenador para liberar protocolo também no finally da falha. Após red, mover ACK para depois dessa janela, forçar queda e provar ready1/unacked0/reentrega com snapshot completo preservado no reinício. Caracterizações complementares do primeiro positivo conferem nanos completos do pedido, micros da resposta, chave/dados originais, publicações e replay de pedido/resposta/POST; não se inventa red para regras já implementadas em TDD.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

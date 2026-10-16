@@ -44,7 +44,7 @@ public final class EncerramentoProcessamentoFixture {
             var leitor = new InputStreamReader(System.in, StandardCharsets.UTF_8);
             String linha;
             while ((linha = lerLimitado(leitor)) != null) {
-                executar(contexto, linha);
+                executar(contexto, linha, leitor);
                 System.out.println("CREDPAY_FIXTURE DONE");
             }
         } catch (Exception | AssertionError falha) {
@@ -53,7 +53,7 @@ public final class EncerramentoProcessamentoFixture {
         }
     }
 
-    private static void executar(ConfigurableApplicationContext contexto, String linha) throws Exception {
+    private static void executar(ConfigurableApplicationContext contexto, String linha, InputStreamReader leitor) throws Exception {
         var partes = linha.split(" ", -1);
 
         if (partes.length == 2 && "PUBLICAR".equals(partes[0])) {
@@ -62,6 +62,13 @@ public final class EncerramentoProcessamentoFixture {
         }
         if (partes.length == 1 && "CONSUMIR".equals(partes[0])) {
             consumir(contexto);
+            return;
+        }
+        if (partes.length == 1 && "CONSUMIR_PAUSADO".equals(partes[0])) {
+            // Scaffolding do red: o consumo atual ainda confirma antes da janela observável.
+            consumir(contexto);
+            System.out.println("CREDPAY_FIXTURE COMMITTED");
+            if (!"ACK".equals(lerLimitado(leitor))) throw new IllegalArgumentException();
             return;
         }
         throw new IllegalArgumentException();

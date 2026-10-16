@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B06.8j/PR #150 — Red real Flow147: seis cenários financeiros verdes e novo GET esperadoFALHOU/observadoPENDENTE. Transporte mínimo implementado após red, compila nos dois módulos/Checkstyle0; aguardando primeiro green e depois replay/recuperação/decisão anterior. Sem API operacional; spec9.96.
+- [ ] B06.8j/PR #150 — Red Flow147 e green Flow148 comprovam POST→pedido→resposta→GET FALHOU com sete casos verdes. Próximo red exige commit externo e mensagem ainda unacked nos dois consumidores antes de testar queda/reinício/replay estável. Sem API operacional; spec9.96.
 
 ## Próximo
 
