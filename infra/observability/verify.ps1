@@ -19,7 +19,11 @@ function Compose {
 }
 function Request([string]$Path) {
     try { return (Invoke-WebRequest -Uri "$script:grafana$Path" -Headers $script:headers -TimeoutSec 5 -SkipHttpErrorCheck -MaximumRedirection 0) }
-    catch { throw 'HTTP de observação indisponível; conteúdo omitido.' }
+    catch {
+        $kind = $_.Exception.GetType().Name
+        if ($kind -cnotmatch '^[A-Za-z]{1,80}$') { $kind = 'Omitido' }
+        throw "HTTP de observação indisponível: tipo=$kind; conteúdo omitido."
+    }
 }
 function Query([string]$Expression) {
     $encoded = [Uri]::EscapeDataString($Expression)
@@ -83,6 +87,7 @@ try {
             } else { Require ($mount.Type -ceq 'tmpfs' -and $mount.Destination -ceq '/tmp') 'Mount inesperado no serviço de observação.' }
         }
     }
+    Write-Host "Observação: Grafana publicado somente em loopback, porta=$(@($config.services.grafana.ports)[0].published)."
     $health = Request '/api/health'
     Require ($health.StatusCode -eq 200 -and (Json $health.Content).database -ceq 'ok') 'Grafana deve estar saudável.'
     $ready = Request '/api/datasources/proxy/uid/credpay-prometheus/-/ready'

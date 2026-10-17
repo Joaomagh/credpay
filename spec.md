@@ -2688,6 +2688,8 @@ Inventário: preservar artefato histórico dos quatro alvos Java/Ubuntu e suas e
 
 Scaffolding do primeiro red: imagens/configs/roteiro e novo workflow preparados; sem jobs deliberadamente. Flag operacional Observability no demo existente implica Diagnostics e usa o mesmo override/envfile já no Prepare/Activate, para ligar apps e coletor à mesma rede sem reconfigurar flags depois. Padrão preservado; Smoke financeiro anterior continua próprio, painel tem roteiro próprio. Render Compose local somente cliente validou sete serviços, rede interna, Prometheus sem porta host, Grafana472/readOnly/loopback e tmpfs único32m; dois ASTs válidos/guardlocal bloqueou antes de Docker/diff-check passaram. Revisão somente leitura sem bloqueantes; bootstrap/volume/health e red reais ainda pendentes. Não foi iniciado container local, baixada imagem ou afirmado scan das imagens nesta etapa.
 
+Primeira execução e494700/Observability1/run38986230465/job117258234903 falhou antes da prova de coleta: requisição HTTP de observação indisponível, sem chegar ao marcador de health/exporters/query. Não é o red proposto. Prepare/Activate/conferências de containers foram alcançados e cleanup passou; Compose124/Scan257 verdes. Saída relevante preservada em memória; próximo experimento registra somente porta loopback e classe da exceção HTTP, sem mensagens/headers/corpos/credenciais, para distinguir bootstrap de ausência de jobs antes de configurar coleta.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
