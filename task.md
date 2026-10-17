@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.7e.3 — Prova de PIDs: criador finito, filhos bloqueados em pipe, pico128/evento local/retorno a1PID e positivos antes/depois. Red/green52controles locais; revisão/CI pendentes; spec9.110.
+- [ ] B08.7e.3 — Prova de PIDs: criador finito, filhos bloqueados em pipe, pico128/evento local/retorno a1PID e positivos antes/depois. 53testes Linux verdes,52locais/1skip POSIX explícito, revisão/Core32/Scan304 e artefato conferidos; gates finais/merge pendentes; spec9.110.
 
 ## Próximo
 
