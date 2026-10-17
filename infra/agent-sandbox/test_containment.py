@@ -2,12 +2,22 @@ import copy
 from pathlib import Path
 import unittest
 
+import containment
 from containment import parse_observations, validate_namespace_pair, validate_worker
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 class ContainmentTest(unittest.TestCase):
+    def test_controlled_child_oom_does_not_accept_failed_or_live_observer(self):
+        state = {"Status": "exited", "ExitCode": 0, "Pid": 0, "OOMKilled": True}
+        validate = getattr(containment, "successful_exit", lambda *args, **kwargs: False)
+        self.assertTrue(validate(state, 0, allow_child_oom=True))
+        self.assertFalse(validate(state, 0))
+        for key, value in (("ExitCode", 137), ("Pid", 42), ("Status", "running")):
+            self.assertFalse(validate({**state, key: value}, 0, allow_child_oom=True))
+        self.assertFalse(validate(state, 1, allow_child_oom=True))
+
     def test_accepts_nonnegative_counters_without_weakening_positive_observations(self):
         self.assertEqual({"COUNTER": "0"}, parse_observations("COUNTER=0", {"COUNTER": int}))
         self.assertEqual({"COUNTER": "42"}, parse_observations("COUNTER=42", {"COUNTER": int}))

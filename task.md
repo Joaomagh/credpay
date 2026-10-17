@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.7e.2 — Refinar e provar excesso de memória em worker próprio: alocador limitado, observador previamente vivo, eventos max/oom locais e controle positivo; timeout/observação perdida não viram PASS. Antes de editar, registrar desenho/limites em spec.
+- [ ] B08.7e.2 — Memória sob excesso: positivo/recuperação32MiB, carga nominal limitada1,5GiB sob1GiB/swap0, PID1 observador e eventos locais max/oom/kill. Red/green50 controles locais; revisão/CI pendentes; spec9.108.
 
 ## Próximo
 

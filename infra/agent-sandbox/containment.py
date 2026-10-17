@@ -158,7 +158,12 @@ def _inspect(identity, marker, image, workspace):
     return data, selected
 
 
-def _worker(image, marker, workspace, script, expected, hold=False, timeout=30):
+def successful_exit(state, returncode, allow_child_oom=False):
+    return (returncode == 0 and state["Status"] == "exited" and state["ExitCode"] == 0 and state["Pid"] == 0
+            and (not state["OOMKilled"] or allow_child_oom is True))
+
+
+def _worker(image, marker, workspace, script, expected, hold=False, timeout=30, allow_child_oom=False):
     identity = docker("create", "--name", marker, "--label", f"{LABEL}={marker}", "--user", "10001:10001",
                       "--network", "none", "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges:true",
                       "--cpus", "1", "--memory", "1g", "--memory-swap", "1g", "--pids-limit", "128",
@@ -207,14 +212,14 @@ def _worker(image, marker, workspace, script, expected, hold=False, timeout=30):
             raise RuntimeError("Operação do protocolo excedeu seu timeout externo; cleanup próprio obrigatório.") from None
         after, _ = _inspect(identity, marker, image, workspace)
         state = after["State"]
-        if result.returncode or state["Status"] != "exited" or state["ExitCode"] != 0 or state["OOMKilled"] or state["Pid"] != 0:
+        if not successful_exit(state, result.returncode, allow_child_oom):
             markers = [line for line in output.splitlines() if re.fullmatch(r"[A-Z_0-9]+=PASS", line)]
             reason = "permission" if "Permission denied" in result.stderr else "missing" if "No such file" in result.stderr else "unclassified"
             raise ValueError(f"Worker falhou: exit={state['ExitCode']}; marcadores={markers}; classe={reason}; saída integral omitida.")
         observations = parse_observations(output, expected)
         return {"configuration": configuration, "configurationSha256": _sha(json.dumps(configuration, sort_keys=True)),
                 "command": script, "commandSha256": _sha(script), "exitCode": 0, "observations": observations, "stopped": True,
-                "liveNamespaceControl": live_control}
+                "liveNamespaceControl": live_control, "oomKilled": state["OOMKilled"]}
     finally:
         _inspect(identity, marker, image, workspace)
         docker("rm", "--force", identity, timeout=10)

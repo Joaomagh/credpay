@@ -333,3 +333,5 @@ Referências visuais fornecidas em16/10 preservadas em docs/frontend/references,
 B08.7e.1:47 controles locais/Linux verdes após reds; revisão sem bloqueantes/Core25/Scan293 e artefato conferidos. Deltas35períodos/35throttles/3462494usec; dois cálculos progrediram/recuperaçãoPASS. Gates finais Core26/Scan294 verdes no headfdb6b5c; spec9.106.
 
 Reconciliação documental em17/10: resumo vigente aponta às evidências integradas de FALHOU/Kubernetes/métricas/core e às pendências reais, preservando histórico/escopo/percentual aproximado e sem inventar remediação; spec9.107.
+
+**B08.7e.2 — Excesso real de memória — em validação.** Carga limitada e observador PID1 já vivo; só eventos locais max/oom/kill positivos+exit137 do alocador+positivo/recuperação32MiB podem comprovar limite. Nenhum ajuste de proteção OOM/privilégio; observer exit0/PID0 continua obrigatório.50 controles locais após reds; revisão/CI pendentes, spec9.108. Não testa PIDs/Desktop nem corrige advisories.

@@ -2795,6 +2795,16 @@ Incremento documental: a abertura da spec ainda dizia Kubernetes sem execução,
 
 Verificação: UTF8 estrito nos quatro arquivos, asserções do resumo/limites/próximo único, diff-check e Gitleaks8.30.1 na spec passaram; revisão independente somente leitura sem bloqueantes. Nenhuma infraestrutura executada neste incremento.
 
+### 9.108 Memória sob excesso limitado — B08.7e.2
+
+PR164/a94e6de0d6a537eb83f7c71b55e097225d6b0f57 integrou resumo vigente após Secret Scan296/run39070672827 verde no head5572a70db3702ebe9a413f89a3b33eefe77d69e5; somente docs, filtros não disparam suites de runtime, revisão sem bloqueantes.
+
+Objetivo/aceite antes de editar: alocação/touch/readback positivos32MiB, carga GNUawk com teto1,5GiB nominal/deadline interno12s sob memory.max1GiB/swap0, shell observador PID1 previamente vivo, snapshots memory.events.local max/oom/oom_kill antes/depois, exit137 do alocador acompanhado por três deltas positivos e recuperação32MiB. Exit137 isolado/timeout/observador morto ou eventos ausentes não produzem PASS. Sem mudança de oom_score_adj/oom.group, limites ou privilégios; ler oom.group0 como pré-condição. [Contrato kernel](https://docs.kernel.org/admin-guide/cgroup-v2.html).
+
+Arquivos: memory_controls/testes, helper de validação de saída em containment/testes para distinguir OOM de filho esperado de falha de PID1, integração core_ci/docs. Todos os outros protocolos continuam recusando OOM. Novo helper preserva exit0/PID0/status exited do observador mesmo quando o daemon marca OOMKilled pelo filho, e publica o valor observado. Apenas memória opta explicitamente por esse modo e exige causalidade em seu validador. Worker10001/none/RO/capszero/NNP/1CPU/1GiB/pids128/bind próprio inalterado; somente CI hospedado. Timeout externo30s da operação e job15min, cleanup somente próprio. Nenhum runtime/dependência novo ou aceite dos advisories. Risco: pressão/saída incompleta deve falhar, nunca enfraquecer critério para obter green.
+
+TDD observado: memória focada2testes/dez falhas esperadas por validação ausente; helper de saída focado10testes/uma falha esperada ao não reconhecer observador saudável com OOM de filho autorizado. Green mínimo50 controles locais passaram em0,506s; sem import/bootstrap/compilação como red. Diff-check passou; revisão/CI real pendentes.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
