@@ -9,7 +9,7 @@ EXPECTED = {"PIDS_LIMIT": "128", "PIDS_BASELINE": "1", "PIDS_PEAK": "128", "PIDS
             "PIDS_POSITIVE": "PASS", "PIDS_RECOVERY": "PASS", "AJ_RES_PIDS": "PASS"}
 
 SCRIPT = r'''set -eu
-printf 'token\n' | sh -c 'read -r token; [ "$token" = token ]; printf "PIDS_POSITIVE=PASS\n"'
+printf 'token\n' | sh -c 'read -r token && [ "$token" = token ] && printf "PIDS_POSITIVE=PASS\n"'
 read -r limit < /sys/fs/cgroup/pids.max
 read -r baseline < /sys/fs/cgroup/pids.current
 printf 'PIDS_LIMIT=%s\nPIDS_BASELINE=%s\n' "$limit" "$baseline"
@@ -59,7 +59,7 @@ while [ "$tries" -lt 100000 ]; do
 done
 [ "$current" = "$baseline" ]
 printf 'PIDS_RECOVERED=%s\n' "$current"
-printf 'token\n' | sh -c 'read -r token; [ "$token" = token ]; printf "PIDS_RECOVERY=PASS\n"'
+printf 'token\n' | sh -c 'read -r token && [ "$token" = token ] && printf "PIDS_RECOVERY=PASS\n"'
 printf 'AJ_RES_PIDS=PASS\n'
 '''
 
