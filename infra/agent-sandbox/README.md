@@ -63,3 +63,9 @@ A [triagem dos11IDs HIGH/CRITICAL](TRIAGE.md) registra versões, código selecio
 cpu_controls.py executa duas cargas GNUawk finitas em worker próprio sob a configuração restrita existente, exclusivamente no Linux CI. Exige cálculo positivo, progresso dos dois filhos, cpu.max100000/100000 e aumento de nr_periods/nr_throttled/throttled_usec em cpu.stat antes/depois, seguido de cálculo pequeno após wait. Sem throttling ou observação completa, falha como inconclusivo. Deadline interno/teto de iterações e timeout externo limitam a carga.
 
 Relatório resourceCpu preserva comando/configSHA/exit/observações/baseline/final/deltas/limites. PASS_CPU_ONLY não cobre memória/PID/egress, DockerDesktop ou vulnerabilidades; a baseline com advisories continua sem aceite. spec§9.106.
+
+## B08.7e.2: memória sob excesso limitado
+
+memory_controls.py usa alocador GNUawk de strings únicas/materializadas, controle positivo e recuperação32MiB, teto nominal1,5GiB/deadline12s sob limite1GiB/swap0. O shell PID1 observa memory.events.local com builtins, sem criar monitor após pressão. Só exit137 acompanhado por deltas locais max/oom/oom_kill positivos e recuperação aceita PASS_MEMORY_ONLY.
+
+O modo explícito permite ao daemon registrar OOMKilled pelo filho, mas exige observador parado com exit0/PID0 e observações completas. Os demais protocolos continuam recusando OOM. Não altera oom_score_adj/oom.group, capabilities, mounts ou recursos. Timeout externo30s/cleanup próprio; memória/PID1 perdidos ou carga que atinge teto sem OOM falham como inconclusivos. resourceMemory publica fatos/deltas/comando/configSHA/flagOOM/limites. Nenhuma correção de CVEs ou aceite de Desktop/agente implícito; spec§9.108.
