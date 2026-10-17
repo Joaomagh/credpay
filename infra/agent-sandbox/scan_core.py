@@ -127,7 +127,8 @@ def run_scan(projection, folder, image, commit):
     with tarfile.open(fileobj=io.BytesIO(archive), mode="r:gz") as stream:
         matches = [member for member in stream.getmembers() if member.name == "trivy"]
         if len(matches) != 1 or not matches[0].isfile() or not 0 < matches[0].size <= maximum:
-            raise ValueError("Binário do scanner inválido.")
+            selected = [(member.size, member.isfile()) for member in matches]
+            raise ValueError(f"Binário do scanner inválido: membros trivy={len(matches)}; tamanho/regular={selected}; limite={maximum}.")
         binary.write_bytes(stream.extractfile(matches[0]).read())
     binary.chmod(0o700)
     config, ignore, cache = folder / "empty-config.yaml", folder / "empty-ignore", folder / "cache"
