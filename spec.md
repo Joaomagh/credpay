@@ -2817,6 +2817,14 @@ Reconciliação documental em README/spec/task/backlog: CPU e memória sob exces
 
 Verificação documental: UTF8 estrito/um próximo passo, diff-check e Gitleaks8.30.1 na spec passaram; revisão independente somente leitura sem bloqueantes. Nenhuma infraestrutura executada nesta atualização.
 
+### 9.110 Limite de PIDs sob excesso finito — B08.7e.3
+
+Objetivo/aceite antes de editar: observerPID1 previamente vivo, positivo read/pipe funcional antes/depois, limite128/pico128, população retida126..128, delta pids.events.local:max positivo e retorno a1PID antes da recuperação. Actor tenta no máximo160 filhossh diretos; nenhum filho cria processos. Writer único mantém pipe aberto sem dados até flag em/tmp; filhos read bloqueados por FD3 explícito. Somente writer faz espera ativa, evitando128busyloops sob quota1CPU. Observer lê cgroups com builtins, sem forks/command substitution sob pressão; releasebuiltinfecha writer/EOF libera filhos. jobs builtin no polling recolhe adotados se actor morrer ao falharfork. Dependência concreta dash, não garantia POSIX genérica: [jobs.c upstream](https://kernel.googlesource.com/pub/scm/utils/dash/dash/+/da72f6988ceb2e50dbdd894a45c40d02edca9293/src/jobs.c). Leitura/reaping revisados em análise independente antes da implementação.
+
+Arquivos: pids_controls/testes, integração core_ci e docs. Worker restrito/cgroup próprio/128PIDs/1CPU/1GiB/none/RO/capszero/NNP e fixture validados como nos protocolos anteriores. Polls com teto100000 e timeout externo30s; nenhum fork recursivo, runtime/dependência/privilégio novo, escrita no cgroup ou Docker local. Falha de fork isolada, timeout, pico/eventos ausentes ou recuperação incompleta não produzem PASS. Código de wait do actor é registrado, não prova suficiente. Riscos: reaping/adotados e descriptorpipe; provar no CI hospedado antes de aceitar protocolo. Não corrige CVEs nem prova DockerDesktop/contenção do agente.
+
+TDD: dois testes focados/oito falhas esperadas antes da implementação; green52controles locais em0,589s, sem falhas/erros/skips. Diff-check passou. Revisão de implementação/CI real pendentes; nenhum Docker local executado.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
