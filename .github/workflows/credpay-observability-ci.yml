@@ -82,6 +82,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./infra/compose/check-json.ps1
           ./infra/compose/check-metrics.ps1
+          ./infra/observability/check-http.ps1
           docker compose --env-file infra/compose/.env.example --env-file infra/observability/images.env -f infra/compose/compose.yaml -f infra/compose/compose.diagnostics.yaml -f infra/observability/compose.yaml config --quiet
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Make Maven Wrappers executable

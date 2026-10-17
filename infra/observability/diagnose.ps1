@@ -11,9 +11,7 @@ function DiagnosePublication {
             '--header', $rabbitHeader, '--request', $Method, '--write-out', "`nCREDPAY_HTTP_STATUS:%{http_code}")
         if ($Body) { $options += @('--header', 'Content-Type: application/json', '--data-binary', $Body) }
         $response = Compose @options "http://rabbit:15672$Path"
-        $match = [regex]::Match($response, '(?s)^(.*)\r?\nCREDPAY_HTTP_STATUS:([0-9]{3})$')
-        Require $match.Success 'Management HTTP sem status; conteúdo omitido.'
-        return [pscustomobject]@{StatusCode=[int]$match.Groups[2].Value;Content=$match.Groups[1].Value}
+        return (ParseInternalHttp $response)
     }
     function Sql([string]$Service, [string]$Query) {
         Require ($Service -cin @('transacoes', 'processamento')) 'Banco fora do roteiro.'

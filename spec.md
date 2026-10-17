@@ -2712,6 +2712,10 @@ Pesquisa de versões para os quatro IDs HIGH: [GO-2026-6609](https://pkg.go.dev/
 
 Revisão do ensaio sem bloqueantes de protocolo/SQL/scopes; corrigido um ponto semântico antes de executar: timestamp de avaliação instantânea não comprova recência da coleta. Contador e timestamp(metric) agora usam o mesmo instante explícito time; a data da amostra vem do valor da segunda consulta, validada como recente/mesmos labels. Não confundir relógio da avaliação com nova coleta. [Função oficial timestamp](https://prometheus.io/docs/prometheus/latest/querying/functions/) consultada16/10.
 
+Observability7/run38988807388/job117266335514 em09bac93 falhou no parser Management HTTP sem status, após painel/demo normais, antes da prova de returned/restauração. Não é red novo do negócio. Experimento mínimo reproduziu resposta204 válida sem corpo: Compose.Trim remove newline inicial e regex exigia newline antes do marcador. Extraído parser comum sem mudar regex, teste primeiro falhou HTTP interno sem status; depois aceitar corpo opcional ficou green. Quatro controles preservam204 vazio/200 multilinha/401 para rejeição pelo chamador/erro sem reproduzir corpo, adicionados ao workflow. Roteiro real deve ser repetido para confirmar efeito, sem contar essa falha como diagnóstico concluído.
+
+Inventory116/run38988807376/job117266335435 conseguiu projetar os dois perfis após ajusteGo: PrometheusGo431/OS0 U4/L6/M28/H10/C0; GrafanaGo1725/OS33 U18/L13/M162/H60/C0. Totais incluem repetições por binário e não são IDs únicos. Job recusou OS incompleto antes de escrever artefato novo. As versões corrigidas múltiplas agora aparecem no diagnóstico sanitizado. Nenhuma baseline de observabilidade aceita, nenhuma conclusão de exploração/segurança do ambiente a partir desses counts. Escopo dos quatro apps permanece separado.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

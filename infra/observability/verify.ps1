@@ -5,6 +5,7 @@ $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
 $root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 . (Join-Path $root 'infra/compose/json.ps1')
+. (Join-Path $PSScriptRoot 'http.ps1')
 function Require([bool]$Condition, [string]$Message) { if (-not $Condition) { throw $Message } }
 Require ($env:GITHUB_ACTIONS -ceq 'true') 'Ensaio automático autorizado somente no CI descartável.'
 Require ($env:CREDPAY_IMAGE_TAG -cmatch '^[0-9a-f]{40}$') 'Checkout deve ter SHA completo.'
@@ -21,9 +22,7 @@ function Request([string]$Path) {
     # HTTP real pela rede interna; não depende de publicar a UI no host.
     $response = Compose exec -T transacoes curl --silent --show-error --max-time 5 `
         --header $script:authorization --write-out "`nCREDPAY_HTTP_STATUS:%{http_code}" "http://grafana:3000$Path"
-    $matched = [regex]::Match($response, '(?s)^(.*)\r?\nCREDPAY_HTTP_STATUS:([0-9]{3})$')
-    Require $matched.Success 'Resposta HTTP interna sem status; conteúdo omitido.'
-    return [pscustomobject]@{StatusCode=[int]$matched.Groups[2].Value;Content=$matched.Groups[1].Value}
+    return (ParseInternalHttp $response)
 }
 function Query([string]$Expression, [double]$At = 0) {
     $encoded = [Uri]::EscapeDataString($Expression)
