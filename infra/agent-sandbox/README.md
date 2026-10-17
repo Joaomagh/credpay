@@ -47,3 +47,11 @@ Relatório inclui comandos (somente dados fictícios), hashes/configuração sel
 O inventário preserva nome/versão binários e sourceName/sourceVersion completos. Source ausente usa identidade binária; nome sem versão usa a versão binária; versão explícita pode diferir em um rebuild. O builder confiável exporta o control real dos seis debs já fixados por hash; o controlador recusa divergência de nome/versão/arquitetura contra lock antes da projeção. Source inválido interrompe o inventário.
 
 Esses dados acompanham somente os componentes selecionados no manifesto parcial. Nenhum banco dpkg é inventado, nenhum pacote é instalado integralmente e nenhum scanner foi executado por esta mudança. Vulnerabilidades continuam pendentes; contrato/evidências em spec§9.103.
+
+## B08.7d.2: advisories dos componentes parciais
+
+scan_core.py gera CycloneDX próprio a partir da projeção auditada, com OS Debian13 e origem fonte preservada. Reutiliza Trivy0.75.0 pinado por SHA256, somente no controlador CI e em diretório próprio; o worker permanece com os20 comandos. Config/ignore vazios e ambiente mínimo impedem herança de configuração. Não usa socket ou banco dpkg artificial.
+
+Cobertura exige todos os componentes e nenhuma duplicata/extra, versões/arquitetura/fontes iguais, DB presente/temporalmente coerente/não vencida e severidades reconhecidas. Todas as severidades e achados sem correção são preservados. HIGH/CRITICAL marcam baseline como pendente de remediação/disposição, sem omitir o inventário.
+
+O relatório selecionado em core-inventory.json inclui componentScan (cobertura/achados/DB/hashes/imagem/checkout/comando/UTC/limites). SBOM terceiro pode causar detecção imprecisa: warning registrado, sem declarar autoria Trivy. Não cobre imagem completa/camadas inferiores/kernel/controlador/conteúdo futuro do workspace nem demonstra exploração; não aceita sandbox completo. spec§9.104.
