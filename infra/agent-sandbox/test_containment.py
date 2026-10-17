@@ -8,6 +8,15 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class ContainmentTest(unittest.TestCase):
+    def test_accepts_nonnegative_counters_without_weakening_positive_observations(self):
+        self.assertEqual({"COUNTER": "0"}, parse_observations("COUNTER=0", {"COUNTER": int}))
+        self.assertEqual({"COUNTER": "42"}, parse_observations("COUNTER=42", {"COUNTER": int}))
+        for value in ("-1", "1.2", "01", "missing"):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                parse_observations("COUNTER=" + value, {"COUNTER": int})
+        with self.assertRaises(ValueError):
+            parse_observations("POSITIVE=0", {"POSITIVE": None})
+
     def test_does_not_infer_namespace_identity_after_original_lifetime_ended(self):
         with self.assertRaisesRegex(ValueError, "simultaneamente"):
             validate_namespace_pair({"PID_NAMESPACE": "10", "PID_NAMESPACE_DEVICE": "4"},

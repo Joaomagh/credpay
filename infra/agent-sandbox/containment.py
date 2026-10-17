@@ -92,7 +92,10 @@ def parse_observations(text, expected):
         key, separator, value = line.partition("=")
         if not separator or key not in expected or key in result:
             raise ValueError("Observação inesperada/duplicada ou inválida.")
-        if (expected[key] is not None and value != expected[key]) or (expected[key] is None and not re.fullmatch(r"[1-9][0-9]{0,19}", value)):
+        rule = expected[key]
+        valid = re.fullmatch(r"(?:0|[1-9][0-9]{0,19})", value) if rule is int else (
+            re.fullmatch(r"[1-9][0-9]{0,19}", value) if rule is None else value == rule)
+        if not valid:
             raise ValueError("Observação não comprovou o resultado esperado.")
         result[key] = value
     if set(result) != set(expected):
