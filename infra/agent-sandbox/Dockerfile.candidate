@@ -1,0 +1,14 @@
+ARG SOURCE_IMAGE
+FROM ${SOURCE_IMAGE}
+# Preparação fixa/confiável; sem scripts de instalação e sem rede.
+COPY *.deb /packages/
+COPY expected.tsv /packages/expected.tsv
+RUN --network=none set -eu; mkdir -p /usr/share/credpay-candidate; \
+    while read -r name version architecture filename; do \
+      file="/packages/$filename"; \
+      [ "$(dpkg-deb --field "$file" Package)" = "$name" ]; \
+      [ "$(dpkg-deb --field "$file" Version)" = "$version" ]; \
+      [ "$(dpkg-deb --field "$file" Architecture)" = "$architecture" ]; \
+      dpkg-deb --fsys-tarfile "$file" | tar -tf - > "/usr/share/credpay-candidate/$name.list"; \
+      dpkg-deb --extract "$file" /; \
+    done < /packages/expected.tsv; rm -rf /packages

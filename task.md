@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- PR #155/e739515 integrou revisão delimitada B08.1 (Inventory118/Scan265 verdes), com lacunas preservadas. João adiou Prometheus/Grafana da v1; experimento completo38101da preservado na PR154/branch, sem integrar imagens reprovadas. Exportação/diagnóstico HTTP e quatro ZIPs originais permanecem; spec9.99/16.2.
+- PR #157/fd28c0f integrou inventário de origem Debian sem iniciar container:14 controles locais/Linux, Sandbox Source2 e Scan270 verdes.78 pacotes/3276 entradas; ps ausente e comandos/bits privilegiados excedentes registrados; spec9.100.
 
 ## Agora
 
-- [ ] B08.7a — Inventário estático da origem Debian fixada em spec9.100, sem iniciar container:14 controles locais/Linux verdes e CI1/Scan269/artifact conferidos; revisão tratada, aguarda gates finais/integração. Depois reduzir ferramentas/dependências e executar negativos do sandbox-core de4.3; sem Java/Temurin ou topologia de agente presumida, sem Docker local nem privilégios adicionais.
+- [ ] B08.7b — Construção mínima offline em spec9.101: selecionar20 comandos e fechamento ELF, proveniência por arquivo, inventário final e smoke no CI. CI8/Scan276 verdes, artifact conferido:20 comandos/88 arquivos/28 componentes parciais;26 controles locais/Linux. Aguarda gates finais/integração; sem Docker local. Negativos AJ-*/scanner e compatibilidade DockerDesktop permanecem etapas próprias.
 
 ## Próximo
 

@@ -24,9 +24,10 @@ def source_archive(items, status=STATUS):
             raise ValueError("Fixture temporária fora do diretório próprio.")
         archive = Path(folder) / "source.tar"
         with tarfile.open(archive, "w") as stream:
-            info = tarfile.TarInfo("var/lib/dpkg/status")
-            info.size = len(status)
-            stream.addfile(info, io.BytesIO(status))
+            if status is not None:
+                info = tarfile.TarInfo("var/lib/dpkg/status")
+                info.size = len(status)
+                stream.addfile(info, io.BytesIO(status))
             for info, content in items:
                 info.size = len(content)
                 stream.addfile(info, io.BytesIO(content) if info.isfile() else None)
@@ -34,6 +35,13 @@ def source_archive(items, status=STATUS):
 
 
 class InventorySourceTest(unittest.TestCase):
+    def test_file_inventory_does_not_invent_package_database_for_projected_root(self):
+        with source_archive([(tarfile.TarInfo("usr/file"), b"data")], status=None) as archive:
+            result = inventory_source.inventory_files(archive)
+            self.assertIsNotNone(result)
+            self.assertIsNone(result["status"])
+            self.assertEqual(["usr/file"], [entry["path"] for entry in result["entries"]])
+
     def test_preserves_installed_package_and_privileged_file_metadata(self):
         info = tarfile.TarInfo("usr/bin/synthetic-tool")
         info.mode = 0o4755
