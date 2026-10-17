@@ -83,7 +83,7 @@ O projeto está na fase de fluxo assíncrono confiável: os dois aplicativos rea
 | Documentado | contrato `TransacaoCriada` v1 e garantia de entrega pelo menos uma vez via outbox |
 | Documentado | baseline RabbitMQ com propriedade da topologia, confirms/returns, retry e DLQ |
 | Comprovado no CI descartável | Kubernetes: startup/persistência, preparo antes de consumo, POST/GET APROVADA/REJEITADA, replay e recuperação após parada do processador; [limites e roteiro](infra/k8s/README.md) |
-| Ainda não implementado | coordenação entre réplicas publicadoras, painel de diagnóstico e CD com destino definido |
+| Fora do aceite atual | coordenação entre réplicas publicadoras e CD externo; servidores Prometheus/Grafana adiados por João para depois da v1 |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
 
@@ -264,7 +264,7 @@ Fluxo financeiro comprovado:
 5. `transacoes-service` atualiza o estado consultável;
 6. sinais observáveis permitem acompanhar e diagnosticar o fluxo.
 
-Startup, persistência, preparo e fluxo Kubernetes foram comprovados no CI descartável autorizado, incluindo replay e parada/recuperação do processador. O painel de diagnóstico permanece pendente. FALHOU tem aplicação e transporte causais comprovados somente em teste controlado; início operacional continua bloqueado.
+Startup, persistência, preparo e fluxo Kubernetes foram comprovados no CI descartável autorizado, incluindo replay e parada/recuperação do processador. João adiou os servidores Prometheus/Grafana para depois da v1; o diagnóstico HTTP existente permanece. FALHOU tem aplicação e transporte causais comprovados somente em teste controlado; início operacional continua bloqueado.
 
 ## Práticas de engenharia
 
@@ -307,7 +307,7 @@ O sandbox ainda não foi implementado. Docker Desktop, daemon, VM, kernel/hyperv
 | 3 | regras de domínio em TDD e primeira integração PostgreSQL | concluída |
 | 4 | API, fluxo assíncrono, idempotência, outbox, retry e DLQ | fluxo principal e transporte causal FALHOU comprovados em teste controlado; autoridade operacional bloqueada |
 | 5 | experimentos de falha e resiliência | recuperação comprovada nos cenários documentados; fechamento de qualidade pendente |
-| 6 | Kubernetes local e observabilidade | startup/persistência e fluxo/falha/recuperação comprovados no CI descartável; painel pendente |
+| 6 | Kubernetes e observabilidade | startup/persistência e fluxo/falha/recuperação comprovados no CI descartável; diagnóstico HTTP existente, painel adiado da v1 |
 | 7 | evolução do CI, CD e roteiro de demonstração | CI, imagens e Compose comprovados; roteiro disponível, ensaio e fechamento pendentes |
 
 O plano detalhado e os critérios de saída estão em [`CREDPAY_PLAN.md`](CREDPAY_PLAN.md).

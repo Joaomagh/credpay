@@ -2670,6 +2670,16 @@ Pedido adicional explícito de João: quatro ZIPs originais de Downloads copiado
 
 Verify local sem infraestrutura Proc218/32,479s também verde, zero falhas/erros/skips/Checkstyle. Transitivas resolvidas por dependency:tree offline no cache/settings do workspace: registry1.16.7, jspecify1.0.1 e Prometheus Java1.4.3 (core/model/config/tracer-common/exposition-formats/exposition-textformats); sem client legado, tracer-initializer ou pushgateway. Árvores/logs ignorados em .local/evidence/b076a-*-dependencies.*. UTF8/diff-check passaram, revisão green sem bloqueantes. CI completo/inventário das novas dependências ainda pendentes; nenhuma alegação de scanner limpo antecipada.
 
+### 9.99 Painel adiado e observabilidade da v1 revisada
+
+Em16/10/2026, João escolheu explicitamente adiar o painel Prometheus/Grafana da v1 e preservar o trabalho para depois. Plano/backlog/README/demo agora exigem os contadores e diagnósticos HTTP existentes, sem servidores de coleta/painel obrigatórios. Não remover o registry/exposição diagnostics já integrados na PR153; padrão continua health, sem nova execução ou dependência. A revisão de escopo não aprova risco, não corrige CVEs por exclusão e não declara painel entregue. A estimativa passa de aproximadamente75% para85% no escopo revisado, também pela redução de escopo, sem equivalência com prazo ou esforço.
+
+Experimento preservado na [PR154](https://github.com/Joaomagh/credpay/pull/154), branch feat/observability-dashboard, head38101da42ce56795664cee5645c227d542157d91: Observability8/run38989130790/job117267329062 SUCCESS, após reds reais de coleta/painel/returned e correção red/green do parser204. API/coleta, returned/PENDENTE/intenção preservada, finally de restauração, mesma transação APROVADA, causalidade/replay/filas drenadas foram comprovados. Isso não comprova renderização/acesso no host. Inventory117/run38989130812/job117267329399 FAILURE: PrometheusGo431/OS0 U4/L6/M28/H10/C0 e GrafanaGo1725/OS33 U18/L13/M162/H60/C0; quatro e onze IDs HIGH únicos, respectivamente, sem somar repetições como vulnerabilidades novas. Nenhum artefato novo dos dois observadores publicado e nenhum código deles incorporado à main. Retomada exige baseline/triagem/testes revisados; manter branch/commits e evidências, sem merge da candidata reprovada.
+
+Auditoria limitada dos dois logs finais:136763caracteres/1390linhas, zero matches nas seis classes de regex/indicadores declarados, cleanup próprio passou. Não amplia o corte histórico de16.2 nem prova ausência universal de segredo; resumos ignorados em .local/security/pr154-final-*. Revisão documental B08.1 integrada separadamente na PR155/e739515 após Inventory118 e Scan265 verdes, sem encerrar um log/cinco artefatos históricos ainda não revistos.
+
+Próximo incremento é B08.7/sandbox-core conforme4.3, não um novo perfilJava ou arquitetura de controlador presumida. Manter Debian slim/UID10001/limites/ferramentas aprovados e definir o teste de rede controlado antes de executar; não houve instalação ou execução de sandbox nesta decisão. Ensaio e capacidade de João explicar o projeto continuam aceites pessoais pendentes.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
@@ -2750,9 +2760,9 @@ Cobertura, scanners e outras ferramentas serão sinais auxiliares, não metas is
 
 ### ADR-002 — Frontend fora da v1
 
-- **Status:** aceita
+- **Status:** aceita, revisada por João em16/10/2026
 - **Contexto:** o aprendizado prioritário é backend distribuído, Kubernetes e observabilidade.
-- **Decisão:** demonstrar por OpenAPI, scripts e Grafana.
+- **Decisão:** demonstrar por OpenAPI, scripts e métricas HTTP. Grafana fazia parte da demonstração planejada; João adiou os servidores Prometheus/Grafana para depois da v1, preservando o experimento (spec9.99).
 - **Consequências:** mais tempo para confiabilidade; experiência visual limitada, mitigada pelo roteiro de demo.
 
 ### ADR-003 — Contrato mínimo do sandbox AI-Jail
@@ -2903,7 +2913,7 @@ O workflow `.github/workflows/secret-scan.yml` usa checkout fixado por SHA, hist
 
 Consolidação documental em16/10/2026 em [PUBLICATION_REVIEW.md](infra/security/PUBLICATION_REVIEW.md): histórico, delta com corte explícito e candidataPR153 separados, com métodos/detectores/contagens/limites. Revisão de consistência contra resumos locais corrigiu a distinção entre enumeração22:07:07UTC e observação22:18:33UTC; removida descrição de tentativa alternativa não sustentada nos JSONs consultados. Não houve reabertura/download redundante, novo scanner ou mudança em regras/exceções. Nenhum log bruto/URL temporária/valor financeiro foi versionado. Achado histórico de quatro corpos fictícios em dois jobs e correção prospectivaPR149 preservados, sem apagar evidências. Um logTRANSPORT_CLOSED e cinco ZIPs continuam sem conteúdo revisto; B08.1 permanece parcial.
 
-Estado separado do painel: PR154 em construção demonstrou coleta de dois apps e modelo/consultas via API, mas diagnóstico completo ainda em validação. Inventory116 apontou achados HIGH nas duas imagens candidatas e OS0 no Prometheus; baseline recusada, sem inventário adicional válido ou waiver. O documento de publicação não aceita essas imagens, não libera rede/deploy e não declara a última main auditada em tempo real. Quatro alvos Java/Ubuntu dePR153 permanecem com inventário validado/HIGH0CRITICAL0 no recorte registrado. Frontend adiado; quatro ZIPs originais já preservados no repositório.
+Estado separado do painel naquele corte de revisão (estado atual em9.99): PR154 em construção demonstrou coleta de dois apps e modelo/consultas via API, mas diagnóstico completo ainda em validação. Inventory116 apontou achados HIGH nas duas imagens candidatas e OS0 no Prometheus; baseline recusada, sem inventário adicional válido ou waiver. O documento de publicação não aceita essas imagens, não libera rede/deploy e não declara a última main auditada em tempo real. Quatro alvos Java/Ubuntu dePR153 permanecem com inventário validado/HIGH0CRITICAL0 no recorte registrado. Frontend adiado; quatro ZIPs originais já preservados no repositório.
 
 ## 17. Checklist por incremento
 
