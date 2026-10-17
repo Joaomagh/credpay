@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.7b — Construção mínima offline em spec9.101: selecionar20 comandos e fechamento ELF, proveniência por arquivo, inventário final e smoke no CI. Seis pacotes fixados antes de baixar; sem Docker local. Negativos AJ-*/scanner e compatibilidade DockerDesktop permanecem etapas próprias.
+- [ ] B08.7b — Construção mínima offline em spec9.101: selecionar20 comandos e fechamento ELF, proveniência por arquivo, inventário final e smoke no CI. CI8/Scan276 verdes, artifact conferido:20 comandos/88 arquivos/28 componentes parciais;26 controles locais/Linux. Aguarda gates finais/integração; sem Docker local. Negativos AJ-*/scanner e compatibilidade DockerDesktop permanecem etapas próprias.
 
 ## Próximo
 
