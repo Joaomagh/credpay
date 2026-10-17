@@ -1,6 +1,6 @@
 # Demonstração e explicação do CredPay
 
-O roteiro usa somente transações fictícias e a v1 existente. Compose/fluxo estão comprovados no CI; executar no computador de João ainda exige engine Docker Linux acessível. Kubernetes, painel de observabilidade e sandbox do agente continuam pendentes. CI verde não comprova que João consegue explicar o projeto: a apresentação precisa ser ensaiada por ele.
+O roteiro usa somente transações fictícias e a v1 existente. Compose/fluxo e Kubernetes foram comprovados no CI; executar no computador de João ainda depende de infraestrutura e autorização aplicáveis. Sandbox do agente e ensaio por João continuam pendentes. Servidores Prometheus/Grafana foram adiados por João em16/10/2026; métricas e diagnóstico HTTP permanecem. CI verde não comprova que João consegue explicar o projeto: a apresentação precisa ser ensaiada por ele.
 
 Antes do roteiro técnico, leia [Entenda o CredPay](ENTENDA_O_CREDPAY.md) para relacionar o exemplo de produto às escolhas de engenharia.
 
@@ -23,9 +23,9 @@ O roteiro deve conferir políticas/filas e consumidores antes do fluxo. Demo cri
 
 ## Demonstrar recuperação
 
-O [runbook dos JARs](../infra/e2e/README.md) explica os quatro casos de FluxoCredPayE2E: estados finais, duplicatas/replay, parada controlada/reinício do processador e DLQ recuperada após corrigir limite ausente. Preparar ambos JARs e executar o teste dedicado exige Docker Linux. Não importar código do processador no teste do serviço de transações nem inserir resultado financeiro por SQL para encenar uma recuperação.
+O [runbook dos JARs](../infra/e2e/README.md) explica os cenários de FluxoCredPayE2E: estados finais, duplicatas/replay, parada controlada/reinício do processador, DLQ recuperada, retorno sem rota e confirmação causal controlada. Preparar ambos JARs e executar o teste dedicado exige Docker Linux. Não importar código do processador no teste do serviço de transações nem inserir resultado financeiro por SQL para encenar uma recuperação. O [diagnóstico HTTP](../infra/observability/README.md) explica os contadores e a prova de returned/intenção preservada/restauração para cada publicador; painel não é requisito dessa demonstração.
 
-As evidências estão em spec §9.53–9.54 e nos workflows. Parada controlada comprova indisponibilidade e reinício, sem provar crash abrupto em toda janela. Retry limitado tem prova nos listeners; DLQ não é consumida automaticamente. Replay manual desse teste é exclusivo do broker descartável, não ferramenta operacional autorizada para ambiente externo. Sem regra FALHOU definida, esgotar uma falha operacional conserva PENDENTE recuperável.
+As evidências estão em spec §9.53–9.54, §9.96–9.98 e nos workflows. Parada controlada comprova indisponibilidade e reinício, sem provar crash abrupto em toda janela. Retry limitado tem prova nos listeners; DLQ não é consumida automaticamente. Replay manual desse teste é exclusivo do broker descartável, não ferramenta operacional autorizada para ambiente externo. Esgotar uma falha operacional conserva PENDENTE recuperável; FALHOU exige confirmação causal, com transporte comprovado somente na fixture controlada e autoridade operacional ainda bloqueada.
 
 ## Explicação de aproximadamente três minutos
 
@@ -37,11 +37,11 @@ Por isso, idempotência existe em duas fronteiras. No HTTP, a mesma chave e pedi
 
 Valores usam BigDecimal. Equivalência monetária compara valor decimal, enquanto o snapshot conserva os dados originais. Instantes usam java.time; contratos que exigem nanos são persistidos com segundos e nanos, e o instante de aplicação do histórico é normalizado para micros do PostgreSQL. Precisão e equivalência têm regras explícitas.
 
-Os listeners retornam depois do commit, permitindo ack após dados duráveis. Rejeições permanentes seguem para DLQ e falhas operacionais recebem retry limitado a três tentativas. Esgotar retry não inventa uma decisão financeira: a transação pode continuar PENDENTE. FALHOU exige confirmação causal: a aplicação atômica de recibo e histórico já foi comprovada em teste controlado, preservando a decisão financeira existente. Transporte e autoridade operacional ainda estão pendentes; a coordenação não demonstra sozinha irreversibilidade física da causa.
+Os listeners retornam depois do commit, permitindo ack após dados duráveis. Rejeições permanentes seguem para DLQ e falhas operacionais recebem retry limitado a três tentativas. Esgotar retry não inventa uma decisão financeira: a transação pode continuar PENDENTE. FALHOU exige confirmação causal: aplicação atômica, transporte e recuperação já foram comprovados em teste controlado, preservando a decisão financeira existente. Autoridade operacional continua bloqueada; a coordenação não demonstra sozinha irreversibilidade física da causa.
 
 O CI prova fluxo completo, duplicatas, rollback, reentrega e recuperação nos cenários documentados. Imagens comprovam estados finais e replay; Compose também comprova preservação após down/up. Essas provas não cobrem todo crash possível.
 
-Uso uma réplica publicadora por serviço e broker de nó único; não alego alta disponibilidade. Kubernetes está proposto sem execução, observabilidade ainda precisa de painel e diagnóstico, e apps non-root não equivalem ao sandbox de desenvolvimento. O fechamento da v1 exige demonstrar o sistema e defender essas decisões com autonomia.”
+Uso uma réplica publicadora por serviço e broker de nó único; não alego alta disponibilidade. Kubernetes teve fluxo e recuperação comprovados no CI, sem comprovar execução no meu computador. Diagnóstico HTTP usa contadores de tentativas, que não medem transações únicas nem provam commit. O painel foi adiado; apps non-root não equivalem ao sandbox do agente. O fechamento da v1 exige demonstrar o sistema e defender essas decisões com autonomia.”
 
 ## Perguntas para João responder com evidências
 
@@ -52,7 +52,7 @@ Uso uma réplica publicadora por serviço e broker de nó único; não alego alt
 | Como impedir duas decisões concorrentes? | Locks por identidades, constraints, transação e replay/conflito explícitos | [RegistrarProcessamentoService](../processamento-service/src/main/java/br/com/credpay/processamento/application/RegistrarProcessamentoService.java), [AplicarResultadoService](../transacoes-service/src/main/java/br/com/credpay/transacoes/application/AplicarResultadoService.java) |
 | O que ocorre entre commit e ack? | Dados já duráveis; reentrega exige consumidor idempotente; janela testada não é exactly-once | spec §9.37 e §9.48 e runbook Flow; testes de listeners |
 | Por que DLQ não significa FALHOU? | Falha operacional e decisão financeira são distintas; recuperação permanece possível; aplicação causal controlada não autoriza encerramento operacional arbitrário | spec §9.54 e §9.90; recuperação e confirmação causal controlada |
-| Quais limites existem hoje? | Publicador de réplica única, broker sem HA, engine local ausente, observabilidade/sandbox pendentes | README, plano §6 e backlog |
+| Quais limites existem hoje? | Publicador de réplica única, broker sem HA, execução local não comprovada, sandbox pendente; painel adiado e sinais HTTP com limites explícitos | README, plano §6 e backlog |
 
 ## Critério de encerramento da apresentação
 

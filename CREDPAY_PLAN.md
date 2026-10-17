@@ -17,6 +17,7 @@ O projeto estará pronto para portfólio quando João conseguir:
 ### Fora do escopo da v1
 
 - implementação de frontend, autenticação de usuários, PIX real, cartão real, antifraude real e dinheiro real;
+- servidores de coleta Prometheus e painel Grafana, adiados por João em16/10/2026; preservar métricas/diagnósticos existentes e o experimento para etapa posterior;
 - transação distribuída/2PC, multi-região e alta disponibilidade de produção;
 - padrões ou ferramentas adicionados apenas para aumentar a lista do portfólio.
 
@@ -91,7 +92,7 @@ O monorepo reduz manutenção para uma pessoa e facilita avaliação, sem elimin
 | Mensageria | RabbitMQ, Spring AMQP | Entrega assíncrona, retry e DLQ |
 | Testes | JUnit Jupiter, AssertJ, Mockito, Testcontainers | Pirâmide de testes com infraestrutura real nas bordas; versões alinhadas à plataforma em spec§9.94 |
 | Contrato | Bean Validation, OpenAPI | API pequena e demonstrável |
-| Observabilidade | Actuator, Micrometer, Prometheus, Grafana, logs estruturados | Diagnóstico por evidência |
+| Observabilidade | Actuator, Micrometer e logs; Prometheus/Grafana adiados | Diagnóstico por evidência, sem painel obrigatório na v1 |
 | Plataforma | Docker Compose, Kubernetes local | Aprender deploy, configuração, probes e recursos |
 | Entrega | GitHub Actions, Checkstyle e análise de dependências/imagem | Build e qualidade reproduzíveis |
 
@@ -163,10 +164,10 @@ As durações são estimativas, não prazos. Cada sessão deve produzir uma evid
 
 - aprender e aplicar Deployment, Service, ConfigMap/Secret, probes e recursos;
 - subir o sistema em cluster local;
-- criar painel com throughput, latência, aprovação/rejeição, erros, retries e DLQ;
+- usar os contadores existentes por HTTP para observar publicação e diagnosticar retorno sem rota/recuperação; não ampliar catálogo de métricas sem necessidade;
 - demonstrar diagnóstico de uma falha usando sinais observáveis.
 
-**Saída:** demo local repetível e dashboard útil.
+**Saída da v1 revisada em16/10/2026:** demonstração do fluxo e de uma falha com sinais HTTP e limites explícitos. João adiou os servidores Prometheus/Grafana; painel não é critério de fechamento desta v1. O experimento permanece na branch `feat/observability-dashboard`, head38101da42ce56795664cee5645c227d542157d91/PR154: prova funcional no CI, imagens reprovadas e nenhuma incorporação à main. Retomar somente com baseline/triagem/testes revisados; adiamento não declara os achados corrigidos nem aceita risco. Execução local/Kubernetes e ensaio por João conservam seus limites e pendências próprios.
 
 ### Fase 7 — Entrega, CD e portfólio
 

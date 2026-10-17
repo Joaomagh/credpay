@@ -34,7 +34,9 @@ Para a saída do processador, substitua8080 por8081. Cada aplicativo tem seu pr�
 
 O registry gerenciado pelo Boot apresenta o mesmo contador em `/actuator/prometheus`, somente com o perfil `diagnostics`. O nome exportado é `credpay_messaging_publish_attempts_total`, com a etiqueta fixa `outcome`. O endpoint padrão continua404. Séries automáticas JVM/HTTP também fazem parte dessa resposta; restringir o acesso como nos comandos acima.
 
-No serviço local configurado, consulte `http://127.0.0.1:8080/actuator/prometheus` (8081 no processador). As séries de tentativas surgem após a primeira ocorrência; ausência não comprova zero ou saúde. Valores acumulam tentativas desde o início do processo e reiniciam com ele. Não indicam transações únicas, consumo ou commit. Este incremento fornece o formato de coleta; servidor Prometheus, scrape persistido e painel Grafana ainda não foram implementados. Não há envio push ou serviço externo configurado.
+No serviço local configurado, consulte `http://127.0.0.1:8080/actuator/prometheus` (8081 no processador). As séries de tentativas surgem após a primeira ocorrência; ausência não comprova zero ou saúde. Valores acumulam tentativas desde o início do processo e reiniciam com ele. Não indicam transações únicas, consumo ou commit. O backend fornece o formato de coleta; servidores Prometheus/Grafana foram adiados por João em16/10/2026 e não integram o aceite da v1. Não há envio push ou serviço externo configurado.
+
+O experimento funcional está preservado na [PR154](https://github.com/Joaomagh/credpay/pull/154), branch `feat/observability-dashboard`, head38101da42ce56795664cee5645c227d542157d91. Observability8 comprovou coleta, painel por API e falha sem rota/recuperação causal; não comprovou renderização visual/acesso no host. Inventory117 recusou as imagens candidatas por achados HIGH e lacuna OS no Prometheus; nenhum código desses servidores foi incorporado à main. Retomada exige baseline/triagem/testes próprios, sem aceitar risco ou declarar os achados corrigidos pelo adiamento.
 
 ## Demo nos aplicativos do Compose
 

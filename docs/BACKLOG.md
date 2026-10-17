@@ -1,6 +1,6 @@
 # CredPay — Backlog do MVP
 
-Atualizado em 2026-10-16. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos e evidências: [spec](../spec.md). Uma única ação executável: [task](../task.md). Papéis: [P.O.](roles/product-owner.md), [dev sênior](roles/senior-developer.md) e [Scrum Master](roles/scrum-master.md).
+Atualizado em 2026-10-17. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos e evidências: [spec](../spec.md). Uma única ação executável: [task](../task.md). Papéis: [P.O.](roles/product-owner.md), [dev sênior](roles/senior-developer.md) e [Scrum Master](roles/scrum-master.md).
 
 ## Prioridades
 
@@ -12,14 +12,14 @@ Atualizado em 2026-10-16. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos
 | B04 | Consumo seguro de `TransacaoCriada` | entrada validada, commit antes do ack, reentrega sem nova decisão, falhas limitadas/DLQ em PostgreSQL + RabbitMQ reais | B02 e B03; não ativar sem intenção de saída durável | Concluído; B04.1–B04.12 comprovados, ativação manual exige conferência |
 | B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | Concluído; PR #106 integrada após checks do SHA final |
 | B06 | Recuperação e diagnóstico demonstráveis | queda, atraso e duplicação testados; correlação, retry/DLQ e replay operacional observáveis | B05; refinar política de `FALHOU` | Recuperação/diagnóstico, aplicação e transporte controlados de FALHOU comprovados até PR #150; autoridade operacional fora da API |
-| B07 | Ambiente local reproduzível | imagens/Compose e depois Kubernetes local com probes e recursos; roteiro demonstra fluxo e falha | B05 e B06 | Fluxo/replay/parada/recuperação integrados na PR #152 após Kubernetes22/Scan253 verdes; próxima frente é painel/diagnóstico |
+| B07 | Ambiente local reproduzível | imagens/Compose e depois Kubernetes local com probes e recursos; roteiro demonstra fluxo e falha | B05 e B06 | Fluxo/replay/parada/recuperação integrados na PR #152 após Kubernetes22/Scan253 verdes; diagnóstico HTTP integrado; painel adiado por João, próxima frente é sandbox-core |
 | B08 | Entrega e portfólio verificáveis | CI cobre riscos e imagens; CD só com destino/rollback definidos; README e demo coerentes | B07 e critérios do plano | Refinamento |
 
 Não é uma promessa de uma PR por linha nem um cronograma. Itens grandes serão divididos por comportamento, mantendo dependências e evidências. Nenhum percentual de conclusão é inferido do número de PRs.
 
 ## Caminho de conclusão da v1
 
-Posição em2026-10-16: marco1 controlado concluído na PR #150; preparo/fluxo/replay/parada/recuperação Kubernetes integrados na PR #152/a84bb5e. Migração corrigida na PR #149; Inventory109 preserva HIGH0/CRITICAL0 e demais achados visíveis. O fluxo financeiro e a demo Compose já existem; não repetir essas entregas como trabalho futuro. Estimativa global aproximadamente75%/25%, por julgamento aproximado de escopo; não é prazo, velocidade ou contagem de testes.
+Posição em2026-10-16: marco1 controlado concluído na PR #150; preparo/fluxo/replay/parada/recuperação Kubernetes integrados na PR #152/a84bb5e. Migração corrigida na PR #149; Inventory109 preserva HIGH0/CRITICAL0 e demais achados visíveis. O fluxo financeiro e a demo Compose já existem; não repetir essas entregas como trabalho futuro. Após o adiamento explícito do painel em16/10, estimativa global aproximadamente85%/15% no escopo revisado, por julgamento aproximado de escopo; não é prazo, velocidade ou contagem de testes.
 
 ### Cinco marcos da v1 e condição de encerramento
 
@@ -27,7 +27,7 @@ Posição em2026-10-16: marco1 controlado concluído na PR #150; preparo/fluxo/r
 |---|---|---|---|
 | 1 | Confirmação coordenada controlada — concluído | PR #150/feb0ab6: pedido → processador → resposta → GET FALHOU; replay, decisão anterior, criação atrasada, queda/recuperação e commit externo antes ACK comprovados em doze casos | Pedido somente na fixture descartável, sem endpoint administrativo; autoridade operacional permanece bloqueada. Spec9.96 |
 | 2 | Kubernetes — aceite técnico integrado | PR #152/a84bb5e: Kubernetes22/Scan253 finais verdes; preparo, APROVADA/REJEITADA/replay e parada/recuperação, além do startup/persistência anterior | Somente CI descartável autorizado; execução no computador de João não foi comprovada nem autorizada por essa exceção |
-| 3 | Observabilidade útil | Painel local mostra sinais do fluxo e permite diagnosticar uma falha reproduzida; limites dos sinais documentados | Reutilizar métricas existentes; adicionar somente sinais necessários ao aceite do plano, sem catálogo aberto de dashboards |
+| 3 | Observabilidade útil — escopo revisado por João em16/10 | Métricas HTTP existentes permitem observar tentativas e diagnosticar retorno sem rota/recuperação, com estado e persistência conferidos separadamente | Prometheus/Grafana adiados para depois da v1; trabalho preservado na PR154/branch, sem aceitar imagens reprovadas nem contar painel como entregue |
 | 4 | Segurança e qualidade de saída | Sandbox com testes negativos de acesso/privilégios/rede, revisão de publicação/logs/artefatos e triagem dos achados restantes com política explícita | Não afirmar isolamento nem corrigir scanner por exclusão ampla. Dependência de host e decisões de risco/suporte/upgrade são bloqueios visíveis, não aceite implícito |
 | 5 | Ensaio e portfólio | Quickstart seguido por João, demo de sucesso/falha/recuperação, README fiel, explicação de3min e perguntas respondidas por ele | Brief frontend preservado, implementação adiada por João em15/10 e fora do aceite atual. Aprendizado exige participação de João; CD externo só se houver destino/rollback e autorização próprios |
 
@@ -37,7 +37,7 @@ A v1 termina quando os cinco aceites e os critérios do plano forem demonstrados
 
 A tabela abaixo conserva a estimativa por fases; os marcos acima orientam a execução atual. As seções posteriores mantêm o histórico de incrementos e evidências, cujos estados preparatórios são substituídos pelos respectivos aceites finais.
 
-Revisão em2026-10-16 após confirmação controlada entre serviços, fluxo/falha/recuperação Kubernetes e migração corrigida: **aproximadamente75% concluído / 25% restante**. Pesos e valores abaixo são julgamento aproximado de escopo para explicar o balanço, não medição de esforço, horas, velocidade ou prazo. Fluxo Kubernetes não encerra painel/diagnóstico; apps non-root não encerram sandbox do agente.
+Revisão em2026-10-16 após João adiar o painel: **aproximadamente85% concluído / 15% restante no escopo revisado da v1**. A mudança da estimativa decorre também da redução explícita de escopo, não de declarar o painel entregue. Pesos e valores abaixo são julgamento aproximado de escopo, não medição de esforço, horas, velocidade ou prazo. Sandbox, execução/ensaio com João e lacunas de revisão continuam pendentes; apps non-root não encerram sandbox do agente.
 
 | Fase do plano | Peso aproximado | Concluído | Restante | Saída ainda necessária |
 |---|---:|---:|---:|---|
@@ -46,7 +46,7 @@ Revisão em2026-10-16 após confirmação controlada entre serviços, fluxo/falh
 | 3. Primeiro incremento TDD | 5% | 100% | 0% | Saída atendida com red/green/refactor e PostgreSQL real |
 | 4. Fluxo assíncrono confiável | 30% | 100% | 0% | Fluxo financeiro e confirmação controlada entre serviços comprovados; autoridade operacional não integra esse aceite |
 | 5. Qualidade e resiliência | 15% | 75% | 25% | Encerrar dívida relevante e consolidar relatório de falhas/recuperação e limites |
-| 6. Kubernetes e observabilidade | 20% | 50% | 50% | Fluxo/falha/recuperação no CI comprovados; painel e diagnóstico de falha ainda pendentes |
+| 6. Kubernetes e observabilidade | 20% | 90% | 10% | Fluxo/falha/recuperação no CI e diagnóstico HTTP comprovados; ensaio dos sinais com João pendente. Painel adiado, sem contar sua implementação como integrada |
 | 7. Entrega e portfólio | 10% | 75% | 25% | Após migração corrigida, consolidar política de triagem, revisão de publicação e ensaio da demo |
 
 Fluxo principal está demonstrado em CI. Execução local ainda depende da infraestrutura; CD externo continua condicionado. João conseguir explicar as decisões exige validação com ele, não pode ser declarado por um teste automatizado.
@@ -312,4 +312,6 @@ Referências visuais fornecidas em16/10 preservadas em docs/frontend/references,
 
 **B07.6a — Exportação para o painel — concluído na PR #153/c75f927.** Registry Prometheus1.16.7 gerenciado pelo Boot4.0.8 e exportação HTTP opt-in dos contadores existentes, após red200/404 nos dois apps. Padrão404/health200/admin404 preservados. Oito gates finais f345887 verdes, Trans522/Proc340/Flow12; inventário107/JAR243/imagem HIGH0/CRITICAL0. Quatro ZIPs originais preservados/conferidos; spec9.98.
 
-**B07.6b — Painel e diagnóstico — PR #154 em construção, baseline bloqueada.** Coleta dos dois apps e painel por API comprovados após reds; ensaio sem rota/restauração causal em validação. Imagens candidatas Prometheus/Grafana têm achados HIGH; Prometheus também OS0, sem inventário adicional válido ou release oficial pronta que feche os quatro IDs identificados nele. Não integrar com falha de CI ou aceite implícito de risco. UI host/renderização e triagem pendentes; nenhum deploy/Docker local. Quatro alvos dos apps permanecem separados.
+**B07.6b — Painel Prometheus/Grafana — adiado por João para depois da v1 em16/10/2026.** Trabalho preservado na PR #154/branch feat/observability-dashboard, head38101da: Observability8 comprovou API/coleta e falha sem rota/recuperação causal. Inventory117 reprovou baseline: PrometheusGo431/OS0/HIGH10 e GrafanaGo1725/OS33/HIGH60 (ocorrências com repetições). Nenhum código desses servidores integrado, nenhuma disposição implícita de risco ou correção fictícia dos achados. Retomar com baseline/triagem/testes próprios; UI/renderização não comprovadas. Exportação Java e diagnóstico HTTP existentes permanecem no aceite revisado; spec9.99.
+
+**B08.7 — Sandbox-core diagnóstico — próximo item pronto para refinamento.** Implementar apenas o primeiro estágio já aprovado em spec4.3: Debian slim/UID10001, mounts mínimos/raizRO/capabilities vazias/no-new-privileges/rede negada e limites documentados. Fixar baseline/inventário antes da instalação e provar controles com canários fictícios no CI. Java/Temurin/UID do runner e topologia de agente externo não estão automaticamente aprovados para esse perfil; não alegar contenção do agente atual. AJ-NET-01 exige mecanismo diagnóstico controlado definido antes de executar; ausência de cliente não prova bloqueio.
