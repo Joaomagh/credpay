@@ -14,6 +14,7 @@ from urllib.request import urlopen
 
 VERSION = "0.75.0"
 ARCHIVE_SHA256 = "c6e65abddb348e25f10549df887045629cf28cc72453cd1c63acb717316b3f3f"
+SCANNER_BINARY_BYTES = 172765344
 SEVERITIES = ("UNKNOWN", "LOW", "MEDIUM", "HIGH", "CRITICAL")
 
 
@@ -126,9 +127,9 @@ def run_scan(projection, folder, image, commit):
     binary = folder / "trivy"
     with tarfile.open(fileobj=io.BytesIO(archive), mode="r:gz") as stream:
         matches = [member for member in stream.getmembers() if member.name == "trivy"]
-        if len(matches) != 1 or not matches[0].isfile() or not 0 < matches[0].size <= maximum:
+        if len(matches) != 1 or not matches[0].isfile() or matches[0].size != SCANNER_BINARY_BYTES:
             selected = [(member.size, member.isfile()) for member in matches]
-            raise ValueError(f"Binário do scanner inválido: membros trivy={len(matches)}; tamanho/regular={selected}; limite={maximum}.")
+            raise ValueError(f"Binário do scanner inválido: membros trivy={len(matches)}; tamanho/regular={selected}; esperado={SCANNER_BINARY_BYTES}.")
         binary.write_bytes(stream.extractfile(matches[0]).read())
     binary.chmod(0o700)
     config, ignore, cache = folder / "empty-config.yaml", folder / "empty-ignore", folder / "cache"
