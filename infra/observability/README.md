@@ -38,6 +38,8 @@ No serviço local configurado, consulte `http://127.0.0.1:8080/actuator/promethe
 
 ## Demo nos aplicativos do Compose
 
+O painel Prometheus/Grafana está em construção em B07.6b (spec9.99). O override específico acrescenta dois serviços pinados por digest; seu primeiro teste usa coletor saudável sem jobs para provar a falta de coleta antes de configurá-los. Ainda não anunciar painel ou diagnóstico como concluídos. A execução automática está limitada ao CI descartável; o roteiro não inicia containers localmente. O Compose padrão permanece com os cinco serviços anteriores.
+
 Após construir as imagens do checkout conforme o [quickstart Compose](../compose/README.md), use o switch explícito nas três fases:
 
 ```powershell

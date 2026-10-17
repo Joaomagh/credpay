@@ -4,7 +4,8 @@ param(
     [Parameter(Mandatory)][ValidateSet('Prepare', 'Activate', 'Demo', 'Smoke', 'Down')][string]$Action,
     [ValidatePattern('^credpay-[a-z0-9][a-z0-9-]{0,40}$')][string]$Project = 'credpay-demo',
     [ValidateSet('.env', '.env.example')][string]$EnvFile = '.env',
-    [switch]$Diagnostics
+    [switch]$Diagnostics,
+    [switch]$Observability
 )
 
 $ErrorActionPreference = 'Stop'
@@ -14,7 +15,15 @@ $root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 . (Join-Path $PSScriptRoot 'metrics.ps1')
 $composeArgs = @('compose', '--project-name', $Project, '--env-file', (Join-Path $PSScriptRoot $EnvFile),
     '--file', (Join-Path $PSScriptRoot 'compose.yaml'))
+if ($Observability) {
+    if ($Action -ceq 'Smoke') { throw 'Ensaio do painel usa infra/observability/verify.ps1.' }
+    $Diagnostics = $true
+}
 if ($Diagnostics) { $composeArgs += @('--file', (Join-Path $PSScriptRoot 'compose.diagnostics.yaml')) }
+if ($Observability) {
+    $composeArgs += @('--env-file', (Join-Path $root 'infra/observability/images.env'),
+        '--file', (Join-Path $root 'infra/observability/compose.yaml'))
+}
 $apps = @('transacoes', 'processamento')
 $queueNames = @('credpay.processamento.transacao-criada.v1', 'credpay.processamento.transacao-criada.dlq.v1',
     'credpay.transacoes.transacao-processada.v1', 'credpay.transacoes.transacao-processada.dlq.v1')

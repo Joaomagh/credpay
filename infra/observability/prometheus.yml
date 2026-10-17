@@ -1,0 +1,5 @@
+global:
+  scrape_interval: 2s
+  scrape_timeout: 1s
+# Primeiro red real: coletor saudável/API válida, mas sem jobs dos dois aplicativos.
+scrape_configs: []
