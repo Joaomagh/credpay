@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B07.6b — PR #154: coleta e painel via API verdes em ac0c148/Observability5 após reds reais de coleta/painel. Próximo red: returned ausente antes da falha controlada; depois retirar/restaurar um binding e provar recuperação causal. Inventory113 revelou PrometheusGo431/OS0, gate recusou;114 diagnostica ambos antes de recusar OS incompleto. Controles11+9 verdes; baseline runtime inventariável/triagem pendentes. UI host/renderização ainda não comprovados. Spec9.99; sem Docker local/deploy externo.
+- [ ] B07.6b — PR #154: coleta/painelAPI verdes ac0c148/Observability5; redreturned ausente ddf0837/Observability6 confirmado. Ensaio de falha/restauração causal implementado, aguarda revisão/CI. PerfilGo ajustado por red/green13controles. Baseline Prometheus recusada: Go431/OS0/HIGH10 (4IDs únicos), sem release oficial pronta totalmente corrigida; GrafanaGo1725/OS33, totais ainda pendentes por módulos sem versão. UI host/renderização pendentes. Não integrar com falha de segurança/waiver implícito. Spec9.99; sem Docker local/deploy externo.
 
 ## Próximo
 

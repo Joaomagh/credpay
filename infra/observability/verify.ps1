@@ -25,9 +25,11 @@ function Request([string]$Path) {
     Require $matched.Success 'Resposta HTTP interna sem status; conteúdo omitido.'
     return [pscustomobject]@{StatusCode=[int]$matched.Groups[2].Value;Content=$matched.Groups[1].Value}
 }
-function Query([string]$Expression) {
+function Query([string]$Expression, [double]$At = 0) {
     $encoded = [Uri]::EscapeDataString($Expression)
-    $response = Request "/api/datasources/proxy/uid/credpay-prometheus/api/v1/query?query=$encoded&timeout=3s"
+    $path = "/api/datasources/proxy/uid/credpay-prometheus/api/v1/query?query=$encoded&timeout=3s"
+    if ($At -gt 0) { $path += '&time=' + $At.ToString('F3', [Globalization.CultureInfo]::InvariantCulture) }
+    $response = Request $path
     Require ($response.StatusCode -eq 200) 'Consulta Prometheus deve retornar HTTP200.'
     $body = Json $response.Content
     Require ($body.status -ceq 'success' -and $body.data.resultType -ceq 'vector' -and
@@ -124,6 +126,8 @@ try {
     } while ([DateTime]::UtcNow -lt $deadline)
     Require ($confirmed.Count -eq 2) 'Consulta do painel deve observar tentativas confirmadas dos dois apps após a demo real.'
     Write-Host 'Observação: painel provisionado disponível pela API; renderização visual não comprovada.'
+    . (Join-Path $PSScriptRoot 'diagnose.ps1')
+    DiagnosePublication
     $returned = @(Query 'credpay_messaging_publish_attempts_total{job="credpay-transacoes",outcome="returned"}')
     Require ($returned.Count -eq 1 -and [double]$returned[0].value[1] -gt 0) 'Ensaio diagnóstico deve tornar returned positivo; série ainda ausente sem falha controlada.'
 } finally {
