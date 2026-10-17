@@ -19,10 +19,11 @@ def license_references(content):
 def audit_core(archive, manifest):
     actual = inventory_files(archive)
     expected = {entry["path"]: entry for entry in manifest["files"]}
+    expected_links = {entry["path"]: entry["target"] for entry in manifest["links"]}
     files = {entry["path"]: entry for entry in actual["entries"] if entry["type"] != "directory" and entry["path"] not in INJECTED}
-    if set(files) != set(expected) | {"bin"}:
-        difference = {"extra": sorted(set(files) - set(expected) - {"bin"})[:20],
-                      "missing": sorted((set(expected) | {"bin"}) - set(files))[:20]}
+    if set(files) != set(expected) | set(expected_links):
+        difference = {"extra": sorted(set(files) - set(expected) - set(expected_links))[:20],
+                      "missing": sorted((set(expected) | set(expected_links)) - set(files))[:20]}
         raise ValueError("Export final diverge da projeção: " + json.dumps(difference, ensure_ascii=True))
     for path, wanted in expected.items():
         observed = files[path]
@@ -31,8 +32,10 @@ def audit_core(archive, manifest):
         executable = wanted["role"] in ("command", "loader")
         if wanted["mode"] != ("0555" if executable else "0444"):
             raise ValueError("Modo de componente diverge da baseline.")
-    if files["bin"]["type"] != "symlink" or files["bin"]["target"] != "usr/bin":
-        raise ValueError("Alias de shell diverge da baseline.")
+    for path, target in expected_links.items():
+        observed = files[path]
+        if observed["type"] != "symlink" or observed["target"] != target or observed["mode"] != "0777" or observed["uid"] != 0 or observed["gid"] != 0:
+            raise ValueError("Link final diverge da baseline.")
     commands = {entry["path"] for entry in expected.values() if entry["role"] == "command"}
     if commands != {f"usr/bin/{tool}" for tool in TOOLS} or any(not value["present"] for value in actual["tools"].values()):
         raise ValueError("Comandos finais divergem da baseline.")
@@ -203,6 +206,7 @@ def project(archive, folder, additions):
         for path in files:
             directories.update(str(parent).replace("\\", "/") for parent in Path(path).parents if str(parent) != ".")
         directory_manifest = []
+        links = [{"path": "bin", "target": "usr/bin"}, {"path": "etc/mtab", "target": "proc/mounts"}]
         with tarfile.open(folder / "rootfs.tar", "w", format=tarfile.USTAR_FORMAT) as output:
             for path in sorted(directories, key=lambda value: (value.count("/"), value)):
                 entry = tarfile.TarInfo(path)
@@ -212,15 +216,17 @@ def project(archive, folder, additions):
                     entry.uid = entry.gid = 10001
                 directory_manifest.append({"path": path, "mode": format(entry.mode, "04o"), "uid": entry.uid, "gid": entry.gid})
                 output.addfile(entry)
-            link = tarfile.TarInfo("bin")
-            link.type, link.linkname, link.mode = tarfile.SYMTYPE, "usr/bin", 0o777
-            output.addfile(link)
+            for record in links:
+                link = tarfile.TarInfo(record["path"])
+                link.type, link.mode = tarfile.SYMTYPE, 0o777
+                link.linkname = "usr/bin" if record["path"] == "bin" else "/proc/mounts"
+                output.addfile(link)
             for path, (content, mode) in sorted(files.items()):
                 entry = tarfile.TarInfo(path)
                 entry.mode, entry.size = mode, len(content)
                 output.addfile(entry, io.BytesIO(content))
         result = {"scope": "CORE_BUILD_NOT_CONTAINMENT_ACCEPTANCE", "packages": provenance["packages"],
-                  "files": sorted(manifest, key=lambda entry: entry["path"]), "commands": TOOLS, "directories": directory_manifest}
+                  "files": sorted(manifest, key=lambda entry: entry["path"]), "commands": TOOLS, "directories": directory_manifest, "links": links}
         (folder / "projection.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
         return result
     finally:

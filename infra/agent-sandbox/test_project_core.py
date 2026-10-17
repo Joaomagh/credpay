@@ -24,9 +24,9 @@ class ProjectCoreTest(unittest.TestCase):
             records.append({"path": entry.name, "sha256": hashlib.sha256(b"synthetic").hexdigest(),
                             "mode": "0555", "uid": 0, "gid": 0, "role": "command"})
         link = tarfile.TarInfo("bin")
-        link.type, link.linkname = tarfile.SYMTYPE, "usr/bin"
+        link.type, link.linkname, link.mode = tarfile.SYMTYPE, "usr/bin", 0o777
         items.append((link, b""))
-        return items, {"files": records}
+        return items, {"files": records, "links": [{"path": "bin", "target": "usr/bin"}]}
 
     def test_reads_loader_and_library_requirements_without_executing_elf(self):
         text = HEADER + "[Requesting program interpreter: /lib64/ld-linux-x86-64.so.2]\n 0x1 (NEEDED) Shared library: [libc.so.6]\n"
@@ -85,6 +85,14 @@ class ProjectCoreTest(unittest.TestCase):
         with source_archive([*items, (directory, b"")], status=None) as archive:
             with self.assertRaisesRegex(ValueError, "Diretório final diverge"):
                 project_core.audit_core(archive, manifest)
+
+    def test_accepts_declared_engine_mount_table_link(self):
+        items, manifest = self.core_fixture()
+        link = tarfile.TarInfo("etc/mtab")
+        link.type, link.linkname, link.mode = tarfile.SYMTYPE, "/proc/mounts", 0o777
+        manifest["links"].append({"path": "etc/mtab", "target": "proc/mounts"})
+        with source_archive([*items, (link, b"")], status=None) as archive:
+            self.assertEqual(20, len(project_core.audit_core(archive, manifest)["commands"]))
 
 
 if __name__ == "__main__":
