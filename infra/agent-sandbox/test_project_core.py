@@ -11,6 +11,20 @@ HEADER = "Class: ELF64\nData: 2's complement, little endian\nMachine: Advanced M
 
 
 class ProjectCoreTest(unittest.TestCase):
+    def test_candidate_metadata_preserves_source_and_matches_locked_binary(self):
+        control = "Package: synthetic-lib\nVersion: 2:1.0-3+b1\nArchitecture: amd64\nSource: synthetic-source (2:1.0-3)\n"
+        expected = {"name": "synthetic-lib", "version": "2:1.0-3+b1", "architecture": "amd64"}
+        result = getattr(project_core, "candidate_package", lambda *args: {})(control, expected)
+        self.assertEqual({**expected, "sourceName": "synthetic-source", "sourceVersion": "2:1.0-3"}, result)
+
+    def test_candidate_metadata_rejects_mismatch_or_multiple_packages(self):
+        control = "Package: synthetic-lib\nVersion: 1.0\nArchitecture: amd64\n"
+        expected = {"name": "synthetic-lib", "version": "1.0", "architecture": "amd64"}
+        for data, target in ((control, {**expected, "name": "other"}), (control, {**expected, "version": "1.1"}),
+                             (control, {**expected, "architecture": "all"}), (control + "\n" + control.replace("synthetic-lib", "other"), expected)):
+            with self.subTest(data=data, target=target), self.assertRaisesRegex(ValueError, "Candidato diverge"):
+                getattr(project_core, "candidate_package", lambda *args: {})(data, target)
+
     def test_license_reference_excludes_sentence_period_but_preserves_version(self):
         text = b"See /usr/share/common-licenses/GFDL-1.2. Also /usr/share/common-licenses/LGPL-2.1\n"
         self.assertEqual({b"GFDL-1.2", b"LGPL-2.1"}, project_core.license_references(text))
