@@ -2773,6 +2773,20 @@ Arquivos: TRIAGE.md/spec/task/backlog e link README do sandbox. Documentação n
 
 Verificação documental: conjunto exato dos11IDs/19ocorrências/sete binários conferido contra JSON selecionado; UTF8 estrito/diff-check/Gitleaks passaram. Revisão independente corrigiu formulação78409: biblioteca libmount presente não prova presença da função/caminho na compilação exata; ressalva mantida. Nenhum bloqueante restante após ajuste.
 
+### 9.106 Quota de CPU sob excesso limitado — B08.7e.1
+
+PR162 integrada em4335ee3f9713efb5df47cba0481f4046d7d05746 após Sandbox Core23/run39070113695 e Secret Scan291/run39070113966 verdes no head2b9ee6e584c075b8ebcc57f1d1e3fd3102bf1887. Triagem registrada sem remediação/waiver.
+
+Objetivo/aceite refinado no backlog antes de editar: demonstrar quota1CPU sob duas cargas limitadas no cgroup próprio, com progresso real, deltas nr_periods/nr_throttled/throttled_usec positivos e operação pequena funcional após recolher filhos. Fonte: [interface cpu.stat/cpu.max do kernel](https://docs.kernel.org/admin-guide/cgroup-v2.html). Não usar duração/lentidão como prova, nem alegar RAM/PID/egress ou remediação dos CVEs. Contadores próprios permitem distinguir quota local de pressão do host/ancestrais conforme documentação do kernel.
+
+Arquivos previstos/resultado mínimo: cpu_controls.py/testes, parsing de contadores não negativos em containment/teste, integração em core_ci e docs. Reutiliza worker/validação efetiva/bind próprio/cleanup/raizRO/none/10001/capszero/NNP/1CPU/1GiB/pids128; nenhum runtime novo. Dois processos GNUawk limitados por deadline interno4segundos e teto20000blocos de10000operações, com sqrt/progresso; deadline externo15s da operação start/attach, além dos demais timeouts e job15min. Somente CI Linux hospedado. Fixtures fictícias e nenhuma promoção da baseline sem aceite.
+
+TDD: CPU focado2 testes/nove falhas esperadas por validação ausente; parser focado9 testes/ValueError semântico esperado ao recusar contador0, sem falha de import/compilação. Green mínimo:47 controles locais passaram em0,733s. Regra int aceita contador>=0, regra None preserva exigência>0. Deltas zerados/negativos, filho sem progresso, campo ausente ou quota ilimitada recusados. Riscos: runner com apenas1CPU efetiva pode não produzir throttling e deve falhar/inconclusivo; não afrouxar para obter PASS. Revisão/CI real pendentes.
+
+Green real: Sandbox Core25/run39070355874/job117506496721 e Secret Scan293/run39070355886 verdes no head7b50fe7f1481ffce1e734b07554721fa94e9147d;47 controles Linux. Artefato12115076650:160569bytes/SHA256e6ac106d32cda02262c49661025df7ffe568c43fe32206736b306418ff586440, quatro relatórios selecionados; checkout de testedcca6d1c6cdfd80a2e765c54e11836296255ff14; imagemsha256:9d0b519b1cbd72c8f5c5321e582eebc2ddda8f4a341650df6850c2fa7109b0f4.
+
+CPU observado: before(periods1/throttled0/usec0), after(36/35/3462494), deltas(35/35/3462494). Cargas fizeram2458/2438blocos; cpu.max100000100000, sqrt/recuperação PASS, exit0/container parado. Auditoria refez validação dos deltas e hashes comando/configuração; Gitleaks8.30.1 no JSON selecionado não encontrou candidatos. Revisão independente47testes/diff-check sem bloqueantes; guard próprio de CI também incluído no helper (variáveis não são mecanismo de isolamento do agente). Inventário continua HIGH17/CRITICAL2; nenhuma remediação/aceite implícito. Gates do último SHA ainda serão conferidos antes do merge.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

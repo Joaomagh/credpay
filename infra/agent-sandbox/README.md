@@ -57,3 +57,9 @@ Cobertura exige todos os componentes e nenhuma duplicata/extra, versões/arquite
 O relatório selecionado em core-inventory.json inclui componentScan (cobertura/achados/DB/hashes/imagem/checkout/comando/UTC/limites). SBOM terceiro pode causar detecção imprecisa: warning registrado, sem declarar autoria Trivy. Não cobre imagem completa/camadas inferiores/kernel/controlador/conteúdo futuro do workspace nem demonstra exploração; não aceita sandbox completo. spec§9.104.
 
 A [triagem dos11IDs HIGH/CRITICAL](TRIAGE.md) registra versões, código selecionado e lacunas. A baseline permanece sem aceite; testes CI e inventário não são autorização de operação do agente.
+
+## B08.7e.1: quota de CPU sob excesso limitado
+
+cpu_controls.py executa duas cargas GNUawk finitas em worker próprio sob a configuração restrita existente, exclusivamente no Linux CI. Exige cálculo positivo, progresso dos dois filhos, cpu.max100000/100000 e aumento de nr_periods/nr_throttled/throttled_usec em cpu.stat antes/depois, seguido de cálculo pequeno após wait. Sem throttling ou observação completa, falha como inconclusivo. Deadline interno/teto de iterações e timeout externo limitam a carga.
+
+Relatório resourceCpu preserva comando/configSHA/exit/observações/baseline/final/deltas/limites. PASS_CPU_ONLY não cobre memória/PID/egress, DockerDesktop ou vulnerabilidades; a baseline com advisories continua sem aceite. spec§9.106.

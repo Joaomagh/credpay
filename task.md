@@ -4,15 +4,15 @@
 
 ## Último incremento
 
-- PR161/80311f2 integrou inventário dos28componentes após Core21/Scan289 verdes no head361daa3;44 controles. HIGH17/CRITICAL2 (11IDs) preservados; baseline sem aceite; spec9.104.
+- PR162/4335ee3 integrou triagem dos11IDs após Core23/Scan291 verdes no head2b9ee6e. Baseline sem aceite/remediação; spec9.105.
 
 ## Agora
 
-- [ ] B08.7d.3 — Integrar triagem documental dos11IDs, fontes/arquivos/pré-condições e lacunas. Nenhum fixtrixie disponível no corte; sem remediação/waiver. spec9.105.
+- [ ] B08.7e.1 — Prova controlada de CPU sob excesso com progresso e throttling próprios. Red/green47 controles locais/Linux, revisão e Core25/Scan293 verdes; artefato auditado, gates finais/merge pendentes. spec9.106.
 
 ## Próximo
 
-- B08.7e.1: prova controlada de CPU sob excesso, com progresso e throttling reais em cgroup próprio. Memória/PID/rede/daemon/ferramentas seguem separados; DockerDesktop pendente.
+- B08.7e: memória/PID sob excesso e negativos rede/daemon/ferramentas em incrementos separados; DockerDesktop pendente.
 - Remediação da baseline: priorizar gawk e análise de separação do código conforme infra/agent-sandbox/TRIAGE.md, sem mistura de pacotes sid/supressão/aceite implícito.
 - B08.1: recuperar um log/cinco artefatos históricos ou registrar disposição explícita; revisão continua parcial. Depois ensaio do quickstart/demo/explicação com João.
 

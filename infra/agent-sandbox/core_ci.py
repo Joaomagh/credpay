@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from project_core import audit_core, project
 from containment import run_controls
 from scan_core import run_scan
+from cpu_controls import run_cpu
 from source_ci import LABEL, ROOT, assert_never_started, docker, inspect_container
 
 SMOKE = r'''set -eu
@@ -156,12 +157,13 @@ def main():
             inspect_container(identity, marker, final_image["Id"])
             docker("rm", "--force", identity)
         containment = run_controls(final_image["Id"], folder, final_tag + "-containment", origin["commit"])
+        resource_cpu = run_cpu(final_image["Id"], ROOT / containment["fixtureRelative"] / "workspace", final_tag + "-cpu")
         component_scan = run_scan(projection, folder, final_image["Id"], origin["commit"])
         report = {"scope": "CORE_BUILD_NOT_CONTAINMENT_ACCEPTANCE", "commit": origin["commit"],
                   "createdUtc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                   "sourceImage": origin["sourceImage"], "candidateImageId": candidate_image["Id"], "imageId": final_image["Id"],
                   "smoke": "PASS_20_COMMANDS", "inspector": inspector, "projection": projection, "actual": actual,
-                  "containment": containment, "componentScan": component_scan}
+                  "containment": containment, "resourceCpu": resource_cpu, "componentScan": component_scan}
         reports = folder / "reports"
         reports.mkdir()
         (reports / "core-inventory.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
