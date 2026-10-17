@@ -1,0 +1,30 @@
+[
+  {
+    "file": "stitch_console_credpay_transa_es_ass_ncronas.zip",
+    "bytes": 214704,
+    "sha256": "7f4edbb7e82e745f287fc5204991dd248fb5e7af6a9b21bafa5507b4ea0b407e",
+    "entries_verified": 3,
+    "content_matches": "source hashes in ../manifest.json"
+  },
+  {
+    "file": "stitch_console_credpay_transa_es_ass_ncronas (1).zip",
+    "bytes": 200037,
+    "sha256": "e7f1daec1d49a953c34a1dcac05006169b2496447f0d44f3df070f2734b6b371",
+    "entries_verified": 3,
+    "content_matches": "source hashes in ../manifest.json"
+  },
+  {
+    "file": "stitch_console_credpay_transa_es_ass_ncronas (2).zip",
+    "bytes": 13037,
+    "sha256": "e3a762d29d7d02f568c15c62c70fc7096ade2d38cf3022d0b68b54fe73e17b9d",
+    "entries_verified": 3,
+    "content_matches": "source hashes in ../manifest.json"
+  },
+  {
+    "file": "stitch_console_credpay_transa_es_ass_ncronas (3).zip",
+    "bytes": 13496,
+    "sha256": "bbf857d37b50f06cf8c9d4b7de476b18a30120fe1a9929b65532fb4fa5c20eae",
+    "entries_verified": 3,
+    "content_matches": "source hashes in ../manifest.json"
+  }
+]
