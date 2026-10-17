@@ -11,6 +11,10 @@ HEADER = "Class: ELF64\nData: 2's complement, little endian\nMachine: Advanced M
 
 
 class ProjectCoreTest(unittest.TestCase):
+    def test_license_reference_excludes_sentence_period_but_preserves_version(self):
+        text = b"See /usr/share/common-licenses/GFDL-1.2. Also /usr/share/common-licenses/LGPL-2.1\n"
+        self.assertEqual({b"GFDL-1.2", b"LGPL-2.1"}, project_core.license_references(text))
+
     def core_fixture(self):
         items, records = [], []
         for name in TOOLS:

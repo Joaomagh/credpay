@@ -12,6 +12,10 @@ from collections import deque
 from inventory_source import INJECTED, TOOLS, _path, _resolve, inventory, inventory_files
 
 
+def license_references(content):
+    return {name.rstrip(b".") for name in re.findall(rb"/usr/share/common-licenses/([A-Za-z0-9+.-]+)", content)}
+
+
 def audit_core(archive, manifest):
     actual = inventory_files(archive)
     expected = {entry["path"]: entry for entry in manifest["files"]}
@@ -179,7 +183,7 @@ def project(archive, folder, additions):
             add(requested, source.read(copyright_path), 0o444, copyright_path, "copyright", name)
         licenses = set()
         for content, _ in list(files.values()):
-            licenses.update(re.findall(rb"/usr/share/common-licenses/([A-Za-z0-9+.-]+)", content))
+            licenses.update(license_references(content))
         for name in sorted(licenses):
             requested = "usr/share/common-licenses/" + name.decode("ascii")
             license_path = source.resolve(requested)
