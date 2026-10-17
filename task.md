@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.7e.1 — Prova controlada de CPU sob excesso com progresso e throttling próprios. Red/green47 testes locais; revisão/CI pendentes. spec9.106.
+- [ ] B08.7e.1 — Prova controlada de CPU sob excesso com progresso e throttling próprios. Red/green47 controles locais/Linux, revisão e Core25/Scan293 verdes; artefato auditado, gates finais/merge pendentes. spec9.106.
 
 ## Próximo
 
