@@ -8,11 +8,11 @@
 
 ## Agora
 
-- [ ] B08.7d.2 — Inventário de advisories dos componentes parciais com cobertura Debian/fonte exata.44 testes locais verdes; revisão/CI pendentes. spec9.104.
+- [ ] B08.7d.2 — Inventário de advisories dos componentes parciais com cobertura Debian/fonte exata.44 controles locais/Linux, revisão sem bloqueantes e Core20/Scan288 verdes; artefato auditado, integração final pendente. spec9.104.
 
 ## Próximo
 
-- B08.7: negativos rede/daemon/excesso/instalação/download, eventual remediação dos achados e DockerDesktop; sem aceitar risco implicitamente.
+- B08.7d.3: triagem/remediação dos11IDs HIGH/CRITICAL do core (19 ocorrências), sem supressão/aceite implícito. Depois negativos rede/daemon/excesso/instalação/download e DockerDesktop.
 - B08.1: recuperar um log/cinco artefatos históricos ou registrar disposição explícita; revisão continua parcial. Depois ensaio do quickstart/demo/explicação com João.
 
 ## Depois
