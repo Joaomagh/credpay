@@ -69,3 +69,9 @@ Relatório resourceCpu preserva comando/configSHA/exit/observações/baseline/fi
 memory_controls.py usa alocador GNUawk de strings únicas/materializadas, controle positivo e recuperação32MiB, teto nominal1,5GiB/deadline12s sob limite1GiB/swap0. O shell PID1 observa memory.events.local com builtins, sem criar monitor após pressão. Só exit137 acompanhado por deltas locais max/oom/oom_kill positivos e recuperação aceita PASS_MEMORY_ONLY.
 
 O modo explícito permite ao daemon registrar OOMKilled pelo filho, mas exige observador parado com exit0/PID0 e observações completas. Os demais protocolos continuam recusando OOM. Não altera oom_score_adj/oom.group, capabilities, mounts ou recursos. Timeout externo30s/cleanup próprio; memória/PID1 perdidos ou carga que atinge teto sem OOM falham como inconclusivos. resourceMemory publica fatos/deltas/comando/configSHA/flagOOM/limites. Nenhuma correção de CVEs ou aceite de Desktop/agente implícito; spec§9.108.
+
+## B08.7e.3: PIDs sob excesso finito
+
+pids_controls.py usa observerPID1, writer único e actor com teto160tentativas de filhos diretos, bloqueados em read por pipe/FD3. Filhos não criam processos. Sem subshell de observação sob pressão, exige limite/pico128, evento local max crescente, população retida126..128 e retorno ao baseline1 após EOF/reap via jobs builtin do dash. Pipe/read/shell positivos antes/depois; exit de fork isolado não comprova controle.
+
+resourcePids preserva observações/deltas/comando/configSHA/exit/limites. Polls limitados/timeout externo30s/cleanup próprio, sem novo runtime/privilegio ou Docker local. Falha/timeout/população não recuperada não viram PASS. Prova LinuxCI/dash, sem aceite Desktop/agente ou remediação de CVEs; spec§9.110.

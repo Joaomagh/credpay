@@ -17,6 +17,7 @@ from containment import run_controls
 from scan_core import run_scan
 from cpu_controls import run_cpu
 from memory_controls import run_memory
+from pids_controls import run_pids
 from source_ci import LABEL, ROOT, assert_never_started, docker, inspect_container
 
 SMOKE = r'''set -eu
@@ -160,12 +161,14 @@ def main():
         containment = run_controls(final_image["Id"], folder, final_tag + "-containment", origin["commit"])
         resource_cpu = run_cpu(final_image["Id"], ROOT / containment["fixtureRelative"] / "workspace", final_tag + "-cpu")
         resource_memory = run_memory(final_image["Id"], ROOT / containment["fixtureRelative"] / "workspace", final_tag + "-memory")
+        resource_pids = run_pids(final_image["Id"], ROOT / containment["fixtureRelative"] / "workspace", final_tag + "-pids")
         component_scan = run_scan(projection, folder, final_image["Id"], origin["commit"])
         report = {"scope": "CORE_BUILD_NOT_CONTAINMENT_ACCEPTANCE", "commit": origin["commit"],
                   "createdUtc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                   "sourceImage": origin["sourceImage"], "candidateImageId": candidate_image["Id"], "imageId": final_image["Id"],
                   "smoke": "PASS_20_COMMANDS", "inspector": inspector, "projection": projection, "actual": actual,
-                  "containment": containment, "resourceCpu": resource_cpu, "resourceMemory": resource_memory, "componentScan": component_scan}
+                  "containment": containment, "resourceCpu": resource_cpu, "resourceMemory": resource_memory,
+                  "resourcePids": resource_pids, "componentScan": component_scan}
         reports = folder / "reports"
         reports.mkdir()
         (reports / "core-inventory.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

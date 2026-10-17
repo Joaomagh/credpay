@@ -412,7 +412,7 @@ Essa hipótese não bloqueia a validação isolada do `sandbox-core`. O primeiro
 | CPU | 1 CPU | limite e throttling próprio sob excesso comprovados no Linux CI (§9.106); DockerDesktop pendente |
 | Memória | 1 GiB | limite/OOM local controlado e recuperação comprovados no Linux CI (§9.108); DockerDesktop pendente |
 | Swap | desabilitado | memory.swap.max0 observado no Linux CI (§9.102); DockerDesktop pendente |
-| Processos | 128 PIDs | pids.max128 observado no Linux CI (§9.102); saturação/recusa e DockerDesktop pendentes |
+| Processos | 128 PIDs | limite/pico128, recusa local e recuperação comprovados no Linux CI (§9.110); DockerDesktop pendente |
 | `/tmp` | 256 MiB | flags/tamanho/noexec/descarte comprovados no Linux CI (§9.102); DockerDesktop pendente |
 
 Os valores são limites máximos da baseline, não reservas ou requisitos de desempenho. O bind mount do workspace não recebe cota simples de armazenamento por esses parâmetros e permanece como risco residual.
@@ -2816,6 +2816,20 @@ PR165/280e03b13059623625e5f6e02cdd9ac88319f330 integrada após Core29/run3907111
 Reconciliação documental em README/spec/task/backlog: CPU e memória sob excesso comprovados somente no LinuxCI; PIDs/rede/daemon/ferramentas/Desktop continuam pendentes, baseline HIGH17/CRITICAL2 sem aceite e lacunas B08.1/ensaio com João abertas. Task aponta único próximo refinamento de PIDs antes de implementar. Não altera código/política, findings, escopo/frontend/painel ou estimativa de conclusão; não exige red artificial.
 
 Verificação documental: UTF8 estrito/um próximo passo, diff-check e Gitleaks8.30.1 na spec passaram; revisão independente somente leitura sem bloqueantes. Nenhuma infraestrutura executada nesta atualização.
+
+### 9.110 Limite de PIDs sob excesso finito — B08.7e.3
+
+Objetivo/aceite antes de editar: observerPID1 previamente vivo, positivo read/pipe funcional antes/depois, limite128/pico128, população retida126..128, delta pids.events.local:max positivo e retorno a1PID antes da recuperação. Actor tenta no máximo160 filhossh diretos; nenhum filho cria processos. Writer único mantém pipe aberto sem dados até flag em/tmp; filhos read bloqueados por FD3 explícito. Somente writer faz espera ativa, evitando128busyloops sob quota1CPU. Observer lê cgroups com builtins, sem forks/command substitution sob pressão; releasebuiltinfecha writer/EOF libera filhos. jobs builtin no polling recolhe adotados se actor morrer ao falharfork. Dependência concreta dash, não garantia POSIX genérica: [jobs.c upstream](https://kernel.googlesource.com/pub/scm/utils/dash/dash/+/da72f6988ceb2e50dbdd894a45c40d02edca9293/src/jobs.c). Leitura/reaping revisados em análise independente antes da implementação.
+
+Arquivos: pids_controls/testes, integração core_ci e docs. Worker restrito/cgroup próprio/128PIDs/1CPU/1GiB/none/RO/capszero/NNP e fixture validados como nos protocolos anteriores. Polls com teto100000 e timeout externo30s; nenhum fork recursivo, runtime/dependência/privilégio novo, escrita no cgroup ou Docker local. Falha de fork isolada, timeout, pico/eventos ausentes ou recuperação incompleta não produzem PASS. Código de wait do actor é registrado, não prova suficiente. Riscos: reaping/adotados e descriptorpipe; provar no CI hospedado antes de aceitar protocolo. Não corrige CVEs nem prova DockerDesktop/contenção do agente.
+
+TDD: dois testes focados/oito falhas esperadas antes da implementação; green52controles locais em0,589s, sem falhas/erros/skips. Diff-check passou. Revisão de implementação/CI real pendentes; nenhum Docker local executado.
+
+Revisão encontrou positivo que imprimiaPASS com read/comparação falhos. Teste POSIX real usa as duas linhas do protocolo com token incorreto; no Windows é explicitamente não executado, sem instalar shell. Red confirmado no LinuxCI31/run39071698100/job117510475504, head5efbba563e981f3b2d1b134a714fd9392da88493:53 testes/duas falhas esperadas AssertionError0==0 nos dois positivos, zero erros/skips. Correção mínima troca sequência por&&, preservando teste de regressão. Local agora53descobertos/52passam/umskip POSIX conhecido; não alegar green real desse teste antes de novoCI. Carga de PIDs não chegou a executar no red.
+
+Green real: Sandbox Core32/run39071760897/job117510658258 e Scan304/run39071760940 verdes no head93a9e7e3673c45a658bb2614276302860fcbd220;53 testes Linux sem falhas/erros/skips, incluindo negativos dos positivos. Artefato12115143986:162237bytes/SHA256d8a4edf6e80cbde1339972a45c95e7ae9ae01aeb23d85dc26d83c983e47fb8f5, quatro relatórios selecionados. Checkout a45649d3133d4de5ae82d7d4568d48b2cff0363e tem paisfd83972/93a9e7e confirmados; imagemsha256:6109f206979a7b5a24b6bd0bad19159b547cdc676f8c15ba9d8a909f3c848d14.
+
+Observado: baseline1, limite/pico128, retidos127, evento localmax0→1, actor2, recuperado1 e positivos antes/depoisPASS. Hashes comando/configuração refeitos e validação do delta/vínculos conferida; workerexit0/parado/semOOM. Gitleaks8.30.1 no JSON selecionado não encontrou candidatos. Revisão independente tratada sem bloqueantes; actor2 sozinho não é prova. Scanner permanece HIGH17/CRITICAL2; nenhuma remediação/aceite de Desktop/agente implícito. Gates finais do último SHA ainda serão conferidos antes do merge.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
