@@ -8,6 +8,7 @@ import re
 import shlex
 import shutil
 import subprocess
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -59,11 +60,14 @@ printf 'SWAP_MAX=%s\n' "$(awk '{print $1}' /sys/fs/cgroup/memory.swap.max)"
 printf 'PIDS_MAX=%s\n' "$(awk '{print $1}' /sys/fs/cgroup/pids.max)"
 printf 'CPU_MAX=%s\n' "$(awk '{print $1 " " $2}' /sys/fs/cgroup/cpu.max)"
 printf 'PID_NAMESPACE=%s\n' "$(stat -L -c %i /proc/self/ns/pid)"
+printf 'PID_NAMESPACE_DEVICE=%s\n' "$(stat -L -c %d /proc/self/ns/pid)"
 printf 'OUTSIDE_READ_EXIT=%s\nLINK_READ_EXIT=%s\nROOT_WRITE_EXIT=%s\nTMP_EXEC_EXIT=%s\nPRIV_MOUNT_EXIT=%s\n' "$outside_status" "$link_status" "$root_status" "$probe_status" "$mount_status"
 awk 'BEGIN {while (1) {}}' &
 probe_child=$!
 kill -0 "$probe_child"
 printf 'CHILD_STARTED=PASS\nCHILD_PID=%s\n' "$probe_child"
+printf 'OBSERVATIONS_READY=PASS\n'
+while [ ! -e /workspace/release ]; do :; done
 '''
 
 SECOND_SCRIPT = r'''set -eu
@@ -72,11 +76,13 @@ grep -qx created /workspace/created.txt
 [ ! -e /tmp/lifecycle-canary ]
 [ ! -e /tmp/noexec-probe ]
 printf 'LIFECYCLE_RECREATED=PASS\nPID_NAMESPACE=%s\n' "$(stat -L -c %i /proc/self/ns/pid)"
+printf 'PID_NAMESPACE_DEVICE=%s\n' "$(stat -L -c %d /proc/self/ns/pid)"
 '''
 
 FIRST_EXPECTED = {"AJ_FS_01": "PASS", "AJ_FS_02": "PASS", "AJ_SEC_01": "PASS", "AJ_PRIV_01": "PASS",
                   "MEMORY_MAX": "1073741824", "SWAP_MAX": "0", "PIDS_MAX": "128", "CPU_MAX": "100000 100000",
                   "PID_NAMESPACE": None, "CHILD_STARTED": "PASS", "CHILD_PID": None,
+                  "PID_NAMESPACE_DEVICE": None, "OBSERVATIONS_READY": "PASS",
                   "OUTSIDE_READ_EXIT": "2", "LINK_READ_EXIT": "2", "ROOT_WRITE_EXIT": None, "TMP_EXEC_EXIT": "126", "PRIV_MOUNT_EXIT": None}
 
 
@@ -92,6 +98,14 @@ def parse_observations(text, expected):
     if set(result) != set(expected):
         raise ValueError("Observações incompletas.")
     return result
+
+
+def validate_namespace_pair(first, second, simultaneous):
+    if simultaneous is not True:
+        raise ValueError("Comparação exige namespaces simultaneamente vivos.")
+    if (first["PID_NAMESPACE_DEVICE"], first["PID_NAMESPACE"]) == (second["PID_NAMESPACE_DEVICE"], second["PID_NAMESPACE"]):
+        raise ValueError("Namespace de processos não foi distinguido.")
+    return True
 
 
 def validate_worker(data, identity, marker, image, workspace):
@@ -136,39 +150,73 @@ def _sha(value):
 
 
 def _inspect(identity, marker, image, workspace):
-    data = json.loads(docker("container", "inspect", identity))[0]
+    data = json.loads(docker("container", "inspect", identity, timeout=5))[0]
     selected = validate_worker(data, identity, marker, image, workspace)
     return data, selected
 
 
-def _worker(image, marker, workspace, script, expected):
+def _worker(image, marker, workspace, script, expected, hold=False, timeout=30):
     identity = docker("create", "--name", marker, "--label", f"{LABEL}={marker}", "--user", "10001:10001",
                       "--network", "none", "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges:true",
                       "--cpus", "1", "--memory", "1g", "--memory-swap", "1g", "--pids-limit", "128",
                       "--ipc", "private", "--cgroupns", "private", "--tmpfs", "/tmp:rw,noexec,nosuid,nodev,size=256m",
                       "--mount", f"type=bind,source={workspace},target=/workspace,bind-propagation=rprivate",
-                      "--entrypoint", "/usr/bin/sh", image, "-c", script)
+                      "--entrypoint", "/usr/bin/sh", image, "-c", script, timeout=10)
     if not re.fullmatch(r"[a-f0-9]{64}", identity):
         raise ValueError("Identidade de worker inválida.")
+    release = workspace / "release"
+    release_created = False
+    live_control = None
     try:
         before, configuration = _inspect(identity, marker, image, workspace)
         assert_never_started(before)
         try:
-            result = subprocess.run(["docker", "start", "--attach", identity], cwd=ROOT, capture_output=True, text=True, timeout=30)
+            if hold:
+                docker("start", identity, timeout=5)
+                deadline = time.monotonic() + 10
+                while time.monotonic() < deadline:
+                    current, _ = _inspect(identity, marker, image, workspace)
+                    output = docker("logs", identity, timeout=2)
+                    if current["State"]["Status"] != "running":
+                        raise ValueError("Primeiro worker terminou antes do controle simultâneo.")
+                    if output.endswith("OBSERVATIONS_READY=PASS"):
+                        first_live = parse_observations(output, expected)
+                        break
+                    time.sleep(0.05)
+                else:
+                    raise ValueError("Primeiro worker não produziu observações no prazo de10s.")
+                observer_script = "printf 'NAMESPACE_CONTROL=PASS\\nPID_NAMESPACE=%s\\nPID_NAMESPACE_DEVICE=%s\\n' \"$(stat -L -c %i /proc/self/ns/pid)\" \"$(stat -L -c %d /proc/self/ns/pid)\""
+                live_control = _worker(image, marker + "-observer", workspace, observer_script,
+                                       {"NAMESPACE_CONTROL": "PASS", "PID_NAMESPACE": None, "PID_NAMESPACE_DEVICE": None}, timeout=5)
+                still_live, _ = _inspect(identity, marker, image, workspace)
+                if not still_live["State"]["Running"] or still_live["State"]["StartedAt"] != current["State"]["StartedAt"] or still_live.get("RestartCount", 0):
+                    raise ValueError("Primeiro worker não permaneceu vivo durante o controle.")
+                validate_namespace_pair(first_live, live_control["observations"], True)
+                descriptor = os.open(release, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                os.close(descriptor)
+                release_created = True
+                result = subprocess.run(["docker", "wait", identity], cwd=ROOT, capture_output=True, text=True, timeout=10)
+                output = docker("logs", identity, timeout=2)
+            else:
+                result = subprocess.run(["docker", "start", "--attach", identity], cwd=ROOT, capture_output=True, text=True, timeout=timeout)
+                output = result.stdout
         except subprocess.TimeoutExpired:
-            raise RuntimeError("Worker excedeu prazo externo de30s; cleanup próprio obrigatório.") from None
+            raise RuntimeError("Operação do protocolo excedeu seu timeout externo; cleanup próprio obrigatório.") from None
         after, _ = _inspect(identity, marker, image, workspace)
         state = after["State"]
         if result.returncode or state["Status"] != "exited" or state["ExitCode"] != 0 or state["OOMKilled"] or state["Pid"] != 0:
-            markers = [line for line in result.stdout.splitlines() if re.fullmatch(r"[A-Z_0-9]+=PASS", line)]
+            markers = [line for line in output.splitlines() if re.fullmatch(r"[A-Z_0-9]+=PASS", line)]
             reason = "permission" if "Permission denied" in result.stderr else "missing" if "No such file" in result.stderr else "unclassified"
             raise ValueError(f"Worker falhou: exit={state['ExitCode']}; marcadores={markers}; classe={reason}; saída integral omitida.")
-        observations = parse_observations(result.stdout, expected)
+        observations = parse_observations(output, expected)
         return {"configuration": configuration, "configurationSha256": _sha(json.dumps(configuration, sort_keys=True)),
-                "command": script, "commandSha256": _sha(script), "exitCode": 0, "observations": observations, "stopped": True}
+                "command": script, "commandSha256": _sha(script), "exitCode": 0, "observations": observations, "stopped": True,
+                "liveNamespaceControl": live_control}
     finally:
         _inspect(identity, marker, image, workspace)
-        docker("rm", "--force", identity)
+        docker("rm", "--force", identity, timeout=10)
+        if release_created:
+            release.unlink()
 
 
 def run_controls(image, folder, marker, commit):
@@ -211,7 +259,7 @@ def run_controls(image, folder, marker, commit):
         raise ValueError("Sentinela exclusiva já existe no controlador.")
     os.environ[sentinel] = nonce
     try:
-        first = _worker(image, marker + "-first", workspace, first_script, FIRST_EXPECTED)
+        first = _worker(image, marker + "-first", workspace, first_script, FIRST_EXPECTED, hold=True)
     finally:
         del os.environ[sentinel]
     if canary.read_text(encoding="ascii") != "baseline\nchanged\n" or (workspace / "created.txt").read_text(encoding="ascii") != "created\n" or (workspace / "created.txt").stat().st_uid != 10001:
@@ -222,9 +270,7 @@ def run_controls(image, folder, marker, commit):
     diff = git("diff", "--no-ext-diff", "--no-textconv", "--", "canary.txt")
     if set(status.splitlines()) != {" M canary.txt", "?? created.txt"} or "\n+changed" not in diff:
         raise ValueError("Git não detectou exatamente as alterações autorizadas.")
-    second = _worker(image, marker + "-second", workspace, SECOND_SCRIPT, {"LIFECYCLE_RECREATED": "PASS", "PID_NAMESPACE": None})
-    if first["observations"]["PID_NAMESPACE"] == second["observations"]["PID_NAMESPACE"]:
-        raise ValueError("Namespace de processos não foi distinguido na recriação.")
+    second = _worker(image, marker + "-second", workspace, SECOND_SCRIPT, {"LIFECYCLE_RECREATED": "PASS", "PID_NAMESPACE": None, "PID_NAMESPACE_DEVICE": None})
     versions = {"docker": docker("version", "--format", "{{.Server.Version}}|{{.Server.APIVersion}}|{{.Server.Os}}|{{.Server.Arch}}"),
                 "hostKernel": platform.release(), "hostArchitecture": platform.machine(), "python": platform.python_version(),
                 "git": subprocess.run(["git", "--version"], capture_output=True, text=True, check=True, timeout=10).stdout.strip(),
@@ -235,7 +281,7 @@ def run_controls(image, folder, marker, commit):
         {"id": "AJ-FS-02", "expected": "RootfsRO/tmpfsnoexec e descarte", "observed": "Owned10001/mode755 negou EROFS; root mountro; ELF idêntico555 em/tmp negou126/Permissiondenied; mountflags e256MiB conferidos; recriação sem temporários", "positive": "ELF original funciona; cópia/hash/bits conferidos; escrita/tmp funciona"},
         {"id": "AJ-SEC-01", "expected": "Sentinela falsa do controlador ausente", "observed": "Nome/valor ausentes; Config.Env allowlist exata; env runtime só nomes previstos", "positive": "Sentinela definida no controlador; LC_ALL/PATH funcionais no worker"},
         {"id": "AJ-PRIV-01", "expected": "UID/GID10001/capszero/NNP1/operação privilegiada negada", "observed": "id e cinco masks em/proc conferidos; NNP1; mounttmpfs em alvo válido negado por permissão", "positive": "mount lista mounts; tmpfs presente; diretório alvo criado"},
-        {"id": "AJ-LIFE-01", "expected": "Bind persiste/tmp e processo efêmeros", "observed": "Filho vivo observado antes da saídaPID1; primeiro container parado/removido; novo namespace, bind preservado e/tmp vazio", "positive": "Primeira execução criou os dois canários; segunda lê canário do bind"},
+        {"id": "AJ-LIFE-01", "expected": "Bind persiste/tmp e processo efêmeros", "observed": "Filho vivo antes da saídaPID1; namespaces(device+inode) distintos em controle simultâneo; primeiro container parado/removido, recriação preserva bind e limpa/tmp", "positive": "Primeira execução criou canários; observador durante sua vida e recriação posterior verificam isolamento/persistência"},
         {"id": "AJ-SCOPE-01", "expected": "Git detecta alteração autorizada", "observed": "Status exatoMcanary.txt/??created.txt e diff+changed; fixture inicia limpa", "positive": "Commit sintético inicial e leitura host dos conteúdos alterados"}]
     for item in evidence:
         item.update({"conclusion": "PASS", "exitCodes": [0, 0], "commandReferences": ["first", "second"], "limitation": "Linux CI; nenhuma prova DockerDesktop ou contenção do agente"})

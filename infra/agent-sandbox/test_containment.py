@@ -2,12 +2,26 @@ import copy
 from pathlib import Path
 import unittest
 
-from containment import parse_observations, validate_worker
+from containment import parse_observations, validate_namespace_pair, validate_worker
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 class ContainmentTest(unittest.TestCase):
+    def test_does_not_infer_namespace_identity_after_original_lifetime_ended(self):
+        with self.assertRaisesRegex(ValueError, "simultaneamente"):
+            validate_namespace_pair({"PID_NAMESPACE": "10", "PID_NAMESPACE_DEVICE": "4"},
+                                    {"PID_NAMESPACE": "11", "PID_NAMESPACE_DEVICE": "4"}, False)
+
+    def test_compares_both_device_and_inode_while_namespaces_are_alive(self):
+        self.assertTrue(validate_namespace_pair({"PID_NAMESPACE": "10", "PID_NAMESPACE_DEVICE": "4"},
+                                               {"PID_NAMESPACE": "10", "PID_NAMESPACE_DEVICE": "5"}, True))
+
+    def test_rejects_equal_live_namespace_pair(self):
+        namespace = {"PID_NAMESPACE": "10", "PID_NAMESPACE_DEVICE": "4"}
+        with self.assertRaisesRegex(ValueError, "não foi distinguido"):
+            validate_namespace_pair(namespace, namespace, True)
+
     def test_reads_only_expected_success_markers_and_numeric_namespace(self):
         expected = {"AJ_FS_01": "PASS", "PID_NAMESPACE": None}
         self.assertEqual({"AJ_FS_01": "PASS", "PID_NAMESPACE": "12345"}, parse_observations("AJ_FS_01=PASS\nPID_NAMESPACE=12345\n", expected))
