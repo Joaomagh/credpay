@@ -1,0 +1,40 @@
+{
+  "uid": "credpay-publication",
+  "title": "CredPay — Diagnóstico de publicação",
+  "description": "Ambiente demonstrativo descartável. Scrape não prova conclusão financeira. Contadores medem tentativas desde o início de cada processo; incluem retries e reiniciam com ele. Série ausente não significa zero ou saúde.",
+  "editable": false,
+  "schemaVersion": 41,
+  "version": 1,
+  "timezone": "browser",
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "tags": ["credpay", "diagnostico", "demo"],
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Alcance do scrape — 1 alcançável / 0 falhou",
+      "description": "Prometheus conseguiu ler o exportador. Não comprova consumo, persistência ou estado final. Ausência de série não comprova saúde.",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "credpay-prometheus" },
+      "fieldConfig": { "defaults": { "min": 0, "max": 1, "decimals": 0, "custom": { "spanNulls": false } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "refId": "A", "expr": "up{job=~\"credpay-(transacoes|processamento)\"}", "legendFormat": "{{job}}", "range": true, "instant": false }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Tentativas de publicação acumuladas por resultado",
+      "description": "confirmed: ACK sem retorno; returned: sem rota; nacked: confirmação negativa; error: falha na tentativa. Retries contam novamente. Reinício zera o contador. Ausência não equivale a zero. Não mede transações únicas, consumo ou commit.",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "credpay-prometheus" },
+      "fieldConfig": { "defaults": { "min": 0, "decimals": 0, "custom": { "spanNulls": false } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        { "refId": "A", "expr": "credpay_messaging_publish_attempts_total{job=~\"credpay-(transacoes|processamento)\",outcome=~\"confirmed|returned|nacked|error\"}", "legendFormat": "{{job}} / {{outcome}}", "range": true, "instant": false }
+      ]
+    }
+  ]
+}

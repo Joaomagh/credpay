@@ -43,6 +43,7 @@ foreach ($expected in $baseline) {
 }
 Require ($safeTargets[0].ImageId -cne $safeTargets[1].ImageId) 'ImageIDs dos dois alvos devem ser distintos.'
 $reports = @()
+$completeOS = $true
 $summary = @('# Inventário das duas imagens de observabilidade', '',
     "Checkout: $($manifest.Checkout). Scanner0.75.0; triagem pendente. Não aprova segurança.", '',
     '| Alvo | Go | OS | UNKNOWN | LOW | MEDIUM | HIGH | CRITICAL |', '|---|---:|---:|---:|---:|---:|---:|---:|')
@@ -65,7 +66,7 @@ foreach ($target in $safeTargets) {
     Require ($go.Count -gt 0 -and @($go | Where-Object { $_.Name -ceq 'stdlib' }).Count -gt 0) 'Cobertura Go/stdlib ausente.'
     $modulePrefix = if ($target.Name -ceq 'prometheus') { '^github[.]com/prometheus/' } else { '^github[.]com/grafana/' }
     Require (@($go | Where-Object { $_.Name -cmatch $modulePrefix }).Count -gt 0) 'Módulos Go da organização ausentes.'
-    Require ($os.Count -gt 0 -and $raw.Metadata.OS.Family -cin @('alpine', 'debian', 'ubuntu', 'busybox')) 'Cobertura OS ausente.'
+    $completeOS = $completeOS -and $os.Count -gt 0 -and $raw.Metadata.OS.Family -cin @('alpine', 'debian', 'ubuntu', 'busybox')
     $results = @()
     $counts = @{UNKNOWN=0;LOW=0;MEDIUM=0;HIGH=0;CRITICAL=0}
     foreach ($result in $raw.Results) {
@@ -85,8 +86,15 @@ foreach ($target in $safeTargets) {
     $reports += @{Name=$target.Name;Image=@{Id=$raw.Metadata.ImageID;Os=$raw.Metadata.ImageConfig.os;
         Architecture=$raw.Metadata.ImageConfig.architecture};Counts=$counts;Results=$results;
         Coverage=@{GoPackages=$go.Count;OSPackages=$os.Count;OSFamily=$raw.Metadata.OS.Family}}
+    Write-Host "Observação achados: $($target.Name) UNKNOWN=$($counts.UNKNOWN) LOW=$($counts.LOW) MEDIUM=$($counts.MEDIUM) HIGH=$($counts.HIGH) CRITICAL=$($counts.CRITICAL)."
+    foreach ($finding in @($results.Vulnerabilities | Where-Object { $_.Severity -cin @('HIGH', 'CRITICAL') })) {
+        $fields = @($finding.Id, $finding.Package, $finding.Installed, $finding.Fixed)
+        $safe = @($fields | ForEach-Object { if ([string]$_ -cmatch '^[A-Za-z0-9_./+():@~-]{1,180}$') { [string]$_ } else { 'ausente-ou-omitido' } })
+        Write-Host "Observação achado: $($target.Name) $($finding.Severity) id=$($safe[0]) pacote=$($safe[1]) instalado=$($safe[2]) corrigido=$($safe[3])."
+    }
     $summary += "| $($target.Name) | $($go.Count) | $($os.Count) | $($counts.UNKNOWN) | $($counts.LOW) | $($counts.MEDIUM) | $($counts.HIGH) | $($counts.CRITICAL) |"
 }
+Require $completeOS 'Cobertura OS ausente.'
 $summary += @('', 'Escopo somente Prometheus/Grafana. Quatro alvos dos apps estão no artefato separado da mesma execução.',
     'Mesmas bases da execução; não somar repetições como vulnerabilidades únicas. Sem Env/config/history/tars/logs/relatórios brutos.')
 Require (-not (Test-Path -LiteralPath $OutputDirectory) -or @(Get-ChildItem -LiteralPath $OutputDirectory -Force).Count -eq 0) 'Diretório de saída deve estar vazio.'

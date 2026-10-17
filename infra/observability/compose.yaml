@@ -49,6 +49,8 @@ services:
       GF_LOG_MODE: console
     volumes:
       - ./../observability/datasources.yml:/etc/grafana/provisioning/datasources/credpay.yml:ro
+      - ./../observability/dashboards.yml:/etc/grafana/provisioning/dashboards/credpay.yml:ro
+      - ./../observability/publication-dashboard.json:/etc/grafana/dashboards/publication.json:ro
       - grafana-data:/var/lib/grafana
     ports:
       - "127.0.0.1:${GRAFANA_HTTP_PORT:-3000}:3000"

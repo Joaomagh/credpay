@@ -108,6 +108,21 @@ try {
     Require ($dashboard.StatusCode -eq 200) "Painel provisionado esperado HTTP200, observado=$($dashboard.StatusCode)."
     $model = (Json $dashboard.Content).dashboard
     Require ($model.uid -ceq 'credpay-publication' -and $model.panels.Count -eq 2 -and $model.editable -eq $false) 'Painel deve conter os dois sinais de diagnóstico e ser somente leitura.'
+    foreach ($panel in $model.panels) {
+        Require ($panel.datasource.uid -ceq 'credpay-prometheus' -and $panel.targets.Count -eq 1) 'Painel deve consultar somente o datasource próprio.'
+    }
+    Require ($model.panels[0].targets[0].expr -clike 'up{*' -and
+        $model.panels[1].targets[0].expr -clike 'credpay_messaging_publish_attempts_total{*') 'Consultas do painel devem usar os sinais existentes.'
+    $null = & (Join-Path $root 'infra/compose/demo.ps1') -Action Demo -Project $Project -EnvFile .env.example -Observability
+    $deadline = [DateTime]::UtcNow.AddSeconds(15)
+    do {
+        $attempts = @(Query $model.panels[1].targets[0].expr)
+        $confirmed = @($attempts | Where-Object { $_.metric.outcome -ceq 'confirmed' -and [double]$_.value[1] -ge 2 })
+        if (@($confirmed | Where-Object { $_.metric.job -ceq 'credpay-transacoes' }).Count -eq 1 -and
+            @($confirmed | Where-Object { $_.metric.job -ceq 'credpay-processamento' }).Count -eq 1) { break }
+        Start-Sleep -Milliseconds 300
+    } while ([DateTime]::UtcNow -lt $deadline)
+    Require ($confirmed.Count -eq 2) 'Consulta do painel deve observar tentativas confirmadas dos dois apps após a demo real.'
     Write-Host 'Observação: painel provisionado disponível pela API; renderização visual não comprovada.'
 } finally {
     if ((Test-Path -LiteralPath $marker) -and [IO.File]::ReadAllText($marker) -ceq $Project) {
