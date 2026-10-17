@@ -66,14 +66,31 @@ foreach ($target in $safeTargets) {
     Require ($go.Count -gt 0 -and @($go | Where-Object { $_.Name -ceq 'stdlib' }).Count -gt 0) 'Cobertura Go/stdlib ausente.'
     $modulePrefix = if ($target.Name -ceq 'prometheus') { '^github[.]com/prometheus/' } else { '^github[.]com/grafana/' }
     Require (@($go | Where-Object { $_.Name -cmatch $modulePrefix }).Count -gt 0) 'Módulos Go da organização ausentes.'
+    $requiredBinaries = if ($target.Name -ceq 'prometheus') { @('bin/prometheus', 'bin/promtool') } else { @('usr/share/grafana/bin/grafana') }
+    $mainModule = if ($target.Name -ceq 'prometheus') { 'github.com/prometheus/prometheus' } else { 'github.com/grafana/grafana' }
+    foreach ($path in $requiredBinaries) {
+        $matches = @($raw.Results | Where-Object { $_.Class -ceq 'lang-pkgs' -and $_.Type -ceq 'gobinary' -and $_.Target -ceq $path })
+        Require ($matches.Count -eq 1) 'Binário principal Go ausente ou incompleto.'
+        $stdlib = @($matches[0].Packages | Where-Object { $_.Name -ceq 'stdlib' })
+        Require ($stdlib.Count -eq 1 -and -not [string]::IsNullOrWhiteSpace([string]$stdlib[0].Version) -and
+            @($matches[0].Packages | Where-Object { $_.Name -ceq $mainModule }).Count -eq 1) 'Binário principal Go ausente ou incompleto.'
+    }
     $completeOS = $completeOS -and $os.Count -gt 0 -and $raw.Metadata.OS.Family -cin @('alpine', 'debian', 'ubuntu', 'busybox')
     $results = @()
     $counts = @{UNKNOWN=0;LOW=0;MEDIUM=0;HIGH=0;CRITICAL=0}
     foreach ($result in $raw.Results) {
         Require ($result.Class -and $result.Type) 'Tipo/classe de resultado ausente.'
+        $isGo = $result.Class -ceq 'lang-pkgs' -and $result.Type -ceq 'gobinary'
+        $resultTarget = $null
+        if ($isGo) {
+            Require ($result.Target -cmatch '^[A-Za-z0-9_./-]{1,150}$') 'Caminho de binário Go inválido.'
+            $resultTarget = $result.Target
+        }
         $packages = @($result.Packages | Where-Object { $null -ne $_ } | ForEach-Object {
-            Require ($_.Name -and $_.Version) 'Pacote sem identidade/versão.'
-            @{Name=$_.Name;Version=$_.Version}
+            $known = -not [string]::IsNullOrWhiteSpace([string]$_.Version)
+            Require ($_.Name -and ($known -or $isGo)) 'Pacote sem identidade/versão.'
+            @{Name=$_.Name;Version=$(if ($known) { $_.Version } else { $null });
+                VersionStatus=$(if ($known) { 'known' } else { 'unversioned' })}
         })
         $findings = @($result.Vulnerabilities | Where-Object { $null -ne $_ } | ForEach-Object {
             Require ($_.VulnerabilityID -and $_.PkgName -and $_.InstalledVersion -and $counts.ContainsKey($_.Severity)) 'Achado sem identidade/severidade.'
@@ -81,15 +98,17 @@ foreach ($target in $safeTargets) {
             @{Id=$_.VulnerabilityID;Package=$_.PkgName;Installed=$_.InstalledVersion;Fixed=$_.FixedVersion;
                 Severity=$_.Severity;Status=$_.Status;Url=$_.PrimaryURL}
         })
-        $results += @{Class=$result.Class;Type=$result.Type;Packages=$packages;Vulnerabilities=$findings}
+        $results += @{Class=$result.Class;Type=$result.Type;Target=$resultTarget;Packages=$packages;Vulnerabilities=$findings}
     }
     $reports += @{Name=$target.Name;Image=@{Id=$raw.Metadata.ImageID;Os=$raw.Metadata.ImageConfig.os;
         Architecture=$raw.Metadata.ImageConfig.architecture};Counts=$counts;Results=$results;
-        Coverage=@{GoPackages=$go.Count;OSPackages=$os.Count;OSFamily=$raw.Metadata.OS.Family}}
+        Coverage=@{GoPackages=$go.Count;OSPackages=$os.Count;OSFamily=$raw.Metadata.OS.Family;
+            UnversionedGoPackages=@($go | Where-Object { [string]::IsNullOrWhiteSpace([string]$_.Version) }).Count;
+            RequiredGoBinaries=$requiredBinaries}}
     Write-Host "Observação achados: $($target.Name) UNKNOWN=$($counts.UNKNOWN) LOW=$($counts.LOW) MEDIUM=$($counts.MEDIUM) HIGH=$($counts.HIGH) CRITICAL=$($counts.CRITICAL)."
     foreach ($finding in @($results.Vulnerabilities | Where-Object { $_.Severity -cin @('HIGH', 'CRITICAL') })) {
         $fields = @($finding.Id, $finding.Package, $finding.Installed, $finding.Fixed)
-        $safe = @($fields | ForEach-Object { if ([string]$_ -cmatch '^[A-Za-z0-9_./+():@~-]{1,180}$') { [string]$_ } else { 'ausente-ou-omitido' } })
+        $safe = @($fields | ForEach-Object { if ([string]$_ -cmatch '^[A-Za-z0-9_./+():@~, -]{1,180}$') { [string]$_ } else { 'ausente-ou-omitido' } })
         Write-Host "Observação achado: $($target.Name) $($finding.Severity) id=$($safe[0]) pacote=$($safe[1]) instalado=$($safe[2]) corrigido=$($safe[3])."
     }
     $summary += "| $($target.Name) | $($go.Count) | $($os.Count) | $($counts.UNKNOWN) | $($counts.LOW) | $($counts.MEDIUM) | $($counts.HIGH) | $($counts.CRITICAL) |"

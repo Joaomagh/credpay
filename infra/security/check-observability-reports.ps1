@@ -15,12 +15,19 @@ function ResetFixture {
         $id = 'sha256:' + ($(if ($baseline.Name -ceq 'prometheus') { 'a' } else { 'b' }) * 64)
         $targets += @{Name=$baseline.Name;Reference=$baseline.Reference;PlatformDigest=$baseline.PlatformDigest;
             ImageId=$id;Os='linux';Architecture='amd64';TarSha256=('c' * 64)}
-        $module = if ($baseline.Name -ceq 'prometheus') { 'github.com/prometheus/client_golang' } else { 'github.com/grafana/grafana-plugin-sdk-go' }
+        $module = if ($baseline.Name -ceq 'prometheus') { 'github.com/prometheus/prometheus' } else { 'github.com/grafana/grafana' }
+        $binary = if ($baseline.Name -ceq 'prometheus') { 'bin/prometheus' } else { 'usr/share/grafana/bin/grafana' }
         Save "$($baseline.Name).json" @{SchemaVersion=2;Metadata=@{ImageID=$id;OS=@{Family='alpine'};
             ImageConfig=@{os='linux';architecture='amd64';Env=@('SYNTHETIC_ENV_MUST_NOT_BE_PUBLISHED')}};
             Results=@(@{Class='os-pkgs';Type='alpine';Packages=@(@{Name='synthetic-os';Version='1.0'})},
-                @{Class='lang-pkgs';Type='gobinary';Packages=@(@{Name='stdlib';Version='v1.27.1'},@{Name=$module;Version='v1.0.0'});
+                @{Class='lang-pkgs';Type='gobinary';Target=$binary;Packages=@(@{Name='stdlib';Version='v1.27.1'},@{Name=$module;Version='v1.0.0'});
                     Vulnerabilities=@(@{VulnerabilityID='CVE-2099-0001';PkgName='synthetic';InstalledVersion='1.0';FixedVersion='1.1';Severity='HIGH'})})}
+        if ($baseline.Name -ceq 'prometheus') {
+            $saved = Get-Content -Raw (Join-Path $directory 'prometheus.json') | ConvertFrom-Json -AsHashtable
+            $saved.Results += @{Class='lang-pkgs';Type='gobinary';Target='bin/promtool';Packages=@(
+                @{Name='stdlib';Version='v1.27.1'},@{Name=$module;Version='v1.0.0'})}
+            Save 'prometheus.json' $saved
+        }
     }
     Save 'images.json' @{Checkout=('d' * 40);Scanner=@{Version='0.75.0';VulnerabilityDB=$database;JavaDB=$database};Targets=$targets}
 }
@@ -94,4 +101,21 @@ Reject 'missing-tar-hash' {
     $manifest.Targets[0].TarSha256 = ''
     Save 'images.json' $manifest
 } 'Hash do tar ausente ou inválido'
-Write-Host '11 controles observação passaram; fixtures sintéticas não são scan real.'
+ResetFixture
+$report = Get-Content -Raw (Join-Path $directory 'grafana.json') | ConvertFrom-Json -AsHashtable
+$report.Results[1].Packages += @{Name='github.com/grafana/grafana/pkg/local';Version=''}
+Save 'grafana.json' $report
+$output = Join-Path $directory 'unversioned-go'
+& (Join-Path $PSScriptRoot 'report-observability.ps1') -Directory $directory -OutputDirectory $output
+$result = Get-Content -Raw (Join-Path $output 'inventory.json') | ConvertFrom-Json -AsHashtable
+$grafana = @($result.Reports | Where-Object { $_.Name -ceq 'grafana' })[0]
+$local = @($grafana.Results.Packages | Where-Object { $_.Name -ceq 'github.com/grafana/grafana/pkg/local' })
+if ($grafana.Coverage.UnversionedGoPackages -ne 1 -or $local.Count -ne 1 -or
+    $null -ne $local[0].Version -or $local[0].VersionStatus -cne 'unversioned') { throw 'Módulo Go local sem versão deve permanecer explícito no inventário.' }
+Write-Host 'PASS observação: módulo Go sem versão preservado como lacuna explícita.'
+Reject 'missing-main-binary' {
+    $report = Get-Content -Raw (Join-Path $directory 'grafana.json') | ConvertFrom-Json -AsHashtable
+    $report.Results[1].Target = 'bin/auxiliary-tool'
+    Save 'grafana.json' $report
+} 'Binário principal Go ausente ou incompleto'
+Write-Host '13 controles observação passaram; fixtures sintéticas não são scan real.'
