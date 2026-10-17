@@ -1,5 +1,13 @@
 global:
   scrape_interval: 2s
   scrape_timeout: 1s
-# Primeiro red real: coletor saudável/API válida, mas sem jobs dos dois aplicativos.
-scrape_configs: []
+# Coleta interna opt-in dos exportadores existentes.
+scrape_configs:
+  - job_name: credpay-transacoes
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['transacoes:8080']
+  - job_name: credpay-processamento
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['processamento:8080']

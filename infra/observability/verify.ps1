@@ -104,6 +104,11 @@ try {
     }
     Write-Host 'Observação: apps/exportadores200, Grafana saudável e Prometheus ready; consulta real próxima.'
     CheckCollection
+    $dashboard = Request '/api/dashboards/uid/credpay-publication'
+    Require ($dashboard.StatusCode -eq 200) "Painel provisionado esperado HTTP200, observado=$($dashboard.StatusCode)."
+    $model = (Json $dashboard.Content).dashboard
+    Require ($model.uid -ceq 'credpay-publication' -and $model.panels.Count -eq 2 -and $model.editable -eq $false) 'Painel deve conter os dois sinais de diagnóstico e ser somente leitura.'
+    Write-Host 'Observação: painel provisionado disponível pela API; renderização visual não comprovada.'
 } finally {
     if ((Test-Path -LiteralPath $marker) -and [IO.File]::ReadAllText($marker) -ceq $Project) {
         $null = Compose down --volumes --timeout 30

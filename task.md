@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B07.6b — Painel opt-in e diagnóstico: bootstrap HTTP interno em validação na PR #154; duas falhas anteriores ocorreram antes da consulta, não são red. Primeiro red ainda deve observar zero séries válidas antes de configurar jobs. Controles do inventário adicional11 e históricos9 verdes; scan real/cobertura principal/triagem pendentes. Depois coleta, painel e falha sem rota/restauração causal. UI no host ainda não comprovada. Spec9.99; sem Docker local/deploy externo.
+- [ ] B07.6b — PR #154: primeiro red válido9d126a5/Observability3 (API real saudável, zero séries em vez de duas); configurar dois jobs e validar green da coleta/red de painel ausente. Controles inventário adicional11 e históricos9 verdes; scan real/cobertura principal/triagem pendentes. Depois painel e falha sem rota/restauração causal. UI no host ainda não comprovada. Spec9.99; sem Docker local/deploy externo.
 
 ## Próximo
 

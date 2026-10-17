@@ -2694,6 +2694,8 @@ Segunda execução e4a392d/Observability2/run38986637058/job117259539860 também
 
 Controles do novo inventário: red local confirmado quando o protótipo aceitou ImageID trocado; após guard de identidade, 11 controles verdes (positivo e dez rejeições), nove controles históricos preservados/verdes. Fixtures sintéticas não são scan real. Timestamps das bases preservam nove casas sem arredondamento via JsonDocument; saída somente quatro arquivos permitidos, nenhum Env/config/history. Pins de plataforma explícitos em images.env; scanner resolve index e plataforma para o mesmo ImageID, exporta tar e confere hash antes/depois, usa cache compartilhado/skip-update/offline-scan. Revisão apontou que namespace Go só comprova presença de módulos da organização, não reconhecimento do binário principal: essa cobertura permanece parcial até conferir Target/sentinela no scan real. Cobertura OS vazia falha, nunca vira zero vulnerabilidades implicitamente. Inventário antigo é publicado antes do scan adicional, sem mudar significado ou requisitos dos quatro alvos.
 
+Primeiro red comportamental confirmado: 9d126a5/Observability3/run38987395094/job117261941132. HTTP interno real chegou aos exporters200, health Grafana/databaseok e Prometheus ready; consulta válida retornou zero séries onde duas eram esperadas, após15s, com cleanup próprio bem-sucedido. Só então configurar jobs credpay-transacoes/processamento com /actuator/prometheus e targets internos8080. Próximo red exige painel UIDcredpay-publication HTTP200 antes de provisionar arquivos; a mesma execução deve primeiro comprovar duas séries UP. Revisão do transporte interno sem bloqueantes; nenhuma liberação adicional de rede.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
