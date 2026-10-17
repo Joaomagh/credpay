@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.7f.1 — Implementar primeiro corte TCP/UDP conforme docs/SANDBOX_NETWORK_PROTOCOL.md: mesma imagem, fixtures none, positivo em namespace próprio compartilhado e worker negativo separado, positivos antes/depois e prazos limitados. Ainda não executado.
+- [ ] B08.7f.1 — Integrar PR170 após gates do último SHA: Core35/Scan311 verdes,56 testes Linux sem skips e artefato auditado comprovam TCP/UDP entre namespaces próprios, positivos antes/depois e recusa real. Revisão sem bloqueantes; spec9.113. AJ-NET completo permanece aberto.
 
 ## Próximo
 

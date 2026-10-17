@@ -75,3 +75,11 @@ O modo explícito permite ao daemon registrar OOMKilled pelo filho, mas exige ob
 pids_controls.py usa observerPID1, writer único e actor com teto160tentativas de filhos diretos, bloqueados em read por pipe/FD3. Filhos não criam processos. Sem subshell de observação sob pressão, exige limite/pico128, evento local max crescente, população retida126..128 e retorno ao baseline1 após EOF/reap via jobs builtin do dash. Pipe/read/shell positivos antes/depois; exit de fork isolado não comprova controle.
 
 resourcePids preserva observações/deltas/comando/configSHA/exit/limites. Polls limitados/timeout externo30s/cleanup próprio, sem novo runtime/privilegio ou Docker local. Falha/timeout/população não recuperada não viram PASS. Prova LinuxCI/dash, sem aceite Desktop/agente ou remediação de CVEs; spec§9.110.
+
+## B08.7f.1: namespace TCP/UDP comprovado no LinuxCI
+
+network_controls.py usa fixture none com servidor GNUawk e clientes da mesma imageID: positivo compartilha somente rede de fixture própria validada; negativo continua none em namespace distinto. Wrapper validate_worker permanece none. Endpoints próprios em34567/loopback têm disponibilidade conferida por /proc/net da fixture antes/depois do negativo, com nonce exato nos positivos que o cercam. UDP fecha/reabre por peer. Falha genérica/timeoutexterno não viram recusa; a observação exigida é I/O Connection refused.
+
+Mesmo UID/caps/NNP/RO/limites/bind fictício, sem bridge/host/ports/socket/dependência nova. Somente controlador CI executa probe restrita na fixture validada, com timeouts e cleanup por ID/label. Relatório network é parcial: cliente/isolaçãodenamespaces, não DNS/LAN/metadados/internet ou contenção do agente. Contrato em docs/SANDBOX_NETWORK_PROTOCOL.md, evidências em spec§9.113.
+
+Core35/run39072992414 comprovou os dois protocolos,56 testes Linux sem skips e artefato12115633765 auditado: positivos ECHO antes/depois e negativo REFUSED em namespace distinto. Detalhes/hashes em spec9.113; alcance continua parcial.

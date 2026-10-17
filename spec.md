@@ -432,7 +432,7 @@ O `sandbox-core` é um perfil diagnóstico para validar mounts, identidade, file
 
 O inventário efetivo da imagem deverá ser comparado com esta lista. Dependências transitivas trazidas pela imagem-base não serão consideradas automaticamente aprovadas. Git, Java, Maven, `curl`, `wget`, Docker CLI, Docker Compose, SSH, `sudo`, `su`, clientes de nuvem, gerenciadores de credenciais, gerenciadores de pacotes utilizáveis em runtime e outros runtimes ficam fora do `sandbox-core`.
 
-O primeiro corte de AJ-NET-01 usará modo diagnóstico separado com a mesma imagem e GNUawk (§9.111), conforme o contrato em docs/SANDBOX_NETWORK_PROTOCOL.md; implementação e execução permanecem pendentes. Ausência de cliente ou erro DNS genérico não serão evidência de bloqueio; DNS/LAN/metadados/internet exigem provas próprias posteriores.
+O primeiro corte de AJ-NET-01 usa modo diagnóstico separado com a mesma imagem e GNUawk (§9.111), conforme o contrato em docs/SANDBOX_NETWORK_PROTOCOL.md; TCP/UDP entre namespaces próprios foram comprovados no LinuxCI (§9.113). Ausência de cliente ou erro DNS genérico não serão evidência de bloqueio; DNS/LAN/metadados/internet exigem provas próprias posteriores.
 
 ### Perfis futuros
 
@@ -444,7 +444,7 @@ Git será considerado em um futuro perfil operacional quando o worker precisar i
 |---|---|
 | tag e digest da imagem Debian slim | conferidos em §9.100; construção e inventário em §9.101/9.104; baseline sem aceite |
 | compatibilidade de `10001:10001` com o Docker Desktop | validar antes de considerar a identidade funcional |
-| mecanismo diagnóstico inicial para AJ-NET-01 | modo separado/mesma imagem, contrato9.111; execução e cobertura completa pendentes |
+| mecanismo diagnóstico inicial para AJ-NET-01 | modo separado/mesma imagem, contrato9.111 e prova TCP/UDP9.113; cobertura completa pendente |
 | topologia Codex/controlador e mecanismo de enforcement | permanece hipótese e não bloqueia o `sandbox-core` isolado |
 | perfil operacional com Git | aprovar somente quando necessário |
 | `sandbox-java` com Java e Maven | aprovar somente quando houver necessidade de build Java |
@@ -2850,6 +2850,20 @@ João respondeu que ainda não executou o quickstart/demo e pediu ensaio guiado.
 Arquivos: DEMO/spec/task/backlog. Preservar env/volumes, exemplos fictícios e bloqueio sob falha; package com skipTests não substitui CI. Pausas distinguem impedimento do ambiente, falha operacional e dúvida conceitual. Aceite: UTF8/links locais existentes/diff/revisão documental e único próximo passo técnico; execução/entendimento aguardam evidência pessoal de João, sem checklist preenchido ficticiamente. Documentação não exige red artificial.
 
 Verificação documental: links locais existentes e contidos no repositório, UTF8 estrito nos quatro arquivos, um próximo passo técnico/diff-check/Gitleaks no DEMO passaram. Revisão independente somente leitura sem bloqueantes; alinhamento com quickstart/env/volumes/limites confirmado. Nenhum comando do ensaio executado pelo agente.
+
+### 9.113 Primeiro experimento TCP/UDP — B08.7f.1
+
+PR169/45576e2bb830213d95d27e569c5f16fce20e43b3 integrou ensaio guiado após Scan309/run39072370740 verde no head29373e1516d2b42d7229e484af9f3733b0992f1c, somente docs/filtros sem suites de runtime, revisão sem bloqueantes e nenhum pedido/review/thread remoto pendente. Execução pessoal continua pendente.
+
+Objetivo/aceite antes da implementação: executar contrato docs/SANDBOX_NETWORK_PROTOCOL.md sequencialmente TCP/UDP, servidor na mesmaimagem/none e cliente diagnóstico container:fixture própria, worker real none sem relaxar seu validador. Refatorar somente validação comum das demais restrições para reutilização explícita; wrapper validate_worker continua none. Positivos nonce exato antes/depois, fixture viva/semrestart e endpoint ligado comprovado por /proc/net do próprio namespace antes/depois do negativo. Negative precisa I/O Connection refused observado com clientefuncional; timeoutexterno/sintaxe/clienteausente não é PASS. Namespaces device+inode comparados vivos. Fixtures/portas altas/loopback somente; nenhuma bridge/porta publicada/host real ou credencial.
+
+Arquivos previstos: network_controls/testes, validação comum containment e chamada core_ci/docs. GNUawk NONFATAL/READ_TIMEOUT por manualoficial; envmínimoC locale paraerroclassificado. Servidor fecha/reabre socket por peer, READ_TIMEOUT15s; clientes1s/timeoutexterno5s/retriespositivoslimitados e job15min. Controllerverificaendpointexclusivamentenafixturevalidada comexec restrito e saídaselecionada, semclientenovo. Reportselecionado inclui comandos/configSHA/namespace/resultados/IDs/checkout/imagem/UTC herdadosdocore. RiscosUDPpeer/readiness/normalizaçãovalidação; provarTDD e CI. Nenhum runtime/dependência/privilégio novo, Docker local ou aceite dos advisories/Desktop/agente.
+
+TDD:3testes focados/oito falhas esperadas por validação ausente antes da implementação. Removida descoberta duplicada de TestCase importado usando import do módulo de fixtures (contagem correta3, sem ocultar falhas). Green56descobertos/55pass/umskip POSIX conhecido no Windows,0,420s. Core mantém wrappers none; função compartilhada exige fixture própria viva e nunca normaliza State/NetworkMode para simular validação. Cleanup valida propriedade/configuração reais separadamente da exigência de liveness. Diff-check passou; revisão/CI real pendentes.
+
+Green real: Sandbox Core35/run39072992414/job117514284840 e Secret Scan311/run39072992407 verdes no head98ddd268b98414a692a4f2c3012aea6ccaed3f4d;56 testes Linux sem falhas/erros/skips. Artefato12115633765:164138bytes/SHA2569739e6e0cbd754b2c1fae2cb83fab9acd0e63924544badce6cef13fb541fbf37, quatro arquivos selecionados; checkoutd545f2b82464a3f647beb1a581afe70bd043a049 tem pais45576e2/98ddd26 confirmados na consulta ao commit. Imagemsha256:36500aa277cc666e59b2ad705cdcceed9c6b9f54b20629b475075cd764823f4d.
+
+TCP: fixture/positivos namespace4/4026532274, negativo4/4026532337. UDP: fixture/positivos4/4026532273, negativo4/4026532336. Ambos positivos antes/depois ECHO1; negativos REFUSED-1, exit0/semOOM; probes da porta8707 em estadoTCP0A/UDP07 antes/depois PASS. Harness exige fixture viva/StartedAt estável/RestartCount0 durante o protocolo; não há comparação após sua destruição. Auditoria refez hashes de comandos/configurações e validate_exchange; Gitleaks8.30.1 no JSON selecionado sem candidatos. Revisão estática sem bloqueantes; nenhum Docker local. Baseline HIGH17/CRITICAL2 continua sem aceite; AJ-NET completo/DNS/LAN/metadados/internet/Desktop/agente permanecem pendentes. Gates do último SHA serão conferidos antes da integração.
 
 ## 10. Observabilidade e SLOs de aprendizado
 

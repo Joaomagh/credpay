@@ -112,6 +112,10 @@ def validate_namespace_pair(first, second, simultaneous):
 
 
 def validate_worker(data, identity, marker, image, workspace):
+    return _validate_restrictions(data, identity, marker, image, workspace, "none")
+
+
+def _validate_restrictions(data, identity, marker, image, workspace, network):
     workspace = Path(workspace).resolve()
     own_root = (ROOT / ".local/agent-sandbox").resolve()
     if not own_root.is_relative_to(ROOT) or not workspace.is_relative_to(own_root) or workspace.name != "workspace":
@@ -123,7 +127,7 @@ def validate_worker(data, identity, marker, image, workspace):
         raise ValueError("Identidade/ambiente do worker diverge.")
     if host["Privileged"] is not False or host["ReadonlyRootfs"] is not True or set(host["CapDrop"] or []) != {"ALL"} or host.get("CapAdd") or host["SecurityOpt"] != ["no-new-privileges:true"]:
         raise ValueError("Privilégios/rootfs do worker divergem.")
-    if host["NetworkMode"] != "none" or host["PidMode"] != "" or host["UTSMode"] != "" or host["IpcMode"] != "private" or host["CgroupnsMode"] != "private":
+    if host["NetworkMode"] != network or host["PidMode"] != "" or host["UTSMode"] != "" or host["IpcMode"] != "private" or host["CgroupnsMode"] != "private":
         raise ValueError("Namespaces/rede do worker divergem.")
     limits = {"NanoCpus": 1_000_000_000, "Memory": 1_073_741_824, "MemorySwap": 1_073_741_824, "PidsLimit": 128}
     if any(host[key] != expected for key, expected in limits.items()):
@@ -142,7 +146,7 @@ def validate_worker(data, identity, marker, image, workspace):
         binds.append(mount)
     if len(binds) != 1:
         raise ValueError("Worker exige exatamente um bind próprio.")
-    return {"user": config["User"], "readonly": True, "network": "none", "capDrop": ["ALL"], "noNewPrivileges": True,
+    return {"user": config["User"], "readonly": True, "network": network, "capDrop": ["ALL"], "noNewPrivileges": True,
             "cpu": 1, "memoryBytes": limits["Memory"], "memorySwapBytes": limits["MemorySwap"], "pidsLimit": 128,
             "tmpfs": sorted(flags), "workspaceSource": workspace.relative_to(ROOT).as_posix(), "workspaceDestination": "/workspace",
             "pidNamespace": "private", "ipcNamespace": "private", "cgroupNamespace": "private", "environmentNames": ["HOME", "LANG", "LC_ALL", "PATH"]}
