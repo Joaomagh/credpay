@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B07.6b — Painel opt-in e diagnóstico: primeiro red consulta Prometheus válida sem jobs retorna zero séries, com apps/exportação e coletor saudáveis. Depois coleta dos dois apps, painel e falha sem rota/restauração causal. Baseline/imagens/inventário próprio antes de aceitar; spec9.99. Sem execução Docker local/deploy externo.
+- [ ] B07.6b — Painel opt-in e diagnóstico: bootstrap HTTP interno em validação na PR #154; duas falhas anteriores ocorreram antes da consulta, não são red. Primeiro red ainda deve observar zero séries válidas antes de configurar jobs. Controles do inventário adicional11 e históricos9 verdes; scan real/cobertura principal/triagem pendentes. Depois coleta, painel e falha sem rota/restauração causal. UI no host ainda não comprovada. Spec9.99; sem Docker local/deploy externo.
 
 ## Próximo
 

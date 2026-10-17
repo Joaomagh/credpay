@@ -26,6 +26,14 @@ Achados não interrompem este inventário inicial; erro operacional, falta de co
 
 O escopo inclui somente dependências empacotadas e as duas imagens dos apps. PostgreSQL, RabbitMQ, ferramentas de build e Kubernetes exigem análises próprias. A suíte funcional existente continua responsável pelos comportamentos da aplicação.
 
+## Inventário separado do painel em construção
+
+B07.6b acrescenta um segundo artefato, `observability-vulnerability-inventory-<checkout>`, somente para Prometheus e Grafana. Não altera os quatro alvos Java/Ubuntu acima. O scan adicional usa Trivy0.75.0 e as mesmas bases congeladas daquela execução; referências e plataformas estão pinadas em `infra/observability/images.env`. Resolve index/plataforma para o mesmo ImageID e registra hash do tar efetivamente analisado.
+
+Os 11 controles sintéticos são executados por `./infra/security/check-observability-reports.ps1`. O relatório exige identidade, plataforma, pacotes Go/stdlib, módulos da organização e pacotes OS; biblioteca cliente/SDK isolada não comprova cobertura do binário principal. Essa cobertura permanece parcial até conferir os Targets/sentinelas no primeiro scan real. OS ausente falha; não significa ausência de vulnerabilidades. O scan e a triagem reais ainda estão pendentes.
+
+Somente `inventory.json`, `images.json`, `checkout.txt` e `summary.md` deste segundo perfil são publicados por sete dias. Não somar achados repetidos como IDs únicos nem interpretar publicação dos quatro alvos anteriores como validação das duas novas imagens. Nenhuma imagem do painel está aprovada por controles sintéticos.
+
 ## Proposta de bloqueio da entrega externa
 
 A [triagem atual](TRIAGE.md) registra a correção dos três IDs HIGH/CRITICAL originais e a validação da migração B08.6c. Inventory100 reconheceu os quatro alvos completos com HIGH0/CRITICAL0, preservando MEDIUM/LOW. A proposta é impedir entrega externa enquanto houver HIGH/CRITICAL sem correção ou disposição explícita aprovada pelo Navigator. Uma disposição teria de identificar CVE, componente/versão, condições, evidências e lacunas, alcance, responsável, prazo e revisão; nenhuma foi aprovada.
