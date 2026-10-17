@@ -22,7 +22,7 @@ python3 -I -B -m unittest discover -s infra/agent-sandbox -p 'test_*.py'
 
 No Windows desta sessão foi usado o Python3.12.14 já fornecido pelo runtime do workspace, com `-I -B`; nenhuma instalação global. Fixtures sintéticas ficam exclusivamente em `.local/agent-sandbox/controls`, com raiz resolvida/conferida antes da limpeza. Docker local não foi executado. Execução real somente pelo workflow `Sandbox Core CI`.
 
-## B08.7b: construção mínima em andamento
+## B08.7b: construção mínima integrada
 
 `packages.lock.json` registra seis pacotes Debian amd64 por versão completa/bytes/SHA256 antes do download. Origem: índice oficial conferido contra Release viaHTTPS/digest (não se declara verificação GPG adicional). GNU awk implementa o nome aprovado `awk`; `ps` vem deprocps. Pacotes não são instalados integralmente: preparação fixa/confiável usa `dpkg-deb` da base em build sem rede, confere Package/Version/Architecture e extrai arquivos sem maintainer scripts. Esta preparação ocorre como root no builder confiável; o worker final sempre usa10001. Contextos são diretórios próprios sem home/socket/credenciais; `.dockerignore` limita os arquivos enviados.
 
@@ -34,7 +34,7 @@ O CI compara arquivos/tipos/hashes/modos/UID/GID e diretórios/links do export f
 
 ## B08.7c: primeiros negativos de contenção
 
-`containment.py` está em implementação/validação CI. Monta somente uma fixture própria como `/workspace`. O controlador dá ACL apenas ao UID10001 usando `setfacl` preexistente, mantém o pai0700, cria canário externo/symlink falsos e repositório Git sintético com global/sistema/hooks/templates desativados. Não monta checkout real/home/socket nem instala Git no core. Falta de Git/setfacl bloqueia o job; não gera PASS nem instalação automática.
+`containment.py` passou na primeira validação real do Sandbox Core CI12, com34 controles locais/Linux; evidências e limites em spec§9.102. Monta somente uma fixture própria como `/workspace`. O controlador dá ACL apenas ao UID10001 usando `setfacl` preexistente, mantém o pai0700, cria canário externo/symlink falsos e repositório Git sintético com global/sistema/hooks/templates desativados. Não monta checkout real/home/socket nem instala Git no core. Falta de Git/setfacl bloqueia o job; não gera PASS nem instalação automática.
 
 Antes de executar, valida imagem/ID/label, UID/env allowlist, raizRO/capdrop/NNP, namespaces privados/rede none, limites exatos e único bind próprio. O protocolo deve produzir todas as observações esperadas, sem duplicatas, campos extras ou resultados falsos. Testes locais demonstram recusa de configuração/observação divergentes.
 

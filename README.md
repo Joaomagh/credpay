@@ -296,13 +296,13 @@ Gitleaks verifica o histórico Git alcançável em cada PR e na `main`, com vers
 
 O projeto documentou um threat model para limitar o alcance de agentes e ferramentas durante o desenvolvimento. A baseline do `sandbox-core` prevê usuário não-root, recursos limitados, filesystem e mounts mínimos, nenhum Docker socket ou segredo do host e rede negada por padrão.
 
-O sandbox ainda não foi implementado. Docker Desktop, daemon, VM, kernel/hypervisor e host permanecem parte da base confiável; portanto, nenhuma garantia de isolamento é apresentada como comprovada. O contrato, os testes negativos esperados e os riscos residuais estão em [`spec.md`](spec.md#41-modelo-de-ameaça-do-ai-jail).
+O core diagnóstico foi construído e os primeiros controles de filesystem, ambiente, privilégios e recriação passaram no Linux CI, com fixtures fictícias e limites explícitos em [`spec.md`](spec.md#9102-sandbox-core-primeiros-negativos-de-contenção--b087c). Rede, excesso de recursos, contato com daemon, instalação/download, vulnerabilidades e DockerDesktop ainda precisam de validação. Docker Desktop, daemon, VM, kernel/hypervisor e host permanecem parte da base confiável; o agente atual não está comprovadamente contido pelo core.
 
 ## Roadmap
 
 | Fase | Objetivo | Estado |
 |---|---|---|
-| 1 | governança, threat model e contrato do sandbox | documentação concluída; sandbox pendente |
+| 1 | governança, threat model e contrato do sandbox | core construído; primeiros negativos no Linux CI; aceite completo pendente |
 | 2 | fundação reproduzível e CI mínimo | dois serviços com build e CI independentes; processador já tem decisão por limite e validação de entradas em domínio puro |
 | 3 | regras de domínio em TDD e primeira integração PostgreSQL | concluída |
 | 4 | API, fluxo assíncrono, idempotência, outbox, retry e DLQ | fluxo principal e transporte causal FALHOU comprovados em teste controlado; autoridade operacional bloqueada |

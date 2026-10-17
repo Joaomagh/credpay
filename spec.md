@@ -356,7 +356,7 @@ Cada teste deve registrar comando, resultado esperado, resultado observado, vers
 
 ## 4.2 Testes negativos planejados para o AI-Jail
 
-Os testes desta seção definem antecipadamente como o contrato da ADR-003 será avaliado. Eles ainda não foram implementados nem executados. Um teste negativo tenta realizar, de forma controlada, uma ação que o sandbox deve proibir.
+Os testes desta seção definem como o contrato da ADR-003 será avaliado. Os primeiros controles de filesystem, ambiente, privilégios e recriação foram executados parcialmente no Linux CI (§9.102); rede, contato com daemon, excesso de recursos, instalação/download e DockerDesktop continuam pendentes. Um teste negativo tenta realizar, de forma controlada, uma ação que o sandbox deve proibir.
 
 | ID | Propriedade avaliada | Tentativa controlada | Resultado esperado | Controle responsável |
 |---|---|---|---|---|
@@ -395,7 +395,7 @@ Ausência acidental de ferramenta, endereço inválido, erro genérico de DNS ou
 
 ## 4.3 Baseline aprovada do `sandbox-core`
 
-Esta seção registra a decisão documental final do primeiro estágio. A baseline está aprovada para orientar uma implementação futura, mas seus controles ainda não foram implementados nem testados. Tag, digest, permissões e limites efetivos deverão ser comprovados durante a implementação.
+Esta seção registra a baseline aprovada do primeiro estágio. Inventário, construção mínima e primeiros negativos no Linux CI estão registrados em §9.100–9.102, com imagem, configuração e limites efetivos. A implementação continua parcial: não comprova contenção do agente atual, DockerDesktop ou todos os controles da §4.2.
 
 ### Hipótese pendente de topologia
 
@@ -2719,6 +2719,14 @@ Arquivos previstos: harness/controles de contenção, diretório owned10001 na p
 Rootfs10001 tem diretório diagnóstico owned10001, para que tentativa negada seja EROFS e não falta de permissão. Arquivo ELF aprovado copiado ao/tmp preserva bits/hash e deve falhar ao executar diretamente; original funcional é controlepositivo, mountinfo prova noexec/tmpfs/tamanho. UID/capabilities/NNP observados em/proc/self/status e mount privilegiado negado com alvo/fstype válidos. Sentinela fake existe só no processo controlador e não é repassada ao container; env permitido conferido sem publicar valores. Recriação deve manter canário do bind e descartar/tmp; cgroups e PID namespace próprios observados sem ainda alegar teste de excesso. Cleanup somente containers/fixtures de nomes/labels/path próprios; não tocar checkout/daemon global.
 
 Riscos: confundir erro genérico/missingtool com bloqueio, publicar env/logs completos, permissões do bind enganarem filesystemRO, teste de montagem falhar por preparação e não controle, limitar evidência do LinuxCI e anunciar DockerDesktop. Parsing/validação do relatório exige TDD; configurações operacionais serão comprovadas com negativos reais e positivos, sem red artificial por afrouxar controles.
+**Validação de B08.7c em17/10/2026:** 34 controles Python/stdlib locais passaram. Sandbox Core11/run39008404586 falhou na comparação de inode após remover o primeiro container: namespaces destruídos podem ter seus identificadores reutilizados. Não era prova de falha de isolamento. Testes red/green passaram a exigir vidas sobrepostas, comparação de device+inode e recusa de pares iguais. O primeiro worker fica vivo enquanto um observador restrito é executado; só depois é liberado/removido e uma terceira execução verifica persistência/descarte. Sem acesso ao `/proc` do host ou novos privilégios. [Semântica dos namespaces](https://man7.org/linux/man-pages/man7/namespaces.7.html).
+
+**Evidência selecionada:** Sandbox Core12/run39008758876/job117326549435 e Secret Scan280/run39008759017 passaram no head66daaaa0923fbe10457c26c845d93e49dec395d0. Checkout de teste f74b2f22e97aab635af5fd83485cde83e693d496; imagem sha256:7e26737ad112a71e4f9bf0313700eae220dfa376c9119e65b1759201a561e0e6; 88 arquivos/46 diretórios/2 links e28 componentes parciais. Artefato12092057379: quatro relatórios selecionados,154465bytes, SHA256b8780fb2269a1bb542681a5beac8359c8f51c776cf70f3bd61f6611e18b53444. Auditoria local recomputou hashes de comando/configuração das três execuções, vínculo checkout/imagem e seis IDs PASS; Gitleaks8.30.1 não encontrou candidatos no JSON selecionado. Não foram publicados Config/Env completos, tar ou logs brutos.
+
+**Observado:** AJ-FS-01/02, AJ-SEC-01, AJ-PRIV-01, AJ-LIFE-01 e AJ-SCOPE-01 passaram no recorte declarado: leituras externas falsas negadas(exit2), raizRO negou escrita(exit2), ELF idêntico555 no/tmp negou execução(exit126), mount privilegiado negado(exit32), UID10001/cinco masks vazias/NNP1, Git detectou as alterações exatas. Primeiro namespace device4/inode4026532271 e observador simultâneo device4/inode4026532334 diferiram; a recriação reutilizou4026532271, confirmando por que comparação sequencial seria inválida. Filho vivo foi observado antes da saídaPID1; seu término é inferido pelo descarte do namespace, sem inspeção independente no host. Limites cgroup observados: memória1073741824, swap0, pids128, CPU100000/100000; excesso real ainda não testado.
+
+**Plataforma/limites:** Docker28.0.4/API1.48/linuxamd64, kernel6.17.0-1022-azure/x86_64, Python3.12.3, Git2.55.0 e setfacl2.3.2. Operações têm timeouts próprios; o job tem limite global15min, sem alegar um prazo global30s. Escopo do relatório: PARTIAL_CORE_CONTAINMENT_NOT_AGENT_ISOLATION. AJ-HOST/NET/RESexcesso/TOOLS completos, vulnerabilidades, DockerDesktop e topologia do agente permanecem abertos. Revisão independente somente leitura sem bloqueantes; confirmou validações/protocolo/escopo. Se daemon/inspect falhar durante finally, remoção não é garantida: o job falha e o runner é descartável, sem claim de cleanup absoluto. API confirmou que o checkout f74b2f2 tem pais a0667ae e66daaaa. Revisões/threads remotos vazios neste corte; gates do último SHA serão conferidos antes da integração.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
