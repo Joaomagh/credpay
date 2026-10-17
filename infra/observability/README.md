@@ -1,6 +1,6 @@
 # Diagnóstico local de publicação
 
-Os dois serviços têm o perfil opcional `diagnostics`. Ele permite consultar `health` e `metrics`; o comportamento padrão continua expondo apenas health. Não habilita env, beans ou configprops.
+Os dois serviços têm o perfil opcional `diagnostics`. Ele permite consultar `health`, `metrics` e `prometheus`; o comportamento padrão continua expondo apenas health. Não habilita env, beans ou configprops.
 
 Em um terminal do serviço, com suas conexões e configurações já preparadas conforme o README principal, inicie uma instância local:
 
@@ -28,7 +28,13 @@ Para a saída do processador, substitua8080 por8081. Cada aplicativo tem seu pr�
 
 `COUNT` soma tentativas desde o início do processo; reinícios reiniciam a medição em memória. Retries contam novamente. confirmed não comprova consumo, gravação de outbox ou conclusão da transação. Não há IDs de eventos, transações ou payload em etiquetas.
 
-`metrics` também disponibiliza as métricas automáticas da JVM/HTTP existentes no aplicativo. O diagnóstico é destinado ao ambiente local restrito; não acrescenta autenticação, exportador, persistência, painel ou SLO de produção. Os testes HTTP verificam o contrato com um registry real preparado; a prova de publicação/recuperação com PostgreSQL/RabbitMQ permanece nos testes dos publicadores.
+`metrics` também disponibiliza as métricas automáticas da JVM/HTTP existentes no aplicativo. O diagnóstico é destinado ao ambiente local restrito; não acrescenta autenticação, persistência das séries, painel ou SLO de produção. Os testes HTTP verificam o contrato com um registry real preparado; a prova de publicação/recuperação com PostgreSQL/RabbitMQ permanece nos testes dos publicadores.
+
+## Exportação para Prometheus
+
+O registry gerenciado pelo Boot apresenta o mesmo contador em `/actuator/prometheus`, somente com o perfil `diagnostics`. O nome exportado é `credpay_messaging_publish_attempts_total`, com a etiqueta fixa `outcome`. O endpoint padrão continua404. Séries automáticas JVM/HTTP também fazem parte dessa resposta; restringir o acesso como nos comandos acima.
+
+No serviço local configurado, consulte `http://127.0.0.1:8080/actuator/prometheus` (8081 no processador). As séries de tentativas surgem após a primeira ocorrência; ausência não comprova zero ou saúde. Valores acumulam tentativas desde o início do processo e reiniciam com ele. Não indicam transações únicas, consumo ou commit. Este incremento fornece o formato de coleta; servidor Prometheus, scrape persistido e painel Grafana ainda não foram implementados. Não há envio push ou serviço externo configurado.
 
 ## Demo nos aplicativos do Compose
 

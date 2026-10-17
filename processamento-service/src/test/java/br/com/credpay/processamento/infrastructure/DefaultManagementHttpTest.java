@@ -33,6 +33,8 @@ class DefaultManagementHttpTest {
         assertThat(http.getForEntity("/actuator/health", String.class).getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(http.getForEntity("/actuator/metrics/credpay.messaging.publish.attempts", String.class)
                 .getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(http.getForEntity("/actuator/prometheus", String.class).getStatusCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
     }
 
     @Configuration(proxyBeanMethods = false)

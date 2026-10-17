@@ -48,6 +48,13 @@ class DiagnosticsManagementHttpTest {
         assertThat(filtered.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(mapper.readTree(filtered.getBody()).path("measurements").get(0).path("value").asDouble())
                 .isEqualTo(1);
+        var scrape = http.getForEntity("/actuator/prometheus", String.class);
+        assertThat(scrape.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(scrape.getBody()).contains("# TYPE credpay_messaging_publish_attempts_total counter");
+        for (var outcome : java.util.Map.of("confirmed", 2.0, "returned", 1.0, "nacked", 1.0, "error", 1.0).entrySet()) {
+            assertThat(scrape.getBody()).contains("credpay_messaging_publish_attempts_total{outcome=\""
+                    + outcome.getKey() + "\"} " + outcome.getValue());
+        }
     }
 
     @Test

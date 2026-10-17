@@ -4,15 +4,15 @@
 
 ## Último incremento
 
-- B06.8j integrado na PR #150/feb0ab6: oito gates finais0c36163 verdes; Transações522, Processador340 e Flow12. Confirmação controlada, replay, duas quedas antes ACK, criação atrasada e decisão anterior comprovados; spec9.96.
+- B07.5b integrado na PR #152/a84bb5e: Kubernetes22/Scan253 finais0c7aa87 verdes. Preparo antes de consumo, APROVADA/REJEITADA/replay e parada/recuperação causal comprovados; spec9.97.
 
 ## Agora
 
-- [ ] Integrar B07.5b/PR #152 após gates finais: Kubernetes21/Scan252 verdes em03e6f8c comprovam preparo, APROVADA/REJEITADA/replay e parada/recuperação causal com filas drenadas. Revisão sem bloqueantes; atualização final documental em validação. Spec9.97.
+- [ ] B07.6a — Red955c0e3 HTTP200 esperado/404 observado nos dois apps; green HTTP3+3 e verify localTrans320/Proc218 verdes, padrão404 preservado. Registry gerenciado/exposição diagnostics, transitivas registradas; gates completos/inventário pendentes. Sem Grafana/servidor/deploy; spec9.98. Quatro ZIPs originais salvos e conferidos em docs/frontend/references/original-zips.
 
 ## Próximo
 
-- Painel e diagnóstico local, depois segurança/qualidade de saída e ensaio com João. Referências frontend preservadas: quatro arquivos PNG, dois válidos e dois inválidos de28bytes; docs/frontend/references/README.md.
+- Painel e diagnóstico local com Prometheus/Grafana, depois segurança/qualidade de saída e ensaio com João. Referências frontend preservadas: quatro arquivos PNG, dois válidos e dois inválidos de28bytes; docs/frontend/references/README.md.
 
 ## Depois
 
