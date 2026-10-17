@@ -84,12 +84,15 @@ def _digest(stream):
     return result.hexdigest()
 
 
-def _packages(status):
+def _packages(status, installed=True):
     result = []
     identities = set()
     for paragraph in status.split("\n\n"):
         fields = {}
+        key = None
         for line in paragraph.splitlines():
+            if line and line[0].isspace() and key == "Source":
+                raise ValueError("Origem de pacote inválida.")
             if line and not line[0].isspace():
                 if ":" not in line:
                     raise ValueError("Metadados de pacote inválidos.")
@@ -98,7 +101,7 @@ def _packages(status):
                     raise ValueError("Campo de pacote duplicado.")
                 fields[key] = value.strip()
         if fields:
-            if fields.get("Status") != "install ok installed":
+            if installed and fields.get("Status") != "install ok installed":
                 raise ValueError("Estado de pacote inválido.")
             if not re.fullmatch(r"[a-z0-9][a-z0-9+.-]*", fields.get("Package", "")) or not re.fullmatch(r"[0-9][A-Za-z0-9.+:~_-]*", fields.get("Version", "")) or fields.get("Architecture") not in ("amd64", "all"):
                 raise ValueError("Identidade de pacote inválida.")
@@ -106,7 +109,11 @@ def _packages(status):
             if identity in identities:
                 raise ValueError("Pacote duplicado.")
             identities.add(identity)
-            result.append({"name": fields["Package"], "version": fields["Version"], "architecture": fields["Architecture"]})
+            source = re.fullmatch(r"([a-z0-9][a-z0-9+.-]*)(?: \(([0-9][A-Za-z0-9.+:~_-]*)\))?", fields.get("Source", fields["Package"]))
+            if source is None:
+                raise ValueError("Origem de pacote inválida.")
+            result.append({"name": fields["Package"], "version": fields["Version"], "architecture": fields["Architecture"],
+                           "sourceName": source[1], "sourceVersion": source[2] or fields["Version"]})
     if not result:
         raise ValueError("Inventário de pacotes vazio.")
     return sorted(result, key=lambda item: item["name"])

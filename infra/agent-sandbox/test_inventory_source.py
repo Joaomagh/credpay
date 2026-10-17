@@ -35,6 +35,26 @@ def source_archive(items, status=STATUS):
 
 
 class InventorySourceTest(unittest.TestCase):
+    def test_preserves_source_identity_and_full_version_from_installed_metadata(self):
+        status = STATUS.replace(b"Version: 1.0", b"Version: 2:1.0-3+b1\nSource: synthetic-source (2:1.0-3)")
+        with source_archive([], status=status) as archive:
+            package = inventory(archive)["packages"][0]
+            self.assertEqual("synthetic-source", package.get("sourceName"))
+            self.assertEqual("2:1.0-3", package.get("sourceVersion"))
+            self.assertEqual("2:1.0-3+b1", package["version"])
+
+    def test_missing_source_uses_binary_identity_and_source_without_version_uses_binary_version(self):
+        for field, name in ((b"", "synthetic-package"), (b"Source: synthetic-source\n", "synthetic-source")):
+            with self.subTest(field=field), source_archive([], status=field + STATUS) as archive:
+                package = inventory(archive)["packages"][0]
+                self.assertEqual((name, "1.0"), (package.get("sourceName"), package.get("sourceVersion")))
+
+    def test_rejects_malformed_source_identity(self):
+        for value in (b"", b"../outside", b"synthetic-source (bad)", b"synthetic-source (1.0) trailing", b"synthetic-source\n continuation"):
+            with self.subTest(value=value), source_archive([], status=b"Source: " + value + b"\n" + STATUS) as archive:
+                with self.assertRaisesRegex(ValueError, "Origem de pacote inválida"):
+                    inventory(archive)
+
     def test_file_inventory_does_not_invent_package_database_for_projected_root(self):
         with source_archive([(tarfile.TarInfo("usr/file"), b"data")], status=None) as archive:
             result = inventory_source.inventory_files(archive)
@@ -47,7 +67,8 @@ class InventorySourceTest(unittest.TestCase):
         info.mode = 0o4755
         with source_archive([(info, b"test")]) as archive:
             result = inventory(archive)
-            self.assertEqual([{"name": "synthetic-package", "version": "1.0", "architecture": "amd64"}], result["packages"])
+            self.assertEqual([{"name": "synthetic-package", "version": "1.0", "architecture": "amd64",
+                               "sourceName": "synthetic-package", "sourceVersion": "1.0"}], result["packages"])
             entry = next(item for item in result["entries"] if item["path"] == "usr/bin/synthetic-tool")
             self.assertTrue(entry["setuid"])
             self.assertTrue(entry["executable"])

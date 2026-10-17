@@ -2727,6 +2727,16 @@ Riscos: confundir erro genérico/missingtool com bloqueio, publicar env/logs com
 
 **Plataforma/limites:** Docker28.0.4/API1.48/linuxamd64, kernel6.17.0-1022-azure/x86_64, Python3.12.3, Git2.55.0 e setfacl2.3.2. Operações têm timeouts próprios; o job tem limite global15min, sem alegar um prazo global30s. Escopo do relatório: PARTIAL_CORE_CONTAINMENT_NOT_AGENT_ISOLATION. AJ-HOST/NET/RESexcesso/TOOLS completos, vulnerabilidades, DockerDesktop e topologia do agente permanecem abertos. Revisão independente somente leitura sem bloqueantes; confirmou validações/protocolo/escopo. Se daemon/inspect falhar durante finally, remoção não é garantida: o job falha e o runner é descartável, sem claim de cleanup absoluto. API confirmou que o checkout f74b2f2 tem pais a0667ae e66daaaa. Revisões/threads remotos vazios neste corte; gates do último SHA serão conferidos antes da integração.
 
+### 9.103 Proveniência Debian para o futuro scan do core — B08.7d.1
+
+PR159 integrada emdf022fa89955c773d80531c6cce7f7fe63c7218c após Sandbox Core13/run39068841001 e Secret Scan281/run39068841000 verdes no head2278d6acb92b679a6f5f74d5d5874bc524308d14, revisão independente sem bloqueantes e nenhuma revisão/thread/solicitação remota pendente.
+
+Objetivo/aceite antes da implementação: preservar sourceName/sourceVersion completos, incluindo epoch/revisão, no inventário Debian e nos28 componentes selecionados. Campo Source ausente significa nome/versão binários; nome sem versão usa versão binária; nome com versão explícita preserva ambos. Recusar metadado inválido e divergência entre identidade real do deb e lock antes da projeção. Ler control pelo dpkg-deb já presente no builder confiável, sem instalar pacote/scripts; controlador valida o conteúdo exportado. Arquivos: inventory_source/testes, project_core/testes, Dockerfile.candidate, README/task/backlog. Nenhuma dependência nova. [Contrato Source Debian](https://manpages.debian.org/trixie/dpkg-dev/deb-control.5.en.html).
+
+Risco: confundir pacote binário com fonte ou inventar banco dpkg após poda; o manifesto continua PARTIAL_PACKAGE_COMPONENTS_NOT_DPKG_INSTALLATION. Este incremento prepara dados corretos para o scan, não produz inventário de vulnerabilidades nem aceita a imagem. Red inicial:15 testes focados, oito falhas esperadas por origem descartada/metadados inválidos aceitos; nenhum erro de compilação/bootstrap.
+
+Segundo red:13 testes de projeção, cinco falhas esperadas por origem descartada/divergência aceita. Green mínimo e suíte afetada:39 testes locais passaram em0,417s, sem falhas/erros/skips; git diff --check passou. Sem Docker local. A prova real de export/control/projeção aguarda CI.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

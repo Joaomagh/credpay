@@ -9,7 +9,7 @@ import subprocess
 import tarfile
 from collections import deque
 
-from inventory_source import INJECTED, TOOLS, _path, _resolve, inventory, inventory_files
+from inventory_source import INJECTED, TOOLS, _packages, _path, _resolve, inventory, inventory_files
 
 
 def license_references(content):
@@ -120,12 +120,21 @@ class Source:
         return data
 
 
+def candidate_package(control, expected):
+    packages = _packages(control, installed=False)
+    if len(packages) != 1 or any(packages[0][field] != expected[field] for field in ("name", "version", "architecture")):
+        raise ValueError("Candidato diverge da identidade fixada no lock.")
+    return packages[0]
+
+
 def project(archive, folder, additions):
     """Gera tar próprio; readelf lê arquivos regulares sem permissão de execução."""
     source = Source(archive)
     try:
         packages = {entry["name"]: entry for entry in source.data["packages"]}
-        packages.update({entry["name"]: {"name": entry["name"], "version": entry["version"], "architecture": entry["architecture"]} for entry in additions})
+        for entry in additions:
+            control = source.read(f"usr/share/credpay-candidate/{entry['name']}.control").decode("utf-8", errors="strict")
+            packages[entry["name"]] = candidate_package(control, entry)
         owners = {}
         for name, package in packages.items():
             candidates = (f"usr/share/credpay-candidate/{name}.list", f"var/lib/dpkg/info/{name}:amd64.list", f"var/lib/dpkg/info/{name}.list")
