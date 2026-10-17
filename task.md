@@ -14,7 +14,8 @@
 
 - B08.7: negativos rede/daemon/ferramentas em incrementos separados; DockerDesktop pendente.
 - Remediação da baseline: priorizar gawk e análise de separação do código conforme infra/agent-sandbox/TRIAGE.md, sem mistura de pacotes sid/supressão/aceite implícito.
-- B08.1: recuperar um log/cinco artefatos históricos ou registrar disposição explícita; revisão continua parcial. Depois ensaio do quickstart/demo/explicação com João.
+- B08.1: recuperar um log/cinco artefatos históricos ou registrar disposição explícita; revisão continua parcial.
+- João: primeiro ensaio guiado em docs/DEMO.md, começando pelo preflight; execução e explicação ainda não comprovadas.
 
 ## Depois
 

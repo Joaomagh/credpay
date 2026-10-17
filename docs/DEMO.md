@@ -4,6 +4,73 @@ O roteiro usa somente transações fictícias e a v1 existente. Compose/fluxo e 
 
 Antes do roteiro técnico, leia [Entenda o CredPay](ENTENDA_O_CREDPAY.md) para relacionar o exemplo de produto às escolhas de engenharia.
 
+## Primeiro ensaio guiado com João
+
+Estado em17/10/2026: João informou que ainda não executou o roteiro e pediu acompanhamento. As etapas abaixo são uma preparação; execução, entendimento e apresentação continuam sem aceite pessoal. Faça uma etapa por vez e registre dúvidas nas suas palavras.
+
+### 1. Conferir o ambiente
+
+No seu terminal PowerShell, na raiz do checkout, execute:
+
+```powershell
+$PSVersionTable.PSVersion
+java -version
+docker compose version
+docker version --format '{{.Server.Os}}'
+git rev-parse HEAD
+```
+
+Esperado: PowerShell7.3+, Java21, Compose2 e resposta `linux` do servidor Docker. Registre o SHA completo. Se algum comando falhar, pare essa etapa e informe somente qual comando falhou e a mensagem curta, sem logs/configurações completos. Não instalar ferramentas ou apagar dados para fazer a demonstração passar.
+
+Esses comandos são para você executar. A preparação deste guia não acessou o daemon do seu computador. O ensaio começa pelo Compose; isso não conclui o aceite Kubernetes/DockerDesktop nem autoriza node kind privilegiado local.
+
+### 2. Explicar o produto antes de subir os serviços
+
+Leia o exemplo de R$50/R$150 em [Entenda o CredPay](ENTENDA_O_CREDPAY.md), feche a página e explique em cinco frases:
+
+1. O que o cliente pede e por que o POST responde PENDENTE.
+2. Qual serviço decide e qual regra aplica.
+3. Como o resultado volta e aparece no GET.
+4. O que acontece ao repetir a mesma chave/pedido.
+5. Qual situação de falha o projeto consegue demonstrar e qual limite conserva.
+
+Se travar, registre o ponto e consulte a explicação correspondente; depois tente novamente com suas palavras. Esse exercício não exige decorar o texto de três minutos.
+
+### 3. Executar a demo com pausas
+
+Use a seção **Construir e preparar** do [quickstart Compose](../infra/compose/README.md), que é a referência dos comandos de build/configuração. Execute os comandos separadamente, parando em cada pausa da tabela; não cole o bloco inteiro de uma vez. Preserve `.env` existente e volumes; os exemplos são fictícios. Package com skipTests prepara artefatos, sem substituir as suítes do CI.
+
+| Pausa | Ação no quickstart | O que conferir e explicar |
+|---|---|---|
+| Build | Preparar os dois JARs, conferir configuração e construir imagens com a mesma tag/SHA | Por que são dois aplicativos e por que tag/JARs precisam corresponder ao checkout |
+| Prepare | Executar somente Prepare e aguardar sucesso | Infraestrutura/topologia/políticas prontas; consumo/publicação ainda não ativados |
+| Activate | Executar somente Activate após Prepare | Consumidores e publicação ativados após conferência, com flags explícitos |
+| Demo | Executar somente Demo | Exemplos50/150BRL convergem para APROVADA/REJEITADA; replay conserva resposta original PENDENTE/Location |
+| Down | Executar Down ao terminar, inclusive se o ensaio ficar para depois | Recursos desse projeto param e os volumes permanecem; nenhum purge/prune |
+
+Em qualquer falha, interrompa a sequência e guarde apenas etapa/comando/mensagem curta. Não pule Prepare, edite tabelas ou use screenshots antigos como execução atual. O roteiro imprime conclusões sem UUIDs/payloads/credenciais; compartilhe somente essas conclusões e dúvidas. Não publique `.env`, inspect, configuração resolvida ou logs integrais.
+
+### 4. Defender decisões e limites
+
+Responda às seis perguntas da tabela abaixo sem ler o roteiro, depois abra o código/evidência indicado e mostre onde a resposta é sustentada. Concentre-se em outbox/duplicatas, POST replay versus GET atual, concorrência, commit/ack, DLQ/FALHOU e limites atuais. Se não souber um ponto, registre-o como pendente; não invente experiência ou garantia.
+
+A apresentação de três minutos vem depois dessa rodada. Grave ou apresente uma tentativa com suas palavras, confira as dúvidas e repita. Não chamar entrega pelo menos uma vez de exactly-once; DLQ não equivale a decisão financeira FALHOU. Os contadores medem tentativas, e CI não comprova execução pessoal.
+
+### 5. Trazer um retorno curto
+
+Preencha sem credenciais, IDs de transações ou dados pessoais:
+
+```text
+Data e SHA do checkout:
+Ambiente: conferido / impedimento no comando ...
+Build / Prepare / Activate / Demo / Down: executei / não executei / falhou
+Fluxo em cinco frases: ...
+Pergunta técnica que ainda não sei explicar: ...
+Etapa seguinte que preciso praticar: ...
+```
+
+Pode guardar notas em `.local/ensaio/` (ignorado pelo Git). Não marcar uma etapa como executada só por ler o guia. O retorno permite orientar o próximo passo; aceite pessoal, Kubernetes e gates de segurança permanecem separados.
+
 ## Preparar a demonstração
 
 1. Escolher um checkout revisado e conferir os checks do seu SHA. Os workflows de módulos, Flow, Images, Compose e Secret Scan têm responsabilidades diferentes; package com skipTests só prepara artefatos.

@@ -2841,6 +2841,16 @@ Nenhuma execução/instalação/scan novo ou mudança de política/achados neste
 
 Revisão documental somente leitura confirmou contrato sem bloqueantes técnicos; textos antigos de4.3/backlog foram alinhados ao mecanismo escolhido/comprovado. UTF8 estrito/diff-check e Gitleaks no protocolo passaram. João respondeu que ainda não executou o ensaio e pediu roteiro guiado; preparar após este refinamento, sem registrar aceite pessoal fictício.
 
+### 9.112 Primeiro ensaio guiado solicitado por João — B08.5b
+
+PR168/3e4025ee9df93899067b33fdfb25a09dea2cd079 integrou o refinamento de rede após Secret Scan307/run39072191542 verde no head3f88b0e979d9294f6c7ab088a77a553e338f8721. Somente docs/filtros sem suite de runtime, revisão sem bloqueantes e nenhum pedido/review/thread remoto pendente.
+
+João respondeu que ainda não executou o quickstart/demo e pediu ensaio guiado. Objetivo documental: acrescentar ao roteiro existente etapas curtas com pré-requisitos, pausas Build/Prepare/Activate/Demo/Down, produto em cinco frases, seis perguntas com evidências e retorno curto sem segredos. docs/DEMO.md reaproveita o quickstart como referência única dos comandos de build; preflight só consulta versões/Server.Os/SHA, para João executar. Nenhum acesso ao daemon local, instalação, build ou infraestrutura executados pelo agente neste incremento. Não autoriza kind privilegiado local nem conclui Kubernetes/Desktop/aprendizado/segurança pela existência do guia.
+
+Arquivos: DEMO/spec/task/backlog. Preservar env/volumes, exemplos fictícios e bloqueio sob falha; package com skipTests não substitui CI. Pausas distinguem impedimento do ambiente, falha operacional e dúvida conceitual. Aceite: UTF8/links locais existentes/diff/revisão documental e único próximo passo técnico; execução/entendimento aguardam evidência pessoal de João, sem checklist preenchido ficticiamente. Documentação não exige red artificial.
+
+Verificação documental: links locais existentes e contidos no repositório, UTF8 estrito nos quatro arquivos, um próximo passo técnico/diff-check/Gitleaks no DEMO passaram. Revisão independente somente leitura sem bloqueantes; alinhamento com quickstart/env/volumes/limites confirmado. Nenhum comando do ensaio executado pelo agente.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
