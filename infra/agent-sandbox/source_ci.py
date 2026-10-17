@@ -16,8 +16,8 @@ ROOT = Path(__file__).resolve().parents[2]
 LABEL = "io.credpay.sandbox-source"
 
 
-def docker(*arguments):
-    result = subprocess.run(["docker", *arguments], cwd=ROOT, capture_output=True, text=True, timeout=180)
+def docker(*arguments, timeout=180):
+    result = subprocess.run(["docker", *arguments], cwd=ROOT, capture_output=True, text=True, timeout=timeout)
     if result.returncode:
         raise RuntimeError(f"Docker falhou na operação {arguments[0]}; saída integral não publicada.")
     return result.stdout.strip()
