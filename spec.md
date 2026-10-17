@@ -2737,6 +2737,10 @@ Risco: confundir pacote binário com fonte ou inventar banco dpkg após poda; o 
 
 Segundo red:13 testes de projeção, cinco falhas esperadas por origem descartada/divergência aceita. Green mínimo e suíte afetada:39 testes locais passaram em0,417s, sem falhas/erros/skips; git diff --check passou. Sem Docker local. A prova real de export/control/projeção aguarda CI.
 
+Revisão independente somente leitura sem bloqueantes. Sandbox Core15/run39069014264/job117502553720 e Secret Scan283/run39069014270 verdes no head474ed795210c85a6975c0abd756220c038641bfc. Artefato12114362319:155336bytes/SHA2561febe4cefd6aa8b6703e44ebbf3f82ddcafe03b081e69b9091ecd836c2dd77cc; quatro relatórios selecionados. Checkout5eced84333a45ca3ed75d98c9a68cbfbaaf7ca24 tem paisdf022fa/474ed79 confirmados pela API; imagemsha256:646cf10b8f7e09d50035e5840fa148b979f5493d95825e2beaaece2f848f832f.
+
+Auditoria:78 pacotes da origem e28 componentes selecionados têm sourceName/sourceVersion;88 arquivos/46 diretórios/2links. libssl3t64→openssl3.5.7-1~deb13u3; gawk binário1:5.2.1-2+b1→fonte1:5.2.1-2. Hashes de comando/configuração e vínculo de imagem/checkout dos controles de contenção conferidos, seis IDs PASS mantidos. Gitleaks8.30.1 no JSON selecionado não encontrou candidatos. Primeira consulta local ao JSON usou chave incorreta inventory e falhou KeyError; auditoria corrigida para packages do schema real, sem alteração no produto ou PASS antes de validar. Gates do último SHA serão conferidos antes do merge. Scan de vulnerabilidades permanece pendente.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

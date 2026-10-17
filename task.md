@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.7d.1 — Preservar proveniência fonte Debian no manifesto parcial, com identidade do deb conferida contra lock. Red/green local39 controles; revisão e CI pendentes; spec9.103.
+- [ ] B08.7d.1 — Preservar proveniência fonte Debian no manifesto parcial, com identidade do deb conferida contra lock. Red/green39 controles, revisão e Core15/Scan283 verdes; artefato conferido, gates finais/merge pendentes; spec9.103.
 
 ## Próximo
 
