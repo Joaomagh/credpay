@@ -432,7 +432,7 @@ O `sandbox-core` é um perfil diagnóstico para validar mounts, identidade, file
 
 O inventário efetivo da imagem deverá ser comparado com esta lista. Dependências transitivas trazidas pela imagem-base não serão consideradas automaticamente aprovadas. Git, Java, Maven, `curl`, `wget`, Docker CLI, Docker Compose, SSH, `sudo`, `su`, clientes de nuvem, gerenciadores de credenciais, gerenciadores de pacotes utilizáveis em runtime e outros runtimes ficam fora do `sandbox-core`.
 
-O primeiro corte de AJ-NET-01 usará modo diagnóstico separado com a mesma imagem e GNUawk (§9.111), conforme o contrato em docs/SANDBOX_NETWORK_PROTOCOL.md; implementação e execução permanecem pendentes. Ausência de cliente ou erro DNS genérico não serão evidência de bloqueio; DNS/LAN/metadados/internet exigem provas próprias posteriores.
+O primeiro corte de AJ-NET-01 usa modo diagnóstico separado com a mesma imagem e GNUawk (§9.111), conforme o contrato em docs/SANDBOX_NETWORK_PROTOCOL.md; TCP/UDP entre namespaces próprios foram comprovados no LinuxCI (§9.113). Ausência de cliente ou erro DNS genérico não serão evidência de bloqueio; DNS/LAN/metadados/internet exigem provas próprias posteriores.
 
 ### Perfis futuros
 
@@ -444,7 +444,7 @@ Git será considerado em um futuro perfil operacional quando o worker precisar i
 |---|---|
 | tag e digest da imagem Debian slim | conferidos em §9.100; construção e inventário em §9.101/9.104; baseline sem aceite |
 | compatibilidade de `10001:10001` com o Docker Desktop | validar antes de considerar a identidade funcional |
-| mecanismo diagnóstico inicial para AJ-NET-01 | modo separado/mesma imagem, contrato9.111; execução e cobertura completa pendentes |
+| mecanismo diagnóstico inicial para AJ-NET-01 | modo separado/mesma imagem, contrato9.111 e prova TCP/UDP9.113; cobertura completa pendente |
 | topologia Codex/controlador e mecanismo de enforcement | permanece hipótese e não bloqueia o `sandbox-core` isolado |
 | perfil operacional com Git | aprovar somente quando necessário |
 | `sandbox-java` com Java e Maven | aprovar somente quando houver necessidade de build Java |
