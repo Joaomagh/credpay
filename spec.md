@@ -2,11 +2,11 @@
 
 > Fonte de verdade do sistema que existe hoje. Preencher somente com decisão tomada, contrato aceito ou comportamento comprovado. Planos futuros ficam em `CREDPAY_PLAN.md`; próximas ações ficam em `task.md`.
 
-**Última atualização:** 2026-10-15
+**Última atualização:** 2026-10-17
 
-**Fase atual:** conclusão da v1 — qualidade, ambiente reproduzível e preparação de Kubernetes; observabilidade e sandbox ainda pendentes.
+**Fase atual:** fechamento da v1 backend — ensaio com João, lacunas de publicação e sandbox parcialmente verificado. Frontend e servidores Prometheus/Grafana adiados; métricas/diagnóstico HTTP existentes preservados.
 
-**Estado:** fluxo POST → duas outboxes → GET APROVADA/REJEITADA comprovado com JARs e imagens; idempotência, concorrência, histórico único, ack após commit, retry/DLQ, reinício e recuperação manual comprovados nos cenários registrados. Compose prepara e confere políticas antes de ativar consumo/publicação e preserva dados no down/up (PR #117). Flags seguem desligados por padrão; ativação exige o roteiro. Kubernetes está somente proposto na PR #118, sem execução. FALHOU tem aplicação causal demonstrada em cenário controlado, com recibo/histórico atômicos e preservação financeira (§9.90); transporte e início operacional seguem pendentes; observabilidade, sandbox verificável e fechamento de qualidade/portfólio continuam pendentes.
+**Estado:** fluxo POST → duas outboxes → GET APROVADA/REJEITADA, idempotência, concorrência, retry/DLQ e recuperação comprovados nos cenários registrados. FALHOU percorreu transporte/encerramento causal em cenário controlado (§9.96); isso não o transforma em mecanismo operacional genérico. Kubernetes descartável hospedado comprovou startup/persistência, fluxo/replay/parada/recuperação (§9.93/9.97); DockerDesktop e execução pessoal com João continuam sem aceite. Flags seguem desligados por padrão e ativação exige roteiro. Migração de plataforma/imagem dos apps e exportação de métricas opt-in integradas (§9.94/9.98); nenhum deploy externo autorizado. Sandbox tem core mínimo, negativos parciais e quota de CPU comprovados somente no Linux CI (§9.100–9.106), com baseline sem aceite pelos advisories; não contém comprovadamente o agente atual.
 
 ## 1. Contexto e limites atuais
 
@@ -15,13 +15,13 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 - `transacoes-service`: recebe pedidos, valida regras de entrada, mantém o estado consultável e publica eventos;
 - `processamento-service`: consome pedidos de processamento, decide o resultado e publica o evento correspondente.
 
-**Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno. O `processamento-service` possui scaffolding independente, build reproduzível, health check HTTP, decisão `APROVADA`/`REJEITADA`, adapter JPA/Flyway para o snapshot e adapter JDBC para gravar a intenção `TransacaoProcessada` v1 atomicamente em PostgreSQL.
+**Implementado:** `transacoes-service` com CI, regras de domínio, PostgreSQL/Flyway e endpoints de criação e consulta. A criação persiste a transação `PENDENTE`, exige chave idempotente, distingue primeira criação, replay equivalente e conflito, e grava atomicamente um `TransacaoCriada` v1 na outbox. O produtor declara uma exchange RabbitMQ durável e pode publicar manualmente uma pendência, marcando-a somente após `ack` sem retorno. O `processamento-service` é independente, com build reproduzível, health check HTTP, decisão `APROVADA`/`REJEITADA`, adapter JPA/Flyway para o snapshot e adapter JDBC para gravar a intenção `TransacaoProcessada` v1 atomicamente em PostgreSQL.
 
 **Processamento implementado:** o processador exige valor e limite não nulos e estritamente positivos. A aplicação carrega limites externos por moeda; o caso de uso transacional grava decisão e intenção de saída atomicamente, reutiliza o registro no replay equivalente e serializa entradas concorrentes que compartilham `eventId` ou `transactionId`. A migration V2 cria a outbox própria com backfill dos resultados V1; o caso de uso de publicação lê uma pendência e a marca após `ack` sem return. Um scheduler opt-in de réplica única pode chamar esse caso de uso. O listener chama o registro somente quando topologia e listener são habilitados explicitamente; rejeição permanente, retry limitado e reentrega após perda de conexão entre commit/ack foram testados em PostgreSQL/RabbitMQ reais. A recusa da DLQ cheia, retenção e recuperação foram comprovadas na fixture, não em ambiente operacional. O adapter PostgreSQL do primeiro serviço é validado isoladamente e pelo fluxo HTTP completo; sua constraint monetária foi testada por SQL direto.
 
-**Fluxo vertical e idempotência comprovados:** domínio final, estado/histórico atômicos, idempotência sequencial/concorrente e replay HTTP original. Parser/topologia/políticas e listener opt-in comprovam commit antes de ack, replay sem novo histórico/Clock, permanentes para DLQ sem retry e três tentativas operacionais com rollback real. Dois JARs reais percorrem POST → processador/duas outboxes → GET APROVADA/REJEITADA; duplicatas dos dois eventos e replay POST preservam cinco tabelas completas, resposta/Location original e GET final. Ativação manual exige conferência do runbook, flags padrão false. Transporte e início operacional de FALHOU (B06), Kubernetes local (B07) e critérios restantes de qualidade, segurança e demonstração (B08) continuam no backlog. Imagens/Compose já foram comprovados no CI. Coordenação entre múltiplas réplicas publicadoras e HA de produção não são capacidades atuais. Sandbox AI-Jail continua apenas documentado.
+**Fluxo vertical e idempotência comprovados:** domínio final, estado/histórico atômicos, idempotência sequencial/concorrente e replay HTTP original. Parser/topologia/políticas e listener opt-in comprovam commit antes de ack, replay sem novo histórico/Clock, permanentes para DLQ sem retry e três tentativas operacionais com rollback real. Dois JARs reais percorrem POST → processador/duas outboxes → GET APROVADA/REJEITADA; duplicatas dos dois eventos e replay POST preservam cinco tabelas completas, resposta/Location original e GET final. Ativação manual exige conferência do runbook, flags padrão false. Transporte de FALHOU e fluxo Kubernetes foram comprovados em cenários CI controlados (§9.96/9.97); execução DockerDesktop, ensaio de demonstração e critérios restantes de segurança continuam pendentes. Imagens/Compose já foram comprovados no CI. Coordenação entre múltiplas réplicas publicadoras e HA de produção não são capacidades atuais. Sandbox tem implementação/provas parciais no Linux CI, sem aceite completo ou prova de contenção do agente.
 
-**Últimas entregas:** fluxo/recovery, imagens e Compose integrados (§9.52–9.54, §9.60–9.63); Checkstyle na PR #120, roteiro na #121, inventário na #122 e Tomcat na #123 (§9.66–9.69). Achados remanescentes, observabilidade, Kubernetes, sandbox e ensaio pendentes. As seções por incremento preservam a evidência histórica; próximo passo vigente em task.md.
+**Últimas entregas:** plataforma corrigida dos apps (§9.94), transporte causal FALHOU (§9.96), fluxo no cluster descartável (§9.97), métricas opt-in e referências frontend preservadas (§9.98), adiamento explícito do painel (§9.99), construção/inventário/negativos/triagem/quota de CPU do core (§9.100–9.106). Achados do core, controles restantes, lacunas históricas de publicação e ensaio com João seguem abertos. As seções por incremento preservam a evidência histórica; próximo passo vigente em task.md.
 
 ## 2. Arquitetura vigente
 
@@ -405,15 +405,15 @@ Essa hipótese não bloqueia a validação isolada do `sandbox-core`. O primeiro
 
 ### Imagem, identidade e recursos
 
-| Item | Baseline aprovada | Validação pendente |
+| Item | Baseline aprovada | Evidência atual / pendência |
 |---|---|---|
-| Imagem-base | Debian slim | tag e digest imutável devem ser verificados na implementação |
+| Imagem-base | Debian slim | tag/digests conferidos e core construído (§9.100/9.101); baseline sem aceite por advisories (§9.104/9.105) |
 | Identidade | UID/GID `10001:10001` | escrita e ownership no bind mount devem ser testados no Docker Desktop |
-| CPU | 1 CPU | limite efetivo deve ser observado em cgroup |
-| Memória | 1 GiB | limite efetivo deve ser observado em cgroup |
-| Swap | desabilitado | memória e memória+swap devem produzir ausência efetiva de swap |
-| Processos | 128 PIDs | limite efetivo deve ser observado e testado de forma controlada |
-| `/tmp` | 256 MiB | `tmpfs`, descarte, tamanho e opções `noexec`, `nosuid` e `nodev` devem ser verificados |
+| CPU | 1 CPU | limite e throttling próprio sob excesso comprovados no Linux CI (§9.106); DockerDesktop pendente |
+| Memória | 1 GiB | limite observado no Linux CI (§9.102); excesso real e DockerDesktop pendentes |
+| Swap | desabilitado | memory.swap.max0 observado no Linux CI (§9.102); DockerDesktop pendente |
+| Processos | 128 PIDs | pids.max128 observado no Linux CI (§9.102); saturação/recusa e DockerDesktop pendentes |
+| `/tmp` | 256 MiB | flags/tamanho/noexec/descarte comprovados no Linux CI (§9.102); DockerDesktop pendente |
 
 Os valores são limites máximos da baseline, não reservas ou requisitos de desempenho. O bind mount do workspace não recebe cota simples de armazenamento por esses parâmetros e permanece como risco residual.
 
@@ -442,7 +442,7 @@ Git será considerado em um futuro perfil operacional quando o worker precisar i
 
 | Decisão | Estado |
 |---|---|
-| tag e digest da imagem Debian slim | verificar e aprovar no incremento de implementação |
+| tag e digest da imagem Debian slim | conferidos em §9.100; construção e inventário em §9.101/9.104; baseline sem aceite |
 | compatibilidade de `10001:10001` com o Docker Desktop | validar antes de considerar a identidade funcional |
 | imagem ou mecanismo diagnóstico para AJ-NET-01 | escolher antes de executar o teste de rede |
 | topologia Codex/controlador e mecanismo de enforcement | permanece hipótese e não bloqueia o `sandbox-core` isolado |
@@ -2786,6 +2786,14 @@ TDD: CPU focado2 testes/nove falhas esperadas por validação ausente; parser fo
 Green real: Sandbox Core25/run39070355874/job117506496721 e Secret Scan293/run39070355886 verdes no head7b50fe7f1481ffce1e734b07554721fa94e9147d;47 controles Linux. Artefato12115076650:160569bytes/SHA256e6ac106d32cda02262c49661025df7ffe568c43fe32206736b306418ff586440, quatro relatórios selecionados; checkout de testedcca6d1c6cdfd80a2e765c54e11836296255ff14; imagemsha256:9d0b519b1cbd72c8f5c5321e582eebc2ddda8f4a341650df6850c2fa7109b0f4.
 
 CPU observado: before(periods1/throttled0/usec0), after(36/35/3462494), deltas(35/35/3462494). Cargas fizeram2458/2438blocos; cpu.max100000100000, sqrt/recuperação PASS, exit0/container parado. Auditoria refez validação dos deltas e hashes comando/configuração; Gitleaks8.30.1 no JSON selecionado não encontrou candidatos. Revisão independente47testes/diff-check sem bloqueantes; guard próprio de CI também incluído no helper (variáveis não são mecanismo de isolamento do agente). Inventário continua HIGH17/CRITICAL2; nenhuma remediação/aceite implícito. Gates do último SHA ainda serão conferidos antes do merge.
+
+### 9.107 Resumo vigente reconciliado com evidências integradas
+
+PR163 integrada em2b3ad0ba8d890c05b560bee5a57edf2c8966ca5f após Core26/run39070473446 e Scan294/run39070473462 verdes no headfdb6b5c04d4bb0cac5108aadd3e5c4469f229662; revisão sem bloqueantes e nenhum pedido/review/thread remoto pendente.
+
+Incremento documental: a abertura da spec ainda dizia Kubernetes sem execução, transporte FALHOU pendente e sandbox somente documentado. Resumo/seção4.3/README/task/backlog agora apontam às provas integradas e distinguem LinuxCI de DockerDesktop/ensaio pessoal, implementação parcial de aceite e inventário de remediação. Não altera histórico dos incrementos, dependências, política, achados ou escopo da v1; não recalcula percentual por número de PRs.47 controles pertencem ao harness Python; nenhuma suíte Java nova foi executada por esta reconciliação. Conferir diff/UTF8/referências e revisão documental; não requer red artificial.
+
+Verificação: UTF8 estrito nos quatro arquivos, asserções do resumo/limites/próximo único, diff-check e Gitleaks8.30.1 na spec passaram; revisão independente somente leitura sem bloqueantes. Nenhuma infraestrutura executada neste incremento.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
