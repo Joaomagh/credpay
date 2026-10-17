@@ -15,7 +15,7 @@ INJECTED = {"etc/hostname", "etc/hosts", "etc/resolv.conf", ".dockerenv"}
 TOOLS = "sh cp mv mkdir find stat grep sed awk sort head tail wc diff xargs id env mount ps sha256sum".split()
 
 
-def _resolve(path, entries):
+def _resolve(path, entries, executable=True):
     seen = set()
     for _ in range(64):
         if path in seen:
@@ -30,7 +30,7 @@ def _resolve(path, entries):
                 break
         else:
             entry = entries.get(path)
-            return path if entry and entry["executable"] else None
+            return path if entry and entry["type"] == "file" and (not executable or entry["executable"]) else None
     return None
 
 
@@ -112,7 +112,7 @@ def _packages(status):
     return sorted(result, key=lambda item: item["name"])
 
 
-def inventory(archive):
+def inventory_files(archive):
     entries = []
     with tarfile.open(archive, "r:") as stream:
         members = {}
@@ -128,9 +128,9 @@ def inventory(archive):
                 raise ValueError("Limite do inventário excedido.")
             members[path] = member
         status_member = members.get("var/lib/dpkg/status")
-        if status_member is None or not status_member.isfile() or status_member.size > 16 * 1024 * 1024:
+        if status_member is not None and (not status_member.isfile() or status_member.size > 16 * 1024 * 1024):
             raise ValueError("Arquivo de pacotes ausente ou inválido.")
-        status = stream.extractfile(status_member).read().decode("utf-8", errors="strict")
+        status = stream.extractfile(status_member).read().decode("utf-8", errors="strict") if status_member else None
         for path, member in members.items():
             kind = "file" if member.isfile() else "directory" if member.isdir() else "symlink" if member.issym() else "hardlink" if member.islnk() else "character-device" if member.ischr() else "block-device" if member.isblk() else "fifo" if member.isfifo() else None
             if kind is None:
@@ -146,7 +146,16 @@ def inventory(archive):
             if member.issym() or member.islnk():
                 entry["target"] = _link_target(path, member.linkname, member.islnk())
             entries.append(entry)
-    return {"packages": _packages(status), "entries": sorted(entries, key=lambda item: item["path"]), "tools": _tools(entries)}
+    return {"status": status, "entries": sorted(entries, key=lambda item: item["path"]), "tools": _tools(entries)}
+
+
+def inventory(archive):
+    result = inventory_files(archive)
+    status = result.pop("status")
+    if status is None:
+        raise ValueError("Arquivo de pacotes ausente ou inválido.")
+    result["packages"] = _packages(status)
+    return result
 
 
 def write_report(archive, metadata, output):
