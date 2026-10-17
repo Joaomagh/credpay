@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.7a — Inventário estático da origem Debian fixada em spec9.100, sem iniciar container:14 controles locais verdes, revisão tratada; aguarda prova CI e integração. Depois reduzir ferramentas/dependências e executar negativos do sandbox-core de4.3; sem Java/Temurin ou topologia de agente presumida, sem Docker local nem privilégios adicionais.
+- [ ] B08.7a — Inventário estático da origem Debian fixada em spec9.100, sem iniciar container:14 controles locais/Linux verdes e CI1/Scan269/artifact conferidos; revisão tratada, aguarda gates finais/integração. Depois reduzir ferramentas/dependências e executar negativos do sandbox-core de4.3; sem Java/Temurin ou topologia de agente presumida, sem Docker local nem privilégios adicionais.
 
 ## Próximo
 
