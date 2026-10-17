@@ -94,6 +94,15 @@ class ProjectCoreTest(unittest.TestCase):
         with source_archive([*items, (link, b"")], status=None) as archive:
             self.assertEqual(20, len(project_core.audit_core(archive, manifest)["commands"]))
 
+    def test_accepts_only_empty_console_placeholder_with_engine_mode(self):
+        items, manifest = self.core_fixture()
+        console = tarfile.TarInfo("dev/console")
+        console.mode = 0o755
+        manifest["files"].append({"path": "dev/console", "sha256": hashlib.sha256(b"").hexdigest(),
+                                  "mode": "0755", "uid": 0, "gid": 0, "role": "engine-placeholder"})
+        with source_archive([*items, (console, b"")], status=None) as archive:
+            self.assertEqual(20, len(project_core.audit_core(archive, manifest)["commands"]))
+
 
 if __name__ == "__main__":
     unittest.main()

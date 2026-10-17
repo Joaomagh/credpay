@@ -28,9 +28,13 @@ def audit_core(archive, manifest):
     for path, wanted in expected.items():
         observed = files[path]
         if observed["type"] != "file" or any(observed[key] != wanted[key] for key in ("sha256", "mode", "uid", "gid")) or observed["setuid"] or observed["setgid"] or observed["fileCapability"]:
-            raise ValueError(f"Arquivo final diverge da projeção: {path}")
+            metadata = {key: observed[key] for key in ("type", "mode", "uid", "gid", "sha256") if key in observed}
+            raise ValueError(f"Arquivo final diverge da projeção: {path}; " + json.dumps(metadata, ensure_ascii=True))
         executable = wanted["role"] in ("command", "loader")
-        if wanted["mode"] != ("0555" if executable else "0444"):
+        placeholder = wanted["role"] == "engine-placeholder"
+        if placeholder and (path != "dev/console" or wanted["sha256"] != hashlib.sha256(b"").hexdigest()):
+            raise ValueError("Placeholder do engine diverge da baseline.")
+        if wanted["mode"] != ("0755" if placeholder else "0555" if executable else "0444"):
             raise ValueError("Modo de componente diverge da baseline.")
     for path, target in expected_links.items():
         observed = files[path]
@@ -199,7 +203,7 @@ def project(archive, folder, additions):
         add("etc/group", b"sandbox:x:10001:\n", 0o444)
         add("etc/nsswitch.conf", b"passwd: files\ngroup: files\nhosts: files dns\n", 0o444)
         # Ponto vazio para console padrão do engine; não é device nem comando.
-        add("dev/console", b"", 0o444)
+        add("dev/console", b"", 0o755, role="engine-placeholder")
         provenance = {"scope": "PARTIAL_PACKAGE_COMPONENTS_NOT_DPKG_INSTALLATION", "packages": [packages[name] for name in sorted(components)], "files": sorted(manifest, key=lambda entry: entry["path"])}
         add("usr/share/credpay-sandbox/components.json", (json.dumps(provenance, indent=2) + "\n").encode(), 0o444, role="provenance")
         directories = {"tmp", "workspace", "dev", "dev/pts", "dev/shm", "proc", "sys"}
