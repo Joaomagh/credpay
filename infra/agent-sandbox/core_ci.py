@@ -13,6 +13,7 @@ from urllib.request import urlopen
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from project_core import audit_core, project
+from containment import run_controls
 from source_ci import LABEL, ROOT, assert_never_started, docker, inspect_container
 
 SMOKE = r'''set -eu
@@ -153,15 +154,17 @@ def main():
         finally:
             inspect_container(identity, marker, final_image["Id"])
             docker("rm", "--force", identity)
+        containment = run_controls(final_image["Id"], folder, final_tag + "-containment", origin["commit"])
         report = {"scope": "CORE_BUILD_NOT_CONTAINMENT_ACCEPTANCE", "commit": origin["commit"],
                   "createdUtc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                   "sourceImage": origin["sourceImage"], "candidateImageId": candidate_image["Id"], "imageId": final_image["Id"],
-                  "smoke": "PASS_20_COMMANDS", "inspector": inspector, "projection": projection, "actual": actual}
+                  "smoke": "PASS_20_COMMANDS", "inspector": inspector, "projection": projection, "actual": actual, "containment": containment}
         reports = folder / "reports"
         reports.mkdir()
         (reports / "core-inventory.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-        (reports / "SUMMARY.md").write_text(f"# Construção do core\n\nCommit: {origin['commit']}\n\n20 comandos, {len(projection['packages'])} componentes Debian parciais, {len(projection['files'])} arquivos selecionados.\n\nExport final corresponde ao manifesto e smoke passou. Não aceita contenção AJ-*, compatibilidade DockerDesktop ou vulnerabilidades. Sem instalação íntegra dpkg; origem/arquivos preservados na proveniência.\n", encoding="utf-8")
+        (reports / "SUMMARY.md").write_text(f"# Construção e primeiros controles do core\n\nCommit: {origin['commit']}\n\n20 comandos, {len(projection['packages'])} componentes Debian parciais, {len(projection['files'])} arquivos selecionados.\n\nExport final corresponde ao manifesto e smoke passou. Seis controles FS/SEC/PRIV/LIFE/SCOPE passaram no LinuxCI com fixtures próprias. AJ-HOST/NET/RES/TOOLS completos, compatibilidade DockerDesktop e vulnerabilidades continuam pendentes. Não aceita contenção do agente. Sem instalação íntegra dpkg; origem/arquivos preservados na proveniência.\n", encoding="utf-8")
         print(f"CORE_BUILD_ONLY: 20 comandos; {len(projection['files'])} arquivos; smoke e export exato PASS; negativos AJ-* pendentes.")
+        print("CORE_CONTAINMENT_PARTIAL: AJ-FS-01/02, AJ-SEC-01, AJ-PRIV-01, AJ-LIFE-01 e AJ-SCOPE-01 PASS no LinuxCI; demais pendentes.")
     finally:
         for tag in reversed(built):
             image = json.loads(docker("image", "inspect", tag))[0]

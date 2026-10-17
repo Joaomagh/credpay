@@ -206,7 +206,7 @@ def project(archive, folder, additions):
         add("dev/console", b"", 0o755, role="engine-placeholder")
         provenance = {"scope": "PARTIAL_PACKAGE_COMPONENTS_NOT_DPKG_INSTALLATION", "packages": [packages[name] for name in sorted(components)], "files": sorted(manifest, key=lambda entry: entry["path"])}
         add("usr/share/credpay-sandbox/components.json", (json.dumps(provenance, indent=2) + "\n").encode(), 0o444, role="provenance")
-        directories = {"tmp", "workspace", "dev", "dev/pts", "dev/shm", "proc", "sys"}
+        directories = {"tmp", "workspace", "readonly-probe", "dev", "dev/pts", "dev/shm", "proc", "sys"}
         for path in files:
             directories.update(str(parent).replace("\\", "/") for parent in Path(path).parents if str(parent) != ".")
         directory_manifest = []
@@ -216,7 +216,7 @@ def project(archive, folder, additions):
                 entry = tarfile.TarInfo(path)
                 entry.type = tarfile.DIRTYPE
                 entry.mode = 0o1777 if path == "tmp" else 0o755
-                if path == "workspace":
+                if path in ("workspace", "readonly-probe"):
                     entry.uid = entry.gid = 10001
                 directory_manifest.append({"path": path, "mode": format(entry.mode, "04o"), "uid": entry.uid, "gid": entry.gid})
                 output.addfile(entry)
