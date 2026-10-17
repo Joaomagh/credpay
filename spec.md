@@ -2861,6 +2861,10 @@ Arquivos previstos: network_controls/testes, validação comum containment e cha
 
 TDD:3testes focados/oito falhas esperadas por validação ausente antes da implementação. Removida descoberta duplicada de TestCase importado usando import do módulo de fixtures (contagem correta3, sem ocultar falhas). Green56descobertos/55pass/umskip POSIX conhecido no Windows,0,420s. Core mantém wrappers none; função compartilhada exige fixture própria viva e nunca normaliza State/NetworkMode para simular validação. Cleanup valida propriedade/configuração reais separadamente da exigência de liveness. Diff-check passou; revisão/CI real pendentes.
 
+Green real: Sandbox Core35/run39072992414/job117514284840 e Secret Scan311/run39072992407 verdes no head98ddd268b98414a692a4f2c3012aea6ccaed3f4d;56 testes Linux sem falhas/erros/skips. Artefato12115633765:164138bytes/SHA2569739e6e0cbd754b2c1fae2cb83fab9acd0e63924544badce6cef13fb541fbf37, quatro arquivos selecionados; checkoutd545f2b82464a3f647beb1a581afe70bd043a049 tem pais45576e2/98ddd26 confirmados na consulta ao commit. Imagemsha256:36500aa277cc666e59b2ad705cdcceed9c6b9f54b20629b475075cd764823f4d.
+
+TCP: fixture/positivos namespace4/4026532274, negativo4/4026532337. UDP: fixture/positivos4/4026532273, negativo4/4026532336. Ambos positivos antes/depois ECHO1; negativos REFUSED-1, exit0/semOOM; probes da porta8707 em estadoTCP0A/UDP07 antes/depois PASS. Harness exige fixture viva/StartedAt estável/RestartCount0 durante o protocolo; não há comparação após sua destruição. Auditoria refez hashes de comandos/configurações e validate_exchange; Gitleaks8.30.1 no JSON selecionado sem candidatos. Revisão estática sem bloqueantes; nenhum Docker local. Baseline HIGH17/CRITICAL2 continua sem aceite; AJ-NET completo/DNS/LAN/metadados/internet/Desktop/agente permanecem pendentes. Gates do último SHA serão conferidos antes da integração.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
