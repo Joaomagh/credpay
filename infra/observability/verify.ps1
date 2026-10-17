@@ -124,6 +124,8 @@ try {
     } while ([DateTime]::UtcNow -lt $deadline)
     Require ($confirmed.Count -eq 2) 'Consulta do painel deve observar tentativas confirmadas dos dois apps após a demo real.'
     Write-Host 'Observação: painel provisionado disponível pela API; renderização visual não comprovada.'
+    $returned = @(Query 'credpay_messaging_publish_attempts_total{job="credpay-transacoes",outcome="returned"}')
+    Require ($returned.Count -eq 1 -and [double]$returned[0].value[1] -gt 0) 'Ensaio diagnóstico deve tornar returned positivo; série ainda ausente sem falha controlada.'
 } finally {
     if ((Test-Path -LiteralPath $marker) -and [IO.File]::ReadAllText($marker) -ceq $Project) {
         $null = Compose down --volumes --timeout 30

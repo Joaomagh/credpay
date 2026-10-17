@@ -2700,6 +2700,8 @@ Coleta green/painel red em b297b77/Observability4/run38987691151/job117262869300
 
 Inventory113/run38987691152 em b297b77 falhou no controle real: Prometheus Go431/OS0, bin/prometheus e bin/promtool reconhecidos com módulo principal. Grafana não chegou à validação de cobertura antes da interrupção; nenhum artefato das duas imagens foi publicado e nenhuma conclusão de severidades/zero é válida. Artefato histórico12083607435 validado separadamente: quatro alvos107/JAR243/imagem, mesmos achados de111/HIGH0CRITICAL0. Log completo67145caracteres/684linhas, zero matches nos detectores delimitados; auditoria em .local/security/pr154-* ignorada. Próximo experimento projeta/diagnostica ambos antes de rejeitar OS incompleto; mantém CI falhando e não publica inventory.json inválido. Não reduzir o requisito para aceitar a imagem busybox sem base de pacotes; investigar runtime mínimo com OS inventariável antes de qualquer nova baseline/download.
 
+Painel green em ac0c148/Observability5/run38988088338/job117264126652: dois jobs UP, API devolveu modelo provisionado/readonly com dois sinais e datasource próprio; após demo APROVADA/REJEITADA e replays, a consulta carregada do painel observou confirmed>=2 nos dois apps. Cleanup próprio passou. Não houve prova visual. Próximo teste mínimo exige returned positivo após a etapa de diagnóstico, que ainda não injeta falha; esperado red por série lazy ausente, antes de implementar retirada/restauração do binding e verificações causais.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
