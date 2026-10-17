@@ -4,15 +4,16 @@
 
 ## Último incremento
 
-- PR160/e793f10 integrou proveniência fonte Debian após Core16/Scan284 verdes no head040cb9b;39 testes e artefato conferidos; spec9.103.
+- PR161/80311f2 integrou inventário dos28componentes após Core21/Scan289 verdes no head361daa3;44 controles. HIGH17/CRITICAL2 (11IDs) preservados; baseline sem aceite; spec9.104.
 
 ## Agora
 
-- [ ] B08.7d.2 — Inventário de advisories dos componentes parciais com cobertura Debian/fonte exata.44 controles locais/Linux, revisão sem bloqueantes e Core20/Scan288 verdes; artefato auditado, integração final pendente. spec9.104.
+- [ ] B08.7d.3 — Integrar triagem documental dos11IDs, fontes/arquivos/pré-condições e lacunas. Nenhum fixtrixie disponível no corte; sem remediação/waiver. spec9.105.
 
 ## Próximo
 
-- B08.7d.3: triagem/remediação dos11IDs HIGH/CRITICAL do core (19 ocorrências), sem supressão/aceite implícito. Depois negativos rede/daemon/excesso/instalação/download e DockerDesktop.
+- B08.7e.1: prova controlada de CPU sob excesso, com progresso e throttling reais em cgroup próprio. Memória/PID/rede/daemon/ferramentas seguem separados; DockerDesktop pendente.
+- Remediação da baseline: priorizar gawk e análise de separação do código conforme infra/agent-sandbox/TRIAGE.md, sem mistura de pacotes sid/supressão/aceite implícito.
 - B08.1: recuperar um log/cinco artefatos históricos ou registrar disposição explícita; revisão continua parcial. Depois ensaio do quickstart/demo/explicação com João.
 
 ## Depois

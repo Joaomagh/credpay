@@ -55,3 +55,5 @@ scan_core.py gera CycloneDX próprio a partir da projeção auditada, com OS Deb
 Cobertura exige todos os componentes e nenhuma duplicata/extra, versões/arquitetura/fontes iguais, DB presente/temporalmente coerente/não vencida e severidades reconhecidas. Todas as severidades e achados sem correção são preservados. HIGH/CRITICAL marcam baseline como pendente de remediação/disposição, sem omitir o inventário.
 
 O relatório selecionado em core-inventory.json inclui componentScan (cobertura/achados/DB/hashes/imagem/checkout/comando/UTC/limites). SBOM terceiro pode causar detecção imprecisa: warning registrado, sem declarar autoria Trivy. Não cobre imagem completa/camadas inferiores/kernel/controlador/conteúdo futuro do workspace nem demonstra exploração; não aceita sandbox completo. spec§9.104.
+
+A [triagem dos11IDs HIGH/CRITICAL](TRIAGE.md) registra versões, código selecionado e lacunas. A baseline permanece sem aceite; testes CI e inventário não são autorização de operação do agente.
