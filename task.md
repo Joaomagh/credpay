@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B07.6a — Exportação Prometheus opt-in dos dois apps para o painel previsto no plano. Primeiro red HTTP200 esperado/404 observado; depois registry gerenciado e exposição em diagnostics, padrão404 preservado. Sem Grafana/servidor/deploy neste incremento; spec9.98.
+- [ ] B07.6a — Red955c0e3 HTTP200 esperado/404 observado nos dois apps; green HTTP3+3 e verify localTrans320/Proc218 verdes, padrão404 preservado. Registry gerenciado/exposição diagnostics, transitivas registradas; gates completos/inventário pendentes. Sem Grafana/servidor/deploy; spec9.98. Quatro ZIPs originais salvos e conferidos em docs/frontend/references/original-zips.
 
 ## Próximo
 

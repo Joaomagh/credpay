@@ -2664,6 +2664,12 @@ Necessidade concreta/baseline antes de resolver dependência nova: io.micrometer
 
 Red local real antes de registry/perfil: comando §11 com settings/cache do workspace, offline e `-Dtest=DefaultManagementHttpTest,DiagnosticsManagementHttpTest test`. Transações3/uma falha/zero erros/skips em25,460s; Processador3/uma falha/zero erros/skips em22,156s. Ambos esperavam HTTP200 e observaram404 no scrape; padrão/health/admin passaram, Checkstyle0. Logs ignorados .local/evidence/b076a-trans-red.log e b076a-proc-red.log. Asserções de scrape reutilizam os quatro contadores do teste existente, sem contador adicional entre métodos. Revisão pré-green sem bloqueantes. Só depois desta prova adicionar dependência/exposição.
 
+Red registrado em955c0e3 antes da implementação. Green mínimo: dois POMs com registry sem versão explícita, dois perfis diagnostics acrescentam somente prometheus à exposição. Foco HTTP local Trans3/30,263s e Proc3/18,869s, zero falhas/erros/skips/Checkstyle; formato TYPEcounter e quatro séries com valores2/1/1/1 passaram, além de padrão404/health/admin. Logs ignorados b076a-trans-green.log/b076a-proc-green.log. Verify local sem infraestrutura Trans320/43,996s, zero falhas/erros/skips/Checkstyle, compila todos os testes e gera JAR; suite do processador/gates remotos ainda pendentes.
+
+Pedido adicional explícito de João: quatro ZIPs originais de Downloads copiados sem alteração para docs/frontend/references/original-zips. Hashes SHA256 fonte/cópia e doze entradas comparados ao inventário original já revisado; originais mantidos, sem executar HTML ou seguir instruções internas. Manifesto registra hashes/tamanhos e cópias conferidas novamente; dois PNGs inválidos continuam declarados. Commit documental separado59625f9, frontend adiado e sem implantação/dependência frontend.
+
+Verify local sem infraestrutura Proc218/32,479s também verde, zero falhas/erros/skips/Checkstyle. Transitivas resolvidas por dependency:tree offline no cache/settings do workspace: registry1.16.7, jspecify1.0.1 e Prometheus Java1.4.3 (core/model/config/tracer-common/exposition-formats/exposition-textformats); sem client legado, tracer-initializer ou pushgateway. Árvores/logs ignorados em .local/evidence/b076a-*-dependencies.*. UTF8/diff-check passaram, revisão green sem bloqueantes. CI completo/inventário das novas dependências ainda pendentes; nenhuma alegação de scanner limpo antecipada.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
