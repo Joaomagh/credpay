@@ -2690,6 +2690,8 @@ Scaffolding do primeiro red: imagens/configs/roteiro e novo workflow preparados;
 
 Primeira execução e494700/Observability1/run38986230465/job117258234903 falhou antes da prova de coleta: requisição HTTP de observação indisponível, sem chegar ao marcador de health/exporters/query. Não é o red proposto. Prepare/Activate/conferências de containers foram alcançados e cleanup passou; Compose124/Scan257 verdes. Saída relevante preservada em memória; próximo experimento registra somente porta loopback e classe da exceção HTTP, sem mensagens/headers/corpos/credenciais, para distinguir bootstrap de ausência de jobs antes de configurar coleta.
 
+Segunda execução e4a392d/Observability2/run38986637058/job117259539860 também parou no bootstrap HTTP, tipo HttpRequestException, antes da consulta. Health dos containers/inspeções internas e cleanup passaram; isso não comprova a causa da falha no host. Experimento mínimo local sem Docker: servidor HTTP efêmero em memória/loopback respondeu200 com as mesmas opções de Invoke-WebRequest/Basic fictício. Próximo experimento usa curl já presente no app para HTTP real ao Grafana pela rede interna, capturando corpo/status sem publicá-los. Não configura jobs antes do red válido e não amplia egress. Acesso visual ao painel pelo host permanece pendente, não aprovado por uma simples declaração de limitação.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

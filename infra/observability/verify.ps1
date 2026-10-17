@@ -18,12 +18,12 @@ function Compose {
     return $output.Trim()
 }
 function Request([string]$Path) {
-    try { return (Invoke-WebRequest -Uri "$script:grafana$Path" -Headers $script:headers -TimeoutSec 5 -SkipHttpErrorCheck -MaximumRedirection 0) }
-    catch {
-        $kind = $_.Exception.GetType().Name
-        if ($kind -cnotmatch '^[A-Za-z]{1,80}$') { $kind = 'Omitido' }
-        throw "HTTP de observação indisponível: tipo=$kind; conteúdo omitido."
-    }
+    # HTTP real pela rede interna; não depende de publicar a UI no host.
+    $response = Compose exec -T transacoes curl --silent --show-error --max-time 5 `
+        --header $script:authorization --write-out "`nCREDPAY_HTTP_STATUS:%{http_code}" "http://grafana:3000$Path"
+    $matched = [regex]::Match($response, '(?s)^(.*)\r?\nCREDPAY_HTTP_STATUS:([0-9]{3})$')
+    Require $matched.Success 'Resposta HTTP interna sem status; conteúdo omitido.'
+    return [pscustomobject]@{StatusCode=[int]$matched.Groups[2].Value;Content=$matched.Groups[1].Value}
 }
 function Query([string]$Expression) {
     $encoded = [Uri]::EscapeDataString($Expression)
@@ -62,9 +62,8 @@ foreach ($service in @('transacoes', 'processamento', 'grafana')) {
 }
 Require (($null -eq $config.services.prometheus.ports -or @($config.services.prometheus.ports).Count -eq 0) -and
     $config.networks.observability.internal -eq $true) 'Coletor sem porta host e rede interna são obrigatórios.'
-$script:grafana = "http://127.0.0.1:$(@($config.services.grafana.ports)[0].published)"
 $credential = "$($config.services.grafana.environment.GF_SECURITY_ADMIN_USER):$($config.services.grafana.environment.GF_SECURITY_ADMIN_PASSWORD)"
-$script:headers = @{Authorization = 'Basic ' + [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($credential))}
+$script:authorization = 'Authorization: Basic ' + [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($credential))
 $null = New-Item -ItemType Directory -Force (Split-Path $marker)
 [IO.File]::WriteAllText($marker, $Project)
 try {
@@ -87,7 +86,7 @@ try {
             } else { Require ($mount.Type -ceq 'tmpfs' -and $mount.Destination -ceq '/tmp') 'Mount inesperado no serviço de observação.' }
         }
     }
-    Write-Host "Observação: Grafana publicado somente em loopback, porta=$(@($config.services.grafana.ports)[0].published)."
+    Write-Host 'Observação: API Grafana pela rede interna; acesso à UI pelo host ainda não comprovado.'
     $health = Request '/api/health'
     Require ($health.StatusCode -eq 200 -and (Json $health.Content).database -ceq 'ok') 'Grafana deve estar saudável.'
     $ready = Request '/api/datasources/proxy/uid/credpay-prometheus/-/ready'
