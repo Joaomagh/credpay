@@ -2899,6 +2899,12 @@ O workflow `.github/workflows/secret-scan.yml` usa checkout fixado por SHA, hist
 
 **Revisão limitada de logs, 2026-10-04:** nos logs transações #174/#175/#176 e processador #158/#159, buscas em memória por formatos comuns de chave privada, tokens GitHub/OpenAI, chave AWS, formas pesquisadas de JSON financeiro e dumps AMQP retornaram zero candidatos. Nenhum conteúdo candidato foi impresso. A API de artifacts do processador #160 final retornou total_count0; workflows atuais não têm upload-artifact e usam contents:read. Esses recortes não cobrem todos os formatos, todos os logs históricos ou artefatos de outros runs; B08.1 continua com revisão complementar pendente. Nenhuma exclusão nova no scanner.
 
+### 16.2 Revisão delimitada de logs e artefatos — B08.1
+
+Consolidação documental em16/10/2026 em [PUBLICATION_REVIEW.md](infra/security/PUBLICATION_REVIEW.md): histórico, delta com corte explícito e candidataPR153 separados, com métodos/detectores/contagens/limites. Revisão de consistência contra resumos locais corrigiu a distinção entre enumeração22:07:07UTC e observação22:18:33UTC; removida descrição de tentativa alternativa não sustentada nos JSONs consultados. Não houve reabertura/download redundante, novo scanner ou mudança em regras/exceções. Nenhum log bruto/URL temporária/valor financeiro foi versionado. Achado histórico de quatro corpos fictícios em dois jobs e correção prospectivaPR149 preservados, sem apagar evidências. Um logTRANSPORT_CLOSED e cinco ZIPs continuam sem conteúdo revisto; B08.1 permanece parcial.
+
+Estado separado do painel: PR154 em construção demonstrou coleta de dois apps e modelo/consultas via API, mas diagnóstico completo ainda em validação. Inventory116 apontou achados HIGH nas duas imagens candidatas e OS0 no Prometheus; baseline recusada, sem inventário adicional válido ou waiver. O documento de publicação não aceita essas imagens, não libera rede/deploy e não declara a última main auditada em tempo real. Quatro alvos Java/Ubuntu dePR153 permanecem com inventário validado/HIGH0CRITICAL0 no recorte registrado. Frontend adiado; quatro ZIPs originais já preservados no repositório.
+
 ## 17. Checklist por incremento
 
 - [ ] critério de aceitação entendido e escopo mantido;

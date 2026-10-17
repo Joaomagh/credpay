@@ -20,6 +20,8 @@ São nove controles sintéticos: quatro alvos válidos com contagens e exclusão
 
 ## Publicação e triagem
 
+A [revisão delimitada de publicação](PUBLICATION_REVIEW.md) registra os recortes de logs/artefatos, o achado histórico de corpos fictícios de testes e a correção prospectiva. Um log e cinco artefatos históricos permanecem sem conteúdo revisto; B08.1 não está integralmente concluído. Detecção de segredos e inventário de vulnerabilidades têm escopos distintos.
+
 Somente `inventory.json`, `summary.md` e manifestos selecionados são publicados, por sete dias. O JSON usa uma lista explícita de campos públicos de pacotes/achados; não publica configuração de ambiente, histórico da imagem, payloads, tars, relatórios brutos ou logs integrais. Nenhuma supressão, `ignore-unfixed` ou `continue-on-error` é usada.
 
 Achados não interrompem este inventário inicial; erro operacional, falta de cobertura ou relatório inválido interrompem. Isso não aprova segurança. B08.6b deve revisar HIGH/CRITICAL, aplicabilidade, versão corrigida e ação concreta antes de definir o bloqueio. Um CVE detectado não prova exploração nem pode ser descartado apenas porque não há versão corrigida.

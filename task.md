@@ -4,15 +4,15 @@
 
 ## Último incremento
 
-- B07.5b integrado na PR #152/a84bb5e: Kubernetes22/Scan253 finais0c7aa87 verdes. Preparo antes de consumo, APROVADA/REJEITADA/replay e parada/recuperação causal comprovados; spec9.97.
+- B07.6a integrado na PR #153/c75f927: oito gates f345887 verdes, Trans522/Proc340/Flow12; exporter opt-in e quatro ZIPs originais preservados. Revisão delimitada B08.1 consolidada em infra/security/PUBLICATION_REVIEW.md, preservando lacunas; spec16.2.
 
 ## Agora
 
-- [ ] B07.6a — Red955c0e3 HTTP200 esperado/404 observado nos dois apps; green HTTP3+3 e verify localTrans320/Proc218 verdes, padrão404 preservado. Registry gerenciado/exposição diagnostics, transitivas registradas; gates completos/inventário pendentes. Sem Grafana/servidor/deploy; spec9.98. Quatro ZIPs originais salvos e conferidos em docs/frontend/references/original-zips.
+- [ ] B07.6b — PR #154 em rascunho: coleta/painel por API comprovados; ensaio de retorno sem rota/recuperação em CI. Aceite das imagens bloqueado por HIGH e lacuna OS0; sem release oficial Prometheus pronta que feche os quatro IDs encontrados. Não integrar com falha de CI ou disposição de risco implícita. UI host/renderização pendentes; sem Docker local/deploy externo.
 
 ## Próximo
 
-- Painel e diagnóstico local com Prometheus/Grafana, depois segurança/qualidade de saída e ensaio com João. Referências frontend preservadas: quatro arquivos PNG, dois válidos e dois inválidos de28bytes; docs/frontend/references/README.md.
+- B08.1: recuperar um log/cinco artefatos históricos ou registrar disposição explícita; revisão continua parcial. Sandbox verificável e ensaio com João ainda pendentes. Referências frontend preservadas: quatro PNGs (dois válidos/dois inválidos de28bytes) e quatro ZIPs originais; docs/frontend/references/README.md.
 
 ## Depois
 
