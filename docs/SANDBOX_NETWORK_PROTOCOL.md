@@ -1,6 +1,6 @@
 # Protocolo diagnóstico de rede do core
 
-Refinamento em17/10/2026, sem implementação/execução. Primeiro corte de AJ-NET-01: cliente TCP/UDP funcional e isolamento de namespaces, somente fixtures fictícias no CI hospedado. Não declara bloqueio de internet/DNS/LAN/metadados ou allowlist de egress.
+Refinamento em17/10/2026; implementação inicial em revisão/validação CI (§9.113), ainda sem prova real. Primeiro corte de AJ-NET-01: cliente TCP/UDP funcional e isolamento de namespaces, somente fixtures fictícias no CI hospedado. Não declara bloqueio de internet/DNS/LAN/metadados ou allowlist de egress.
 
 ## Mecanismo escolhido
 

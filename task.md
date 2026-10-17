@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.7f.1 — Implementar primeiro corte TCP/UDP conforme docs/SANDBOX_NETWORK_PROTOCOL.md: mesma imagem, fixtures none, positivo em namespace próprio compartilhado e worker negativo separado, positivos antes/depois e prazos limitados. Ainda não executado.
+- [ ] B08.7f.1 — Implementar primeiro corte TCP/UDP conforme docs/SANDBOX_NETWORK_PROTOCOL.md: mesma imagem, fixtures none, positivo em namespace próprio compartilhado e worker negativo separado, positivos antes/depois e prazos limitados. Red/green56descobertos/55passlocais/1skip POSIX; implementação em revisão/CI, ainda sem prova real; spec9.113.
 
 ## Próximo
 

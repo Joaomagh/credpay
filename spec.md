@@ -2851,6 +2851,16 @@ Arquivos: DEMO/spec/task/backlog. Preservar env/volumes, exemplos fictícios e b
 
 Verificação documental: links locais existentes e contidos no repositório, UTF8 estrito nos quatro arquivos, um próximo passo técnico/diff-check/Gitleaks no DEMO passaram. Revisão independente somente leitura sem bloqueantes; alinhamento com quickstart/env/volumes/limites confirmado. Nenhum comando do ensaio executado pelo agente.
 
+### 9.113 Primeiro experimento TCP/UDP — B08.7f.1
+
+PR169/45576e2bb830213d95d27e569c5f16fce20e43b3 integrou ensaio guiado após Scan309/run39072370740 verde no head29373e1516d2b42d7229e484af9f3733b0992f1c, somente docs/filtros sem suites de runtime, revisão sem bloqueantes e nenhum pedido/review/thread remoto pendente. Execução pessoal continua pendente.
+
+Objetivo/aceite antes da implementação: executar contrato docs/SANDBOX_NETWORK_PROTOCOL.md sequencialmente TCP/UDP, servidor na mesmaimagem/none e cliente diagnóstico container:fixture própria, worker real none sem relaxar seu validador. Refatorar somente validação comum das demais restrições para reutilização explícita; wrapper validate_worker continua none. Positivos nonce exato antes/depois, fixture viva/semrestart e endpoint ligado comprovado por /proc/net do próprio namespace antes/depois do negativo. Negative precisa I/O Connection refused observado com clientefuncional; timeoutexterno/sintaxe/clienteausente não é PASS. Namespaces device+inode comparados vivos. Fixtures/portas altas/loopback somente; nenhuma bridge/porta publicada/host real ou credencial.
+
+Arquivos previstos: network_controls/testes, validação comum containment e chamada core_ci/docs. GNUawk NONFATAL/READ_TIMEOUT por manualoficial; envmínimoC locale paraerroclassificado. Servidor fecha/reabre socket por peer, READ_TIMEOUT15s; clientes1s/timeoutexterno5s/retriespositivoslimitados e job15min. Controllerverificaendpointexclusivamentenafixturevalidada comexec restrito e saídaselecionada, semclientenovo. Reportselecionado inclui comandos/configSHA/namespace/resultados/IDs/checkout/imagem/UTC herdadosdocore. RiscosUDPpeer/readiness/normalizaçãovalidação; provarTDD e CI. Nenhum runtime/dependência/privilégio novo, Docker local ou aceite dos advisories/Desktop/agente.
+
+TDD:3testes focados/oito falhas esperadas por validação ausente antes da implementação. Removida descoberta duplicada de TestCase importado usando import do módulo de fixtures (contagem correta3, sem ocultar falhas). Green56descobertos/55pass/umskip POSIX conhecido no Windows,0,420s. Core mantém wrappers none; função compartilhada exige fixture própria viva e nunca normaliza State/NetworkMode para simular validação. Cleanup valida propriedade/configuração reais separadamente da exigência de liveness. Diff-check passou; revisão/CI real pendentes.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
