@@ -6,7 +6,7 @@
 
 **Fase atual:** fechamento da v1 backend — ensaio com João, lacunas de publicação e sandbox parcialmente verificado. Frontend e servidores Prometheus/Grafana adiados; métricas/diagnóstico HTTP existentes preservados.
 
-**Estado:** fluxo POST → duas outboxes → GET APROVADA/REJEITADA, idempotência, concorrência, retry/DLQ e recuperação comprovados nos cenários registrados. FALHOU percorreu transporte/encerramento causal em cenário controlado (§9.96); isso não o transforma em mecanismo operacional genérico. Kubernetes descartável hospedado comprovou startup/persistência, fluxo/replay/parada/recuperação (§9.93/9.97); DockerDesktop e execução pessoal com João continuam sem aceite. Flags seguem desligados por padrão e ativação exige roteiro. Migração de plataforma/imagem dos apps e exportação de métricas opt-in integradas (§9.94/9.98); nenhum deploy externo autorizado. Sandbox tem core mínimo, negativos parciais e quota de CPU comprovados somente no Linux CI (§9.100–9.106), com baseline sem aceite pelos advisories; não contém comprovadamente o agente atual.
+**Estado:** fluxo POST → duas outboxes → GET APROVADA/REJEITADA, idempotência, concorrência, retry/DLQ e recuperação comprovados nos cenários registrados. FALHOU percorreu transporte/encerramento causal em cenário controlado (§9.96); isso não o transforma em mecanismo operacional genérico. Kubernetes descartável hospedado comprovou startup/persistência, fluxo/replay/parada/recuperação (§9.93/9.97); DockerDesktop e execução pessoal com João continuam sem aceite. Flags seguem desligados por padrão e ativação exige roteiro. Migração de plataforma/imagem dos apps e exportação de métricas opt-in integradas (§9.94/9.98); nenhum deploy externo autorizado. Sandbox tem core mínimo, negativos parciais e limites de CPU/memória sob excesso comprovados somente no Linux CI (§9.100–9.108), com baseline sem aceite pelos advisories; não contém comprovadamente o agente atual.
 
 ## 1. Contexto e limites atuais
 
@@ -21,7 +21,7 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 
 **Fluxo vertical e idempotência comprovados:** domínio final, estado/histórico atômicos, idempotência sequencial/concorrente e replay HTTP original. Parser/topologia/políticas e listener opt-in comprovam commit antes de ack, replay sem novo histórico/Clock, permanentes para DLQ sem retry e três tentativas operacionais com rollback real. Dois JARs reais percorrem POST → processador/duas outboxes → GET APROVADA/REJEITADA; duplicatas dos dois eventos e replay POST preservam cinco tabelas completas, resposta/Location original e GET final. Ativação manual exige conferência do runbook, flags padrão false. Transporte de FALHOU e fluxo Kubernetes foram comprovados em cenários CI controlados (§9.96/9.97); execução DockerDesktop, ensaio de demonstração e critérios restantes de segurança continuam pendentes. Imagens/Compose já foram comprovados no CI. Coordenação entre múltiplas réplicas publicadoras e HA de produção não são capacidades atuais. Sandbox tem implementação/provas parciais no Linux CI, sem aceite completo ou prova de contenção do agente.
 
-**Últimas entregas:** plataforma corrigida dos apps (§9.94), transporte causal FALHOU (§9.96), fluxo no cluster descartável (§9.97), métricas opt-in e referências frontend preservadas (§9.98), adiamento explícito do painel (§9.99), construção/inventário/negativos/triagem/quota de CPU do core (§9.100–9.106). Achados do core, controles restantes, lacunas históricas de publicação e ensaio com João seguem abertos. As seções por incremento preservam a evidência histórica; próximo passo vigente em task.md.
+**Últimas entregas:** plataforma corrigida dos apps (§9.94), transporte causal FALHOU (§9.96), fluxo no cluster descartável (§9.97), métricas opt-in e referências frontend preservadas (§9.98), adiamento explícito do painel (§9.99), construção/inventário/negativos/triagem/limites CPU e memória do core (§9.100–9.108). Achados do core, controles restantes, lacunas históricas de publicação e ensaio com João seguem abertos. As seções por incremento preservam a evidência histórica; próximo passo vigente em task.md.
 
 ## 2. Arquitetura vigente
 
@@ -410,7 +410,7 @@ Essa hipótese não bloqueia a validação isolada do `sandbox-core`. O primeiro
 | Imagem-base | Debian slim | tag/digests conferidos e core construído (§9.100/9.101); baseline sem aceite por advisories (§9.104/9.105) |
 | Identidade | UID/GID `10001:10001` | escrita e ownership no bind mount devem ser testados no Docker Desktop |
 | CPU | 1 CPU | limite e throttling próprio sob excesso comprovados no Linux CI (§9.106); DockerDesktop pendente |
-| Memória | 1 GiB | limite observado no Linux CI (§9.102); excesso real e DockerDesktop pendentes |
+| Memória | 1 GiB | limite/OOM local controlado e recuperação comprovados no Linux CI (§9.108); DockerDesktop pendente |
 | Swap | desabilitado | memory.swap.max0 observado no Linux CI (§9.102); DockerDesktop pendente |
 | Processos | 128 PIDs | pids.max128 observado no Linux CI (§9.102); saturação/recusa e DockerDesktop pendentes |
 | `/tmp` | 256 MiB | flags/tamanho/noexec/descarte comprovados no Linux CI (§9.102); DockerDesktop pendente |
@@ -2808,6 +2808,14 @@ TDD observado: memória focada2testes/dez falhas esperadas por validação ausen
 Green real: Sandbox Core28/run39070955740/job117508275671 e Secret Scan298/run39070955880 verdes no head48c54ced626933e325b6df3e071f05ecd377c375;50controles Linux. Artefato12115446349:161466bytes/SHA256e1c2532286e9ff96ce5771617473174706d693fd4727cc6d36f9870161882239; quatro relatórios selecionados. Checkout de teste111cea0bfc6dede0392b1bd56ed67f6f6e730445, paisa94e6de/48c54ce confirmados na API; imagemsha256:6746c623d3b9ea4bfa7ae1de1dd205e43bf9c0d30319fa6853b5873936b224d1.
 
 Observado: beforemax/oom/kill0/0/0, after37/1/1 e deltas37/1/1. Alocador pesado exit137, daemonOOMKilledtrue, mas observador terminouexit0/PID0 e fez nova alocação/materialização/readback33554432bytes, igual ao positivo inicial. Limite1073741824/swap0/oom.group0 conferidos sem alteração. Auditoria refez validação dos deltas/hashes comando/configuração; Gitleaks8.30.1 no JSON selecionado não encontrou candidatos. Revisão independente50testes/diff-check sem bloqueantes. Scanner continua HIGH17/CRITICAL2; nenhuma remediação/aceite implícito. Gates do último SHA ainda serão conferidos antes da integração.
+
+### 9.109 Estado após prova de memória integrada
+
+PR165/280e03b13059623625e5f6e02cdd9ac88319f330 integrada após Core29/run39071116435 e Scan299/run39071116434 verdes no head46a3cb78521060eabe95f93401caeb7e79794789; revisão sem bloqueantes e nenhuma revisão/thread/solicitação remota pendente.50 controles do harness Python locais/Linux, artefato e limites em9.108; nenhuma suíte Java nova.
+
+Reconciliação documental em README/spec/task/backlog: CPU e memória sob excesso comprovados somente no LinuxCI; PIDs/rede/daemon/ferramentas/Desktop continuam pendentes, baseline HIGH17/CRITICAL2 sem aceite e lacunas B08.1/ensaio com João abertas. Task aponta único próximo refinamento de PIDs antes de implementar. Não altera código/política, findings, escopo/frontend/painel ou estimativa de conclusão; não exige red artificial.
+
+Verificação documental: UTF8 estrito/um próximo passo, diff-check e Gitleaks8.30.1 na spec passaram; revisão independente somente leitura sem bloqueantes. Nenhuma infraestrutura executada nesta atualização.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
