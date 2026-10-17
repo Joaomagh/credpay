@@ -2741,6 +2741,20 @@ Revisão independente somente leitura sem bloqueantes. Sandbox Core15/run3906901
 
 Auditoria:78 pacotes da origem e28 componentes selecionados têm sourceName/sourceVersion;88 arquivos/46 diretórios/2links. libssl3t64→openssl3.5.7-1~deb13u3; gawk binário1:5.2.1-2+b1→fonte1:5.2.1-2. Hashes de comando/configuração e vínculo de imagem/checkout dos controles de contenção conferidos, seis IDs PASS mantidos. Gitleaks8.30.1 no JSON selecionado não encontrou candidatos. Primeira consulta local ao JSON usou chave incorreta inventory e falhou KeyError; auditoria corrigida para packages do schema real, sem alteração no produto ou PASS antes de validar. Gates do último SHA serão conferidos antes do merge. Scan de vulnerabilidades permanece pendente.
 
+### 9.104 Inventário de advisories dos componentes parciais — B08.7d.2
+
+PR160 integrada eme793f1029f2ca4cfec1e7298e688c2ef06352d29 após Sandbox Core16/run39069164245 e Secret Scan284/run39069164247 verdes no head040cb9b5d1c0c0ca9b4359179d4c263c50c7b34f; revisão independente sem bloqueantes e nenhum reviewer/thread/review remoto pendente.
+
+Objetivo/aceite: gerar CycloneDX1.5 próprio dos componentes já auditados e Debian13; executar scanner somente no controlador Linux CI e comparar cobertura exata de nome/versão/arquitetura e fonte antes de interpretar achados. Sem banco dpkg fictício/scan Docker socket. Preservar todas as severidades/unfixed e distinguir inventário válido de baseline aceita. HIGH/CRITICAL exigem remediação ou disposição específica; nenhuma disposição aprovada. OS0/fonte incompleta/metadados DB ausentes ou vencidos falham operacionalmente.
+
+Baseline antes de download: reutilizar Trivy0.75.0/Linux64 já fixado no inventário existente, tar SHA256c6e65abddb348e25f10549df887045629cf28cc72453cd1c63acb717316b3f3f, URL oficial GitHub/aquasecurity/trivy/releases/download/v0.75.0/trivy_0.75.0_Linux-64bit.tar.gz. Necessidade concreta: advisories Debian identificados por pacote-fonte. Nenhum binário novo no worker ou instalação global; controlador extrai somente membro regular trivy validado por tamanho/hash em pasta própria. DB própria atualizada e metadata/hash registrados; sem JavaDB por não haver componente Java neste perfil.
+
+Desenho/arquivos: scan_core.py/test_scan_core.py, chamada em core_ci e relatório selecionado existente/README/task/backlog. SBOM declara autoria própria (sem fingir ferramenta Trivy), OS component e dependências explícitas dos28componentes. PURL carrega versão binária completa; propriedades aquasecurity:trivy:SrcName/SrcEpoch/SrcVersion/SrcRelease preservam fonte separada. Fonte primária tag0.75: [decode](https://github.com/aquasecurity/trivy/blob/v0.75.0/pkg/sbom/io/decode.go), [CycloneDX](https://github.com/aquasecurity/trivy/blob/v0.75.0/pkg/sbom/cyclonedx/unmarshal.go), [formatação](https://github.com/aquasecurity/trivy/blob/v0.75.0/pkg/scan/utils/utils.go). Warning de SBOM terceiro é limite real, não deve ser suprimido.
+
+Riscos: duplicar epoch/revisão, perder fonte, OS0 interpretado como limpo, variáveis/configuração/ignore locais suprimirem achados ou revelar logs brutos. Scanner usa ambiente mínimo, HOME próprio, config/ignore vazios explícitos e coleta somente vulnerabilidades; sem ignore-unfixed, severidade filtrada ou credenciais. Publicar só campos selecionados/contagens/DB/sha/UTC/comando/imagem/checkout; relatórios brutos, binário e DB ficam ignorados. Escopo parcial não cobre camadas inferiores/kernel/controlador nem prova exploração ou segurança integral da imagem.
+
+TDD: cinco testes focados/18 falhas esperadas antes da implementação (SBOM ausente, metadados inválidos aceitos, cobertura sem validação); erro nenhum de import/bootstrap. Teste adicional source1:bad falhou antes de exigir upstream iniciando por dígito. Green e suíte afetada:44 testes locais passaram em0,476s. Docker/scanner não executados localmente. CI/revisão/artefato ainda pendentes.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

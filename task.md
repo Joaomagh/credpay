@@ -4,15 +4,15 @@
 
 ## Último incremento
 
-- PR159/df022fa integrou seis controles parciais de contenção no LinuxCI após Core13/Scan281 verdes no head2278d6a;34 testes e artefato conferidos; spec9.102.
+- PR160/e793f10 integrou proveniência fonte Debian após Core16/Scan284 verdes no head040cb9b;39 testes e artefato conferidos; spec9.103.
 
 ## Agora
 
-- [ ] B08.7d.1 — Preservar proveniência fonte Debian no manifesto parcial, com identidade do deb conferida contra lock. Red/green39 controles, revisão e Core15/Scan283 verdes; artefato conferido, gates finais/merge pendentes; spec9.103.
+- [ ] B08.7d.2 — Inventário de advisories dos componentes parciais com cobertura Debian/fonte exata.44 testes locais verdes; revisão/CI pendentes. spec9.104.
 
 ## Próximo
 
-- B08.7d.2: inventário de vulnerabilidades do core parcial com cobertura real; não interpretar OS0 como baseline limpa. Depois negativos rede/daemon/excesso/instalação/download e DockerDesktop.
+- B08.7: negativos rede/daemon/excesso/instalação/download, eventual remediação dos achados e DockerDesktop; sem aceitar risco implicitamente.
 - B08.1: recuperar um log/cinco artefatos históricos ou registrar disposição explícita; revisão continua parcial. Depois ensaio do quickstart/demo/explicação com João.
 
 ## Depois
