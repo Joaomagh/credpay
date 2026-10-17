@@ -21,7 +21,9 @@ def audit_core(archive, manifest):
     expected = {entry["path"]: entry for entry in manifest["files"]}
     files = {entry["path"]: entry for entry in actual["entries"] if entry["type"] != "directory" and entry["path"] not in INJECTED}
     if set(files) != set(expected) | {"bin"}:
-        raise ValueError("Export final diverge da projeção: arquivos extras/ausentes.")
+        difference = {"extra": sorted(set(files) - set(expected) - {"bin"})[:20],
+                      "missing": sorted((set(expected) | {"bin"}) - set(files))[:20]}
+        raise ValueError("Export final diverge da projeção: " + json.dumps(difference, ensure_ascii=True))
     for path, wanted in expected.items():
         observed = files[path]
         if observed["type"] != "file" or any(observed[key] != wanted[key] for key in ("sha256", "mode", "uid", "gid")) or observed["setuid"] or observed["setgid"] or observed["fileCapability"]:
