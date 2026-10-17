@@ -2805,6 +2805,10 @@ Arquivos: memory_controls/testes, helper de validação de saída em containment
 
 TDD observado: memória focada2testes/dez falhas esperadas por validação ausente; helper de saída focado10testes/uma falha esperada ao não reconhecer observador saudável com OOM de filho autorizado. Green mínimo50 controles locais passaram em0,506s; sem import/bootstrap/compilação como red. Diff-check passou; revisão/CI real pendentes.
 
+Green real: Sandbox Core28/run39070955740/job117508275671 e Secret Scan298/run39070955880 verdes no head48c54ced626933e325b6df3e071f05ecd377c375;50controles Linux. Artefato12115446349:161466bytes/SHA256e1c2532286e9ff96ce5771617473174706d693fd4727cc6d36f9870161882239; quatro relatórios selecionados. Checkout de teste111cea0bfc6dede0392b1bd56ed67f6f6e730445, paisa94e6de/48c54ce confirmados na API; imagemsha256:6746c623d3b9ea4bfa7ae1de1dd205e43bf9c0d30319fa6853b5873936b224d1.
+
+Observado: beforemax/oom/kill0/0/0, after37/1/1 e deltas37/1/1. Alocador pesado exit137, daemonOOMKilledtrue, mas observador terminouexit0/PID0 e fez nova alocação/materialização/readback33554432bytes, igual ao positivo inicial. Limite1073741824/swap0/oom.group0 conferidos sem alteração. Auditoria refez validação dos deltas/hashes comando/configuração; Gitleaks8.30.1 no JSON selecionado não encontrou candidatos. Revisão independente50testes/diff-check sem bloqueantes. Scanner continua HIGH17/CRITICAL2; nenhuma remediação/aceite implícito. Gates do último SHA ainda serão conferidos antes da integração.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
