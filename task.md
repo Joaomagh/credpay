@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- PR165/280e03b integrou OOM local controlado/recuperação32MiB após Core29/Scan299 verdes no head46a3cb7;50 controles e artefato conferidos. Baseline com CVEs continua sem aceite; spec9.108.
+- PR167/3ca6ec5 integrou recusa local de PIDs/recuperação após Core33/Scan305 verdes no head3d4eaf2;53testes Linux sem skips,52locais/1skip POSIX explícito; spec9.110. Baseline com CVEs continua sem aceite.
 
 ## Agora
 
-- [ ] B08.7e.3 — Prova de PIDs: criador finito, filhos bloqueados em pipe, pico128/evento local/retorno a1PID e positivos antes/depois. 53testes Linux verdes,52locais/1skip POSIX explícito, revisão/Core32/Scan304 e artefato conferidos; gates finais/merge pendentes; spec9.110.
+- [ ] B08.7f.1 — Implementar primeiro corte TCP/UDP conforme docs/SANDBOX_NETWORK_PROTOCOL.md: mesma imagem, fixtures none, positivo em namespace próprio compartilhado e worker negativo separado, positivos antes/depois e prazos limitados. Ainda não executado.
 
 ## Próximo
 

@@ -356,7 +356,7 @@ Cada teste deve registrar comando, resultado esperado, resultado observado, vers
 
 ## 4.2 Testes negativos planejados para o AI-Jail
 
-Os testes desta seção definem como o contrato da ADR-003 será avaliado. Os primeiros controles de filesystem, ambiente, privilégios e recriação foram executados parcialmente no Linux CI (§9.102); rede, contato com daemon, excesso de recursos, instalação/download e DockerDesktop continuam pendentes. Um teste negativo tenta realizar, de forma controlada, uma ação que o sandbox deve proibir.
+Os testes desta seção definem como o contrato da ADR-003 será avaliado. Controles parciais de filesystem, ambiente, privilégios/recriação (§9.102) e CPU/memória/PIDs sob excesso (§9.106/9.108/9.110) foram comprovados no Linux CI. Rede, contato com daemon, instalação/download e DockerDesktop continuam pendentes. Um teste negativo tenta realizar, de forma controlada, uma ação que o sandbox deve proibir.
 
 | ID | Propriedade avaliada | Tentativa controlada | Resultado esperado | Controle responsável |
 |---|---|---|---|---|
@@ -432,7 +432,7 @@ O `sandbox-core` é um perfil diagnóstico para validar mounts, identidade, file
 
 O inventário efetivo da imagem deverá ser comparado com esta lista. Dependências transitivas trazidas pela imagem-base não serão consideradas automaticamente aprovadas. Git, Java, Maven, `curl`, `wget`, Docker CLI, Docker Compose, SSH, `sudo`, `su`, clientes de nuvem, gerenciadores de credenciais, gerenciadores de pacotes utilizáveis em runtime e outros runtimes ficam fora do `sandbox-core`.
 
-O teste AJ-NET-01 precisará de uma forma controlada de realizar conexões. A escolha entre imagem diagnóstica derivada ou modo de execução separado permanece pendente; a ausência de cliente de rede no `sandbox-core` não será aceita como evidência de bloqueio.
+O primeiro corte de AJ-NET-01 usará modo diagnóstico separado com a mesma imagem e GNUawk (§9.111), conforme o contrato em docs/SANDBOX_NETWORK_PROTOCOL.md; implementação e execução permanecem pendentes. Ausência de cliente ou erro DNS genérico não serão evidência de bloqueio; DNS/LAN/metadados/internet exigem provas próprias posteriores.
 
 ### Perfis futuros
 
@@ -444,7 +444,7 @@ Git será considerado em um futuro perfil operacional quando o worker precisar i
 |---|---|
 | tag e digest da imagem Debian slim | conferidos em §9.100; construção e inventário em §9.101/9.104; baseline sem aceite |
 | compatibilidade de `10001:10001` com o Docker Desktop | validar antes de considerar a identidade funcional |
-| imagem ou mecanismo diagnóstico para AJ-NET-01 | escolher antes de executar o teste de rede |
+| mecanismo diagnóstico inicial para AJ-NET-01 | modo separado/mesma imagem, contrato9.111; execução e cobertura completa pendentes |
 | topologia Codex/controlador e mecanismo de enforcement | permanece hipótese e não bloqueia o `sandbox-core` isolado |
 | perfil operacional com Git | aprovar somente quando necessário |
 | `sandbox-java` com Java e Maven | aprovar somente quando houver necessidade de build Java |
@@ -2830,6 +2830,16 @@ Revisão encontrou positivo que imprimiaPASS com read/comparação falhos. Teste
 Green real: Sandbox Core32/run39071760897/job117510658258 e Scan304/run39071760940 verdes no head93a9e7e3673c45a658bb2614276302860fcbd220;53 testes Linux sem falhas/erros/skips, incluindo negativos dos positivos. Artefato12115143986:162237bytes/SHA256d8a4edf6e80cbde1339972a45c95e7ae9ae01aeb23d85dc26d83c983e47fb8f5, quatro relatórios selecionados. Checkout a45649d3133d4de5ae82d7d4568d48b2cff0363e tem paisfd83972/93a9e7e confirmados; imagemsha256:6109f206979a7b5a24b6bd0bad19159b547cdc676f8c15ba9d8a909f3c848d14.
 
 Observado: baseline1, limite/pico128, retidos127, evento localmax0→1, actor2, recuperado1 e positivos antes/depoisPASS. Hashes comando/configuração refeitos e validação do delta/vínculos conferida; workerexit0/parado/semOOM. Gitleaks8.30.1 no JSON selecionado não encontrou candidatos. Revisão independente tratada sem bloqueantes; actor2 sozinho não é prova. Scanner permanece HIGH17/CRITICAL2; nenhuma remediação/aceite de Desktop/agente implícito. Gates finais do último SHA ainda serão conferidos antes do merge.
+
+### 9.111 Próximo corte de rede e estado após PIDs
+
+PR167/3ca6ec5390a7faf37b1fb6d3e700f256d702615d integrada após Sandbox Core33/run39071894420 e Scan305/run39071894432 verdes no head3d4eaf2d9d1a3d76855bbd67aad24d0b8aee0bcb, revisão tratada e nenhum review/thread/reviewer remoto pendente.53 testes Linux sem falhas/erros/skips; local52pass/umskip POSIX explícito. CPU/memória/PIDs sob excesso comprovados no LinuxCI, sem alterar pendências Desktop/agente/advisories.
+
+Refinamento documental do próximo item antes da implementação: [protocolo TCP/UDP](docs/SANDBOX_NETWORK_PROTOCOL.md) escolhe modo diagnóstico separado/mesma imageID, com20ferramentas. Fixture none, controle positivo na rede da fixture por container:ID próprio e worker negativo none independente; positivos exatos antes/depois, fixture viva sem reinício, namespaces observados vivos, erro I/O classificado e timeouts/cleanup restritos. Não compartilha host/PID/IPC, não publica portas nem cria bridge. READ_TIMEOUT não limita necessariamente connect/accept; readiness exige intercâmbio real e ausência de disponibilidade comprovada torna resultado inconclusivo. UDP fecha/reabre socket entre peers. Decisão operacional restrita ao diagnóstico já previsto em4.3, sem escolher topologia do agente.
+
+Nenhuma execução/instalação/scan novo ou mudança de política/achados neste refinamento. AJ-NET completo/DNS/LAN/metadados/internet e baseline com HIGH17/CRITICAL2 continuam abertos. Pedido assíncrono a João busca evidência de quickstart/explicação pessoal, sem presumir resposta ou aceite. Documentação exige UTF8/diff/revisão e coerência de escopo, não red artificial.
+
+Revisão documental somente leitura confirmou contrato sem bloqueantes técnicos; textos antigos de4.3/backlog foram alinhados ao mecanismo escolhido/comprovado. UTF8 estrito/diff-check e Gitleaks no protocolo passaram. João respondeu que ainda não executou o ensaio e pediu roteiro guiado; preparar após este refinamento, sem registrar aceite pessoal fictício.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
