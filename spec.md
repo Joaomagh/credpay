@@ -2763,6 +2763,16 @@ Resultado do recorte:UNKNOWN0/LOW24/MEDIUM21/HIGH17/CRITICAL2;19 ocorrências HI
 
 Consulta inicial a fontes oficiais confirmou [gawk40468](https://security-tracker.debian.org/tracker/CVE-2026-40468) sem versão corrigida trixie/sid no corte, com patch upstream referido; [40469](https://security-tracker.debian.org/tracker/CVE-2026-40469) menciona builds32bit, enquanto core élinuxamd64/ELF64, exigindo revisão de aplicabilidade sem remover achado; [ncurses69720](https://security-tracker.debian.org/tracker/CVE-2025-69720) descreve infocmp, ausente do core, e trixie permanece sem correção na tabela. Isso não fecha triagem ou aceita risco. Nenhuma troca de plataforma/runtime/patch externo aplicada. Inventário integrado poderá mostrar achados sem transformar CI verde em autorização de uso. Gates finais ainda serão conferidos no último SHA.
 
+### 9.105 Triagem inicial completa do core parcial — B08.7d.3
+
+PR161 integrada em80311f2e7b508cb64b5e2dd31af12e129a787ae7 após Sandbox Core21/run39069859445 e Secret Scan289/run39069859443 verdes no head361daa3cb7d3a5c320b25a26c32c046b77a0d1cc, revisão sem bloqueantes e nenhuma revisão/thread/solicitação remota pendente. Inventário integrado, baseline continua sem aceite.
+
+Objetivo/aceite documental: mapear os11IDs HIGH/CRITICAL às fontes oficiais, versões trixie/fora dela, arquivos/funções/pré-condições e lacunas do manifesto auditado, sem executar exploit, aplicar patch, trocar distribuição ou alterar findings. Resultado em [TRIAGE.md](infra/agent-sandbox/TRIAGE.md): nenhum pacote trixie corrigido nos11trackers consultados; gawk40467/40468 exigem prioridade de correção, quatro candidatos dependem de separação de código/objetos e40469 exige análise32bit/ABI. ACL requer biblioteca e consumidores; divergência tracker/advisory util-linux78408 preservada. Código ausente do manifesto/controles nonroot não viram automaticamente não afetado ou waiver.
+
+Arquivos: TRIAGE.md/spec/task/backlog e link README do sandbox. Documentação não exige red artificial; conferir cobertura dos11IDs/19ocorrências contra artefato selecionado, Markdown/diff/UTF8 e Gitleaks. Risco: tratar triagem como remediação ou decisão de escopo; não ocorreu. Novos negativos podem avançar em fixtures CI sem promover o core, enquanto a rota de correção da baseline continua pendente. Não houve novo scan ou reavaliação dos aplicativos Java nesta triagem.
+
+Verificação documental: conjunto exato dos11IDs/19ocorrências/sete binários conferido contra JSON selecionado; UTF8 estrito/diff-check/Gitleaks passaram. Revisão independente corrigiu formulação78409: biblioteca libmount presente não prova presença da função/caminho na compilação exata; ressalva mantida. Nenhum bloqueante restante após ajuste.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
