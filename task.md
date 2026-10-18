@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- PR170/cacd213 integrou diagnóstico TCP/UDP entre namespaces próprios após Core37/Scan313 verdes no heade940a5e.56 testes Linux sem skips, artefato auditado e revisão sem pendências; spec9.113. AJ-NET completo e baseline de segurança continuam abertos.
+- PR173/60e606a integrou inventário Noble sem processos após NobleSource2/Core40/Scan321 verdes no head91182fc;60 testes Linux sem skips,92pacotes/3448entradas/artefato auditado. Awk da origem é mawk; spec9.116. Baseline segue sem aceite.
 
 ## Agora
 
-- [ ] B08.7d.4 — Avaliar UbuntuNoble oficial no CI, autorizado por João em18/10 sem aceite automático. Integrar PR173 após gates finais: NobleSource1/Core39/Scan320 verdes,60Linux sem skips/artefato auditado92pacotes/3448entradas. Awk é mawk; depois fixar GNUawk corrigido/dependências e só então projeção/scanner/controles. Proposta em docs/SANDBOX_REMEDIATION_PROPOSAL.md; ACL/util-linux ainda sem fixed informado, nenhum aceite de risco.
+- [ ] B08.7d.4b — Integrar avaliação do coreNoble após gates finais: NobleCandidate4/Core42/Scan323 verdes,65Linux sem skips/artefato auditado31componentes/controles passaram. ScanHIGH0/CRITICAL0 não resolve lacuna: ACL/util-linux constam semfixed em dados oficiais, mas não apareceram no scan. Próximo conciliarIDs/fontes/aplicabilidade sem promover candidata; spec9.117.
 
 ## Próximo
 
