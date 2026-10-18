@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.7d.4c — Analisar ACL54369 na biblioteca e consumidores exatos do coreNoble, com pré-condições/privilégios/mounts demonstrados. docs/SANDBOX_NOBLE_FINDINGS.md preserva cincoIDs fora do scan e os12emitidos. Não promover candidata ou confundir ignored/needs-triage com correção; spec9.118.
+- [ ] B08.7d.4c.1 — Integrar PR176 após gates finais: NobleCandidate7/Core45/Scan328 verdes,71Linux sem skips/44ELFs/mapa/hash auditados. Consumidores ACL reais cp/mv/sed têm imports pathname eFD, semAPI_at observada; não é correção/nãoafetação. Próximo ligar fonteUbuntu exata aos ramos/autoridade; spec9.119.
 
 ## Próximo
 

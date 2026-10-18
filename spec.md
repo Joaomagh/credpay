@@ -2929,6 +2929,26 @@ Dossiê docs/SANDBOX_NOBLE_FINDINGS.md concilia11IDs anteriores e12emitidos, sem
 
 Nenhum finding bruto alterado/suprimido e nenhuma disposição de risco implícita. Próxima análise: ACL54369 na biblioteca/consumidores exatos versus privilégios/mounts impostos; não confundir mitigação com correção. Registrar também quatro util-linux/40553 e os12IDs remanescentes. Apenas documentação, verificar UTF8/links/diff/revisão; sem dependência/instalação/Docker local ou nova execução de comportamento.
 
+### 9.119 Mapa estático dos consumidores ACL reais — B08.7d.4c.1
+
+PR175 integrada em65df53bb6f69a762a36179fcc92a9ff99944b991 após Scan326/run39096537431 verde no heada7c9e2f7594359a4bb520109b4dcfb13b03940a8; somente docs/filtros sem runtime, revisão sem bloqueantes e nenhuma revisão/thread/solicitação remota pendente.
+
+Objetivo/aceite antes de editar: mapear todos osELFscommand/library/loader da projeção real para DT_NEEDED, imports/exports ACL versionados e mecanismos de lookupdinâmico. Usar somente Pythonstdlib/readelf existentes no controladorCI; não executar candidato/ldd/exploit, instalar ferramentas, alterar worker ou promoverNoble. Dados partem do exportfinal já auditado, SHA de cadaELF corresponde ao manifesto, readelf lê cópia600 própria sem execução. Mapa exige cobertura exata e controlepositivo libacl exportando acl_get_file/acl_set_file/acl_extended_file/acl_delete_def_file; erro/tabela ausente/truncada/timeout/hashdivergente são falha operacional, não ausência de consumidores.
+
+Arquivos previstos: acl_analysis/testes, chamada/report core_ci e docs. Registrar hash/argumentos/readelfVersion/commit/imageID/UTC, interfacesACL_*_fd/*_at e dlopen/dlsym/dlvsym observados, cadeias deDT_NEEDED por comando. Ausência de import não demonstra códigoausente/inalcançável; interfacesat/fd presentes não provam adoção em todos os caminhos. UID/caps/NNP/mounts são contexto mitigador já testado, não correção deACL.
+
+Fontes primárias consultadas18/10: https://security-tracker.debian.org/tracker/CVE-2026-54369 descreve quarteto/pathcontrolável/chamadorprivilegiado; divulgação upstream https://www.openwall.com/lists/oss-security/2026/06/29/1 explica novasAPIsem2.4.0 e compatibilidade dasantigas. Fontecoreutils9.4/copy.c aponta copy_acl comFD-1 em preserve/move como pista, não prova da compilaçãoUbuntu. Contrato readelf: https://sourceware.org/binutils/docs/binutils/readelf.html . Nenhum download/dependência novo; TDD antes do parser/mapa.
+
+TDD5métodos/14falhas assert esperadas por ausência do parser/mapa antes da implementação. Durante green, corrigido uso inválido de slice em Match para group(3,4,5); regressão adicional observou duas falhas semânticas ao aceitar tipo/binding desconhecidos e passou a rejeitá-los. Green70descobertos/69passWindows/1skipPOSIX conhecido,0,584s. Nenhum ELF/Docker executado localmente; parser/mapa em revisão e CI real pendentes.
+
+Revisão encontrou controlepositivo que aceitava quartetos definidos apenas pelo nome. Red adicional6ºmétodo/trêsfalhasassert esperadas com OBJECT/LOCAL/HIDDEN; correção exige exportsFUNC/IFUNC, GLOBAL/WEAK e DEFAULT/PROTECTED. Green71descobertos/70passWindows/1skipPOSIX,0,628s; nenhum achado foi omitido. Revisão final/CI real pendentes.
+
+Green real no headfb236a195a615303ac999ab871f95b26fdbd1957: NobleCandidate7/run39100876538/job117596715871, DebianCore45/run39100876609 e Scan328/run39100876614 SUCCESS;71 testes Linux sem falhas/erros/skips. Artefato12126710667:166564bytes/SHA256c01e2a9cadd41c1fafdda2a9a5f6eb6de74747f22011115d3b649eb42fbbdb3d; quatro relatórios selecionados. Checkoutd114defbda9636ff6c70a5b5960b07cb852f9561 tem pais65df53b/fb236a1 confirmados na consulta ao commit. ImagemNoblesha256:bcc978211dbc5de699771a209890c4f307836dcf3ec851c35ec312e4dc26c3cd; readelfGNU2.42.
+
+Auditoria do mapaNoble:44ELFs/cobertura/hash/role/package iguais à projeção, argumentosSHA conferidos, map_acl_consumers reaplicado coincide. Provedorlibacl1=2.3.2-1build1.1/SHA2561f5247285409ec89990e9fe384d78dfb2ae6ec8e210a2657073babc8d6b7e54f exporta quarteto como FUNC/GLOBAL/DEFAULT. cp/mv(coreutils9.4-3ubuntu6.3) importam acl_set_file/acl_delete_def_file e acl_set_fd; sed4.9-2ubuntu0.24.04.1 importa acl_get_file/acl_set_file/acl_delete_def_file e acl_get_fd/acl_set_fd. Todos versionadosACL_1.0; nenhumaAPI_at observada nesses consumidores. Somente cp/mv/sed alcançamlibacl no grafoDT_NEEDED da projeção; lookupdinâmico e código incorporado permanecem fora dessa inferência.
+
+ScanNoble preserva MEDIUM11/LOW1/HIGH0/CRITICAL0; mapa não corrigeACL nem sustenta nãoafetação. Gitleaks8.30.1 noJSONselecionado sem candidatos; revisão do achadoexports tratada. Próxima análise deve ligar fonteUbuntu exata desses consumidores aos ramospathname/FD e autoridade efetiva, incluindo controlador; não criar outro canário que apenas preserveACL como se fosse remediação. Gates do último SHA ainda serão conferidos antes da integração.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
