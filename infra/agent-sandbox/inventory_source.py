@@ -165,7 +165,43 @@ def inventory(archive):
     return result
 
 
+def source_baseline(noble_candidate=False):
+    if type(noble_candidate) is not bool:
+        raise ValueError("Perfil de origem inválido.")
+    name = "baseline.noble.env" if noble_candidate else "baseline.env"
+    baseline = dict(line.split("=", 1) for line in (Path(__file__).parent / name).read_text().splitlines() if line and not line.startswith("#"))
+    prefix = r"ubuntu:24\.04" if noble_candidate else "debian:trixie-slim"
+    if set(baseline) != {"SANDBOX_SOURCE_IMAGE", "SANDBOX_SOURCE_PLATFORM_DIGEST"} or not re.fullmatch(prefix + r"@sha256:[a-f0-9]{64}", baseline["SANDBOX_SOURCE_IMAGE"]) or not re.fullmatch(r"sha256:[a-f0-9]{64}", baseline["SANDBOX_SOURCE_PLATFORM_DIGEST"]):
+        raise ValueError("Baseline inválida.")
+    return baseline
+
+
+def _noble_release(archive):
+    with tarfile.open(archive, "r:*") as stream:
+        member = next((item for item in stream.getmembers() if _path(item.name) == "usr/lib/os-release"), None)
+        if member is None or not member.isfile() or member.size > 4096:
+            raise ValueError("Release da candidata ausente ou inválido.")
+        values = {}
+        for line in stream.extractfile(member).read().decode("utf-8", errors="strict").splitlines():
+            key, separator, value = line.partition("=")
+            if key in ("ID", "VERSION_ID"):
+                if not separator or key in values:
+                    raise ValueError("Release da candidata ambíguo.")
+                values[key] = value
+        if values.get("ID") not in ('ubuntu', '"ubuntu"') or values.get("VERSION_ID") not in ('24.04', '"24.04"'):
+            raise ValueError("Release da candidata diverge de Ubuntu24.04.")
+    return {"id": "ubuntu", "versionId": "24.04"}
+
+
+def write_noble_report(archive, metadata, output):
+    return _write_report(archive, metadata, output, True)
+
+
 def write_report(archive, metadata, output):
+    return _write_report(archive, metadata, output, False)
+
+
+def _write_report(archive, metadata, output, noble_candidate):
     root = Path(__file__).resolve().parents[2]
     archive, metadata, output = (Path(path).resolve() for path in (archive, metadata, output))
     if any(not path.is_relative_to(root) for path in (archive, metadata, output)):
@@ -175,7 +211,7 @@ def write_report(archive, metadata, output):
     if metadata.stat().st_size > 8192:
         raise ValueError("Metadados excedem o limite.")
     data = json.loads(metadata.read_text(encoding="utf-8-sig"))
-    baseline = dict(line.split("=", 1) for line in (Path(__file__).parent / "baseline.env").read_text().splitlines() if line and not line.startswith("#"))
+    baseline = source_baseline(noble_candidate)
     keys = {"sourceImage", "platformDigest", "imageId", "commit", "platform", "createdUtc", "containerNeverStarted"}
     if not isinstance(data, dict) or set(data) != keys:
         raise ValueError("Campos de metadados inválidos.")
@@ -187,6 +223,8 @@ def write_report(archive, metadata, output):
     with archive.open("rb") as stream:
         digest = _digest(stream)
     result = inventory(archive)
+    if noble_candidate:
+        result["osRelease"] = _noble_release(archive)
     with archive.open("rb") as stream:
         if _digest(stream) != digest:
             raise ValueError("Arquivo mudou durante o inventário.")

@@ -2885,6 +2885,16 @@ Recomendação revisável: avaliar core integralmenteNoble com pacotes oficiais,
 
 João escolheu explicitamente em18/10: avaliar UbuntuNoble oficial no CI, sem aceite automático. Direção restrita à candidata/protocolo descritos; não aprova build próprio, promoção da imagem ou supressão de findings. Próximo incremento fixa baseline/inventário sem executar processos antes de projeção/scanner/testes.
 
+### 9.116 Inventário candidato Noble sem execução — B08.7d.4a
+
+PR172/28b168b36b9f5d01510ddfc7b94bbbbb3834859e integrou proposta/direção de João após Scan318/run39095571640 verde no headd3d268024e88e145d545a6a7f4a233783fa7e6fb, docs/filtros sem runtime, revisão sem bloqueantes e nenhum pedido/review/thread remoto pendente.
+
+Objetivo/aceite antes de download: inventariar candidata Ubuntu24.04 oficial em CI hospedado, sem iniciar processo, com índice/plataforma mesmaimageID e release realubuntu24.04. Não substituir baseline/core Debian nem alegar correção dos CVEs. Origem oficial consultada18/10 https://hub.docker.com/v2/repositories/library/ubuntu/tags/24.04: índice68ee22004a9109b44973313b02ff7b1de250f1de0f5ecb628d73f579aaff33ac, linuxamd64a2d43bffc46670d7108bb3c0468c67c5557c4c92e83e1e34cbff1322ad1b94dc,29765758bytes comprimidos, atualização17/10T04:04:16Z. Necessidade: avaliar pacotes oficiais corrigidos sem fork; baseline.noble.env separado antes do pull, sem instalação local/dependência nova no worker. Pin não garante advisories corrigidos.
+
+Arquivos previstos: gerador de inventário/controlador/testes, baseline separada e workflow candidato sósource. Reusar parsing tar/dpkg/identidade/cleanup, manter API/pins padrão Debian, aceitar candidato somente por opção explícita e validar usr/lib/os-release regular/limitado sem executar shell. Riscos: confundir OS/proveniência, promover candidata sem testes, imagens mutáveis/volumes/mounts extras; TDD deve rejeitar divergências e pipeline não executa core candidato. Relatórios selecionados somente, sem tar/Config/Env completos. Nenhum Docker local.
+
+TDD4métodos novos/10falhas assert esperadas por ausência de validação/relatório antes da implementação. Green60descobertos/59passWindows/1skipPOSIX conhecido; defaultDebian continua recusando metadataNoble e candidato recusa OS ausente/divergente/duplicado/expressão/arquivo excedido, origemDebian e estadoiniciado. Perfis aceitam bool exato, pins separados. Nenhum mock de Docker nem execução local; revisão/CI real pendentes.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

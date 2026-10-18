@@ -364,3 +364,6 @@ B08.7e.3: mecanismo dash/pipe/FD3 e reapbuiltin refinado antes de editar; reds d
 **B08.5b — Primeiro ensaio guiado — roteiro integrado na PR169, execução pessoal pendente.** João informou não ter executado e pediu acompanhamento. docs/DEMO.md adiciona preflight, produto em cinco frases, pausas de execução, perguntas e retorno curto com evidências; sem duplicar build/runbooks ou presumir autoria/domínio/execução. Nenhuma infraestrutura/instalação/Docker local do agente; não fecha Kubernetes/Desktop/segurança. spec9.112.
 
 B08.7f.1: validação comum preserva wrappernone; sharedclientexige fixture própria viva. Red/green56descobertos/55passWindows/1skip POSIX; revisão sem bloqueantes/Core35/Scan311 verdes,56Linux sem skips/artefato12115633765 auditado; gates finais Core37/Scan313 verdes no heade940a5e e PR170 integrada emcacd213; spec9.113.
+
+
+**B08.7d.4a — Inventário candidato Noble sem execução — em validação.** Autorização específica de João em18/10, sem aceite automático; baseline.noble.env fixa índice/plataforma oficiais separados do Debian. Novo modo explícito valida imagem comum e releaseubuntu24.04 real sem iniciar container. TDD4métodos/10falhas esperadas, green60descobertos/59passWindows/1skipPOSIX; revisão/CI pendentes. Não altera core/pacotes/scanner Debian nem resolve CVEs; spec9.116.
