@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.7d.4b — Construir e avaliar coreNoble candidato autorizado, sem promoção automática: lock4pacotes oficiais já fixado, GNUawk Ubuntu corrigido, projeção/controles existentes e scannerUbuntu24.04 com cobertura exata. TDD5métodos/17falhas esperadas; green65descobertos/64Windows/1skipPOSIX. Revisão/CI real pendentes; spec9.117.
+- [ ] B08.7d.4b — Integrar avaliação do coreNoble após gates finais: NobleCandidate4/Core42/Scan323 verdes,65Linux sem skips/artefato auditado31componentes/controles passaram. ScanHIGH0/CRITICAL0 não resolve lacuna: ACL/util-linux constam semfixed em dados oficiais, mas não apareceram no scan. Próximo conciliarIDs/fontes/aplicabilidade sem promover candidata; spec9.117.
 
 ## Próximo
 
