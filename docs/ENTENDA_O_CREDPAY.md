@@ -60,17 +60,19 @@ Não existe validação de mercado ou cliente real registrada. O problema resolv
 
 João aprovou a direção recomendada: esgotar as tentativas não torna a transação automaticamente FALHOU. Ela continua PENDENTE e pode ser recuperada. FALHOU representa uma falha técnica confirmada como irrecuperável, e é terminal.
 
-Essa decisão de produto não implementa sozinha a transição. Ainda precisamos definir o mecanismo de confirmação, condições/evidências e testes. Aprovação/rejeição pelo limite e falha técnica são conceitos diferentes.
+A confirmação causal de FALHOU foi implementada e testada em cenário controlado na PR150: pedido, processamento, resposta, replay e recuperação. O início operacional genérico permanece indisponível, sem endpoint administrativo. Aprovação/rejeição pelo limite e falha técnica são conceitos diferentes.
 
 ## O que já podemos demonstrar e o que falta
 
 O CI já demonstrou criação/consulta, aprovação/rejeição, duplicatas/replay, concorrência, rollback, reentrega e recuperação nos casos registrados. Imagens demonstraram o fluxo; Compose também comprovou preservação após down/up. Isso não cobre toda janela de crash possível nem comprova execução no computador de João enquanto o engine Docker local estiver indisponível.
 
-Faltam tratamento dos demais achados de segurança, observabilidade útil com métricas/painel/diagnóstico, Kubernetes local executado, isolamento verificável do ambiente de desenvolvimento, mecanismo FALHOU e ensaio da apresentação. A estimativa de escopo permanece aproximadamente 65% concluído / 35% restante; não é percentual calculado por quantidade de PRs/testes ou previsão de prazo.
+Métricas HTTP opt-in e diagnóstico, confirmação controlada de FALHOU e fluxo/falha/recuperação Kubernetes no CI estão integrados. Restam checks/inventários finais e triagem dos aplicativos, disposição das lacunas de publicação, execução local e ensaio pessoal. João adiou painel e frontend; em18/10 também separou a pesquisa de sandbox do aceite da v1, preservando achados e sem liberar o core experimental. A fila vigente está em [BACKLOG.md](BACKLOG.md); não há percentual recalculado a partir de PRs.
 
-## Etapas e estimativa de conclusão
+## Recorte histórico de etapas e estimativa
 
-| Etapa | Concluído | Restante | O que falta para encerrar |
+A tabela abaixo preserva o recorte anterior às entregas e decisões de15–18/10/2026. Seus percentuais e pendências não representam o estado atual nem são critérios vigentes de fechamento.
+
+| Etapa | Concluído | Restante | O que faltava naquele recorte |
 |---|---:|---:|---|
 | Governança e isolamento do ambiente | 30% | 70% | Executar sandbox e comprovar restrições de acesso, privilégios e rede |
 | Fundação reproduzível | 95% | 5% | Confirmar o quickstart no computador de João com Docker Linux disponível |
@@ -80,6 +82,6 @@ Faltam tratamento dos demais achados de segurança, observabilidade útil com m�
 | Kubernetes e observabilidade | 5% | 95% | Executar cluster local, provar fluxo/persistência e criar métricas/painel úteis |
 | Entrega e portfólio | 65% | 35% | Tratar achados de dependências/imagens, revisar publicação e ensaiar a demo |
 
-Os percentuais usam pesos de escopo diferentes, registrados no backlog. Não devem ser somados ou usados como prazo. A maior lacuna está na operação e no diagnóstico; o fluxo principal já foi demonstrado. O projeto só encerra quando os critérios do plano forem cumpridos, inclusive João conseguir explicar e executar o trabalho.
+Os percentuais usam pesos de escopo diferentes, registrados no backlog. Não devem ser somados ou usados como prazo. No estado atual, a fila de fechamento acima substitui essas pendências históricas; o fluxo principal já foi demonstrado. O projeto só encerra quando os critérios do plano forem cumpridos, inclusive João conseguir explicar e executar o trabalho.
 
 Para executar a demonstração e localizar as evidências, consultar [o roteiro](DEMO.md), [o backlog](BACKLOG.md) e [a especificação](../spec.md).

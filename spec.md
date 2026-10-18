@@ -2,7 +2,7 @@
 
 > Fonte de verdade do sistema que existe hoje. Preencher somente com decisão tomada, contrato aceito ou comportamento comprovado. Planos futuros ficam em `CREDPAY_PLAN.md`; próximas ações ficam em `task.md`.
 
-**Última atualização:** 2026-10-17
+**Última atualização:** 2026-10-18
 
 **Fase atual:** fechamento da v1 backend — candidato final/checks/inventários, ensaio com João e lacunas de publicação. Pesquisa de sandbox separada por João em18/10, incompleta e sem aceite/liberação; frontend e servidores Prometheus/Grafana também adiados. Métricas/diagnóstico HTTP preservados.
 
