@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.7d.4 — Avaliar UbuntuNoble oficial no CI, autorizado por João em18/10 sem aceite automático. Baseline Noble fixada e inventário candidato sem execução em validação:60descobertos/59passWindows/1skipPOSIX, revisão/CI pendentes. Depois projeção/scanner/controles. Proposta em docs/SANDBOX_REMEDIATION_PROPOSAL.md; ACL/util-linux ainda sem fixed informado, nenhum aceite de risco.
+- [ ] B08.7d.4 — Avaliar UbuntuNoble oficial no CI, autorizado por João em18/10 sem aceite automático. Integrar PR173 após gates finais: NobleSource1/Core39/Scan320 verdes,60Linux sem skips/artefato auditado92pacotes/3448entradas. Awk é mawk; depois fixar GNUawk corrigido/dependências e só então projeção/scanner/controles. Proposta em docs/SANDBOX_REMEDIATION_PROPOSAL.md; ACL/util-linux ainda sem fixed informado, nenhum aceite de risco.
 
 ## Próximo
 

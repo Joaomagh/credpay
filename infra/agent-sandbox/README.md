@@ -89,3 +89,5 @@ Core35/run39072992414 comprovou os dois protocolos,56 testes Linux sem skips e a
 João autorizou em18/10 avaliar Ubuntu24.04 oficial no CI, sem aceite automático. baseline.noble.env fixa índice/plataforma separadamente; source_ci.py --noble-candidate cria/exporta container próprio sem iniciar processo, confere imageID comum e release realUbuntu24.04 antes de publicar inventário. Workflow Sandbox Noble Source CI usa somente esse modo. Padrão Debian/core/pacotes existentes não são substituídos.
 
 Não é construção do coreNoble, scan, correção de CVEs ou prova de contenção. Nenhum tar/Config/Env completo publicado; inventário selecionado inclui pacotes/proveniência, entradas e identidade OS observada. Proposta/limites em docs/SANDBOX_REMEDIATION_PROPOSAL.md; evidências em spec9.116. Risco real ACL/util-linux sem fixed permanece aberto.
+
+Noble Source1/run39095747017:60 testes Linux sem skips; artefato12124711231 auditado,92pacotes/3448entradas/releaseubuntu24.04, nenhum processo iniciado. Awk da origem é mawk; GNUawk e suas dependências ainda precisam de baseline oficial própria antes da projeção. Core39/Scan320 verdes preservam o caminho Debian.

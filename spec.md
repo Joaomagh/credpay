@@ -2895,6 +2895,12 @@ Arquivos previstos: gerador de inventário/controlador/testes, baseline separada
 
 TDD4métodos novos/10falhas assert esperadas por ausência de validação/relatório antes da implementação. Green60descobertos/59passWindows/1skipPOSIX conhecido; defaultDebian continua recusando metadataNoble e candidato recusa OS ausente/divergente/duplicado/expressão/arquivo excedido, origemDebian e estadoiniciado. Perfis aceitam bool exato, pins separados. Nenhum mock de Docker nem execução local; revisão/CI real pendentes.
 
+Green real no headcd2ac366ccdb721a7ee69945d3bef9e568f2311e: Noble Source1/run39095747017/job117581706255, Core39/run39095746912 e Scan320/run39095746870 SUCCESS;60 testes Linux sem falhas/erros/skips. Artefato12124711231:134142bytes/SHA256d86af545ef323650cd3b32bbf9e73a02ff740f32d89ef7b18cacf4d3786f2b15 contém somente source-inventory.json/SUMMARY.md; checkout65ffbf91f236bce19133c0590d169153e65f0342 tem pais28b168b/cd2ac36 confirmados na consulta ao commit.
+
+Inventário auditado: imageIDsha256:6277ab668b2ad3c3ab851d370faa1690d324b30db29d342527f61fed28f20f36, releaseubuntu24.04, containerNeverStartedtrue,92pacotes/3448entradas. ExportSHA256dba47c620b707a23aa17719a46189778b02d2935550ae82c122afd18420163ea.20 nomes presentes, mas awk resolve usr/bin/mawk1.3.4.20240123-1build1; gawk/libmpfr6/libreadline8t64/libsigsegv2 não estão instalados na origem. Presença do nome awk não comprova clienteTCP/UDP. Próximo: fixar pacote oficial GNUawk corrigido e dependências Noble antes da projeção; não executar teste de rede com cliente ausente.
+
+Pacotes reais selecionados: libsystemd0=255.4-1ubuntu8.17, libtinfo6=6.4+20240113-1ubuntu2.2, libacl1=2.3.2-1build1.1 e mount/libmount1/libblkid1=2.39.3-9ubuntu6.6. Isso é proveniência, não scan/aceite ou correção dos IDs restantes. Gitleaks8.30.1 no JSON selecionado sem candidatos; revisão independente sem bloqueantes, nenhum Docker local. Gates do último SHA serão conferidos antes de integrar.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
