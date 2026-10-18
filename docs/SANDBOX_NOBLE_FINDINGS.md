@@ -58,6 +58,23 @@ NobleCandidate7/run39100876538, headfb236a1, mapaestático auditado em44ELFs (sp
 
 Interfaces versionadasACL_1.0, hashes/argumentos/proveniência vinculados à imagem e checkout no relatório selecionado. Imports não provam execução de cada ramo; FD presente não elimina caminhos pathname. Ausência de outras relaçõesDT_NEEDED não exclui resolução dinâmica/código incorporado. O mapa delimita consumidores para revisão de fonte, sem concluir exploração, nãoafetação ou correção.
 
+## Fonte exata e autoridade dos consumidores ACL
+
+Revisão estática em18/10/2026 dos arquivos originais e das séries de patches das fontes oficiais [coreutils9.4-3ubuntu6.3](https://archive.ubuntu.com/ubuntu/pool/main/c/coreutils/coreutils_9.4-3ubuntu6.3.dsc) e [sed4.9-2ubuntu0.24.04.1](https://archive.ubuntu.com/ubuntu/pool/main/s/sed/sed_4.9-2ubuntu0.24.04.1.dsc). Baseline, tamanhos e SHA256 dos quatro arquivos estão em spec9.120. A relação com os ELFs é documental por pacote-fonte/versão; não houve compilação, execução das fontes, verificação GPG da assinatura ou reprodução do build Ubuntu.
+
+| Recorte da fonte original | Evidência específica | Conclusão e limite |
+|---|---|---|
+| coreutils `src/copy.c:3290–3305` | Ramos de preservação/movimentação passam descritores `-1` a `copy_acl`; outros ramos passam `-1` a `set_acl` | Há chamadas por nome na fonte. O teste anterior de `dest_is_symlink` não demonstra estabilidade dos ancestrais do caminho |
+| coreutils `lib/qcopy-acl.c:53–87` | Se `USE_XATTR` estiver definido, usa `attr_copy_file` quando um descritor é inválido; caso contrário usa os helpers de permissões | Não atribuir toda chamada de `copy_acl` a libacl. O `config.h` exato do build não foi obtido; imports ELF não selecionam sozinhos esse ramo |
+| Helpers POSIX de coreutils e sed, `lib/get-permissions.c:45–63` e `lib/set-permissions.c:513–540` | ACL de acesso prefere FD quando disponível; fallback usa nome. ACL padrão de diretório continua usando nome | FDs não substituem universalmente as interfaces pathname. Código condicional não prova execução de cada ramo no binário |
+| sed `sed/execute.c:592–596,646–675` e `lib/qcopy-acl.c:39–50` | Edição in-place exige entrada regular e passa `fileno` de entrada/saída ao helper | O callsite fornece FDs; nesse percurso regular o ramo de ACL padrão de diretório não se aplica. Isso não certifica todas as operações de sed nem remove seus imports pathname |
+
+As dez entradas da série de patches coreutils não alteram `src/copy.c` nem os helpers ACL analisados. `cp-n.diff` altera seleção de comportamento de `cp -n`, não esses helpers. A única entrada da série sed, `CVE-2026-5958.patch`, ajusta o nome usado na abertura após resolução de link, sem alterar a chamada de `copy_acl` ou os helpers. `debian/rules` não fornece o `config.h` gerado nem prova sozinho todas as opções efetivas do build. Não se conclui que a biblioteca ACL inteira esteja corrigida a partir dessa revisão de consumidores.
+
+No worker, quem controla caminhos sintéticos opera como UID10001, sem capabilities e sem autoridade adicional demonstrada sobre arquivos de outro proprietário. Isso limita consequências; não corrige o código nem comprova ausência de exploração. No controlador, a autoridade é a do runner/daemon confiáveis: `containment.py:253–254` prepara as duas ACLs antes do primeiro worker (`:274`); o retorno normal de `_worker` exige saída bem-sucedida e executa remoção própria no `finally` (`:217–229`) antes das leituras posteriores. Não há reaplicação de ACL pelo controlador enquanto esse worker executa neste protocolo. Essa ordem não autoriza operações futuras em caminhos mutáveis nem comprova contenção do agente atual.
+
+Resultado: o recorte `sed -i` oferece evidência de uso de FDs, mas não há demonstração suficiente para classificar ACL54369 como corrigido ou não afetado na composição inteira. Preservar a pendência e a baseline candidata. Um teste que apenas copie ACL com sucesso não responderia à questão de autoridade/corrida e não é critério de fechamento.
+
 ## Próximo aceite
 
 Primeiro analisar ACL54369 na biblioteca/consumidores exatos e nos privilégios/mounts realmente impostos, sem confundir mitigação com correção. Depois resolver os quatro util-linux e a lacuna40553, além de registrar triagem/prioridade dos12IDs remanescentes. Conclusão de código não afetado exige evidência específica; alteração de risco/escopo ou manutenção própria exige direção de João.
