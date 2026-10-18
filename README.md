@@ -15,6 +15,8 @@ Cada capacidade entra em um incremento pequeno, testado e documentado. Assim, o 
 
 Para entender o produto, os problemas técnicos e as escolhas, leia [Entenda o CredPay](docs/ENTENDA_O_CREDPAY.md).
 
+O fechamento da v1 prioriza o backend: testes e inventários finais, revisão de publicação delimitada e ensaio local com João ainda precisam de seus aceites. Por decisão dele em18/10/2026, a pesquisa de sandbox do agente fica para etapa posterior, com [evidências e lacunas preservadas](docs/SANDBOX_NOBLE_FINDINGS.md). O core experimental não foi aceito nem liberado para uso pelo agente; não há alegação de isolamento. Frontend Angular e painel também permanecem posteriores.
+
 ## Status atual
 
 O inventário de dependências e imagens está ativo. A migração para Spring Boot4 e runtime Ubuntu Noble removeu os três achados Spring/OpenSSL originais; o [Inventory #100](https://github.com/Joaomagh/credpay/actions/runs/38827148221) reconheceu os quatro alvos completos sem HIGH/CRITICAL. Achados MEDIUM/LOW e critérios de saída permanecem documentados; consulte a [triagem atual](infra/security/TRIAGE.md). CI verde não significa aprovação geral de segurança ou prontidão para produção.

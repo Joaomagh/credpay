@@ -2963,6 +2963,18 @@ Resultado da leitura: quatro arquivos/tamanhos/SHA conferidos,36 textos selecion
 
 Verificações locais deste incremento documental: decodificação UTF8 estrita e links relativos dos quatro documentos passaram; SHA256 dos quatro compactados e tamanho/SHA dos36 textos revalidados. `git diff --check` passou; Gitleaks no dossiê retornou0/nenhum achado. Hook completo e Secret Scan remoto exigidos antes da integração. Nenhuma mudança executável que justifique repetir a suíte Java ou fabricar red.
 
+### 9.121 Proposta explícita de fechamento e nova recuperação histórica
+
+PR177 integrada em71bf871d8a7b99cc2433ac8047511eee4c334ba4 após SecretScan331/run39101524012 verde no head72a8cd378fdab9ce0111c67e2b936b5272e0a998; mergeable clean, sem reviews/threads/solicitações pendentes. Alteração exclusivamente documental, filtros não dispararam suítes de código; verificações locais em9.120.
+
+Objetivo/aceite deste incremento: apresentar opções concretas para João decidir o recorte da v1 e a lacuna histórica, sem modificar o plano ou aceitar baseline/risco por inferência. Arquivos previstos: docs/V1_CLOSURE_PROPOSAL.md, backlog/task/spec; risco é confundir proposta de adiamento com correção ou conclusão. Nenhum código/runtime/dependência/teste de negócio alterado.
+
+Consulta somente leitura via conectorGitHub em18/10/2026: runs37847328359/37846134850/37844620033/37844107153/37843707080 retornaram total_count0/artifacts[]; leitura job111053029171 retornou Transport closed. Nenhum conteúdo desses seis itens foi recuperado/revisto. Não inferir expiração/exclusão/conteúdo limpo. Proposta de disposição histórica preserva a lacuna; depende de decisão específica.
+
+Após leitura da proposta, João escolheu explicitamente separar a pesquisa de sandbox da v1 do backend, preservando achados e sem aceitar/liberar o core experimental. CREDPAY_PLAN/README/backlog/task passam a refletir essa decisão; itens históricos continuam como evidência, sem reclassificar pesquisa como entregue. Não autoriza uso do core pelo agente, baseline candidata, CVEs, novos privilégios ou implantação externa. Ensaios locais e explicação pessoal continuam necessários. Disposição histórica foi perguntada separadamente e continua pendente; a escolha do recorte não a aprova. Ausência de resposta não é aprovação.
+
+Preparação operacional da validação final: adicionar somente workflow_dispatch aos sete workflows existentes dos dois módulos, fluxo, imagens, Compose, Kubernetes e inventário. Objetivo é permitir execução do candidato identificado sem mudança fictícia no código; PR atual também dispara cada workflow pelo seu próprio caminho alterado. Nenhuma etapa/permissão/versão/segredo/runner alterado, nenhuma execução local de Docker. Aceite exige todos os checks aplicáveis do head final e auditoria/triagem dos inventários; falhas reais serão corrigidas, não suprimidas. Incremento não fecha aceites pessoais ou revisão histórica.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
