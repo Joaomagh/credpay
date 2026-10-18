@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- PR174/aa47391 integrou avaliação do coreNoble após NobleCandidate5/Core43/Scan324 verdes no heade8fc73e;65 testes Linux sem skips,31componentes/controles atuais/artefato auditados. ScanHIGH0/CRITICAL0 não é aceite: cincoIDs ausentes exigem conciliação manual; spec9.117.
+- PR176/7f3737a integrou mapa ACL após NobleCandidate8/Core46/Scan329 verdes no headbe412b1. Evidência anterior auditada:71 testes Linux sem skips/44ELFs; cp/mv/sed têm imports pathname eFD. Fonte exata e limites registrados em spec9.120; candidata sem aceite.
 
 ## Agora
 
-- [ ] B08.7d.4c.1 — Integrar PR176 após gates finais: NobleCandidate7/Core45/Scan328 verdes,71Linux sem skips/44ELFs/mapa/hash auditados. Consumidores ACL reais cp/mv/sed têm imports pathname eFD, semAPI_at observada; não é correção/nãoafetação. Próximo ligar fonteUbuntu exata aos ramos/autoridade; spec9.119.
+- [ ] B08.7d.4c.2 — Integrar revisão da fonte Ubuntu exata após verificações/revisão. sed-in-place fornece FDs e exige arquivo regular; coreutils mantém chamadas por nome e ramo USE_XATTR não confirmado. ACL54369 continua sem correção/nãoafetação demonstrada; não promover a candidata.
 
 ## Próximo
 
