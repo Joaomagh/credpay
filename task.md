@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- PR173/60e606a integrou inventário Noble sem processos após NobleSource2/Core40/Scan321 verdes no head91182fc;60 testes Linux sem skips,92pacotes/3448entradas/artefato auditado. Awk da origem é mawk; spec9.116. Baseline segue sem aceite.
+- PR174/aa47391 integrou avaliação do coreNoble após NobleCandidate5/Core43/Scan324 verdes no heade8fc73e;65 testes Linux sem skips,31componentes/controles atuais/artefato auditados. ScanHIGH0/CRITICAL0 não é aceite: cincoIDs ausentes exigem conciliação manual; spec9.117.
 
 ## Agora
 
-- [ ] B08.7d.4b — Integrar avaliação do coreNoble após gates finais: NobleCandidate4/Core42/Scan323 verdes,65Linux sem skips/artefato auditado31componentes/controles passaram. ScanHIGH0/CRITICAL0 não resolve lacuna: ACL/util-linux constam semfixed em dados oficiais, mas não apareceram no scan. Próximo conciliarIDs/fontes/aplicabilidade sem promover candidata; spec9.117.
+- [ ] B08.7d.4c — Analisar ACL54369 na biblioteca e consumidores exatos do coreNoble, com pré-condições/privilégios/mounts demonstrados. docs/SANDBOX_NOBLE_FINDINGS.md preserva cincoIDs fora do scan e os12emitidos. Não promover candidata ou confundir ignored/needs-triage com correção; spec9.118.
 
 ## Próximo
 
