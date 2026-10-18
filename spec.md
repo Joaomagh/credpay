@@ -2921,6 +2921,14 @@ Export exato auditado:95arquivos/49diretórios/2links/31componentes,20comandos. 
 
 Scanner reconheceu Ubuntu24.04 e31identidades binário/fonte exatas: UNKNOWN0/LOW1/MEDIUM11/HIGH0/CRITICAL0. Nenhum dos11IDs anteriores foi emitido. Isso NÃO comprova correção dos11: a consulta OSVCanonical9.115 ainda apresenta ACL54369/util-linux76642/78408/78409/78410 semfixed; ausência no scan exige conciliação de fontes/cobertura/aplicabilidade antes de qualquer disposição. MEDIUM/LOW novos preservados, sem supressão. Baseline Debian/default não substituída; candidata não promovida e nenhum risco aceito. Próxima análise compara os11IDs e os12IDs remanescentes, separando correção oficial, lacuna do scanner e necessidade de análise de código. Gates do último SHA serão conferidos antes da integração.
 
+### 9.118 Conciliação dos advisories da candidata Noble
+
+PR174 integrada emaa473916a5c2631c01615b27815374da9649c285 após NobleCandidate5/run39096319111, DebianCore43/run39096319165 e Scan324/run39096319250 verdes no heade8fc73e5a91576fe36c72fece603381b3520741c; revisão de implementação/evidência sem bloqueantes, nenhuma revisão/thread/solicitação remota pendente. DefaultDebian conservado, candidata não promovida.
+
+Dossiê docs/SANDBOX_NOBLE_FINDINGS.md concilia11IDs anteriores e12emitidos, sem usarHIGH0/CRITICAL0 como aceite. Fonte oficialCanonicalOSV distingue versõesfixed gawk/systemd/ncurses de lacunas ACL/util-linux e40553. Consulta18/10 aos dados públicos do scanner registra ACLNoble ignored/backport too intrusive e quatro util-linux needs-triage; importadortrivy-db corrente aceita somente needed/deferred/pending/released. Mecanismo compatível com ausência dos cincoIDs, mas commits/dados exatos geradores da DB auditada não foram identificados retrospectivamente. PáginasUbuntu/Launchpad inacessíveis, sem confirmação direta por elas.
+
+Nenhum finding bruto alterado/suprimido e nenhuma disposição de risco implícita. Próxima análise: ACL54369 na biblioteca/consumidores exatos versus privilégios/mounts impostos; não confundir mitigação com correção. Registrar também quatro util-linux/40553 e os12IDs remanescentes. Apenas documentação, verificar UTF8/links/diff/revisão; sem dependência/instalação/Docker local ou nova execução de comportamento.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
