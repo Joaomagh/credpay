@@ -1,6 +1,6 @@
 # Proposta de remediação do core diagnóstico
 
-Estado em18/10/2026: proposta para decisão de João, sem mudança de imagem, instalação ou aceite de risco. Aplicativos Java conservam a plataforma já migrada; este documento trata somente do core diagnóstico Debian.
+Estado em18/10/2026: João escolheu avaliar UbuntuNoble oficial no CI, sem aceite automático. A direção autoriza a avaliação descrita abaixo; nenhuma candidata foi promovida e nenhum risco foi aceito. Aplicativos Java conservam a plataforma já migrada; este documento trata somente do core diagnóstico Debian.
 
 ## Problema e recomendação
 

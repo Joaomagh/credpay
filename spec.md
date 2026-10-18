@@ -2883,6 +2883,8 @@ Comparativo somente leitura em18/10, docs/SANDBOX_REMEDIATION_PROPOSAL.md: dados
 
 Recomendação revisável: avaliar core integralmenteNoble com pacotes oficiais, baseline/pins antes de resolução, inventário sem execução, adaptação failclosed do scanner Debian13 paraUbuntu24.04 sobTDD, repetição dos controles e comparação completa de findings. Alternativa Debian/build próprio exige manutenção/proveniência local reais. Nenhuma rota aceita risco nem garante correção dos11IDs. A triagem proíbe troca automática de distribuição/patches; solicitar direção de João sobre proposta concreta. Nenhuma imagem/pacote/toolchain baixada ou instalada; appsJava intactos.
 
+João escolheu explicitamente em18/10: avaliar UbuntuNoble oficial no CI, sem aceite automático. Direção restrita à candidata/protocolo descritos; não aprova build próprio, promoção da imagem ou supressão de findings. Próximo incremento fixa baseline/inventário sem executar processos antes de projeção/scanner/testes.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
