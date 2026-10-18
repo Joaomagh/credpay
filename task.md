@@ -4,19 +4,19 @@
 
 ## Último incremento
 
-- PR167/3ca6ec5 integrou recusa local de PIDs/recuperação após Core33/Scan305 verdes no head3d4eaf2;53testes Linux sem skips,52locais/1skip POSIX explícito; spec9.110. Baseline com CVEs continua sem aceite.
+- PR170/cacd213 integrou diagnóstico TCP/UDP entre namespaces próprios após Core37/Scan313 verdes no heade940a5e.56 testes Linux sem skips, artefato auditado e revisão sem pendências; spec9.113. AJ-NET completo e baseline de segurança continuam abertos.
 
 ## Agora
 
-- [ ] B08.7f.1 — Integrar PR170 após gates do último SHA: Core35/Scan311 verdes,56 testes Linux sem skips e artefato auditado comprovam TCP/UDP entre namespaces próprios, positivos antes/depois e recusa real. Revisão sem bloqueantes; spec9.113. AJ-NET completo permanece aberto.
+- [ ] B08.7d.4 — Concluir proposta de baseline corrigida para o core: comparar distribuição oficial e build próprio, começando por gawk40467/40468. Registrar origem, cobertura, riscos e critério de aceite antes de escolher/baixar nova baseline. Não misturar pacotes ou aceitar risco implicitamente.
 
 ## Próximo
 
-- B08.7: negativos rede/daemon/ferramentas em incrementos separados; DockerDesktop pendente.
-- Remediação da baseline: priorizar gawk e análise de separação do código conforme infra/agent-sandbox/TRIAGE.md, sem mistura de pacotes sid/supressão/aceite implícito.
-- B08.1: recuperar um log/cinco artefatos históricos ou registrar disposição explícita; revisão continua parcial.
-- João: primeiro ensaio guiado em docs/DEMO.md, começando pelo preflight; execução e explicação ainda não comprovadas.
+- Fechar lacunas de rede/daemon/ferramentas com mecanismo válido; ausência de cliente não comprova bloqueio. Topologia/enforcement do agente não foram aprovados.
+- B08.1: recuperar um log/cinco artefatos ou obter disposição específica de João; revisão continua parcial.
+- João: preflight/ensaio guiado em docs/DEMO.md e evidências locais/Desktop; execução e explicação ainda não comprovadas.
+- Candidato final: checks aplicáveis, inventários/triagem, revisão e documentação coerentes após resolver os aceites da fila de fechamento.
 
 ## Depois
 
-- Frontend/painel depois da v1; referências em docs/frontend/references/README.md. Nenhum aceite de risco ou implantação externa autorizado.
+- Frontend Angular/Stitch e painel após v1; referências preservadas. Sem pagamento real, HA ou implantação externa.

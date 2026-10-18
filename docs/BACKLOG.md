@@ -1,6 +1,6 @@
 # CredPay — Backlog do MVP
 
-Atualizado em 2026-10-17. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos e evidências: [spec](../spec.md). Uma única ação executável: [task](../task.md). Papéis: [P.O.](roles/product-owner.md), [dev sênior](roles/senior-developer.md) e [Scrum Master](roles/scrum-master.md).
+Atualizado em 2026-10-18. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos e evidências: [spec](../spec.md). Uma única ação executável: [task](../task.md). Papéis: [P.O.](roles/product-owner.md), [dev sênior](roles/senior-developer.md) e [Scrum Master](roles/scrum-master.md).
 
 ## Prioridades
 
@@ -13,13 +13,32 @@ Atualizado em 2026-10-17. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos
 | B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | Concluído; PR #106 integrada após checks do SHA final |
 | B06 | Recuperação e diagnóstico demonstráveis | queda, atraso e duplicação testados; correlação, retry/DLQ e replay operacional observáveis | B05; refinar política de `FALHOU` | Recuperação/diagnóstico, aplicação e transporte controlados de FALHOU comprovados até PR #150; autoridade operacional fora da API |
 | B07 | Ambiente local reproduzível | imagens/Compose e depois Kubernetes local com probes e recursos; roteiro demonstra fluxo e falha | B05 e B06 | Fluxo/replay/parada/recuperação integrados na PR #152 após Kubernetes22/Scan253 verdes; diagnóstico HTTP integrado; painel adiado por João, próxima frente é sandbox-core |
-| B08 | Entrega e portfólio verificáveis | CI cobre riscos e imagens; CD só com destino/rollback definidos; README e demo coerentes | B07 e critérios do plano | Refinamento |
+| B08 | Entrega e portfólio verificáveis | CI cobre riscos e imagens; CD só com destino/rollback definidos; README e demo coerentes | B07 e critérios do plano | Fechamento: segurança do core, lacunas de publicação e ensaio pessoal ainda abertos; fila abaixo |
 
 Não é uma promessa de uma PR por linha nem um cronograma. Itens grandes serão divididos por comportamento, mantendo dependências e evidências. Nenhum percentual de conclusão é inferido do número de PRs.
 
 ## Caminho de conclusão da v1
 
 Posição em2026-10-16: marco1 controlado concluído na PR #150; preparo/fluxo/replay/parada/recuperação Kubernetes integrados na PR #152/a84bb5e. Migração corrigida na PR #149; Inventory109 preserva HIGH0/CRITICAL0 e demais achados visíveis. O fluxo financeiro e a demo Compose já existem; não repetir essas entregas como trabalho futuro. Após o adiamento explícito do painel em16/10, estimativa global aproximadamente85%/15% no escopo revisado, por julgamento aproximado de escopo; não é prazo, velocidade ou contagem de testes.
+
+### Fila de fechamento vigente — 18/10/2026
+
+Backend funcional, recuperação, imagens/Compose, fluxo Kubernetes no CI e métricas HTTP já têm evidências integradas. CPU, memória, PIDs e o primeiro diagnóstico TCP/UDP do core também estão integrados; PR170/cacd213 fechou essa última fatia após Core37/Scan313 verdes no heade940a5e,56 testes Linux sem skips e revisão sem pendências. Não reabrir esses comportamentos como funcionalidades a implementar.
+
+Esta fila substitui indicações antigas de próximo passo; o histórico abaixo permanece como evidência. Cada linha encerra um aceite já previsto, sem adicionar funcionalidades para buscar perfeição indefinida.
+
+| Ordem / vínculo | Resultado ainda necessário | Critério de saída | Responsável / dependência | Estado vigente |
+|---|---|---|---|---|
+| 1 — B08.7d.4 / marco4 | Escolher e validar rota de remediação do core | Comparativo de baseline oficial corrigida versus build próprio; origem/versões/digests e cobertura do scanner fixados antes de resolução; reproduzir controles afetados e manter todos os achados visíveis. Não basta reduzir contagem | Agente prepara proposta; João decide troca de distribuição ou manutenção de pacote próprio; a triagem proíbe executar essas mudanças automaticamente | Prioridade técnica. HIGH17/CRITICAL2 em11IDs no corte auditado; gawk40467/40468 primeiro. Nenhum aceite de risco |
+| 2 — B08.7 / marco4 | Encerrar controles de isolamento ainda sem prova | AJ-NET: provas próprias de DNS/LAN/metadados/egress; AJ-HOST: endpoints/dispositivos e tentativa real de contato; AJ-TOOLS: inventário e tentativa de instalação/download com mecanismo identificado. Controles positivos e falha operacional distinta de bloqueio | Depende de mecanismo compatível com20 ferramentas e AGENTS§5; proposta antes de nova ferramenta/runtime/host/socket. Core diagnóstico não encerra topologia/enforcement do agente | TCP/UDP só comprova namespaces. AF_UNIX não tem cliente aprovado; ausência de Docker CLI não é teste de contato. Workspace gravável não é proibição global de instalar/executar código |
+| 3 — B08.1 / marco4 | Resolver lacuna da revisão de publicação | Recuperar e revisar um log e cinco artefatos históricos, ou João registrar disposição específica sobre essa lacuna; manter limite da conclusão pública | Agente tenta recuperação pelos meios autorizados e apresenta evidência; disposição depende de João | Revisão parcial. Ausência na listagem não prova conteúdo limpo nem exclusão/expiração; não apagar histórico para fechar item |
+| 4 — B08.7 e B07 / marcos2/4 | Validar ambiente de João e compatibilidade Desktop | Preflight e execução autorizada no ambiente dele; registrar versões/configuração, ownership10001, controles afetados e limites. Separar Compose, core e Kubernetes | João fornece evidências; agente acompanha. Exceção kind privilegiado vale somente no CI hospedado | LinuxCI não é prova de Desktop. Não executar kind privilegiado local ou acessar socket do host por essa fila |
+| 5 — B08.5b / marco5 | Executar ensaio guiado e demonstrar entendimento | João segue docs/DEMO.md, demonstra sucesso/falha/recuperação, explica POST→RabbitMQ→processamento→GET e decisões em3min; registrar respostas reais | João, com acompanhamento do agente. Começar pelo preflight já preparado | Roteiro integrado na PR169; João informou que ainda não executou. Não presumir domínio nem aprovação pessoal |
+| 6 — B08 / marcos4/5 | Registrar candidato final da v1 | Candidato identificado por SHA; checks aplicáveis verdes, inventários/triagem e lacunas com disposição válida, revisão resolvida, README/quickstart/demo coerentes e aceites acima demonstrados | Após correções e evidências anteriores. Reexecutar o que mudar ou perder aplicabilidade; não repetir suítes sem motivo | Aguardando fechamento dos bloqueios; nenhuma tag/release ou declaração de100% agora |
+
+**Próxima ação executável:** concluir proposta de baseline corrigida do core, sem alterar runtime ou instalar dependências. Na consulta de17/10, Debian ainda apresenta gawk trixie5.2.1-2 e sid5.3.2-1 vulneráveis a40467/40468. A publicação oficial Ubuntu mostra backport corrigido na série5.2.1, e CERT Polska informa correção upstream5.4.1. Isso permite comparar distribuição oficial com build próprio; não autoriza misturar DEB Ubuntu em Debian, manter fork automaticamente ou concluir que os outros sete IDs estão corrigidos. Fontes: [Debian40467](https://security-tracker.debian.org/tracker/CVE-2026-40467), [Debian40468](https://security-tracker.debian.org/tracker/CVE-2026-40468), [publicação Ubuntu](https://lists.ubuntu.com/archives/noble-changes/2026-July/057555.html), [CERT Polska](https://cert.pl/en/posts/2026/07/CVE-2026-40467/).
+
+Frontend Angular/Stitch e servidores Prometheus/Grafana continuam após a v1. Autenticação, dinheiro real, HA e implantação externa não entram nesta fila. A estimativa85% abaixo é histórica de16/10; não foi recalculada por quantidade de PRs. O fechamento será comunicado pelos aceites comprovados, sem percentual artificial.
 
 ### Cinco marcos da v1 e condição de encerramento
 
@@ -340,8 +359,8 @@ Reconciliação documental em17/10: resumo vigente aponta às evidências integr
 
 B08.7e.3: mecanismo dash/pipe/FD3 e reapbuiltin refinado antes de editar; reds do validador/controles positivos e green53testes Linux; revisão/Core32/Scan304/artefato conferidos: pico128/retidos127/evento+1/recuperado1. Gates finais Core33/Scan305 verdes no head3d4eaf2; spec9.110.
 
-**B08.7f.1 — Primeiro diagnóstico TCP/UDP — provas LinuxCI validadas, integração pendente.** Modo separado/mesma imagem/20ferramentas, fixture none e cliente positivo na rede dela, worker negativo none independente, intercâmbios exatos antes/depois, namespaces comparados vivos, validação/cleanup próprios e prazos limitados. docs/SANDBOX_NETWORK_PROTOCOL.md. Não comprova DNS/LAN/metadados/internet ou AJ-NET-01 completo; nenhum runtime/bridge/privilégio novo ou promoção da baseline.
+**B08.7f.1 — Primeiro diagnóstico TCP/UDP — integrado na PR170/cacd213.** Modo separado/mesma imagem/20ferramentas, fixture none e cliente positivo na rede dela, worker negativo none independente, intercâmbios exatos antes/depois, namespaces comparados vivos, validação/cleanup próprios e prazos limitados. docs/SANDBOX_NETWORK_PROTOCOL.md. Não comprova DNS/LAN/metadados/internet ou AJ-NET-01 completo; nenhum runtime/bridge/privilégio novo ou promoção da baseline.
 
 **B08.5b — Primeiro ensaio guiado — roteiro integrado na PR169, execução pessoal pendente.** João informou não ter executado e pediu acompanhamento. docs/DEMO.md adiciona preflight, produto em cinco frases, pausas de execução, perguntas e retorno curto com evidências; sem duplicar build/runbooks ou presumir autoria/domínio/execução. Nenhuma infraestrutura/instalação/Docker local do agente; não fecha Kubernetes/Desktop/segurança. spec9.112.
 
-B08.7f.1: validação comum preserva wrappernone; sharedclientexige fixture própria viva. Red/green56descobertos/55passWindows/1skip POSIX; revisão sem bloqueantes/Core35/Scan311 verdes,56Linux sem skips/artefato12115633765 auditado; gates finais/integração pendentes; spec9.113.
+B08.7f.1: validação comum preserva wrappernone; sharedclientexige fixture própria viva. Red/green56descobertos/55passWindows/1skip POSIX; revisão sem bloqueantes/Core35/Scan311 verdes,56Linux sem skips/artefato12115633765 auditado; gates finais Core37/Scan313 verdes no heade940a5e e PR170 integrada emcacd213; spec9.113.

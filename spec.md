@@ -2865,6 +2865,16 @@ Green real: Sandbox Core35/run39072992414/job117514284840 e Secret Scan311/run39
 
 TCP: fixture/positivos namespace4/4026532274, negativo4/4026532337. UDP: fixture/positivos4/4026532273, negativo4/4026532336. Ambos positivos antes/depois ECHO1; negativos REFUSED-1, exit0/semOOM; probes da porta8707 em estadoTCP0A/UDP07 antes/depois PASS. Harness exige fixture viva/StartedAt estável/RestartCount0 durante o protocolo; não há comparação após sua destruição. Auditoria refez hashes de comandos/configurações e validate_exchange; Gitleaks8.30.1 no JSON selecionado sem candidatos. Revisão estática sem bloqueantes; nenhum Docker local. Baseline HIGH17/CRITICAL2 continua sem aceite; AJ-NET completo/DNS/LAN/metadados/internet/Desktop/agente permanecem pendentes. Gates do último SHA serão conferidos antes da integração.
 
+### 9.114 Fila de fechamento da v1 — revisão em18/10/2026
+
+PR170 integrada emcacd2134632e63ecceee97e0efe2ca5aeb4da42d após Core37/run39073194276 e Scan313/run39073194273 verdes no heade940a5e3ef264cd9bef2d29f1ca1f3e27b3a09fb; nenhuma revisão/thread/solicitação remota pendente, merge com SHA esperado e main sincronizada. Prova9.113 permanece restrita a namespacesTCP/UDP.
+
+João pediu atualizar o backlog para concluir a v1. Fila vigente em docs/BACKLOG.md ordena remediação do core, controles ainda sem prova, lacunas históricas de publicação, compatibilidade local, ensaio pessoal e candidato final. Critérios/responsáveis/dependências explícitos; não reabre fluxo financeiro/KubernetesCI/recursos já comprovados, não adiciona frontend/painel ou recálculo percentual por PR. Task aponta uma única análise executável: proposta de baseline corrigida antes de instalar/trocar distribuição/compilar patches.
+
+Investigação somente leitura em17/10: trackers oficiais Debian40467/40468 mantêm trixie5.2.1-2/sid5.3.2-1 vulneráveis; CERT Polska identifica correções upstream5.4.1, publicação Ubuntu registra backport40467/40468/40469 em5.2.1-2ubuntu0.1. Links no backlog. Não há baseline nova validada nem correção dos outros IDs demonstrada; build próprio exigiria proveniência real no manifesto/scanner e manutenção explícita. Triagem proíbe troca automática de distribuição/patches. Próximo resultado deve ser proposta revisável para direção de João, sem repetir testes FS sob novo nome para fechar HOST/TOOLS artificialmente.
+
+Incremento documental: verificar UTF8, links locais, diff-check e revisão; nenhum teste de comportamento novo, download/instalação ou Docker local.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
