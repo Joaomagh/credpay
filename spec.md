@@ -2875,6 +2875,16 @@ Investigação somente leitura em17/10: trackers oficiais Debian40467/40468 mant
 
 Incremento documental: verificar UTF8, links locais, diff-check e revisão; nenhum teste de comportamento novo, download/instalação ou Docker local.
 
+### 9.115 Proposta de rota de remediação do core
+
+PR171/395957e8f22e175c46f36a542d5c6d3d89be004a integrou fila de fechamento após Scan315/run39095379297 verde no headf54ac664adc9ccec217a1642870f0cd0338ea4d7; docs apenas, filtros sem runtime, revisão sem bloqueantes e nenhuma solicitação/review/thread pendente.
+
+Comparativo somente leitura em18/10, docs/SANDBOX_REMEDIATION_PROPOSAL.md: dados OSV oficiais Canonical para Ubuntu24.04LTS registram fixed gawk40467/68/69 em1:5.2.1-2ubuntu0.1, systemd16742 em255.4-1ubuntu8.17 e ncurses69720 em6.4+20240113-1ubuntu2.1. Para ACL54369 e util-linux76642/78408/78409/78410 há introduced0 sem fixed;40553 sem entrada affectedNoble não é prova de código ausente. Esses dados não são scan da candidata; identidade Ubuntu, cobertura e conteúdo ELF ainda precisam ser validados.
+
+Recomendação revisável: avaliar core integralmenteNoble com pacotes oficiais, baseline/pins antes de resolução, inventário sem execução, adaptação failclosed do scanner Debian13 paraUbuntu24.04 sobTDD, repetição dos controles e comparação completa de findings. Alternativa Debian/build próprio exige manutenção/proveniência local reais. Nenhuma rota aceita risco nem garante correção dos11IDs. A triagem proíbe troca automática de distribuição/patches; solicitar direção de João sobre proposta concreta. Nenhuma imagem/pacote/toolchain baixada ou instalada; appsJava intactos.
+
+João escolheu explicitamente em18/10: avaliar UbuntuNoble oficial no CI, sem aceite automático. Direção restrita à candidata/protocolo descritos; não aprova build próprio, promoção da imagem ou supressão de findings. Próximo incremento fixa baseline/inventário sem executar processos antes de projeção/scanner/testes.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

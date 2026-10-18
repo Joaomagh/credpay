@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.7d.4 — Concluir proposta de baseline corrigida para o core: comparar distribuição oficial e build próprio, começando por gawk40467/40468. Registrar origem, cobertura, riscos e critério de aceite antes de escolher/baixar nova baseline. Não misturar pacotes ou aceitar risco implicitamente.
+- [ ] B08.7d.4 — Avaliar UbuntuNoble oficial no CI, autorizado por João em18/10 sem aceite automático. Primeiro fixar origem/digests e inventário candidato sem execução; depois projeção/scanner/controles. Proposta em docs/SANDBOX_REMEDIATION_PROPOSAL.md; ACL/util-linux ainda sem fixed informado, nenhum aceite de risco.
 
 ## Próximo
 
