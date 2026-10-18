@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.7d.4c.1 — Validar mapa estático ACL dos ELFs reais no CI: cobertura/hash/DT_NEEDED/imports/exports/versionamento/lookupdinâmico.71descobertos/70passWindows/1skipPOSIX; revisão/CI pendentes. Não conclui aplicabilidade ou correção deACL; spec9.119.
+- [ ] B08.7d.4c.1 — Integrar PR176 após gates finais: NobleCandidate7/Core45/Scan328 verdes,71Linux sem skips/44ELFs/mapa/hash auditados. Consumidores ACL reais cp/mv/sed têm imports pathname eFD, semAPI_at observada; não é correção/nãoafetação. Próximo ligar fonteUbuntu exata aos ramos/autoridade; spec9.119.
 
 ## Próximo
 

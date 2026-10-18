@@ -2943,6 +2943,12 @@ TDD5métodos/14falhas assert esperadas por ausência do parser/mapa antes da imp
 
 Revisão encontrou controlepositivo que aceitava quartetos definidos apenas pelo nome. Red adicional6ºmétodo/trêsfalhasassert esperadas com OBJECT/LOCAL/HIDDEN; correção exige exportsFUNC/IFUNC, GLOBAL/WEAK e DEFAULT/PROTECTED. Green71descobertos/70passWindows/1skipPOSIX,0,628s; nenhum achado foi omitido. Revisão final/CI real pendentes.
 
+Green real no headfb236a195a615303ac999ab871f95b26fdbd1957: NobleCandidate7/run39100876538/job117596715871, DebianCore45/run39100876609 e Scan328/run39100876614 SUCCESS;71 testes Linux sem falhas/erros/skips. Artefato12126710667:166564bytes/SHA256c01e2a9cadd41c1fafdda2a9a5f6eb6de74747f22011115d3b649eb42fbbdb3d; quatro relatórios selecionados. Checkoutd114defbda9636ff6c70a5b5960b07cb852f9561 tem pais65df53b/fb236a1 confirmados na consulta ao commit. ImagemNoblesha256:bcc978211dbc5de699771a209890c4f307836dcf3ec851c35ec312e4dc26c3cd; readelfGNU2.42.
+
+Auditoria do mapaNoble:44ELFs/cobertura/hash/role/package iguais à projeção, argumentosSHA conferidos, map_acl_consumers reaplicado coincide. Provedorlibacl1=2.3.2-1build1.1/SHA2561f5247285409ec89990e9fe384d78dfb2ae6ec8e210a2657073babc8d6b7e54f exporta quarteto como FUNC/GLOBAL/DEFAULT. cp/mv(coreutils9.4-3ubuntu6.3) importam acl_set_file/acl_delete_def_file e acl_set_fd; sed4.9-2ubuntu0.24.04.1 importa acl_get_file/acl_set_file/acl_delete_def_file e acl_get_fd/acl_set_fd. Todos versionadosACL_1.0; nenhumaAPI_at observada nesses consumidores. Somente cp/mv/sed alcançamlibacl no grafoDT_NEEDED da projeção; lookupdinâmico e código incorporado permanecem fora dessa inferência.
+
+ScanNoble preserva MEDIUM11/LOW1/HIGH0/CRITICAL0; mapa não corrigeACL nem sustenta nãoafetação. Gitleaks8.30.1 noJSONselecionado sem candidatos; revisão do achadoexports tratada. Próxima análise deve ligar fonteUbuntu exata desses consumidores aos ramospathname/FD e autoridade efetiva, incluindo controlador; não criar outro canário que apenas preserveACL como se fosse remediação. Gates do último SHA ainda serão conferidos antes da integração.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

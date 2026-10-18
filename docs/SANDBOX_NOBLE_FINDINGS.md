@@ -46,6 +46,18 @@ Todos os12IDs remanescentes estão abaixo. FixedVersion não foi informado para 
 | CVE-2026-89161 | MEDIUM | libpcre2-8-0=10.42-4ubuntu2.1 |
 | CVE-2026-40228 | LOW | libsystemd0=255.4-1ubuntu8.17 |
 
+## Consumidores ACL observados no ELF real
+
+NobleCandidate7/run39100876538, headfb236a1, mapaestático auditado em44ELFs (spec9.119). Provedorlibacl1=2.3.2-1build1.1 exporta o quarteto legado como funções públicas. Apenas os três comandos abaixo alcançamlibacl no grafoDT_NEEDED da projeção.
+
+| Consumidor / pacote-fonte real | Imports pathname observados | Imports por FD observados | Interfaces_at observadas |
+|---|---|---|---|
+| cp/coreutils9.4-3ubuntu6.3 | acl_set_file, acl_delete_def_file | acl_set_fd | Nenhuma |
+| mv/coreutils9.4-3ubuntu6.3 | acl_set_file, acl_delete_def_file | acl_set_fd | Nenhuma |
+| sed4.9-2ubuntu0.24.04.1 | acl_get_file, acl_set_file, acl_delete_def_file | acl_get_fd, acl_set_fd | Nenhuma |
+
+Interfaces versionadasACL_1.0, hashes/argumentos/proveniência vinculados à imagem e checkout no relatório selecionado. Imports não provam execução de cada ramo; FD presente não elimina caminhos pathname. Ausência de outras relaçõesDT_NEEDED não exclui resolução dinâmica/código incorporado. O mapa delimita consumidores para revisão de fonte, sem concluir exploração, nãoafetação ou correção.
+
 ## Próximo aceite
 
 Primeiro analisar ACL54369 na biblioteca/consumidores exatos e nos privilégios/mounts realmente impostos, sem confundir mitigação com correção. Depois resolver os quatro util-linux e a lacuna40553, além de registrar triagem/prioridade dos12IDs remanescentes. Conclusão de código não afetado exige evidência específica; alteração de risco/escopo ou manutenção própria exige direção de João.

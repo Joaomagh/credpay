@@ -100,8 +100,10 @@ Scanner candidato exige identidade Ubuntu24.04/PURLUbuntu e cobertura exata, pre
 
 NobleCandidate4/run39096167262:65Linux sem skips,95arquivos/49dirs/2links/31componentes, todos os controles existentes passaram; artefato12123579802 auditado. ScanUbuntu24.04:HIGH0/CRITICAL0/MEDIUM11/LOW1, mas ausência dos11IDs Debian não comprova correção; dados oficiais ACL/util-linux semfixed exigem conciliação antes de qualquer aceite. DebianCore42/Scan323 verdes; spec9.117.
 
-## Mapa estático ACL em validação
+## Mapa estático ACL comprovado no CI
 
 acl_analysis.py lê somente ELFs command/library/loader do exportfinal previamente auditado, confere bytes/SHA do manifesto e usa readelf existente no controlador, sem executar candidatos/ldd. ReportaclAnalysis registra interfacesversionadas/DT_NEEDED/cadeias de consumidores, controlepositivo deexports libacl e lookupdinâmico observado. Argumentos/hashsaída/readelfVersion/imageID/commit são selecionados; arquivos ELF/tar/saídabruta não publicados.
 
 Tabela ausente/truncada/ambígua, ferramenta/timeout/erro ou cobertura/hash divergentes falham operacionalmente. O resultado é ACL_DYNAMIC_INTERFACES_NOT_APPLICABILITY_ACCEPTANCE: ausência deimport não significa códigoausente/nãoafetado; APIat/fd observada não prova que todoscaminhos a usam. Sem promoção da candidata, correção automática ou VEX/risco implícito. spec9.119.
+
+NobleCandidate7:71Linux sem skips,44ELFs e provedorlibacl auditados; cp/mv/sed importam interfacespathname/FD legadas, sem_at observada. Mapa é estático, não correção. Core45/Scan328 verdes; artefato12126710667/spec9.119.
