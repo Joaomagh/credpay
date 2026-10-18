@@ -1,5 +1,6 @@
 """Controlador confiável do CI: cria/exporta origem, nunca inicia o container."""
 
+import argparse
 import json
 import os
 from pathlib import Path
@@ -10,7 +11,7 @@ from datetime import datetime, timezone
 
 # -I ignora o diretório do script; adicionar somente a pasta deste código revisado.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from inventory_source import write_report
+from inventory_source import source_baseline, write_noble_report, write_report
 
 ROOT = Path(__file__).resolve().parents[2]
 LABEL = "io.credpay.sandbox-source"
@@ -44,26 +45,25 @@ def assert_never_started(data):
         raise ValueError("Container de origem foi iniciado; inventário recusado.")
 
 
-def main():
+def main(noble_candidate=False):
     if os.environ.get("GITHUB_ACTIONS") != "true" or os.environ.get("RUNNER_ENVIRONMENT") != "github-hosted" or os.environ.get("RUNNER_OS") != "Linux":
         raise ValueError("Execução somente no runner Linux hospedado e descartável do GitHub.")
     commit = os.environ.get("GITHUB_SHA", "")
     run, attempt = os.environ.get("GITHUB_RUN_ID", ""), os.environ.get("GITHUB_RUN_ATTEMPT", "")
     if not re.fullmatch(r"[a-f0-9]{40}", commit) or not re.fullmatch(r"[0-9]+", run) or not re.fullmatch(r"[0-9]+", attempt):
         raise ValueError("Identidade do job inválida.")
-    marker = f"credpay-source-{run}-{attempt}"
+    baseline = source_baseline(noble_candidate)
+    marker = f"credpay-noble-source-{run}-{attempt}" if noble_candidate else f"credpay-source-{run}-{attempt}"
     folder = ROOT / ".local" / "agent-sandbox" / marker
     if not folder.resolve().is_relative_to(ROOT):
         raise ValueError("Saída fora do workspace.")
     folder.mkdir(parents=True, exist_ok=False)
-    baseline = dict(line.split("=", 1) for line in (Path(__file__).parent / "baseline.env").read_text().splitlines() if line and not line.startswith("#"))
     source, platform = baseline["SANDBOX_SOURCE_IMAGE"], baseline["SANDBOX_SOURCE_PLATFORM_DIGEST"]
-    if not re.fullmatch(r"debian:trixie-slim@sha256:[a-f0-9]{64}", source) or not re.fullmatch(r"sha256:[a-f0-9]{64}", platform):
-        raise ValueError("Baseline inválida.")
+    repository = "ubuntu" if noble_candidate else "debian"
     docker("pull", "--platform=linux/amd64", source)
     image = json.loads(docker("image", "inspect", source))[0]
-    docker("pull", "--platform=linux/amd64", f"debian@{platform}")
-    selected = json.loads(docker("image", "inspect", f"debian@{platform}"))[0]
+    docker("pull", "--platform=linux/amd64", f"{repository}@{platform}")
+    selected = json.loads(docker("image", "inspect", f"{repository}@{platform}"))[0]
     if image["Id"] != selected["Id"] or image["Os"] != "linux" or image["Architecture"] != "amd64" or image["Config"].get("Volumes"):
         raise ValueError("Identidade/plataforma/volumes da origem divergem.")
     identity = None
@@ -85,7 +85,8 @@ def main():
                     "commit": commit, "platform": "linux/amd64", "containerNeverStarted": True,
                     "createdUtc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")}
         (folder / "metadata.json").write_text(json.dumps(metadata), encoding="utf-8")
-        report = write_report(folder / "source.tar", folder / "metadata.json", folder / "reports")
+        writer = write_noble_report if noble_candidate else write_report
+        report = writer(folder / "source.tar", folder / "metadata.json", folder / "reports")
         print(f"SOURCE_ONLY: {len(report['packages'])} pacotes; {len(report['entries'])} entradas; container nunca iniciado.")
     finally:
         if identity and re.fullmatch(r"[a-f0-9]{64}", identity):
@@ -95,4 +96,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--noble-candidate", action="store_true", help="Somente inventário da candidata autorizada Ubuntu24.04.")
+    main(parser.parse_args().noble_candidate)
