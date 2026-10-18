@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.7d.4 — Concluir proposta de baseline corrigida para o core: comparar distribuição oficial e build próprio, começando por gawk40467/40468. Registrar origem, cobertura, riscos e critério de aceite antes de escolher/baixar nova baseline. Não misturar pacotes ou aceitar risco implicitamente.
+- [ ] B08.7d.4 — João escolher rota em docs/SANDBOX_REMEDIATION_PROPOSAL.md: avaliar Noble oficial no CI (recomendação) ou manter Debian com build próprio. Comparativo11IDs pronto; ACL/util-linux ainda sem fixed informado. Depois da direção, fixar baseline antes de download e validar gates; nenhum aceite de risco.
 
 ## Próximo
 
