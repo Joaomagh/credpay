@@ -2901,6 +2901,20 @@ Inventário auditado: imageIDsha256:6277ab668b2ad3c3ab851d370faa1690d324b30db29d
 
 Pacotes reais selecionados: libsystemd0=255.4-1ubuntu8.17, libtinfo6=6.4+20240113-1ubuntu2.2, libacl1=2.3.2-1build1.1 e mount/libmount1/libblkid1=2.39.3-9ubuntu6.6. Isso é proveniência, não scan/aceite ou correção dos IDs restantes. Gitleaks8.30.1 no JSON selecionado sem candidatos; revisão independente sem bloqueantes, nenhum Docker local. Gates do último SHA serão conferidos antes de integrar.
 
+### 9.117 Construção/avaliação do core Noble candidato — B08.7d.4b
+
+PR173 integrada em60e606ad16eeb659d8790baabc8c651aa62faf9b após NobleSource2/run39095838468, Core40/run39095838495 e Scan321/run39095838484 verdes no head91182fcc067f8b53fdeba449dc9a8fc116a51639; revisão sem bloqueantes, nenhum pedido/review/thread remoto pendente. Origem Noble inventariada, não aceita como core.
+
+Objetivo/aceite antes da resolução: construir candidata Noble explícita reutilizando Dockerfiles/projeção/20comandos e controles, sem alterar padrão Debian. Scanner precisa SBOM/PURL/OS/resulttype Ubuntu24.04 e cobertura exata de sua projeção; relatório Debian/mistura/erro não são scan válido. Preservar todos os findings e baseline sem promoção automática. Arquivos previstos: core_ci/scan_core/testes/workflowNoble, lock separado e docs; project_core só muda se falha concreta exigir. Nenhum pacote sid/DEBUbuntu em Debian, compilador próprio ou privilégio novo.
+
+Baseline registrada em packages.noble.lock.json antes do download dosDEBs: gawk1:5.2.1-2ubuntu0.1/463234B/SHA256baaf6853bea746485bff4ae0e506599b3c5093ebe6ec9b9584e4272f94f75b93; libmpfr6=4.2.1-1build1.1/353020B/aebc1c8b69a1f98bb43dfc268daecd181116dbf40b13ee4e822eb4bdd52b493a; libreadline8t64=8.2-4build1/152856B/563977a16df03b611f5239cc1e9a0426e86479fcc616b5c9e200ea32063119e5; libsigsegv2=2.14-1ubuntu2/15042B/889f338bea4ebfd999939d946da4ac0a45668264a5aae78e023feeb0529505b8.984152bytes totais; libc6/gmp/libtinfo/procps/libproc já presentes na origem auditada, sem sobrescrever com Debian.
+
+Metadados oficiais consultados18/10: noble-securityRelease17/10T23:35:54Z/mainPackages.gz SHA256f0825a95f5053b7b602e1f98a3ee993369c08adb8e3070a8a76b86962ec7f888/1409442B; noble-updatesRelease18/10T01:52:05Z SHA256325b055e7673eb0313e9e2f883c5bdb66f46c3593df59d1910e6fb72cb024310/1728828B; nobleRelease25/04/2024T15:10:33Z SHA256e0d7e4cbb09d2aa7f9e104a1488817417bc9d85f3e5d9a21156a52ec641ae531/1808488B. URLs oficiais no lock; índices conferidos contra Release antes de descompressão limitada. TLS+hash não é alegação de assinaturaGPG verificada. Ainda nenhumDEB baixado/executado localmente.
+
+Preparação fixa do candidato continua root/offline noCI para extrair controles/listas/conteúdo, sem executar scripts maintainer; worker sóUID10001/rede none/RO/capszero/NNP/limites. PROCINFO5.2.1 é compatibilidade funcional, não prova do backport: exigir control oficial completo, SHA doDEB e vínculo doELF no manifesto. ACL/util-linux e findings novos podem reprovar candidata; nenhuma redução de cobertura ou supressão. Primeiro TDD valida perfil/pacotes/identidadeUbuntu/cobertura antes da implementação.
+
+TDD5métodos/17falhas assert esperadas antes da implementação; green65descobertos/64passWindows/1skipPOSIX conhecido,0,538s. Novos controles exigem plano4pacotesUbuntu/gawkbackportexato/hostoficial versus default6Debian e rejeitam nome/versão/arquitetura/path/tamanho/hash inválidos; SBOMUbuntu e report estrito preservam fonte/findings e recusam OS/tipo/cobertura divergentes. Nenhum teste de runtime local; revisão/CI real pendentes.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

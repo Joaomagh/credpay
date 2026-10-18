@@ -1,0 +1,57 @@
+{
+  "scope": "NOBLE_CANDIDATE_NOT_ACCEPTANCE",
+  "metadataSources": [
+    {
+      "release": "https://security.ubuntu.com/ubuntu/dists/noble-security/Release",
+      "date": "2026-10-17T23:35:54Z",
+      "index": "main/binary-amd64/Packages.gz",
+      "indexSha256": "f0825a95f5053b7b602e1f98a3ee993369c08adb8e3070a8a76b86962ec7f888"
+    },
+    {
+      "release": "https://archive.ubuntu.com/ubuntu/dists/noble-updates/Release",
+      "date": "2026-10-18T01:52:05Z",
+      "index": "main/binary-amd64/Packages.gz",
+      "indexSha256": "325b055e7673eb0313e9e2f883c5bdb66f46c3593df59d1910e6fb72cb024310"
+    },
+    {
+      "release": "https://archive.ubuntu.com/ubuntu/dists/noble/Release",
+      "date": "2024-04-25T15:10:33Z",
+      "index": "main/binary-amd64/Packages.gz",
+      "indexSha256": "e0d7e4cbb09d2aa7f9e104a1488817417bc9d85f3e5d9a21156a52ec641ae531"
+    }
+  ],
+  "packages": [
+    {
+      "name": "gawk",
+      "version": "1:5.2.1-2ubuntu0.1",
+      "architecture": "amd64",
+      "path": "pool/main/g/gawk/gawk_5.2.1-2ubuntu0.1_amd64.deb",
+      "size": 463234,
+      "sha256": "baaf6853bea746485bff4ae0e506599b3c5093ebe6ec9b9584e4272f94f75b93"
+    },
+    {
+      "name": "libmpfr6",
+      "version": "4.2.1-1build1.1",
+      "architecture": "amd64",
+      "path": "pool/main/m/mpfr4/libmpfr6_4.2.1-1build1.1_amd64.deb",
+      "size": 353020,
+      "sha256": "aebc1c8b69a1f98bb43dfc268daecd181116dbf40b13ee4e822eb4bdd52b493a"
+    },
+    {
+      "name": "libreadline8t64",
+      "version": "8.2-4build1",
+      "architecture": "amd64",
+      "path": "pool/main/r/readline/libreadline8t64_8.2-4build1_amd64.deb",
+      "size": 152856,
+      "sha256": "563977a16df03b611f5239cc1e9a0426e86479fcc616b5c9e200ea32063119e5"
+    },
+    {
+      "name": "libsigsegv2",
+      "version": "2.14-1ubuntu2",
+      "architecture": "amd64",
+      "path": "pool/main/libs/libsigsegv/libsigsegv2_2.14-1ubuntu2_amd64.deb",
+      "size": 15042,
+      "sha256": "889f338bea4ebfd999939d946da4ac0a45668264a5aae78e023feeb0529505b8"
+    }
+  ]
+}

@@ -84,10 +84,16 @@ Mesmo UID/caps/NNP/RO/limites/bind fictício, sem bridge/host/ports/socket/depen
 
 Core35/run39072992414 comprovou os dois protocolos,56 testes Linux sem skips e artefato12115633765 auditado: positivos ECHO antes/depois e negativo REFUSED em namespace distinto. Detalhes/hashes em spec9.113; alcance continua parcial.
 
-## Candidata Noble: somente inventário
+## Candidata Noble: inventário inicial
 
 João autorizou em18/10 avaliar Ubuntu24.04 oficial no CI, sem aceite automático. baseline.noble.env fixa índice/plataforma separadamente; source_ci.py --noble-candidate cria/exporta container próprio sem iniciar processo, confere imageID comum e release realUbuntu24.04 antes de publicar inventário. Workflow Sandbox Noble Source CI usa somente esse modo. Padrão Debian/core/pacotes existentes não são substituídos.
 
 Não é construção do coreNoble, scan, correção de CVEs ou prova de contenção. Nenhum tar/Config/Env completo publicado; inventário selecionado inclui pacotes/proveniência, entradas e identidade OS observada. Proposta/limites em docs/SANDBOX_REMEDIATION_PROPOSAL.md; evidências em spec9.116. Risco real ACL/util-linux sem fixed permanece aberto.
 
 Noble Source1/run39095747017:60 testes Linux sem skips; artefato12124711231 auditado,92pacotes/3448entradas/releaseubuntu24.04, nenhum processo iniciado. Awk da origem é mawk; GNUawk e suas dependências ainda precisam de baseline oficial própria antes da projeção. Core39/Scan320 verdes preservam o caminho Debian.
+
+## CoreNoble candidato em avaliação
+
+Workflow Sandbox Noble Candidate CI passa a construir/avaliar candidata após o inventário. core_ci.py --noble-candidate usa packages.noble.lock.json com GNUawk oficial1:5.2.1-2ubuntu0.1 eMPFR/readline/sigsegv ausentes na origem. Padrão e lockDebian permanecem separados; projeção/Dockerfiles/20comandos/controles reutilizados. Smoke5.2.1 é funcionalidade; revisão completaUbuntu doDEB e hash/proveniênciaELF evidenciam o backport.
+
+Scanner candidato exige identidade Ubuntu24.04/PURLUbuntu e cobertura exata, preservando fontes/epoch/revisão e todos os achados. Candidata pode ser reprovada; não há promoção automática, supressão ou aceite do agente/Desktop. Nenhum Docker local. Baseline/risco/TDD em spec9.117.

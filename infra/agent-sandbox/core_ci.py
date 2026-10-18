@@ -1,6 +1,7 @@
 """Construção offline e smoke do core no controlador confiável do CI."""
 
 from datetime import datetime, timezone
+import argparse
 import hashlib
 import json
 import os
@@ -12,6 +13,7 @@ import sys
 from urllib.request import urlopen
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from inventory_source import source_baseline
 from project_core import audit_core, project
 from containment import run_controls
 from scan_core import run_scan
@@ -47,21 +49,42 @@ printf 'SMOKE_CORE_OK\n'
 '''
 
 
-def download_packages(folder):
-    lock = json.loads((Path(__file__).parent / "packages.lock.json").read_text(encoding="utf-8-sig"))
-    packages = lock["packages"]
-    if {entry["name"] for entry in packages} != {"gawk", "procps", "libproc2-0", "libmpfr6", "libreadline8t64", "libsigsegv2"} or len(packages) != 6:
+def validate_packages(packages, noble_candidate=False):
+    if type(noble_candidate) is not bool:
+        raise ValueError("Perfil de pacotes inválido.")
+    expected = {"gawk", "libmpfr6", "libreadline8t64", "libsigsegv2"}
+    if not noble_candidate:
+        expected |= {"procps", "libproc2-0"}
+    if not isinstance(packages, list) or len(packages) != len(expected) or {entry["name"] for entry in packages} != expected:
         raise ValueError("Pacotes divergem da baseline.")
     for entry in packages:
-        if entry["architecture"] != "amd64" or not re.fullmatch(r"[a-f0-9]{64}", entry["sha256"]) or not 0 < entry["size"] <= 2 * 1024 * 1024:
+        if entry["architecture"] != "amd64" or not re.fullmatch(r"[a-f0-9]{64}", entry["sha256"]) or type(entry["size"]) is not int or not 0 < entry["size"] <= 2 * 1024 * 1024:
             raise ValueError("Identidade de pacote inválida.")
         path = entry["path"]
         if not re.fullmatch(r"pool/main/[A-Za-z0-9+._~/-]+", path) or ".." in path.split("/") or not path.endswith("_amd64.deb"):
             raise ValueError("Caminho de pacote inválido.")
-        target = folder / Path(path).name
         if not re.fullmatch(r"[0-9][A-Za-z0-9.+:~_-]*", entry["version"]):
             raise ValueError("Versão de pacote inválida.")
-        with urlopen("https://deb.debian.org/debian/" + path, timeout=60) as response:
+        if noble_candidate and entry["name"] == "gawk" and entry["version"] != "1:5.2.1-2ubuntu0.1":
+            raise ValueError("GNUawk diverge do backport oficial fixado.")
+    return True
+
+
+def package_baseline(noble_candidate=False):
+    if type(noble_candidate) is not bool:
+        raise ValueError("Perfil de pacotes inválido.")
+    name = "packages.noble.lock.json" if noble_candidate else "packages.lock.json"
+    packages = json.loads((Path(__file__).parent / name).read_text(encoding="utf-8-sig"))["packages"]
+    validate_packages(packages, noble_candidate)
+    return packages, "https://archive.ubuntu.com/ubuntu/" if noble_candidate else "https://deb.debian.org/debian/"
+
+
+def download_packages(folder, noble_candidate=False):
+    packages, origin = package_baseline(noble_candidate)
+    for entry in packages:
+        path = entry["path"]
+        target = folder / Path(path).name
+        with urlopen(origin + path, timeout=60) as response:
             content = response.read(entry["size"] + 1)
         if len(content) != entry["size"] or hashlib.sha256(content).hexdigest() != entry["sha256"]:
             raise ValueError(f"Tamanho/hash de pacote divergente: {entry['name']}")
@@ -101,21 +124,24 @@ def build(context, source, marker):
     return data
 
 
-def main():
+def main(noble_candidate=False):
     if os.environ.get("GITHUB_ACTIONS") != "true" or os.environ.get("RUNNER_ENVIRONMENT") != "github-hosted" or os.environ.get("RUNNER_OS") != "Linux":
         raise ValueError("Construção somente no runner Linux hospedado e descartável.")
     run, attempt = os.environ.get("GITHUB_RUN_ID", ""), os.environ.get("GITHUB_RUN_ATTEMPT", "")
     if not re.fullmatch(r"[0-9]+", run) or not re.fullmatch(r"[0-9]+", attempt):
         raise ValueError("Identidade do job inválida.")
-    source_folder = ROOT / ".local" / "agent-sandbox" / f"credpay-source-{run}-{attempt}"
+    baseline = source_baseline(noble_candidate)
+    source_marker = f"credpay-noble-source-{run}-{attempt}" if noble_candidate else f"credpay-source-{run}-{attempt}"
+    source_folder = ROOT / ".local" / "agent-sandbox" / source_marker
     if not source_folder.resolve().is_relative_to(ROOT):
         raise ValueError("Pasta de origem fora do workspace.")
     origin = json.loads((source_folder / "reports/source-inventory.json").read_text())
     if origin["scope"] != "SOURCE_ONLY_NOT_CORE_ACCEPTANCE" or origin["commit"] != os.environ.get("GITHUB_SHA"):
         raise ValueError("Inventário de origem não corresponde ao checkout.")
-    baseline = dict(line.split("=", 1) for line in (Path(__file__).parent / "baseline.env").read_text().splitlines() if line and not line.startswith("#"))
     if origin["sourceImage"] != baseline["SANDBOX_SOURCE_IMAGE"] or origin["platformDigest"] != baseline["SANDBOX_SOURCE_PLATFORM_DIGEST"]:
         raise ValueError("Inventário diverge da baseline.")
+    if noble_candidate and origin.get("osRelease") != {"id": "ubuntu", "versionId": "24.04"}:
+        raise ValueError("Origem candidata não comprova releaseUbuntu24.04.")
     with (source_folder / "source.tar").open("rb") as stream:
         if hashlib.file_digest(stream, "sha256").hexdigest() != origin["archiveSha256"]:
             raise ValueError("Export de origem mudou.")
@@ -128,7 +154,7 @@ def main():
     final = folder / "final"
     candidate.mkdir()
     final.mkdir()
-    packages = download_packages(candidate)
+    packages = download_packages(candidate, noble_candidate)
     (candidate / ".dockerignore").write_text("*\n!Dockerfile\n!*.deb\n!expected.tsv\n", encoding="utf-8")
     shutil.copyfile(Path(__file__).parent / "Dockerfile.candidate", candidate / "Dockerfile")
     built = []
@@ -164,7 +190,7 @@ def main():
         resource_memory = run_memory(final_image["Id"], ROOT / containment["fixtureRelative"] / "workspace", final_tag + "-memory")
         resource_pids = run_pids(final_image["Id"], ROOT / containment["fixtureRelative"] / "workspace", final_tag + "-pids")
         network = run_network(final_image["Id"], ROOT / containment["fixtureRelative"] / "workspace", final_tag + "-network")
-        component_scan = run_scan(projection, folder, final_image["Id"], origin["commit"])
+        component_scan = run_scan(projection, folder, final_image["Id"], origin["commit"], noble_candidate)
         report = {"scope": "CORE_BUILD_NOT_CONTAINMENT_ACCEPTANCE", "commit": origin["commit"],
                   "createdUtc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
                   "sourceImage": origin["sourceImage"], "candidateImageId": candidate_image["Id"], "imageId": final_image["Id"],
@@ -174,7 +200,7 @@ def main():
         reports = folder / "reports"
         reports.mkdir()
         (reports / "core-inventory.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-        (reports / "SUMMARY.md").write_text(f"# Construção e primeiros controles do core\n\nCommit: {origin['commit']}\n\n20 comandos, {len(projection['packages'])} componentes Debian parciais, {len(projection['files'])} arquivos selecionados.\n\nExport final corresponde ao manifesto e smoke passou. Seis controles FS/SEC/PRIV/LIFE/SCOPE passaram no LinuxCI com fixtures próprias. Inventário de advisories dos componentes parciais em componentScan, com cobertura/achados/limites; aceite separado. AJ-HOST/NET/RES/TOOLS completos e compatibilidade DockerDesktop continuam pendentes. Não aceita contenção do agente. Sem instalação íntegra dpkg; origem/arquivos preservados na proveniência.\n", encoding="utf-8")
+        (reports / "SUMMARY.md").write_text(f"# Construção e primeiros controles do core\n\nCommit: {origin['commit']}\n\n20 comandos, {len(projection['packages'])} componentes DEB parciais, {len(projection['files'])} arquivos selecionados.\n\nExport final corresponde ao manifesto e smoke passou. Seis controles FS/SEC/PRIV/LIFE/SCOPE passaram no LinuxCI com fixtures próprias. Inventário de advisories dos componentes parciais em componentScan, com cobertura/achados/limites; aceite separado. AJ-HOST/NET/RES/TOOLS completos e compatibilidade DockerDesktop continuam pendentes. Não aceita contenção do agente. Sem instalação íntegra dpkg; origem/arquivos preservados na proveniência.\n", encoding="utf-8")
         print(f"CORE_BUILD_ONLY: 20 comandos; {len(projection['files'])} arquivos; smoke e export exato PASS; negativos AJ-* pendentes.")
         print("CORE_CONTAINMENT_PARTIAL: AJ-FS-01/02, AJ-SEC-01, AJ-PRIV-01, AJ-LIFE-01 e AJ-SCOPE-01 PASS no LinuxCI; demais pendentes.")
     finally:
@@ -187,4 +213,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--noble-candidate", action="store_true", help="Construir e avaliar somente candidataNoble, sem promoção automática.")
+    main(parser.parse_args().noble_candidate)
