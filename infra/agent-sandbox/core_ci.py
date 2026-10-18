@@ -13,6 +13,7 @@ import sys
 from urllib.request import urlopen
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from acl_analysis import analyze_acl
 from inventory_source import source_baseline
 from project_core import audit_core, project
 from containment import run_controls
@@ -174,6 +175,7 @@ def main(noble_candidate=False):
             raise ValueError("Configuração final diverge da baseline.")
         export_stopped(final_image["Id"], final_tag + "-export", folder / "final.tar")
         actual = audit_core(folder / "final.tar", projection)
+        acl_analysis = analyze_acl(folder / "final.tar", projection, folder / "acl-analysis", final_image["Id"], origin["commit"], inspector)
         marker = final_tag + "-smoke"
         identity = create(final_image["Id"], marker, SMOKE)
         try:
@@ -196,7 +198,7 @@ def main(noble_candidate=False):
                   "sourceImage": origin["sourceImage"], "candidateImageId": candidate_image["Id"], "imageId": final_image["Id"],
                   "smoke": "PASS_20_COMMANDS", "inspector": inspector, "projection": projection, "actual": actual,
                   "containment": containment, "resourceCpu": resource_cpu, "resourceMemory": resource_memory,
-                  "resourcePids": resource_pids, "network": network, "componentScan": component_scan}
+                  "resourcePids": resource_pids, "network": network, "componentScan": component_scan, "aclAnalysis": acl_analysis}
         reports = folder / "reports"
         reports.mkdir()
         (reports / "core-inventory.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

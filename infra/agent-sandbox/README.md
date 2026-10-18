@@ -99,3 +99,9 @@ Workflow Sandbox Noble Candidate CI passa a construir/avaliar candidata após o 
 Scanner candidato exige identidade Ubuntu24.04/PURLUbuntu e cobertura exata, preservando fontes/epoch/revisão e todos os achados. Candidata pode ser reprovada; não há promoção automática, supressão ou aceite do agente/Desktop. Nenhum Docker local. Baseline/risco/TDD em spec9.117.
 
 NobleCandidate4/run39096167262:65Linux sem skips,95arquivos/49dirs/2links/31componentes, todos os controles existentes passaram; artefato12123579802 auditado. ScanUbuntu24.04:HIGH0/CRITICAL0/MEDIUM11/LOW1, mas ausência dos11IDs Debian não comprova correção; dados oficiais ACL/util-linux semfixed exigem conciliação antes de qualquer aceite. DebianCore42/Scan323 verdes; spec9.117.
+
+## Mapa estático ACL em validação
+
+acl_analysis.py lê somente ELFs command/library/loader do exportfinal previamente auditado, confere bytes/SHA do manifesto e usa readelf existente no controlador, sem executar candidatos/ldd. ReportaclAnalysis registra interfacesversionadas/DT_NEEDED/cadeias de consumidores, controlepositivo deexports libacl e lookupdinâmico observado. Argumentos/hashsaída/readelfVersion/imageID/commit são selecionados; arquivos ELF/tar/saídabruta não publicados.
+
+Tabela ausente/truncada/ambígua, ferramenta/timeout/erro ou cobertura/hash divergentes falham operacionalmente. O resultado é ACL_DYNAMIC_INTERFACES_NOT_APPLICABILITY_ACCEPTANCE: ausência deimport não significa códigoausente/nãoafetado; APIat/fd observada não prova que todoscaminhos a usam. Sem promoção da candidata, correção automática ou VEX/risco implícito. spec9.119.

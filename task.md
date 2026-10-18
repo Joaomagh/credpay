@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] B08.7d.4c — Analisar ACL54369 na biblioteca e consumidores exatos do coreNoble, com pré-condições/privilégios/mounts demonstrados. docs/SANDBOX_NOBLE_FINDINGS.md preserva cincoIDs fora do scan e os12emitidos. Não promover candidata ou confundir ignored/needs-triage com correção; spec9.118.
+- [ ] B08.7d.4c.1 — Validar mapa estático ACL dos ELFs reais no CI: cobertura/hash/DT_NEEDED/imports/exports/versionamento/lookupdinâmico.71descobertos/70passWindows/1skipPOSIX; revisão/CI pendentes. Não conclui aplicabilidade ou correção deACL; spec9.119.
 
 ## Próximo
 

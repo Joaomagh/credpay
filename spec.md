@@ -2929,6 +2929,20 @@ Dossiê docs/SANDBOX_NOBLE_FINDINGS.md concilia11IDs anteriores e12emitidos, sem
 
 Nenhum finding bruto alterado/suprimido e nenhuma disposição de risco implícita. Próxima análise: ACL54369 na biblioteca/consumidores exatos versus privilégios/mounts impostos; não confundir mitigação com correção. Registrar também quatro util-linux/40553 e os12IDs remanescentes. Apenas documentação, verificar UTF8/links/diff/revisão; sem dependência/instalação/Docker local ou nova execução de comportamento.
 
+### 9.119 Mapa estático dos consumidores ACL reais — B08.7d.4c.1
+
+PR175 integrada em65df53bb6f69a762a36179fcc92a9ff99944b991 após Scan326/run39096537431 verde no heada7c9e2f7594359a4bb520109b4dcfb13b03940a8; somente docs/filtros sem runtime, revisão sem bloqueantes e nenhuma revisão/thread/solicitação remota pendente.
+
+Objetivo/aceite antes de editar: mapear todos osELFscommand/library/loader da projeção real para DT_NEEDED, imports/exports ACL versionados e mecanismos de lookupdinâmico. Usar somente Pythonstdlib/readelf existentes no controladorCI; não executar candidato/ldd/exploit, instalar ferramentas, alterar worker ou promoverNoble. Dados partem do exportfinal já auditado, SHA de cadaELF corresponde ao manifesto, readelf lê cópia600 própria sem execução. Mapa exige cobertura exata e controlepositivo libacl exportando acl_get_file/acl_set_file/acl_extended_file/acl_delete_def_file; erro/tabela ausente/truncada/timeout/hashdivergente são falha operacional, não ausência de consumidores.
+
+Arquivos previstos: acl_analysis/testes, chamada/report core_ci e docs. Registrar hash/argumentos/readelfVersion/commit/imageID/UTC, interfacesACL_*_fd/*_at e dlopen/dlsym/dlvsym observados, cadeias deDT_NEEDED por comando. Ausência de import não demonstra códigoausente/inalcançável; interfacesat/fd presentes não provam adoção em todos os caminhos. UID/caps/NNP/mounts são contexto mitigador já testado, não correção deACL.
+
+Fontes primárias consultadas18/10: https://security-tracker.debian.org/tracker/CVE-2026-54369 descreve quarteto/pathcontrolável/chamadorprivilegiado; divulgação upstream https://www.openwall.com/lists/oss-security/2026/06/29/1 explica novasAPIsem2.4.0 e compatibilidade dasantigas. Fontecoreutils9.4/copy.c aponta copy_acl comFD-1 em preserve/move como pista, não prova da compilaçãoUbuntu. Contrato readelf: https://sourceware.org/binutils/docs/binutils/readelf.html . Nenhum download/dependência novo; TDD antes do parser/mapa.
+
+TDD5métodos/14falhas assert esperadas por ausência do parser/mapa antes da implementação. Durante green, corrigido uso inválido de slice em Match para group(3,4,5); regressão adicional observou duas falhas semânticas ao aceitar tipo/binding desconhecidos e passou a rejeitá-los. Green70descobertos/69passWindows/1skipPOSIX conhecido,0,584s. Nenhum ELF/Docker executado localmente; parser/mapa em revisão e CI real pendentes.
+
+Revisão encontrou controlepositivo que aceitava quartetos definidos apenas pelo nome. Red adicional6ºmétodo/trêsfalhasassert esperadas com OBJECT/LOCAL/HIDDEN; correção exige exportsFUNC/IFUNC, GLOBAL/WEAK e DEFAULT/PROTECTED. Green71descobertos/70passWindows/1skipPOSIX,0,628s; nenhum achado foi omitido. Revisão final/CI real pendentes.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

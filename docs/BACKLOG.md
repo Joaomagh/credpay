@@ -373,3 +373,6 @@ B08.7f.1: validação comum preserva wrappernone; sharedclientexige fixture pró
 
 
 **B08.7d.4c — Conciliação manual da candidata — em análise.** docs/SANDBOX_NOBLE_FINDINGS.md separa correções oficiais de cinco lacunas ACL/util-linux ausentes no scan e registra todos os12IDs emitidos. Importador/status atuais do Trivy explicam mecanismo compatível de exclusão ignored/needs-triage, não correção nem prova retrospectiva da DB. Priorizar ACL na biblioteca/consumidores/configuração exatos; depois quatro util-linux/40553 e triagem remanescente. Nenhuma candidata aceita ou findings apagados; spec9.118.
+
+
+**B08.7d.4c.1 — Mapa estático de interfaces ACL — em validação.** ControladorPython/readelf existente lê exportfinal auditado, confere SHA/cobertura de todosELFs e quarteto exportado porlibacl; registraimports/exports versionados, DT_NEEDED e cadeias porcomando. Não executaELF/ldd/exploit nem altera worker. TDD5métodos/14reds+duasregressões/todosverdes:71descobertos/70passWindows/1skipPOSIX. Revisão/CI real pendentes; ausência deimport não prova códigoausente/nãoafetado, interfacesFD/at não encerram adoção; spec9.119.
