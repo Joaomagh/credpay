@@ -4,7 +4,7 @@
 
 **Última atualização:** 2026-10-17
 
-**Fase atual:** fechamento da v1 backend — ensaio com João, lacunas de publicação e sandbox parcialmente verificado. Frontend e servidores Prometheus/Grafana adiados; métricas/diagnóstico HTTP existentes preservados.
+**Fase atual:** fechamento da v1 backend — candidato final/checks/inventários, ensaio com João e lacunas de publicação. Pesquisa de sandbox separada por João em18/10, incompleta e sem aceite/liberação; frontend e servidores Prometheus/Grafana também adiados. Métricas/diagnóstico HTTP preservados.
 
 **Estado:** fluxo POST → duas outboxes → GET APROVADA/REJEITADA, idempotência, concorrência, retry/DLQ e recuperação comprovados nos cenários registrados. FALHOU percorreu transporte/encerramento causal em cenário controlado (§9.96); isso não o transforma em mecanismo operacional genérico. Kubernetes descartável hospedado comprovou startup/persistência, fluxo/replay/parada/recuperação (§9.93/9.97); DockerDesktop e execução pessoal com João continuam sem aceite. Flags seguem desligados por padrão e ativação exige roteiro. Migração de plataforma/imagem dos apps e exportação de métricas opt-in integradas (§9.94/9.98); nenhum deploy externo autorizado. Sandbox tem core mínimo, negativos parciais e limites de CPU/memória sob excesso comprovados somente no Linux CI (§9.100–9.108), com baseline sem aceite pelos advisories; não contém comprovadamente o agente atual.
 

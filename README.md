@@ -304,7 +304,7 @@ O core diagnóstico foi construído e os primeiros controles de filesystem, ambi
 
 | Fase | Objetivo | Estado |
 |---|---|---|
-| 1 | governança, threat model e contrato do sandbox | core construído; primeiros negativos no Linux CI; aceite completo pendente |
+| 1 | governança e pesquisa de sandbox | governança vigente; sandbox incompleta e adiada por João em18/10, sem aceite/liberação do core |
 | 2 | fundação reproduzível e CI mínimo | dois serviços com build e CI independentes; processador já tem decisão por limite e validação de entradas em domínio puro |
 | 3 | regras de domínio em TDD e primeira integração PostgreSQL | concluída |
 | 4 | API, fluxo assíncrono, idempotência, outbox, retry e DLQ | fluxo principal e transporte causal FALHOU comprovados em teste controlado; autoridade operacional bloqueada |

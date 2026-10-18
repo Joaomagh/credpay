@@ -13,7 +13,7 @@ Atualizado em 2026-10-18. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos
 | B05 | Estado final consultável e auditável | POST → eventos → GET conclui; duplicatas não duplicam histórico; transições inválidas não sobrescrevem estado | B03 e B04 | Concluído; PR #106 integrada após checks do SHA final |
 | B06 | Recuperação e diagnóstico demonstráveis | queda, atraso e duplicação testados; correlação, retry/DLQ e replay operacional observáveis | B05; refinar política de `FALHOU` | Recuperação/diagnóstico, aplicação e transporte controlados de FALHOU comprovados até PR #150; autoridade operacional fora da API |
 | B07 | Ambiente local reproduzível | imagens/Compose e depois Kubernetes local com probes e recursos; roteiro demonstra fluxo e falha | B05 e B06 | Fluxo/replay/parada/recuperação integrados na PR #152 após Kubernetes22/Scan253 verdes; diagnóstico HTTP integrado; painel e pesquisa de sandbox adiados por João; execução local/ensaio e candidato final pendentes |
-| B08 | Entrega e portfólio verificáveis | CI cobre riscos e imagens; CD só com destino/rollback definidos; README e demo coerentes | B07 e critérios do plano | Fechamento: segurança do core, lacunas de publicação e ensaio pessoal ainda abertos; fila abaixo |
+| B08 | Entrega e portfólio verificáveis | CI cobre riscos e imagens; CD só com destino/rollback definidos; README e demo coerentes | B07 e critérios do plano | Fechamento: checks/inventários finais, lacunas de publicação e ensaio pessoal; sandbox adiada por João em18/10, sem aceite |
 
 Não é uma promessa de uma PR por linha nem um cronograma. Itens grandes serão divididos por comportamento, mantendo dependências e evidências. Nenhum percentual de conclusão é inferido do número de PRs.
 
@@ -29,8 +29,6 @@ João separou a pesquisa de sandbox da v1 do backend em18/10. Remediação, isol
 
 | Ordem / vínculo | Resultado ainda necessário | Critério de saída | Responsável / dependência | Estado vigente |
 |---|---|---|---|---|
-
-
 | 1 — B08.1 / marco4 | Resolver lacuna da revisão de publicação | Recuperar e revisar um log e cinco artefatos históricos, ou João registrar disposição específica sobre essa lacuna; manter limite da conclusão pública | Agente tenta recuperação pelos meios autorizados e apresenta evidência; disposição depende de João | Revisão parcial. Ausência na listagem não prova conteúdo limpo nem exclusão/expiração; não apagar histórico para fechar item |
 | 2 — B07 / marco2 | Validar ambiente local dos aplicativos | João segue preflight/quickstart Compose e roteiro Kubernetes compatível com as autorizações existentes; registrar versões, resultado e limites | João fornece evidências; agente acompanha. Não inclui compatibilidade da sandbox, adiada | LinuxCI não prova execução local. Não executar kind privilegiado no computador; exceção de node permanece exclusiva do CI |
 | 3 — B08.5b / marco5 | Executar ensaio guiado e demonstrar entendimento | João segue docs/DEMO.md, demonstra sucesso/falha/recuperação, explica POST→RabbitMQ→processamento→GET e decisões em3min; registrar respostas reais | João, com acompanhamento do agente. Começar pelo preflight já preparado | Roteiro integrado na PR169; João informou que ainda não executou. Não presumir domínio nem aprovação pessoal |
