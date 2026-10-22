@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- PR179/65fe4eb integrada após Inventory124/Scan337 verdes no headdd4c9fa. Inventário22/10 auditado: cobertura107/243 e quatro alvos H0/C0; M3/JAR e M32/L22/imagem preservados, sem novos IDs. Oito checks anteriores da PR178 e862 testes Maven permanecem a evidência de comportamento; detalhes em docs/V1_VALIDATION.md/spec9.123.
+- Preflight assistido de João no SHA373b6a1: PowerShell7.6.7/Java21.0.6/Compose2.39.4 e engineLinux via contexto default confirmados por seus retornos. Ajuste temporário DOCKER_CONTEXT na sessão; sem execução dos aplicativos ou aceite de entendimento. Registro em docs/DEMO.md/spec9.124.
 
 ## Agora
 
-- [ ] Conduzir o aceite final com João: disposição específica sobre um log/cinco artefatos históricos não verificados e preflight/execução/ensaio de docs/DEMO.md. Aguardar respostas/evidências reais; não declarar v1 completa nem inventar aceite pessoal.
+- [ ] Continuar o ensaio guiado com João: explicar o fluxo com suas palavras, depois Build/Prepare/Activate/Demo/Down em etapas. Preflight passou; execução/entendimento não foram presumidos. Disposição histórica B08.1 continua separada e pendente.
 
 ## Próximo
 

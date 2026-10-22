@@ -6,7 +6,7 @@ Antes do roteiro técnico, leia [Entenda o CredPay](ENTENDA_O_CREDPAY.md) para r
 
 ## Primeiro ensaio guiado com João
 
-Estado em17/10/2026: João informou que ainda não executou o roteiro e pediu acompanhamento. As etapas abaixo são uma preparação; execução, entendimento e apresentação continuam sem aceite pessoal. Faça uma etapa por vez e registre dúvidas nas suas palavras.
+Estado em22/10/2026: João concluiu o preflight assistido no checkout373b6a1, enviando os resultados dos comandos. Execução dos aplicativos, entendimento e apresentação continuam sem aceite pessoal. Faça uma etapa por vez e registre dúvidas nas suas palavras.
 
 ### 1. Conferir o ambiente
 
@@ -20,9 +20,20 @@ docker version --format '{{.Server.Os}}'
 git rev-parse HEAD
 ```
 
-Esperado: PowerShell7.3+, Java21, Compose2 e resposta `linux` do servidor Docker. Registre o SHA completo. Se algum comando falhar, pare essa etapa e informe somente qual comando falhou e a mensagem curta, sem logs/configurações completos. Não instalar ferramentas ou apagar dados para fazer a demonstração passar.
+Esperado: PowerShell7.3+, Java21, Compose2 e resposta `linux` do servidor Docker. Registre o SHA completo. Se algum comando falhar, pare essa etapa e informe somente qual comando falhou e a mensagem curta, sem logs/configurações completos. Se faltar um pré-requisito, parar e revisar origem, versão e impacto da instalação com João; não instalar automaticamente nem apagar dados para contornar uma falha.
 
 Esses comandos são para você executar. A preparação deste guia não acessou o daemon do seu computador. O ensaio começa pelo Compose; isso não conclui o aceite Kubernetes/DockerDesktop nem autoriza node kind privilegiado local.
+
+**Preflight assistido de 22/10:** retornos de João confirmaram PowerShell 7.6.7, Java 21.0.6, Compose 2.39.4-desktop.1 e servidor Docker respondendo `linux` no SHA `373b6a124f25bc582baffc44ae86f7b1dccc7dbb`. O PowerShell inicial era5.1; João instalou Microsoft.PowerShell7.6.7.0 viaWinGet e confirmou7.6.7 na sessão nova. Essa conferência atende aos pré-requisitos de versão principal; não declara todos os componentes do computador atualizados ou seguros.
+
+O contexto desktop-linux falhou ao acessar seu named pipe, mesmo com o aplicativo mostrando Engine running. A consulta explícita ao contexto default retornou linux. João selecionou-o somente na sessão atual e repetiu a consulta com sucesso:
+
+```powershell
+$env:DOCKER_CONTEXT = 'default'
+docker version --format '{{.Server.Os}}'
+```
+
+Essa variável vale apenas para a sessão e os processos iniciados por ela. Não é uma mudança permanente de contexto nem uma correção comprovada do endpoint desktop-linux. Ao abrir outro terminal, verificar novamente a conexão antes do roteiro. Nenhum aplicativo CredPay foi iniciado nessa conferência; ela não encerra o ensaio nem o aceite de execução local.
 
 ### 2. Explicar o produto antes de subir os serviços
 
