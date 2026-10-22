@@ -4,18 +4,16 @@
 
 ## Último incremento
 
-- PR177/71bf871 integrou revisão das fontes Ubuntu após SecretScan331 verde no head72a8cd3. Quatro compactados/36 textos conferidos; sed-in-place fornece FDs, coreutils mantém caminhos por nome. Nenhuma correção/nãoafetação global ou promoção da candidata; spec9.120.
+- PR178/ea175e1 integrada em22/10 após oito checks verdes no head7e4233d: 522+340 testes Maven sem falhas/erros/skips, Flow/Images/Compose/Kubernetes/Inventory122/Scan335. Inventário18/10 auditado: quatro alvos H0/C0, demais achados preservados. Recorte de sandbox aprovado/documentado; evidências em docs/V1_VALIDATION.md/spec9.122.
 
 ## Agora
 
-- [ ] Validar candidato final do backend após recorte aprovado por João em18/10: sandbox fica em pesquisa posterior, sem aceite/liberação. Checks e inventários finais, triagem e revisão; disposição histórica ainda aguarda resposta separada.
+- [ ] Obter inventário atualizado na retomada22/10 e consolidar a validação da PR178. Depois restam disposição específica de B08.1 e preflight/execução/ensaio de João em docs/DEMO.md; não declarar v1 completa nem inventar aceite pessoal.
 
 ## Próximo
 
-- Resolver falhas reais do candidato final; não adicionar funcionalidades para buscar perfeição indefinida.
-- B08.1: recuperar um log/cinco artefatos ou obter disposição específica de João; revisão continua parcial.
-- João: preflight/ensaio guiado em docs/DEMO.md e evidências locais/Desktop; execução e explicação ainda não comprovadas.
-- Candidato final: checks aplicáveis, inventários/triagem, revisão e documentação coerentes após resolver os aceites da fila de fechamento.
+- Se João trouxer erro local ou dúvida, tratar o menor problema demonstrado com teste quando aplicável.
+- Após os aceites restantes, conferir aplicabilidade do corte técnico, atualizar somente o necessário e registrar fechamento sem alegações além da evidência.
 
 ## Depois
 

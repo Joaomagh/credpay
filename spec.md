@@ -2,7 +2,7 @@
 
 > Fonte de verdade do sistema que existe hoje. Preencher somente com decisão tomada, contrato aceito ou comportamento comprovado. Planos futuros ficam em `CREDPAY_PLAN.md`; próximas ações ficam em `task.md`.
 
-**Última atualização:** 2026-10-18
+**Última atualização:** 2026-10-22
 
 **Fase atual:** fechamento da v1 backend — candidato final/checks/inventários, ensaio com João e lacunas de publicação. Pesquisa de sandbox separada por João em18/10, incompleta e sem aceite/liberação; frontend e servidores Prometheus/Grafana também adiados. Métricas/diagnóstico HTTP preservados.
 
@@ -2974,6 +2974,16 @@ Consulta somente leitura via conectorGitHub em18/10/2026: runs37847328359/378461
 Após leitura da proposta, João escolheu explicitamente separar a pesquisa de sandbox da v1 do backend, preservando achados e sem aceitar/liberar o core experimental. CREDPAY_PLAN/README/backlog/task passam a refletir essa decisão; itens históricos continuam como evidência, sem reclassificar pesquisa como entregue. Não autoriza uso do core pelo agente, baseline candidata, CVEs, novos privilégios ou implantação externa. Ensaios locais e explicação pessoal continuam necessários. Disposição histórica foi perguntada separadamente e continua pendente; a escolha do recorte não a aprova. Ausência de resposta não é aprovação.
 
 Preparação operacional da validação final: adicionar somente workflow_dispatch aos sete workflows existentes dos dois módulos, fluxo, imagens, Compose, Kubernetes e inventário. Objetivo é permitir execução do candidato identificado sem mudança fictícia no código; PR atual também dispara cada workflow pelo seu próprio caminho alterado. Nenhuma etapa/permissão/versão/segredo/runner alterado, nenhuma execução local de Docker. Aceite exige todos os checks aplicáveis do head final e auditoria/triagem dos inventários; falhas reais serão corrigidas, não suprimidas. Incremento não fecha aceites pessoais ou revisão histórica.
+
+### 9.122 Validação integrada do candidato backend e retomada em22/10
+
+Objetivo/aceite antes das alterações: consolidar o candidato real da PR178 e registrar limites/aceites externos sem declarar v1 completa; atualizar relatório de validação, resumos vigentes e triagem. Retomada22/10 exige inventário atualizado, pois os checks e DBs existentes datam18/10; nenhuma mudança de código demanda repetir as oito suítes nesta PR documental. Arquivos previstos: docs/V1_VALIDATION.md, README, backlog/task/spec e infra/security/TRIAGE.md. Risco: confundir corte18/10 com ausência de vulnerabilidades em tempo real ou transferir aceites pessoais ao CI.
+
+Estado remoto revalidado: oito runs do head7e4233d5d9f952637510f9bc66a76a298b225bdc concluídos com sucesso; 522 testes transações e340 processamento, sem falhas/erros/skips, Checkstyle0. Flow159/Images126/Compose134/Kubernetes28/Inventory122/Scan335 com resultados, URLs e limites no relatório dedicado. Revisão independente dos deltas/documentação e inventário sem bloqueante; reviews/threads/requested_reviewers vazios, mergeable clean e expected_head_sha usados antes do merge178/ea175e177f9c99ff371cbe30a6f100a72d24db5f em22/10.
+
+Artefato12127116199/10997B/SHA5986f78cea9898bf8bb89ee810bc7b247a7f340b6ab740c8fa75f51933a969e2: seis arquivos UTF8 com limites/tipos/nomes/digest conferidos; checkout028f83e/parents71bf871+7e4233d conferidos viaAPI. Cobertura selecionada107/243 e todos registros/pacotes iguaisInventory111; H0/C0 no corte18/10, demais achados preservados. Primeiro assert local Installed==Version de OS falhou por separar versão upstream de epoch/release; corrigido apenas o método de auditoria, explicitando campos não preservados, sem inventar revisões ausentes ou alterar scanner. Não rehash local de JAR/imagens originais nem revalidação do raw descartado; Gitleaks nos arquivos selecionados retornou0. Revisão independente confirmou esses limites.
+
+Sete logs foram relidos somente em memória em22/10: seis regex de credenciais e candidatos JSON financeiro retornaram zero candidatos. Não é Gitleaks sobre logs originais nem cobertura de todos formatos; só contagens/limites persistidos em.local/security/v1-logs-reviewed.json. Log SecretScan fora desse recorte. Memória da execução anterior não estava disponível na retomada; leituras reais foram refeitas, sem presumir revisão de bytes indisponíveis. Limites históricos de B08.1 e ensaio/execução de João continuam pendentes. Nada autoriza a sandbox adiada ou pagamento real/deploy externo.
 
 ## 10. Observabilidade e SLOs de aprendizado
 

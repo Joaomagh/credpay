@@ -1,4 +1,8 @@
-# Triagem inicial — 2026-10-08
+# Triagem de dependências e imagens
+
+**Estado técnico de18/10, revalidado em22/10/2026:** PR178/ea175e1 integrou oito checks verdes no head7e4233d. Inventory122 conserva quatro alvos completos selecionados107pacotes/JAR243/imagem, HIGH0/CRITICAL0, MEDIUM3/JAR e MEDIUM32/LOW22/imagem; achados iguais ao Inventory111, sem supressão. Detalhes, identidade, DBs e limites em [V1_VALIDATION.md](../../docs/V1_VALIDATION.md). Este corte não substitui um inventário atualizado após a retomada22/10, não cobre infraestrutura externa e não fecha ensaio ou revisão histórica. A migração B08.6c e seus aceites posteriores substituem os estados preparatórios abaixo.
+
+## Histórico inicial — 2026-10-08
 
 **Estado consolidado em 2026-10-09:** JDBC integrado na PR #127; Inventory #13 registra HIGH0/JAR1/imagem e CRITICAL2/alvo. Os três IDs restantes e a proposta de publicação estão no final deste documento. As tabelas e preparações anteriores preservam o histórico.
 
