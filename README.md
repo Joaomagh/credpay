@@ -15,7 +15,7 @@ Cada capacidade entra em um incremento pequeno, testado e documentado. Assim, o 
 
 Para entender o produto, os problemas técnicos e as escolhas, leia [Entenda o CredPay](docs/ENTENDA_O_CREDPAY.md).
 
-O fechamento da v1 prioriza o backend: [validação técnica do candidato](docs/V1_VALIDATION.md) tem oito checks verdes no corte registrado; o inventário de22/10 manteve HIGH0/CRITICAL0 nos quatro alvos, com demais achados visíveis. Disposição da revisão histórica e ensaio local com João ainda estão pendentes. Por decisão dele em18/10/2026, a pesquisa de sandbox do agente fica para etapa posterior, com [evidências e lacunas preservadas](docs/SANDBOX_NOBLE_FINDINGS.md). O core experimental não foi aceito nem liberado para uso pelo agente; não há alegação de isolamento. Frontend Angular e painel também permanecem posteriores.
+O fechamento da v1 prioriza o backend: [validação técnica do candidato](docs/V1_VALIDATION.md) tem oito checks verdes no corte registrado; o inventário de22/10 manteve HIGH0/CRITICAL0 nos quatro alvos, com demais achados visíveis. João completou a primeira demo local com Compose em 22/10 e aceitou a revisão histórica delimitada, preservando seis conteúdos não verificados. Explicação autônoma, diagnóstico/recuperação pessoais e Kubernetes local continuam pendentes. Por decisão dele em18/10/2026, a pesquisa de sandbox do agente fica para etapa posterior, com [evidências e lacunas preservadas](docs/SANDBOX_NOBLE_FINDINGS.md). O core experimental não foi aceito nem liberado para uso pelo agente; não há alegação de isolamento. Frontend Angular e painel também permanecem posteriores.
 
 ## Status atual
 
@@ -63,7 +63,7 @@ O projeto está na fase de fluxo assíncrono confiável: os dois aplicativos rea
 | Implementado | UUID malformado retorna `400 Problem Details` sem consultar o caso de uso nem expor detalhes internos |
 | Implementado | testes automatizados nos dois módulos, incluindo PostgreSQL e RabbitMQ reais no CI |
 | Comprovado | imagens dos dois serviços com runtime Java21 fixado por digest, UID10001 e smoke real de startup/health, políticas antes da ativação e consumidores exatos, POST→GET APROVADA/REJEITADA e replay estável; roteiro em [infra/images](infra/images/README.md) |
-| Comprovado | Compose com cinco serviços/três volumes, preparação antes do opt-in, AP/REJ/replay e registros preservados após down/up no CI; [quickstart local](infra/compose/README.md) requer Docker Linux acessível |
+| Comprovado | Compose com cinco serviços/três volumes, preparação antes do opt-in, AP/REJ/replay e registros preservados após down/up no CI; primeiro percurso local Build→Prepare→Activate→Demo→Down realizado por João em22/10; [quickstart local](infra/compose/README.md) requer Docker Linux acessível |
 | Implementado | `POST /transacoes` exige `Idempotency-Key`, repete a resposta original para payload equivalente e retorna `409` em conflito |
 | Comprovado | aplicação idempotente do resultado grava estado final e histórico atomicamente, inclusive em concorrência real |
 | Comprovado | replay do POST mantém resposta original `PENDENTE`; GET expõe estado final, com dados/histórico/outbox preservados |

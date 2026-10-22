@@ -1,12 +1,12 @@
 # Demonstração e explicação do CredPay
 
-O roteiro usa somente transações fictícias e a v1 existente. Compose/fluxo e Kubernetes foram comprovados no CI; executar no computador de João ainda depende de infraestrutura e autorização aplicáveis. Pesquisa de sandbox foi separada da v1 por João em18/10/2026, incompleta e sem aceite/liberação do core. Ensaio por João continua necessário ao fechamento do backend. Servidores Prometheus/Grafana foram adiados por João em16/10/2026; métricas e diagnóstico HTTP permanecem. CI verde não comprova que João consegue explicar o projeto: a apresentação precisa ser ensaiada por ele.
+O roteiro usa somente transações fictícias e a v1 existente. Compose/fluxo e Kubernetes foram comprovados no CI; João executou a primeira demo local com Compose em22/10. Kubernetes local e demais cenários pessoais conservam seus aceites próprios. Pesquisa de sandbox foi separada da v1 por João em18/10/2026, incompleta e sem aceite/liberação do core. Ensaio por João continua necessário ao fechamento do backend. Servidores Prometheus/Grafana foram adiados por João em16/10/2026; métricas e diagnóstico HTTP permanecem. CI verde não comprova que João consegue explicar o projeto: a apresentação precisa ser ensaiada por ele.
 
 Antes do roteiro técnico, leia [Entenda o CredPay](ENTENDA_O_CREDPAY.md) para relacionar o exemplo de produto às escolhas de engenharia.
 
 ## Primeiro ensaio guiado com João
 
-Estado em22/10/2026: João concluiu o preflight assistido no checkout373b6a1, enviando os resultados dos comandos. Execução dos aplicativos, entendimento e apresentação continuam sem aceite pessoal. Faça uma etapa por vez e registre dúvidas nas suas palavras.
+Estado em22/10/2026: após o preflight no checkout373b6a1, João compilou os dois serviços e executou Build/Prepare/Activate/Demo/Down usando imagens com tagcf103ee. Aprovação, rejeição e replay POST passaram; Down informou volumes preservados. Isso encerra esse primeiro percurso operacional assistido, sem comprovar explicação autônoma, recuperação local ou Kubernetes local. Faça uma etapa por vez e registre dúvidas nas suas palavras.
 
 ### 1. Conferir o ambiente
 
@@ -35,9 +35,9 @@ docker version --format '{{.Server.Os}}'
 
 Essa variável vale apenas para a sessão e os processos iniciados por ela. Não é uma mudança permanente de contexto nem uma correção comprovada do endpoint desktop-linux. Ao abrir outro terminal, verificar novamente a conexão antes do roteiro. Nenhum aplicativo CredPay foi iniciado nessa conferência; ela não encerra o ensaio nem o aceite de execução local.
 
-### 2. Explicar o produto antes de subir os serviços
+### 2. Entender o produto durante o ensaio
 
-Leia o exemplo de R$50/R$150 em [Entenda o CredPay](ENTENDA_O_CREDPAY.md), feche a página e explique em cinco frases:
+Comece com uma explicação curta: POST salva o pedido como PENDENTE, o processador recebe o trabalho pela fila e GET consulta o estado atual. A execução guiada pode servir de apoio antes da explicação independente. Leia o exemplo de R$50/R$150 em [Entenda o CredPay](ENTENDA_O_CREDPAY.md), observe os resultados da demo e depois explique em cinco frases:
 
 1. O que o cliente pede e por que o POST responde PENDENTE.
 2. Qual serviço decide e qual regra aplica.
@@ -130,7 +130,7 @@ Uso uma réplica publicadora por serviço e broker de nó único; não alego alt
 | Como impedir duas decisões concorrentes? | Locks por identidades, constraints, transação e replay/conflito explícitos | [RegistrarProcessamentoService](../processamento-service/src/main/java/br/com/credpay/processamento/application/RegistrarProcessamentoService.java), [AplicarResultadoService](../transacoes-service/src/main/java/br/com/credpay/transacoes/application/AplicarResultadoService.java) |
 | O que ocorre entre commit e ack? | Dados já duráveis; reentrega exige consumidor idempotente; janela testada não é exactly-once | spec §9.37 e §9.48 e runbook Flow; testes de listeners |
 | Por que DLQ não significa FALHOU? | Falha operacional e decisão financeira são distintas; recuperação permanece possível; aplicação causal controlada não autoriza encerramento operacional arbitrário | spec §9.54 e §9.90; recuperação e confirmação causal controlada |
-| Quais limites existem hoje? | Publicador de réplica única, broker sem HA, execução local não comprovada, sandbox adiada e sem aceite; painel adiado e sinais HTTP com limites explícitos | README, plano §6 e backlog |
+| Quais limites existem hoje? | Publicador de réplica única, broker sem HA, primeira demo Compose local comprovada por retornos de João, recuperação/Kubernetes locais pendentes, sandbox adiada e sem aceite; painel adiado e sinais HTTP com limites explícitos | README, plano §6 e backlog |
 
 ## Critério de encerramento da apresentação
 

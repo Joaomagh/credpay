@@ -1,6 +1,6 @@
 # Validação de fechamento do backend
 
-Execuções e inventário de18/10/2026; estado dos checks revalidado e integração realizada em22/10. Candidato da PR178: `7e4233d5d9f952637510f9bc66a76a298b225bdc`, integrado em `ea175e177f9c99ff371cbe30a6f100a72d24db5f`. Checkout de teste do PR: `028f83efff62ead792c35b882bc37b3b1183346f`, com pais `71bf871d8a7b99cc2433ac8047511eee4c334ba4` e o candidato, conferidos pela API GitHub. Este registro não declara a v1 concluída, execução pessoal de João ou inventário atualizado em tempo real.
+Execuções e inventário de18/10/2026; estado dos checks revalidado e integração realizada em22/10. Candidato da PR178: `7e4233d5d9f952637510f9bc66a76a298b225bdc`, integrado em `ea175e177f9c99ff371cbe30a6f100a72d24db5f`. Checkout de teste do PR: `028f83efff62ead792c35b882bc37b3b1183346f`, com pais `71bf871d8a7b99cc2433ac8047511eee4c334ba4` e o candidato, conferidos pela API GitHub. Este registro não declara a v1 concluída ou inventário atualizado em tempo real. A primeira execução Compose pessoal de22/10 está delimitada na seção própria abaixo.
 
 ## Checks do candidato
 
@@ -42,10 +42,25 @@ Os JARs não tiveram delta de achados. Cada imagem teve18 alterações apenas de
 
 Limites da projeção e do rehash permanecem os mesmos. O log do novo job120117245956 também foi lido em memória pelas seis classes de regex e candidatos JSON financeiro: zero candidatos; não é Gitleaks sobre o log bruto. Nova tentativa de recuperação histórica em22/10 manteve cinco listagens vazias e Transport closed no job111053029171, sem inferir expiração, exclusão ou conteúdo limpo.
 
+## Primeiro percurso Compose local — 22/10
+
+Fonte: resultados dos comandos executados por João e enviados na conversa, incluindo o texto do preparo. O agente não acessou o daemon local. Preflight no SHA373b6a1; os dois JARs foram empacotados com Java21 e as imagens construídas com tag completa `cf103eefef87afacebecfae7cf538ec050f4d093`. Essa revisão incorporou somente documentação em relação ao código de aplicação anteriormente testado; não representa novo inventário das imagens locais.
+
+| Etapa realizada por João | Resultado observado |
+|---|---|
+| Package dos dois serviços | BUILD SUCCESS; uso explícito de skipTests, sem alegação de suíte local executada |
+| Configuração e build das imagens | Compose config quiet retornou sucesso; duas imagens construídas com a mesma tag |
+| Prepare | Aplicativos UID10001, mounts0, privilegedfalse, healthUP; flags desligadas, exchanges produtoras e quatro filas quorum/políticas/bindings conferidos, consumidores0 |
+| Activate | healthUP; consumidores2, ack obrigatório, prefetch10/1 |
+| Demo | APROVADA e REJEITADA com replay POST original estável |
+| Down | Projeto desligado e volumes preservados |
+
+Isso demonstra o primeiro percurso operacional assistido no ambiente Windows/PowerShell7/DockerDesktop de João. Não comprova releitura dos mesmos registros após novo up, recuperação sob falha, métricas locais, toda a matriz de concorrência/idempotência, Kubernetes local ou explicação autônoma. A apresentação continua como aprendizado acompanhado; executar comandos não concede sozinho esse aceite.
+
 ## Limites de fechamento
 
 Em22/10, sete logs dos jobs de serviços/fluxo/imagens/Compose/Kubernetes/inventário foram relidos somente em memória: seis classes de regex para credenciais (AWS, GitHub, OpenAI, Slack, cabeçalho de chave privada e URL com credencial) e linhas candidatas a JSON financeiro valor/moeda ou amount/currency retornaram zero candidatos. Não é Gitleaks sobre logs brutos nem prova de ausência de todos os formatos. Só contagens/limites foram preservados localmente; nenhum log bruto foi versionado. O log Secret Scan não foi incluído nesse recorte; seu resultado é o check separado acima.
 
 João separou explicitamente a pesquisa de sandbox da v1 do backend em18/10. Baselines e findings do core continuam preservados, incompletos e sem aceite/liberação de uso pelo agente. Frontend e painel também são posteriores; governança e restrições de AGENTS.md continuam aplicáveis.
 
-A disposição de um log e cinco artefatos históricos não verificados continua pendente, separada do recorte de sandbox. A [revisão de publicação](../infra/security/PUBLICATION_REVIEW.md) não se torna completa por estes checks. Preflight, execução local/Desktop e ensaio/explicação por João continuam sem comprovação; o [roteiro guiado](DEMO.md) está preparado. Nenhuma tag/release ou declaração de 100% é emitida aqui.
+João aceitou em22/10 a revisão histórica limitada ao material acessível, preservando um log e cinco artefatos como NÃO VERIFICADOS e reabrindo a análise se recuperados. A [revisão de publicação](../infra/security/PUBLICATION_REVIEW.md) permanece parcial; o aceite não declara esses conteúdos limpos nem aceita CVEs. Preflight e primeiro percurso Compose local foram realizados; explicação autônoma, diagnóstico/recuperação pessoais e Kubernetes local permanecem pendentes no [roteiro guiado](DEMO.md). Nenhuma tag/release ou declaração de 100% é emitida aqui.
