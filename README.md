@@ -15,7 +15,7 @@ Cada capacidade entra em um incremento pequeno, testado e documentado. Assim, o 
 
 Para entender o produto, os problemas técnicos e as escolhas, leia [Entenda o CredPay](docs/ENTENDA_O_CREDPAY.md).
 
-O fechamento da v1 prioriza o backend: [validação técnica do candidato](docs/V1_VALIDATION.md) tem oito checks verdes no corte registrado; inventário atualizado, disposição da revisão histórica e ensaio local com João continuam separados. Por decisão dele em18/10/2026, a pesquisa de sandbox do agente fica para etapa posterior, com [evidências e lacunas preservadas](docs/SANDBOX_NOBLE_FINDINGS.md). O core experimental não foi aceito nem liberado para uso pelo agente; não há alegação de isolamento. Frontend Angular e painel também permanecem posteriores.
+O fechamento da v1 prioriza o backend: [validação técnica do candidato](docs/V1_VALIDATION.md) tem oito checks verdes no corte registrado; o inventário de22/10 manteve HIGH0/CRITICAL0 nos quatro alvos, com demais achados visíveis. Disposição da revisão histórica e ensaio local com João ainda estão pendentes. Por decisão dele em18/10/2026, a pesquisa de sandbox do agente fica para etapa posterior, com [evidências e lacunas preservadas](docs/SANDBOX_NOBLE_FINDINGS.md). O core experimental não foi aceito nem liberado para uso pelo agente; não há alegação de isolamento. Frontend Angular e painel também permanecem posteriores.
 
 ## Status atual
 
