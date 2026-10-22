@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- PR178/ea175e1 integrada em22/10 após oito checks verdes no head7e4233d: 522+340 testes Maven sem falhas/erros/skips, Flow/Images/Compose/Kubernetes/Inventory122/Scan335. Inventário18/10 auditado: quatro alvos H0/C0, demais achados preservados. Recorte de sandbox aprovado/documentado; evidências em docs/V1_VALIDATION.md/spec9.122.
+- PR179/65fe4eb integrada após Inventory124/Scan337 verdes no headdd4c9fa. Inventário22/10 auditado: cobertura107/243 e quatro alvos H0/C0; M3/JAR e M32/L22/imagem preservados, sem novos IDs. Oito checks anteriores da PR178 e862 testes Maven permanecem a evidência de comportamento; detalhes em docs/V1_VALIDATION.md/spec9.123.
 
 ## Agora
 
-- [ ] Obter inventário atualizado na retomada22/10 e consolidar a validação da PR178. Depois restam disposição específica de B08.1 e preflight/execução/ensaio de João em docs/DEMO.md; não declarar v1 completa nem inventar aceite pessoal.
+- [ ] Conduzir o aceite final com João: disposição específica sobre um log/cinco artefatos históricos não verificados e preflight/execução/ensaio de docs/DEMO.md. Aguardar respostas/evidências reais; não declarar v1 completa nem inventar aceite pessoal.
 
 ## Próximo
 

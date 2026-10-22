@@ -2985,6 +2985,14 @@ Artefato12127116199/10997B/SHA5986f78cea9898bf8bb89ee810bc7b247a7f340b6ab740c8fa
 
 Sete logs foram relidos somente em memória em22/10: seis regex de credenciais e candidatos JSON financeiro retornaram zero candidatos. Não é Gitleaks sobre logs originais nem cobertura de todos formatos; só contagens/limites persistidos em.local/security/v1-logs-reviewed.json. Log SecretScan fora desse recorte. Memória da execução anterior não estava disponível na retomada; leituras reais foram refeitas, sem presumir revisão de bytes indisponíveis. Limites históricos de B08.1 e ensaio/execução de João continuam pendentes. Nada autoriza a sandbox adiada ou pagamento real/deploy externo.
 
+### 9.123 Inventário atualizado e aceites externos restantes — 22/10
+
+Objetivo/aceite antes das alterações: registrar resultado real de Inventory124 e delta de metadados após auditoria; atualizar somente relatório público/README/backlog/task/spec, sem novo comportamento ou dependência. Risco: chamar Statusfixed de correção instalada ou encerrar aceites pessoais por resultado de CI. PR179 integrada em65fe4ebcb79e61cc2541bc18d963f95664f58d90 após Inventory124/run39862739218 e Scan337/run39862739139 verdes no headdd4c9faba54a9bb2fcd4dc68c3487b096ba449d1, revisão sem bloqueantes/reviews/threads/solicitações pendentes e merge clean com expected_head_sha.
+
+Artefato12461853306/11115B/SHA819f59c2d5b2a6a6ea63a6026615b60332114c09f3ddef1d6cf4b83d8decb516 baixado em diretório próprio ignorado, seis arquivos UTF8 regulares/nomes únicos/limites e digest auditados; esquema/cobertura107/243/contagens/identidade conferidos, Gitleaks0 e revisão independente sem bloqueantes. Checkout76db612d9e6da2af64ab8f1b5f4034217bfd8013/parentsea175e1+dd4c9fa conferido viaAPI. DBs22/10, H0/C0 nos quatro alvos, JARM3/imagemM32L22. Sem delta de pacotes, versões instaladas, IDs ou severidades. Cada imagem tem18 mudanças de Fixed/Status, noveIDsLOWcurl/libcurl4t64; Installed10.15 e Fixed10.16 não demonstram correção instalada. Detalhes e limites mantidos em docs/V1_VALIDATION.md; não revalidar raw/JAR/imagem originais por inferência.
+
+Jobnovo120117245956 revisto somente em memória: seis classes de regex e candidatos JSON financeiro retornaram zero candidatos. Nova consulta22/10 aos cinco runs históricos retornou total_count0; job111053029171 manteve Transport closed. Não há conclusão de conteúdo limpo/expiração/exclusão nem disposição de João recebida sobre a lacuna. O próximo aceite depende dessa direção e da execução/explicação pessoal no ensaio guiado; frontend/painel/sandbox continuam posteriores, sem promoção do core ou implantação externa. Sem código novo, não há red de negócio ou repetição das suítes Java; verificar UTF8/links/diff/Gitleaks e SecretScan do head documental.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
