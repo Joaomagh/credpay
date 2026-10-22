@@ -1,6 +1,6 @@
 # Demonstração e explicação do CredPay
 
-O roteiro usa somente transações fictícias e a v1 existente. Compose/fluxo e Kubernetes foram comprovados no CI; executar no computador de João ainda depende de infraestrutura e autorização aplicáveis. Sandbox do agente e ensaio por João continuam pendentes. Servidores Prometheus/Grafana foram adiados por João em16/10/2026; métricas e diagnóstico HTTP permanecem. CI verde não comprova que João consegue explicar o projeto: a apresentação precisa ser ensaiada por ele.
+O roteiro usa somente transações fictícias e a v1 existente. Compose/fluxo e Kubernetes foram comprovados no CI; executar no computador de João ainda depende de infraestrutura e autorização aplicáveis. Pesquisa de sandbox foi separada da v1 por João em18/10/2026, incompleta e sem aceite/liberação do core. Ensaio por João continua necessário ao fechamento do backend. Servidores Prometheus/Grafana foram adiados por João em16/10/2026; métricas e diagnóstico HTTP permanecem. CI verde não comprova que João consegue explicar o projeto: a apresentação precisa ser ensaiada por ele.
 
 Antes do roteiro técnico, leia [Entenda o CredPay](ENTENDA_O_CREDPAY.md) para relacionar o exemplo de produto às escolhas de engenharia.
 
@@ -119,7 +119,7 @@ Uso uma réplica publicadora por serviço e broker de nó único; não alego alt
 | Como impedir duas decisões concorrentes? | Locks por identidades, constraints, transação e replay/conflito explícitos | [RegistrarProcessamentoService](../processamento-service/src/main/java/br/com/credpay/processamento/application/RegistrarProcessamentoService.java), [AplicarResultadoService](../transacoes-service/src/main/java/br/com/credpay/transacoes/application/AplicarResultadoService.java) |
 | O que ocorre entre commit e ack? | Dados já duráveis; reentrega exige consumidor idempotente; janela testada não é exactly-once | spec §9.37 e §9.48 e runbook Flow; testes de listeners |
 | Por que DLQ não significa FALHOU? | Falha operacional e decisão financeira são distintas; recuperação permanece possível; aplicação causal controlada não autoriza encerramento operacional arbitrário | spec §9.54 e §9.90; recuperação e confirmação causal controlada |
-| Quais limites existem hoje? | Publicador de réplica única, broker sem HA, execução local não comprovada, sandbox pendente; painel adiado e sinais HTTP com limites explícitos | README, plano §6 e backlog |
+| Quais limites existem hoje? | Publicador de réplica única, broker sem HA, execução local não comprovada, sandbox adiada e sem aceite; painel adiado e sinais HTTP com limites explícitos | README, plano §6 e backlog |
 
 ## Critério de encerramento da apresentação
 

@@ -3,6 +3,7 @@
 name: CredPay Kubernetes CI
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - "transacoes-service/**"

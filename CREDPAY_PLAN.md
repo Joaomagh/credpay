@@ -20,6 +20,7 @@ O projeto estará pronto para portfólio quando João conseguir:
 - servidores de coleta Prometheus e painel Grafana, adiados por João em16/10/2026; preservar métricas/diagnósticos existentes e o experimento para etapa posterior;
 - transação distribuída/2PC, multi-região e alta disponibilidade de produção;
 - padrões ou ferramentas adicionados apenas para aumentar a lista do portfólio.
+- sandbox do agente e remediação do core diagnóstico, separados da v1 do backend por decisão explícita de João em18/10/2026; pesquisa preservada e incompleta, sem aceite da baseline ou liberação de uso pelo agente.
 
 ### Briefing de frontend para etapa posterior — 2026-10-15
 
@@ -116,6 +117,8 @@ O Navigator mantém a direção e aprova expansão de escopo e decisões irrever
 As durações são estimativas, não prazos. Cada sessão deve produzir uma evidência pequena e verificável.
 
 ### Fase 1 — Governança e sandbox do agente
+
+**Recorte revisado por João em18/10/2026:** governança e restrições de trabalho permanecem aplicáveis. A implementação/remediação da sandbox passa a pesquisa posterior, fora do aceite de fechamento da v1 do backend. Os itens e a saída abaixo descrevem essa pesquisa ainda incompleta, não uma entrega concluída. Evidências, CI, fontes e findings ficam preservados; nenhuma candidata foi aceita ou liberada para uso pelo agente. Esta decisão não dispensa segurança, testes e inventários dos aplicativos nem altera as restrições de AGENTS.md.
 
 - importar e revisar os documentos-base no repositório;
 - definir o modelo de ameaça e o que “isolado” significa;

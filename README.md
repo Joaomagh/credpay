@@ -15,6 +15,8 @@ Cada capacidade entra em um incremento pequeno, testado e documentado. Assim, o 
 
 Para entender o produto, os problemas técnicos e as escolhas, leia [Entenda o CredPay](docs/ENTENDA_O_CREDPAY.md).
 
+O fechamento da v1 prioriza o backend: testes e inventários finais, revisão de publicação delimitada e ensaio local com João ainda precisam de seus aceites. Por decisão dele em18/10/2026, a pesquisa de sandbox do agente fica para etapa posterior, com [evidências e lacunas preservadas](docs/SANDBOX_NOBLE_FINDINGS.md). O core experimental não foi aceito nem liberado para uso pelo agente; não há alegação de isolamento. Frontend Angular e painel também permanecem posteriores.
+
 ## Status atual
 
 O inventário de dependências e imagens está ativo. A migração para Spring Boot4 e runtime Ubuntu Noble removeu os três achados Spring/OpenSSL originais; o [Inventory #100](https://github.com/Joaomagh/credpay/actions/runs/38827148221) reconheceu os quatro alvos completos sem HIGH/CRITICAL. Achados MEDIUM/LOW e critérios de saída permanecem documentados; consulte a [triagem atual](infra/security/TRIAGE.md). CI verde não significa aprovação geral de segurança ou prontidão para produção.
@@ -302,7 +304,7 @@ O core diagnóstico foi construído e os primeiros controles de filesystem, ambi
 
 | Fase | Objetivo | Estado |
 |---|---|---|
-| 1 | governança, threat model e contrato do sandbox | core construído; primeiros negativos no Linux CI; aceite completo pendente |
+| 1 | governança e pesquisa de sandbox | governança vigente; sandbox incompleta e adiada por João em18/10, sem aceite/liberação do core |
 | 2 | fundação reproduzível e CI mínimo | dois serviços com build e CI independentes; processador já tem decisão por limite e validação de entradas em domínio puro |
 | 3 | regras de domínio em TDD e primeira integração PostgreSQL | concluída |
 | 4 | API, fluxo assíncrono, idempotência, outbox, retry e DLQ | fluxo principal e transporte causal FALHOU comprovados em teste controlado; autoridade operacional bloqueada |

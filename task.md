@@ -4,19 +4,19 @@
 
 ## Último incremento
 
-- PR176/7f3737a integrou mapa ACL após NobleCandidate8/Core46/Scan329 verdes no headbe412b1. Evidência anterior auditada:71 testes Linux sem skips/44ELFs; cp/mv/sed têm imports pathname eFD. Fonte exata e limites registrados em spec9.120; candidata sem aceite.
+- PR177/71bf871 integrou revisão das fontes Ubuntu após SecretScan331 verde no head72a8cd3. Quatro compactados/36 textos conferidos; sed-in-place fornece FDs, coreutils mantém caminhos por nome. Nenhuma correção/nãoafetação global ou promoção da candidata; spec9.120.
 
 ## Agora
 
-- [ ] B08.7d.4c.2 — Integrar revisão da fonte Ubuntu exata após verificações/revisão. sed-in-place fornece FDs e exige arquivo regular; coreutils mantém chamadas por nome e ramo USE_XATTR não confirmado. ACL54369 continua sem correção/nãoafetação demonstrada; não promover a candidata.
+- [ ] Validar candidato final do backend após recorte aprovado por João em18/10: sandbox fica em pesquisa posterior, sem aceite/liberação. Checks e inventários finais, triagem e revisão; disposição histórica ainda aguarda resposta separada.
 
 ## Próximo
 
-- Fechar lacunas de rede/daemon/ferramentas com mecanismo válido; ausência de cliente não comprova bloqueio. Topologia/enforcement do agente não foram aprovados.
+- Resolver falhas reais do candidato final; não adicionar funcionalidades para buscar perfeição indefinida.
 - B08.1: recuperar um log/cinco artefatos ou obter disposição específica de João; revisão continua parcial.
 - João: preflight/ensaio guiado em docs/DEMO.md e evidências locais/Desktop; execução e explicação ainda não comprovadas.
 - Candidato final: checks aplicáveis, inventários/triagem, revisão e documentação coerentes após resolver os aceites da fila de fechamento.
 
 ## Depois
 
-- Frontend Angular/Stitch e painel após v1; referências preservadas. Sem pagamento real, HA ou implantação externa.
+- Pesquisa de sandbox incompleta, frontend Angular/Stitch e painel após v1; referências preservadas. Sem pagamento real, HA ou implantação externa.

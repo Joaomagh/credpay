@@ -2,9 +2,9 @@
 
 > Fonte de verdade do sistema que existe hoje. Preencher somente com decisão tomada, contrato aceito ou comportamento comprovado. Planos futuros ficam em `CREDPAY_PLAN.md`; próximas ações ficam em `task.md`.
 
-**Última atualização:** 2026-10-17
+**Última atualização:** 2026-10-18
 
-**Fase atual:** fechamento da v1 backend — ensaio com João, lacunas de publicação e sandbox parcialmente verificado. Frontend e servidores Prometheus/Grafana adiados; métricas/diagnóstico HTTP existentes preservados.
+**Fase atual:** fechamento da v1 backend — candidato final/checks/inventários, ensaio com João e lacunas de publicação. Pesquisa de sandbox separada por João em18/10, incompleta e sem aceite/liberação; frontend e servidores Prometheus/Grafana também adiados. Métricas/diagnóstico HTTP preservados.
 
 **Estado:** fluxo POST → duas outboxes → GET APROVADA/REJEITADA, idempotência, concorrência, retry/DLQ e recuperação comprovados nos cenários registrados. FALHOU percorreu transporte/encerramento causal em cenário controlado (§9.96); isso não o transforma em mecanismo operacional genérico. Kubernetes descartável hospedado comprovou startup/persistência, fluxo/replay/parada/recuperação (§9.93/9.97); DockerDesktop e execução pessoal com João continuam sem aceite. Flags seguem desligados por padrão e ativação exige roteiro. Migração de plataforma/imagem dos apps e exportação de métricas opt-in integradas (§9.94/9.98); nenhum deploy externo autorizado. Sandbox tem core mínimo, negativos parciais e limites de CPU/memória sob excesso comprovados somente no Linux CI (§9.100–9.108), com baseline sem aceite pelos advisories; não contém comprovadamente o agente atual.
 
@@ -2962,6 +2962,18 @@ Arquivos previstos: dossiê ACL/backlog/task/spec, sem código de produto. Relac
 Resultado da leitura: quatro arquivos/tamanhos/SHA conferidos,36 textos selecionados tiveram tamanho/SHA revalidados; séries com dez patches coreutils e um sed. Matriz e linhas da fonte original em docs/SANDBOX_NOBLE_FINDINGS.md. coreutils copy.c contém chamadas com descritor -1; qcopy-acl tem ramo USE_XATTR, logo não generalizar libacl para toda cópia. sed execute.c fornece FDs e rejeita entrada in-place não regular; seus helpers preservam pathname, mas ramo de ACL padrão de diretório não é atingível por esse percurso regular demonstrado. Não houve config.h gerado/build reproduzido, correção de ACL54369, conclusão global de nãoafetação ou promoção. Containment prepara ACLs antes dos workers, remove worker antes das leituras seguintes no retorno normal; controlador/runner/daemon permanecem confiáveis e agente atual não foi contido. Revisão independente de leitura conferiu36selecionados e destacou a restrição S_ISREG; incorporada à matriz. Sem teste comportamental novo por ser documentação, sem execução local de Docker.
 
 Verificações locais deste incremento documental: decodificação UTF8 estrita e links relativos dos quatro documentos passaram; SHA256 dos quatro compactados e tamanho/SHA dos36 textos revalidados. `git diff --check` passou; Gitleaks no dossiê retornou0/nenhum achado. Hook completo e Secret Scan remoto exigidos antes da integração. Nenhuma mudança executável que justifique repetir a suíte Java ou fabricar red.
+
+### 9.121 Proposta explícita de fechamento e nova recuperação histórica
+
+PR177 integrada em71bf871d8a7b99cc2433ac8047511eee4c334ba4 após SecretScan331/run39101524012 verde no head72a8cd378fdab9ce0111c67e2b936b5272e0a998; mergeable clean, sem reviews/threads/solicitações pendentes. Alteração exclusivamente documental, filtros não dispararam suítes de código; verificações locais em9.120.
+
+Objetivo/aceite deste incremento: apresentar opções concretas para João decidir o recorte da v1 e a lacuna histórica, sem modificar o plano ou aceitar baseline/risco por inferência. Arquivos previstos: docs/V1_CLOSURE_PROPOSAL.md, backlog/task/spec; risco é confundir proposta de adiamento com correção ou conclusão. Nenhum código/runtime/dependência/teste de negócio alterado.
+
+Consulta somente leitura via conectorGitHub em18/10/2026: runs37847328359/37846134850/37844620033/37844107153/37843707080 retornaram total_count0/artifacts[]; leitura job111053029171 retornou Transport closed. Nenhum conteúdo desses seis itens foi recuperado/revisto. Não inferir expiração/exclusão/conteúdo limpo. Proposta de disposição histórica preserva a lacuna; depende de decisão específica.
+
+Após leitura da proposta, João escolheu explicitamente separar a pesquisa de sandbox da v1 do backend, preservando achados e sem aceitar/liberar o core experimental. CREDPAY_PLAN/README/backlog/task passam a refletir essa decisão; itens históricos continuam como evidência, sem reclassificar pesquisa como entregue. Não autoriza uso do core pelo agente, baseline candidata, CVEs, novos privilégios ou implantação externa. Ensaios locais e explicação pessoal continuam necessários. Disposição histórica foi perguntada separadamente e continua pendente; a escolha do recorte não a aprova. Ausência de resposta não é aprovação.
+
+Preparação operacional da validação final: adicionar somente workflow_dispatch aos sete workflows existentes dos dois módulos, fluxo, imagens, Compose, Kubernetes e inventário. Objetivo é permitir execução do candidato identificado sem mudança fictícia no código; PR atual também dispara cada workflow pelo seu próprio caminho alterado. Nenhuma etapa/permissão/versão/segredo/runner alterado, nenhuma execução local de Docker. Aceite exige todos os checks aplicáveis do head final e auditoria/triagem dos inventários; falhas reais serão corrigidas, não suprimidas. Incremento não fecha aceites pessoais ou revisão histórica.
 
 ## 10. Observabilidade e SLOs de aprendizado
 

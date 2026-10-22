@@ -1,6 +1,7 @@
 name: CredPay Application Flow CI
 
 on:
+  workflow_dispatch:
   pull_request:
     paths:
       - "transacoes-service/**"
