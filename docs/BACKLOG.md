@@ -391,4 +391,8 @@ João pediu adiar prática/explicação em22/10 após o ensaio assistido. O acei
 
 ### F03 — Regressão do navegador com backend real
 
-Aceite: seis cenários desktop/mobile Chromium contra Compose real no CI,201/Location/decimal/reload sem POST extra/APROVADA/REJEITADA/404 e validação sem HTTP. Projeto/cleanup próprios, limites e saída segura; nenhum browser/daemon local do agente. Tipos/descoberta6 e33testes app/build/audit passaram localmente; revisão sem bloqueantes. Aguardar execução real e gates do SHA final antes de integrar; nenhum estado de domínio ou deploy novo.
+Concluída na PR185/1c0d7dc: seis cenários desktop/mobile Chromium contra Compose real no CI,201/Location/decimal/reload sem POST extra/APROVADA/REJEITADA/404 e validação sem HTTP. Compose141/run39883779001, Frontend8/run39883779146 e Scan352/run39883778963 verdes no SHA628ca65; revisão sem bloqueantes. Projeto/cleanup próprios, limites e saída segura; nenhum browser/daemon local do agente. Não comprova WebKit nem aceites pessoais da v1; spec9.130.
+
+### F04 — Contraste dos textos auxiliares
+
+Medição anterior no Chromium reprovou quatro pares texto/fundo abaixo de4,5:1. Reutilizar --muted sem alterar layout/dependência, comprovar os quatro contrastes após ajuste, conferir mobile sem overflow e build/testes/CI. Escopo restrito aos textos medidos; não é auditoria completa WCAG. Evidência em spec9.131; integração pendente.
