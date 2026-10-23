@@ -8,6 +8,8 @@ on:
       - "processamento-service/**"
       - "infra/compose/**"
       - "infra/rabbitmq/**"
+      - "infra/images/**"
+      - "frontend/**"
       - ".github/workflows/credpay-compose-ci.yml"
   push:
     branches: [main]
@@ -16,6 +18,8 @@ on:
       - "processamento-service/**"
       - "infra/compose/**"
       - "infra/rabbitmq/**"
+      - "infra/images/**"
+      - "frontend/**"
       - ".github/workflows/credpay-compose-ci.yml"
 
 permissions:
@@ -28,14 +32,17 @@ concurrency:
 jobs:
   compose:
     name: Prepare, activate and preserve local data
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     env:
       CREDPAY_IMAGE_TAG: ${{ github.sha }}
       COMPOSE_PROJECT_NAME: credpay-ci-${{ github.run_id }}-${{ github.run_attempt }}
+      NG_CLI_ANALYTICS: 'false'
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       # Trusted repository code can access this credential during the job.
       - name: Check public pull authentication availability
         id: dockerhub_auth
@@ -92,6 +99,33 @@ jobs:
       - name: Verify phases, flow and persistence
         shell: pwsh
         run: ./infra/compose/demo.ps1 -Action Smoke -Project $env:COMPOSE_PROJECT_NAME -EnvFile .env.example -Diagnostics
+      - name: Prepare verified Node runtime for browser tests
+        shell: bash
+        run: |
+          directory="$RUNNER_TEMP/credpay-browser-node"
+          mkdir -p "$directory"
+          curl --fail --silent --show-error --location --retry 3 \
+            https://nodejs.org/dist/v24.22.1/node-v24.22.1-linux-x64.tar.xz \
+            --output "$directory/node.tar.xz"
+          printf '%s  %s\n' 6c172a9ab6718f7b801fb5a7bd486af2ee5e32758086a04b84fcce2aa77095e6 \
+            "$directory/node.tar.xz" | sha256sum --check --status
+          tar -xJf "$directory/node.tar.xz" -C "$directory"
+          echo "$directory/node-v24.22.1-linux-x64/bin" >> "$GITHUB_PATH"
+          touch "$RUNNER_TEMP/browser-user.npmrc" "$RUNNER_TEMP/browser-global.npmrc"
+          echo "NPM_CONFIG_USERCONFIG=$RUNNER_TEMP/browser-user.npmrc" >> "$GITHUB_ENV"
+          echo "NPM_CONFIG_GLOBALCONFIG=$RUNNER_TEMP/browser-global.npmrc" >> "$GITHUB_ENV"
+          echo "NPM_CONFIG_CACHE=$RUNNER_TEMP/browser-npm-cache" >> "$GITHUB_ENV"
+          echo "PLAYWRIGHT_BROWSERS_PATH=$RUNNER_TEMP/credpay-browser-binaries" >> "$GITHUB_ENV"
+      - name: Install locked browser test tools and headless Chromium
+        working-directory: frontend
+        run: |
+          test "$(node --version)" = v24.22.1
+          npm ci --ignore-scripts --no-fund
+          npm run check:e2e
+          node node_modules/playwright/cli.js install chromium --only-shell
+      - name: Exercise desktop and mobile against real applications
+        working-directory: frontend
+        run: npm run e2e:ci
       - name: Remove only this disposable CI project
         if: always()
         shell: pwsh

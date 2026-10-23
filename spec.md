@@ -3055,6 +3055,16 @@ Recuperação assistida: João parou somente processamento pelo Compose; navegad
 
 Capturas derivadas locais ignoradas em .local/frontend/real-query-approved.png, real-query-rejected.png, real-recovery-pending.png e real-recovery-approved.png; sem versionar IDs/payloads/logs brutos. Fonte de sucesso local do frontend é essa interação, distinta do HTTP controlado dos testes e do aceite autônomo de João. João informou ainda não saber explicar esse comportamento e pediu separar a prática para depois. Preservar essa decisão e não insistir em exercícios nesta execução. Explicação, métricas/diagnóstico pessoais e Kubernetes local continuam sem aceite; isso não impede trabalho técnico independente nem autoriza declarar100% ou release final.
 
+### 9.130 Navegador real automatizado contra Compose — preparação e validação estrutural
+
+F02 foi integrada pela PR184/869ed9f421a071e0f0170a6445d0fc51fb19d282 após Frontend5/run39881832286 e Scan349/run39881832140 verdes no SHAfa175c41864d32b7ee1470bb79eff3617870fc80, revisão sem bloqueantes, reviews/threads/solicitações vazios e merge clean/SHA esperado. Preserva o ensaio assistido em9.129 e a decisão de adiar prática.
+
+F03 caracteriza a jornada já implementada, sem novo comportamento de produção ou red artificial: três cenários ×desktop/mobile, apps/bancos/broker reais após Smoke do Compose CI. Espera201/Location/decimal, recibo após reload com só um POST observado, APROVADA/REJEITADA, validação sem HTTP e404. Reutiliza projeto descartável/cleanup existente e runtimeNode24.22.1 verificado; runner fixadoUbuntu24.04, checkout sem credencial persistida, frontendloopback4300/proxy8080, workers1/retries0/deadlines. Nenhum comando Docker executado pelo agente no computador.
+
+Baseline antes da resolução: Playwright1.64.1/Apache-2.0 e tipos Node24.19.2/MIT em docs/frontend/BASELINE.md/dependencies-baseline.json; npm scripts off/cache e configs próprios, audit0/286pacotes. Manifesto npm conferiu Chromium/Headless156.0.8078.4/rev1248; download só no CI temporário, sem apt ou navegador local. SRI valida pacotes npm, não é checksum independente do navegador; runner/distribuição integram a base de confiança, sem alegação AI-Jail/egress. Guard exige ambiente CI/projeto (não é isolamento); reporter só títulos estáticos/contagens, sem erros brutos/traces/vídeos/screenshots, e exige6pass/0skip/0erro.
+
+Primeiras checagens estruturais: tipos Node ausentes foram adicionados após baseline; descoberta --list inicialmente foi rejeitada pela contagem do reporter e passou ao usar reporter de listagem somente nessa operação, sem executar navegador. Tipos e descoberta6cenários passaram;33testes Angular/6arquivos, tipos app e build337,74kB/89,92kB estimados passaram com as novas devDependencies. Revisão estática sem bloqueantes. Execução real dos seis cenários e bibliotecas nativas do runner dependem do CI; não atribuir aceite antes do resultado. Mobile Chromium não prova Safari/WebKit.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

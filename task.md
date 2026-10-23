@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] Integrar F02 (retomada da intenção após reload) após CI/revisão do SHA final.33testes locais/tipos/build/audit0 e jornada real/recuperação assistida passaram; evidências em spec9.128–9.129.
+- [ ] F03: executar e integrar os seis cenários de navegador contra Compose real no CI. Tipos/descoberta6,33testes app/build/audit e revisão locais passaram; baseline em docs/frontend/BASELINE.md e evidência em spec9.130. F02 integrada na PR184; prática continua adiada.
 
 ## Próximo
 
