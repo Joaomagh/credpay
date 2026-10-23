@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- Preflight assistido de João no SHA373b6a1: PowerShell7.6.7/Java21.0.6/Compose2.39.4 e engineLinux via contexto default confirmados por seus retornos. Ajuste temporário DOCKER_CONTEXT na sessão; sem execução dos aplicativos ou aceite de entendimento. Registro em docs/DEMO.md/spec9.124.
+- Primeiro percurso Compose de João concluído: dois JARs e imagens cf103ee, Prepare/Activate/Demo/Down; APROVADA/REJEITADA/replay estáveis e volumes preservados ao parar. João também aceitou a revisão histórica limitada, com seis conteúdos NÃO VERIFICADOS e reabertura se recuperados. Evidências em docs/V1_VALIDATION.md, PUBLICATION_REVIEW.md e spec9.125/16.3.
 
 ## Agora
 
-- [ ] Continuar o ensaio guiado com João: explicar o fluxo com suas palavras, depois Build/Prepare/Activate/Demo/Down em etapas. Preflight passou; execução/entendimento não foram presumidos. Disposição histórica B08.1 continua separada e pendente.
+- [ ] Continuar o aprendizado a partir da demo executada: explicar o fluxo com apoio e depois com autonomia; planejar diagnóstico/recuperação pessoais e rota Kubernetes local compatível com as autorizações. Não repetir o primeiro percurso ou presumir domínio/aceite completo.
 
 ## Próximo
 

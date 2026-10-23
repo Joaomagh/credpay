@@ -1,6 +1,6 @@
 # Revisão de publicação — B08.1
 
-Revisão delimitada em 16/10/2026. **Parcial:** um log e cinco artefatos históricos permanecem sem conteúdo revisto. Ausência de matches nos detectores utilizados não prova ausência universal de segredos. Não autoriza implantação externa, reescrita de histórico ou remoção de evidências.
+Revisão técnica delimitada em16/10/2026; disposição específica aprovada por João em22/10. **Parcial:** um log e cinco artefatos históricos permanecem NÃO VERIFICADOS, sem conteúdo revisto. Ausência de matches nos detectores utilizados não prova ausência universal de segredos. Não autoriza implantação externa, reescrita de histórico ou remoção de evidências.
 
 ## Cobertura observada
 
@@ -39,6 +39,14 @@ O [job111053029171 / run37071897057](https://github.com/Joaomagh/credpay/actions
 |11578772025|37843707080|
 
 Qualquer conclusão ampliada exige recuperar esses conteúdos ou registrar uma disposição específica sobre a lacuna. Não excluir evidências para encerrar o item.
+
+## Disposição específica de João — 22/10/2026
+
+João escolheu explicitamente registrar a revisão limitada ao material acessível, preservar os seis itens acima como NÃO VERIFICADOS e reabrir a análise se forem recuperados. O critério de disposição sobre essa lacuna foi atendido; a revisão continua parcial e delimitada aos recortes efetivamente examinados.
+
+Essa decisão aceita a lacuna de evidência histórica. Não classifica conteúdo indisponível como limpo, excluído ou expirado; não aceita vulnerabilidades, apaga evidências, reescreve histórico ou autoriza implantação externa. Os IDs e a falha de acesso permanecem registrados. Novos runs ou artefatos não entram automaticamente no recorte histórico e exigem identificação/método/limites próprios.
+
+Última tentativa relatada em22/10: cinco listagens dos runs retornaram total_count0 e job111053029171 retornou Transport closed. Nenhum byte desses seis conteúdos foi revisto. Recuperação futura exige revisão do conteúdo e atualização deste registro; ausência de acesso não é resultado de scanner.
 
 ## Inventários posteriores e escopo
 

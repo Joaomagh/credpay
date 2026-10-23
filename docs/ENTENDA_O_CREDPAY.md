@@ -64,9 +64,9 @@ A confirmação causal de FALHOU foi implementada e testada em cenário controla
 
 ## O que já podemos demonstrar e o que falta
 
-O CI já demonstrou criação/consulta, aprovação/rejeição, duplicatas/replay, concorrência, rollback, reentrega e recuperação nos casos registrados. Imagens demonstraram o fluxo; Compose também comprovou preservação após down/up. Isso não cobre toda janela de crash possível nem comprova execução no computador de João enquanto o engine Docker local estiver indisponível.
+O CI já demonstrou criação/consulta, aprovação/rejeição, duplicatas/replay, concorrência, rollback, reentrega e recuperação nos casos registrados. Imagens demonstraram o fluxo; Compose também comprovou preservação após down/up. João também completou Build/Prepare/Activate/Demo/Down local em22/10, com aprovação/rejeição/replay. Isso não cobre toda janela de crash possível, recuperação local ou Kubernetes no computador dele.
 
-Métricas HTTP opt-in e diagnóstico, confirmação controlada de FALHOU e fluxo/falha/recuperação Kubernetes no CI estão integrados. Restam checks/inventários finais e triagem dos aplicativos, disposição das lacunas de publicação, execução local e ensaio pessoal. João adiou painel e frontend; em18/10 também separou a pesquisa de sandbox do aceite da v1, preservando achados e sem liberar o core experimental. A fila vigente está em [BACKLOG.md](BACKLOG.md); não há percentual recalculado a partir de PRs.
+Métricas HTTP opt-in e diagnóstico, confirmação controlada de FALHOU e fluxo/falha/recuperação Kubernetes no CI estão integrados. Checks e inventários do candidato têm corte explícito, e a primeira demo Compose local passou. João aceitou a revisão de publicação delimitada em22/10, preservando seis conteúdos não verificados. Continuam pendentes explicação autônoma, diagnóstico/recuperação pessoais e Kubernetes local. João adiou painel e frontend; em18/10 também separou a pesquisa de sandbox do aceite da v1, preservando achados e sem liberar o core experimental. A fila vigente está em [BACKLOG.md](BACKLOG.md); não há percentual recalculado a partir de PRs.
 
 ## Recorte histórico de etapas e estimativa
 
