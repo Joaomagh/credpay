@@ -1,0 +1,30 @@
+<div class="page-heading"><div><p class="eyebrow">Console de transações</p><h1>Nova transação<span>.</span></h1></div><span class="heading-meta">BRL / ASYNC</span></div>
+<div class="intro-line"><span class="tag"><cp-icon name="bolt" /> Processamento assíncrono</span><span class="tag subtle">Demonstração</span></div>
+<p class="page-description">Um pedido agora. Um resultado logo depois. Crie uma transação e acompanhe cada etapa do processamento.</p>
+<div class="workspace-grid">
+  <form class="card transaction-form" (ngSubmit)="creation.submit()" novalidate>
+    <div class="section-line"><h2>Dados da transação</h2><span class="step-number">01</span></div>
+    <label class="eyebrow">Moeda da transação</label>
+    <div class="currency-field"><span class="currency-badge">BRL</span><span>Real brasileiro</span><span class="muted">Moeda fixa</span></div>
+    <label class="eyebrow amount-label" for="amount">Valor da transação <span aria-hidden="true">*</span></label>
+    <div class="amount-field"><span aria-hidden="true">R$</span><input id="amount" name="amount" type="text" inputmode="decimal" autocomplete="off" required placeholder="0,00" [(ngModel)]="creation.value" [readOnly]="!!creation.intent()" [attr.aria-invalid]="creation.error() ? 'true' : null" aria-describedby="amount-help creation-error" /></div>
+    <p id="amount-help" class="helper">Use vírgula ou ponto para os decimais, sem separador de milhar.</p>
+    <div class="info-panel"><cp-icon name="bolt" /><div><strong>O fluxo continua na fila</strong><p>O POST registra o pedido como PENDENTE. O processamento acontece depois; a consulta mostra o resultado atual.</p></div></div>
+    <div id="creation-error" class="error-message" role="alert" [hidden]="!creation.error()">{{creation.error()}}</div>
+    <button class="button primary wide" type="submit" [disabled]="creation.busy() || !!creation.result()"><cp-icon [name]="creation.busy() ? 'clock' : 'plus'" />{{creation.busy() ? 'Enviando pedido…' : creation.intent() && !creation.result() ? 'Tentar com a mesma intenção' : 'Criar transação'}}<cp-icon name="arrow" /></button>
+    <p class="secure-note"><cp-icon name="shield" /> Chave de idempotência por intenção</p>
+    @if (creation.intent()) {
+      <div class="intent-note"><p>Valor e chave preservados nesta sessão. Uma nova intenção pode criar outra transação, mesmo após falha de comunicação.</p><button class="button secondary wide" type="button" (click)="creation.reset()" [disabled]="creation.busy()">Iniciar nova intenção</button></div>
+    }
+  </form>
+  <div class="result-column" aria-live="polite">
+    @if (creation.result(); as result) {
+      <cp-transaction-card [transaction]="result" />
+      <a class="button primary wide follow-link" routerLink="/consultar" [queryParams]="{id: result.id}">Acompanhar transação <cp-icon name="arrow" /></a>
+      <p class="helper center">A criação confirma o recebimento. Consulte para ver o estado atual.</p>
+    } @else {
+      <section class="card empty-state"><div class="empty-icon"><cp-icon name="bolt" /></div><span class="eyebrow">Pronto para começar</span><h2>Do pedido ao resultado,<br>sem perder o caminho.</h2><p>Depois do envio, o identificador da transação aparece aqui. Use-o para acompanhar o processamento.</p><div class="flow-steps"><span><b>1</b> Criar</span><i></i><span><b>2</b> Processar</span><i></i><span><b>3</b> Consultar</span></div></section>
+    }
+    <div class="small-note"><cp-icon name="shield" /><p><strong>Dados fictícios, fluxo real.</strong><br>Este ambiente simula transações. Não há movimentação financeira.</p></div>
+  </div>
+</div>

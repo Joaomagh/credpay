@@ -1,6 +1,6 @@
 # Referências visuais para uma etapa posterior
 
-João forneceu estes arquivos em 2026-10-16 para preservar o design web/mobile. A implementação do frontend continua adiada; o backlog do backend permanece prioritário.
+João forneceu estes arquivos em 2026-10-16 para preservar o design web/mobile. Em22/10 solicitou a implementação Angular; frontend/ aplica essas referências e os contratos reais. Os aceites restantes da v1 backend continuam separados.
 
 Os quatro ZIPs originais também estão guardados em [original-zips/](original-zips/), sem alteração. O manifesto dessa pasta registra tamanho e SHA256 de cada arquivo. As doze entradas internas foram conferidas em memória contra os hashes originais já revisados em `manifest.json`; nenhuma entrada foi executada. As cópias não corrigem os dois PNGs inválidos descritos abaixo.
 

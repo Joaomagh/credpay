@@ -8,13 +8,14 @@
 
 ## Agora
 
-- [ ] Continuar o aprendizado a partir da demo executada: explicar o fluxo com apoio e depois com autonomia; planejar diagnóstico/recuperação pessoais e rota Kubernetes local compatível com as autorizações. Não repetir o primeiro percurso ou presumir domínio/aceite completo.
+- [ ] Implementar e validar o console Angular solicitado em22/10: duas telas, precisão decimal, repetição segura e consulta limitada. Finalizar revisão/CI e depois guiar João na jornada com o backend real. Isso não conclui os aceites pessoais restantes da v1 backend.
 
 ## Próximo
 
+- Retomar explicação do fluxo com apoio e depois autonomia; diagnóstico/recuperação pessoais e rota Kubernetes local compatível com as autorizações continuam pendentes, sem repetir a primeira demo como nova evidência.
 - Se João trouxer erro local ou dúvida, tratar o menor problema demonstrado com teste quando aplicável.
 - Após os aceites restantes, conferir aplicabilidade do corte técnico, atualizar somente o necessário e registrar fechamento sem alegações além da evidência.
 
 ## Depois
 
-- Pesquisa de sandbox incompleta, frontend Angular/Stitch e painel após v1; referências preservadas. Sem pagamento real, HA ou implantação externa.
+- Pesquisa de sandbox incompleta e painel adiados; referências frontend preservadas. Sem pagamento real, HA ou implantação externa.
