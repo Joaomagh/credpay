@@ -9,11 +9,12 @@ describe('Intenção de criação e formulário', () => {
   let http: HttpTestingController;
   let creation: Creation;
   beforeEach(() => {
+    sessionStorage.removeItem('credpay.creation.v1');
     TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] });
     http = TestBed.inject(HttpTestingController);
     creation = TestBed.inject(Creation);
   });
-  afterEach(() => http.verify());
+  afterEach(() => { try { http.verify(); } finally { sessionStorage.removeItem('credpay.creation.v1'); } });
   it('explica valor inválido no formulário sem enviar POST', async () => {
     const fixture = TestBed.createComponent(CreatePage);
     fixture.detectChanges();

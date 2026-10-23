@@ -23,7 +23,12 @@ Para criar/consultar dados, o backend precisa estar preparado e ativado conforme
 3. Ao receber o pedido, copie o ID ou clique **Acompanhar transação**. POST confirma recebimento/PENDENTE inclusive em replay; GET revela o estado atual.
 4. A consulta se repete dois segundos depois de cada resposta PENDENTE. Para no estado final, no erro, ao navegar/trocar ID, em30 respostas ou60segundos. Cada chamada tem timeout de8segundos. Limite/erro não transforma PENDENTE em FALHOU.
 
-**Limite da intenção:** fica apenas na memória desta aplicação, inclusive ao alternar suas duas telas. Recarregar/fechar a aba perde chave e resultado. Após resposta ambígua, guarde o ID quando disponível e consulte antes de iniciar outro pedido. **Iniciar nova intenção** é uma ação explícita e pode criar outra transação; não é retry da anterior. Não há armazenamento de dados no navegador nem recuperação de intenção após reload nesta versão.
+**Retomar após recarregar:** antes do POST, a intenção é guardada no sessionStorage da origem/aba. Recarregar recupera chave, payload e recibo anterior, se já recebido; não envia pedidos automaticamente. O recibo recuperado confirma somente o POST anterior (PENDENTE); use **Acompanhar transação** para consultar o estado atual. Em falha de comunicação sem recibo, **Tentar com a mesma intenção** mantém chave/payload.
+
+Se o registro estiver inválido ou o armazenamento indisponível/sem espaço, a criação fica bloqueada em vez de enviar com outra chave. Repare a permissão/espaço e recarregue para tentar recuperar o registro existente. Registro ilegível permanece até **Iniciar nova intenção**, ação explícita que remove somente o registro CredPay e pode criar outra transação. Falha ao salvar o recibo mantém o ID confirmado visível; copie-o antes de fechar.
+
+**Limites:** sessionStorage não é backup nem autoridade financeira; pode ser perdido ao fechar/limpar a sessão, muda com a origem (localhost e127.0.0.1 são distintas) e pode ser copiado inicialmente ao duplicar uma aba. Não guardamos credenciais nem usamos localStorage. O registro versionado tem limite de65.536caracteres e dados fictícios. Dados acessíveis ao JavaScript da origem não são armazenamento seguro. **Iniciar nova intenção** não é retry; após resposta ambígua, consulte o pedido anterior quando possível antes de escolher essa ação.
+
 
 ## Verificar
 
