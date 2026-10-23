@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- Primeiro percurso Compose de João concluído: dois JARs e imagens cf103ee, Prepare/Activate/Demo/Down; APROVADA/REJEITADA/replay estáveis e volumes preservados ao parar. João também aceitou a revisão histórica limitada, com seis conteúdos NÃO VERIFICADOS e reabertura se recuperados. Evidências em docs/V1_VALIDATION.md, PUBLICATION_REVIEW.md e spec9.125/16.3.
+- Console Angular com criação e consulta, design Stitch responsivo, decimal exato, intenção/retry em memória e consulta limitada.19testes locais e CI Linux, tipos, build e audit0; revisão sem bloqueantes, PR183 e evidências em spec9.127. Isso não encerra os aceites pessoais da v1 backend.
 
 ## Agora
 
-- [ ] Implementar e validar o console Angular solicitado em22/10: duas telas, precisão decimal, repetição segura e consulta limitada. Finalizar revisão/CI e depois guiar João na jornada com o backend real. Isso não conclui os aceites pessoais restantes da v1 backend.
+- [ ] Guiar João na jornada do console com backend real ativado: criar, acompanhar e consultar o mesmo UUID. Respostas finais no navegador ainda não comprovadas; intenção em memória perde a chave no reload, limite explícito no roteiro frontend/README.md.
 
 ## Próximo
 
