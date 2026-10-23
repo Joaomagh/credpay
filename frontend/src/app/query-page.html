@@ -1,0 +1,25 @@
+<div class="page-heading"><div><p class="eyebrow">Console de transações</p><h1>Consultar<span>.</span></h1></div><span class="heading-meta">BRL / ASYNC</span></div>
+<div class="intro-line"><span class="tag"><cp-icon name="search" /> Consulta por identificador</span><span class="tag subtle">Demonstração</span></div>
+<p class="page-description">Acompanhe o que acontece depois do pedido. Consulte o estado atual usando o identificador da transação.</p>
+<div class="workspace-grid query-grid">
+  <div>
+    <form class="card query-form" (ngSubmit)="search()" novalidate>
+      <div class="section-line"><h2>Localizar transação</h2><cp-icon name="search" /></div>
+      <label class="eyebrow" for="query-id">Identificador da transação · UUID</label>
+      <input class="query-input" id="query-id" name="id" [(ngModel)]="id" placeholder="Cole o UUID da transação" autocomplete="off" spellcheck="false" required aria-describedby="uuid-help query-error" [attr.aria-invalid]="error() ? 'true' : null" />
+      <p class="helper" id="uuid-help">Você recebe esse código ao criar uma transação.</p>
+      <button type="submit" class="button primary wide"><cp-icon [name]="loading() ? 'clock' : 'search'" />{{loading() ? 'Consultando…' : 'Consultar transação'}}</button>
+      <div class="error-message" id="query-error" role="alert" [hidden]="!error()">{{error()}}</div>
+    </form>
+    <section class="card explanation-card"><span class="eyebrow"><cp-icon name="refresh" /> Atualização automática</span><h2>O processamento é assíncrono.</h2><p>Enquanto a API responder PENDENTE, consultamos novamente a cada dois segundos após a resposta, por até um minuto ou 30 respostas.</p><p>A atualização para ao receber um estado final, ocorrer um erro ou você sair desta tela.</p><span class="tag subtle">Consultar não cria outra transação</span></section>
+  </div>
+  <div class="result-column" aria-live="polite" [attr.aria-busy]="loading()">
+    @if (result(); as transaction) {
+      <cp-transaction-card [transaction]="transaction" />
+      @if (tracking() || note()) { <div class="tracking-note"><cp-icon [name]="tracking() ? 'refresh' : transaction.status === 'PENDENTE' ? 'clock' : 'check'" /><p>{{tracking() ? 'Acompanhando o estado informado pela API…' : note()}}</p></div> }
+      <button class="button secondary wide" type="button" (click)="search()"><cp-icon name="refresh" /> Consultar novamente</button>
+    } @else {
+      <section class="card empty-state"><div class="empty-icon"><cp-icon [name]="loading() ? 'clock' : 'search'" /></div><span class="eyebrow">{{loading() ? 'Consultando a API' : 'Cada pedido tem seu caminho'}}</span><h2>{{loading() ? 'Buscando sua transação…' : 'Um identificador.\nO estado atual.'}}</h2><p>O resultado aparece aqui com valor, moeda e o estado recebido do backend.</p><div class="empty-detail"><cp-icon name="shield" /><span>Sem movimentação financeira real</span></div></section>
+    }
+  </div>
+</div>

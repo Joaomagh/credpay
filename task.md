@@ -4,17 +4,18 @@
 
 ## Último incremento
 
-- Primeiro percurso Compose de João concluído: dois JARs e imagens cf103ee, Prepare/Activate/Demo/Down; APROVADA/REJEITADA/replay estáveis e volumes preservados ao parar. João também aceitou a revisão histórica limitada, com seis conteúdos NÃO VERIFICADOS e reabertura se recuperados. Evidências em docs/V1_VALIDATION.md, PUBLICATION_REVIEW.md e spec9.125/16.3.
+- Console Angular com criação e consulta, design Stitch responsivo, decimal exato, intenção/retry em memória e consulta limitada.19testes locais e CI Linux, tipos, build e audit0; revisão sem bloqueantes, PR183 e evidências em spec9.127. Isso não encerra os aceites pessoais da v1 backend.
 
 ## Agora
 
-- [ ] Continuar o aprendizado a partir da demo executada: explicar o fluxo com apoio e depois com autonomia; planejar diagnóstico/recuperação pessoais e rota Kubernetes local compatível com as autorizações. Não repetir o primeiro percurso ou presumir domínio/aceite completo.
+- [ ] Guiar João na jornada do console com backend real ativado: criar, acompanhar e consultar o mesmo UUID. Respostas finais no navegador ainda não comprovadas; intenção em memória perde a chave no reload, limite explícito no roteiro frontend/README.md.
 
 ## Próximo
 
+- Retomar explicação do fluxo com apoio e depois autonomia; diagnóstico/recuperação pessoais e rota Kubernetes local compatível com as autorizações continuam pendentes, sem repetir a primeira demo como nova evidência.
 - Se João trouxer erro local ou dúvida, tratar o menor problema demonstrado com teste quando aplicável.
 - Após os aceites restantes, conferir aplicabilidade do corte técnico, atualizar somente o necessário e registrar fechamento sem alegações além da evidência.
 
 ## Depois
 
-- Pesquisa de sandbox incompleta, frontend Angular/Stitch e painel após v1; referências preservadas. Sem pagamento real, HA ou implantação externa.
+- Pesquisa de sandbox incompleta e painel adiados; referências frontend preservadas. Sem pagamento real, HA ou implantação externa.

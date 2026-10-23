@@ -1,3 +1,7 @@
 .githooks/* text eol=lf
 # Referências preservam bytes e hashes também em clones com autocrlf habilitado.
 docs/frontend/references/** -text
+
+# Fontes web mantêm finais de linha estáveis entre Windows e Linux.
+frontend/** text eol=lf
+.github/workflows/frontend-ci.yml text eol=lf

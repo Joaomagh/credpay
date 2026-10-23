@@ -24,7 +24,7 @@ O projeto estará pronto para portfólio quando João conseguir:
 
 ### Briefing de frontend para etapa posterior — 2026-10-15
 
-João considerou uma interface Angular com design explorado no Google Stitch e depois pediu priorizar o backlog, preservando somente o briefing. `docs/FRONTEND_BRIEF.md` guarda o recorte futuro: criar transação, acompanhar estado e consultar por ID usando contratos existentes. Frontend não é critério para encerrar esta v1; nenhuma dependência, tela externa ou aplicação foi criada. Retomar sua implementação em etapa posterior, sem ampliar o backlog atual.
+João considerou uma interface Angular com design explorado no Google Stitch e depois pediu priorizar o backlog, preservando somente o briefing. `docs/FRONTEND_BRIEF.md` guarda o recorte futuro: criar transação, acompanhar estado e consultar por ID usando contratos existentes. Frontend não é critério para encerrar esta v1; a preparação inicial não criou dependências, tela externa ou aplicação. João retomou explicitamente a implementação em22/10, após a primeira demo Compose local: frontend/ inicia a etapa Angular em paralelo ao acompanhamento dos aceites pessoais restantes, com uma única frente de implementação. Isso não torna frontend requisito retroativo nem declara encerrada a v1 backend.
 
 ## 2. Fluxo de negócio v1
 

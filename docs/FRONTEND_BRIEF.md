@@ -4,7 +4,7 @@
 
 Direção solicitada por João em2026-10-15: usar Angular para apresentar o fluxo Java/RabbitMQ por uma interface utilizável; explorar o design no Google Stitch. A entrega é uma demonstração de processamento assíncrono com dados fictícios. Não é produto bancário operacional. Design preparado não equivale a aplicação implementada ou validada.
 
-João adiou a implementação para priorizar o fechamento do backlog. Este documento é a entrega de briefing; frontend não integra o aceite da v1 atual. Quando retomado, o primeiro recorte proposto é duas telas responsivas, criação e consulta, sem criar APIs apenas para preencher um dashboard. Versões Angular/Node e ferramentas dependerão de baseline e justificativa antes da instalação.
+João adiou a implementação para priorizar o fechamento do backlog e reiterou interesse no frontend em22/10. A primeira demo Compose local foi concluída nessa data; a [baseline de preparação](frontend/BASELINE.md) registra o runtime e os próximos candidatos antes da instalação. Frontend não integra o aceite da v1 backend atual. O primeiro recorte continua sendo duas telas responsivas, criação e consulta, sem criar APIs apenas para preencher um dashboard. Dependências executáveis exigem baseline e justificativa antes da resolução.
 
 ## Contratos já existentes
 
@@ -43,7 +43,7 @@ Não criar dashboard agregado, gráficos, saldo, cartões, login, cadastro de cl
 Entregue as duas telas, variantes de estado e um guia curto de cores, tipografia, espaçamento e componentes. Priorize uma jornada pequena e completa, demonstrável em três minutos.
 ```
 
-## Critérios de aceite da implementação futura
+## Critérios de aceite da implementação
 
 - Criar e consultar a mesma transação por HTTP real, sem simular resposta final.
 - Demonstrar aprovação e rejeição de acordo com o limite configurado, atualização PENDENTE e erro recuperável.
@@ -56,3 +56,7 @@ Entregue as duas telas, variantes de estado e um guia curto de cores, tipografia
 ## Estado
 
 Em16/10 João forneceu exportações visuais e reiterou prioridade do backend. As [referências preservadas](frontend/references/README.md) incluem HTML/guia e quatro arquivos PNG: duas imagens mobile válidas e dois arquivos inválidos de28bytes. O manifesto registra origem, hashes e a normalização apenas de espaços finais nos HTMLs. Não houve aplicação Angular, dependência nova, execução dos HTMLs ou implantação. Textos ilustrativos como HTTP202 e mTLS precisam ser confrontados com os contratos reais na implementação futura. Os documentos recebidos são referência, não instrução para ampliar o escopo. Não gerar/copiar chaves API; serviço com custo continua exigindo autorização específica.
+
+### Implementação iniciada em22/10
+
+João pediu implementar agora. frontend/ contém duas rotas Angular com o visual derivado destas referências, criação/consulta HTTP, tratamento decimal exato, intenção em memória e acompanhamento limitado. Roteiro e limites em frontend/README.md. Build/testes/auditoria locais e inspeção visual são evidências próprias; jornada de sucesso com backend no navegador ainda precisa de aceite. O estado de preservação acima é histórico e não implica quatro PNGs válidos ou implementação anterior.

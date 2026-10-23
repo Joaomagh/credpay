@@ -1,5 +1,8 @@
 # Build e arquivos locais do editor
 target/
+node_modules/
+frontend/dist/
+frontend/.angular/
 .idea/
 .vscode/
 *.iml
