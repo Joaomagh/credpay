@@ -31,3 +31,5 @@ CI Linux usa a mesma versão Node24.22.1 oficial: node-v24.22.1-linux-x64.tar.xz
 Metadados publicados no registro npm consultados em22/10: @angular/core22.2.3 e @angular/cli22.2.4, ambos exigindo as linhas Node acima. A CLI admite npm>=8. As versões fixadas acima e o lockfile identificam a resolução do primeiro incremento executável; não usar tags latest como identidade persistente.
 
 Não instalar CLI global, contratar serviço, publicar site ou alterar CORS do backend nesta preparação. Os comportamentos implementados seguiram red/green e preservação decimal/idempotência do briefing; a jornada manual no navegador com backend ativo permanece pendente. Baseline de ferramentas não comprova contenção do agente; restrições de trabalho e limites da sandbox continuam documentados separadamente.
+
+Inspeção responsiva no navegador: viewports320/390/1280, sem overflow horizontal nos recortes conferidos; foco visível e validação negativa observados. Não constitui auditoria completa WCAG nem jornada de sucesso com backend ativo. Capturas locais em .local/frontend, sem substituir as referências originais.
