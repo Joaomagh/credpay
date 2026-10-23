@@ -105,6 +105,24 @@ O [runbook dos JARs](../infra/e2e/README.md) explica os cenários de FluxoCredPa
 
 As evidências estão em spec §9.53–9.54, §9.96–9.98 e nos workflows. Parada controlada comprova indisponibilidade e reinício, sem provar crash abrupto em toda janela. Retry limitado tem prova nos listeners; DLQ não é consumida automaticamente. Replay manual desse teste é exclusivo do broker descartável, não ferramenta operacional autorizada para ambiente externo. Esgotar uma falha operacional conserva PENDENTE recuperável; FALHOU exige confirmação causal, com transporte comprovado somente na fixture controlada e autoridade operacional ainda bloqueada.
 
+## Console Angular e recuperação assistida
+
+O [console](../frontend/README.md) permite observar a jornada sem montar requisições manualmente. Em22/10, João executou Prepare/Activate e os comandos Docker abaixo, enquanto o agente usou o navegador. Aprovação/rejeição, recuperação do recibo após reload,404 recuperável e mesmo UUID PENDENTE→APROVADA após reinício foram observados. Isso não é demonstração autônoma de João nem prova de crash abrupto/métricas/Kubernetes.
+
+Com o backend preparado/ativado e a interface aberta, crie um pedido abaixo do limite e acompanhe o UUID. Para praticar recuperação controlada, execute um comando por vez, no projeto de demonstração com dados fictícios e variáveis/tag já conferidas:
+
+```powershell
+docker --context default compose --env-file infra/compose/.env -f infra/compose/compose.yaml -p credpay-demo stop processamento
+```
+
+Crie outra intenção abaixo do limite e observe PENDENTE. Guarde seu UUID; depois inicie o mesmo container, sem reconstruir ou apagar volumes:
+
+```powershell
+docker --context default compose --env-file infra/compose/.env -f infra/compose/compose.yaml -p credpay-demo start processamento
+```
+
+Consulte novamente o mesmo UUID; o resultado esperado éAPROVADA, sem criar outro pedido para recuperá-lo. O acompanhamento automático tem prazo limitado; use Consultar novamente se necessário. Confira falhas pelo roteiro existente, sem concluir aprovação se a API não informar. Ao encerrar a prática, use Down do quickstart para preservar volumes. Se você não souber explicar uma etapa, releia o fluxo em cinco frases e anote a dúvida.
+
 ## Explicação de aproximadamente três minutos
 
 “CredPay simula uma transação assíncrona com dois serviços Java, cada um dono do seu PostgreSQL. A API cria uma transação PENDENTE. O processador decide APROVADA ou REJEITADA pelo limite configurado; o resultado volta por RabbitMQ e atualiza o estado consultável com histórico.

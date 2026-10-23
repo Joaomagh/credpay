@@ -8,11 +8,11 @@
 
 ## Agora
 
-- [ ] Guiar João na jornada do console com backend real ativado: criar, acompanhar e consultar o mesmo UUID. Respostas finais no navegador ainda não comprovadas; intenção em memória perde a chave no reload, limite explícito no roteiro frontend/README.md.
+- [ ] Integrar F02 (retomada da intenção após reload) após CI/revisão do SHA final.33testes locais/tipos/build/audit0 e jornada real/recuperação assistida passaram; evidências em spec9.128–9.129.
 
 ## Próximo
 
-- Retomar explicação do fluxo com apoio e depois autonomia; diagnóstico/recuperação pessoais e rota Kubernetes local compatível com as autorizações continuam pendentes, sem repetir a primeira demo como nova evidência.
+- João pediu adiar prática/explicação em22/10. Preservar o aceite de aprendizado pendente sem novos exercícios nesta execução; continuar trabalho técnico independente. Diagnóstico por métricas e Kubernetes local conservam seus limites/autorização.
 - Se João trouxer erro local ou dúvida, tratar o menor problema demonstrado com teste quando aplicável.
 - Após os aceites restantes, conferir aplicabilidade do corte técnico, atualizar somente o necessário e registrar fechamento sem alegações além da evidência.
 

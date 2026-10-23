@@ -1,6 +1,7 @@
 <div class="page-heading"><div><p class="eyebrow">Console de transações</p><h1>Nova transação<span>.</span></h1></div><span class="heading-meta">BRL / ASYNC</span></div>
 <div class="intro-line"><span class="tag"><cp-icon name="bolt" /> Processamento assíncrono</span><span class="tag subtle">Demonstração</span></div>
 <p class="page-description">Um pedido agora. Um resultado logo depois. Crie uma transação e acompanhe cada etapa do processamento.</p>
+@if (creation.restored()) { <div class="info-panel" role="status"><cp-icon name="refresh" /><div><strong>Intenção recuperada desta aba</strong><p>Nenhum pedido foi reenviado automaticamente. O recibo, quando disponível, é a confirmação anterior; consulte para obter o estado atual.</p></div></div> }
 <div class="workspace-grid">
   <form class="card transaction-form" (ngSubmit)="creation.submit()" novalidate>
     <div class="section-line"><h2>Dados da transação</h2><span class="step-number">01</span></div>
@@ -11,10 +12,10 @@
     <p id="amount-help" class="helper">Use vírgula ou ponto para os decimais, sem separador de milhar.</p>
     <div class="info-panel"><cp-icon name="bolt" /><div><strong>O fluxo continua na fila</strong><p>O POST registra o pedido como PENDENTE. O processamento acontece depois; a consulta mostra o resultado atual.</p></div></div>
     <div id="creation-error" class="error-message" role="alert" [hidden]="!creation.error()">{{creation.error()}}</div>
-    <button class="button primary wide" type="submit" [disabled]="creation.busy() || !!creation.result()"><cp-icon [name]="creation.busy() ? 'clock' : 'plus'" />{{creation.busy() ? 'Enviando pedido…' : creation.intent() && !creation.result() ? 'Tentar com a mesma intenção' : 'Criar transação'}}<cp-icon name="arrow" /></button>
+    <button class="button primary wide" type="submit" [disabled]="creation.busy() || !!creation.result() || creation.blocked()"><cp-icon [name]="creation.busy() ? 'clock' : 'plus'" />{{creation.busy() ? 'Enviando pedido…' : creation.intent() && !creation.result() ? 'Tentar com a mesma intenção' : 'Criar transação'}}<cp-icon name="arrow" /></button>
     <p class="secure-note"><cp-icon name="shield" /> Chave de idempotência por intenção</p>
-    @if (creation.intent()) {
-      <div class="intent-note"><p>Valor e chave preservados nesta sessão. Uma nova intenção pode criar outra transação, mesmo após falha de comunicação.</p><button class="button secondary wide" type="button" (click)="creation.reset()" [disabled]="creation.busy()">Iniciar nova intenção</button></div>
+    @if (creation.intent() || creation.blocked()) {
+      <div class="intent-note"><p>{{creation.intent() ? 'Valor e chave capturados nesta intenção.' : 'Não foi possível recuperar uma intenção válida.'}} Uma nova intenção pode criar outra transação, mesmo após falha de comunicação.</p><button class="button secondary wide" type="button" (click)="creation.reset()" [disabled]="creation.busy()">Iniciar nova intenção</button></div>
     }
   </form>
   <div class="result-column" aria-live="polite">
