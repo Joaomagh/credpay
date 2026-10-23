@@ -3065,6 +3065,8 @@ Baseline antes da resolução: Playwright1.64.1/Apache-2.0 e tipos Node24.19.2/M
 
 Primeiras checagens estruturais: tipos Node ausentes foram adicionados após baseline; descoberta --list inicialmente foi rejeitada pela contagem do reporter e passou ao usar reporter de listagem somente nessa operação, sem executar navegador. Tipos e descoberta6cenários passaram;33testes Angular/6arquivos, tipos app e build337,74kB/89,92kB estimados passaram com as novas devDependencies. Revisão estática sem bloqueantes. Execução real dos seis cenários e bibliotecas nativas do runner dependem do CI; não atribuir aceite antes do resultado. Mobile Chromium não prova Safari/WebKit.
 
+Primeiro CI da PR185/bc47c7e: Frontend7/Scan351 passaram, Compose140/run39882860314/job120184094601 passou Smoke mas browser0executados/runnererror1 por timeout de60s na inicialização do webServer. Experimento mínimo local iniciou somente ngserve4300 com CI=true (sem Docker/navegador Playwright): build desenvolvimento1,89MB rejeitado pelo orçamento800kB de produção que estava em options comuns; caching/prebundling de dev não é usado em CI. Correção operacional: mover os mesmos budgets600/800kB para configuração production e tornar production o default do build; development continua sem otimização. Repetição CI=true abriu4300 e sonda no navegador renderizou a tela, depois sonda/servidor foram encerrados. Não ampliar orçamento de produção ou reduzir cenários. Nova execução remota ainda necessária.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
