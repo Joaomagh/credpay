@@ -385,6 +385,10 @@ F01: console de duas telas integrado pela PR183/b438543 após Frontend Angular3/
 
 ### F02 — Retomar a mesma intenção após reload
 
-Problema observado no console inicial: reload perde chave/payload. Aceite: salvar antes do POST, recuperar sem reenvio automático, recibo anterior distinto de estado atual, decimal exato e bloqueio explícito para registro/storage inválido; limpar somente registro próprio em nova intenção consciente. Implementação e revisão locais passaram:33testes, tipos/build/audit0, sem dependência nova ou mudança na API. Navegador real recuperou recibo do mesmo UUID após reload e consultou estado final. CI remoto/integração pendentes; não é armazenamento seguro ou backup.
+Problema observado no console inicial: reload perde chave/payload. Aceite: salvar antes do POST, recuperar sem reenvio automático, recibo anterior distinto de estado atual, decimal exato e bloqueio explícito para registro/storage inválido; limpar somente registro próprio em nova intenção consciente. Implementação e revisão locais passaram:33testes, tipos/build/audit0, sem dependência nova ou mudança na API. Navegador real recuperou recibo do mesmo UUID após reload e consultou estado final. Integrada na PR184/869ed9f após Frontend5/Scan349 verdes no SHAfa175c4; não é armazenamento seguro ou backup.
 
 João pediu adiar prática/explicação em22/10 após o ensaio assistido. O aceite de aprendizado permanece pendente, sem novos exercícios nesta execução; trabalho técnico independente pode continuar. Não converter o adiamento em domínio comprovado ou retirada implícita dos critérios da v1.
+
+### F03 — Regressão do navegador com backend real
+
+Aceite: seis cenários desktop/mobile Chromium contra Compose real no CI,201/Location/decimal/reload sem POST extra/APROVADA/REJEITADA/404 e validação sem HTTP. Projeto/cleanup próprios, limites e saída segura; nenhum browser/daemon local do agente. Tipos/descoberta6 e33testes app/build/audit passaram localmente; revisão sem bloqueantes. Aguardar execução real e gates do SHA final antes de integrar; nenhum estado de domínio ou deploy novo.

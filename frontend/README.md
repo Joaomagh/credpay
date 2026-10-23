@@ -42,3 +42,16 @@ npm.cmd audit --audit-level=low
 Testes Angular/Vitest usam a fronteira HTTP controlada, sem RabbitMQ/PostgreSQL e sem substituir o aceite da jornada com backend real. O CI repete instalação pelo lockfile, tipos, comportamento, build e auditoria no Linux. A revisão visual usa navegador desktop/mobile, validação inválida e navegação; sucesso financeiro no navegador com backend é um aceite separado.
 
 Framework standalone, Router, Forms e HttpClient; estado assíncrono com signals/RxJS. `lossless-json` preserva o token decimal recebido/enviado sem converter dinheiro para `Number`; a formatação só desloca caracteres. CSS e ícones SVG são locais, sem fonte/CDN ou framework visual adicional. Baseline, justificativas e override de segurança do Vite estão em [docs/frontend/BASELINE.md](../docs/frontend/BASELINE.md).
+
+## Jornada automatizada no CI
+
+Compose CI executa seis cenários de navegador Chromium (desktop e celular) contra os dois aplicativos reais após Smoke: aprovação com decimal/HTTP201/Location, reload com mesmo recibo e sem outro POST, rejeição e validação/404. Não há mock de API nesses cenários. Banco/broker/apps pertencem somente ao projeto descartável credpay-ci; cleanup always permanece limitado a ele. O teste não controla o Docker do seu computador nem substitui todos os testes Java/concorrência/reentrega.
+
+Verificações estruturais sem abrir navegador:
+
+```powershell
+npm.cmd run check:e2e
+npm.cmd run e2e:list
+```
+
+A execução e2e:ci exige GitHubActions/CI e nome do projeto de teste; esse guard previne acidentes, não é isolamento. O CI baixa somente o Chromium headless compatível para seu temporário, sem instalar navegador global. Sem testes ignorados, sem retry automático e com deadlines; reporte público limita-se a nomes estáticos de cenários/etapas e contagens. Detalhes de erros, corpos, UUIDs, traces, vídeos e screenshots não são publicados por esse reporter. Em falha, identificar cenário/etapa e reproduzir o menor problema; não reduzir testes para passar. Mobile aqui é Chromium responsivo, sem prova de Safari/WebKit.
