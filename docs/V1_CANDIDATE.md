@@ -11,7 +11,7 @@ Registro de 24/10/2026. **Identificado para validação; ainda não promovido a 
 
 Essas árvores identificam fontes e configuração versionadas, não os bytes de JARs ou imagens reconstruídos. Não renomear uma imagem antiga para a tag deste candidato. Uma mudança relevante reabre seus checks e a identificação do candidato.
 
-O perfil Kubernetes Local Windows é incremento posterior a esse corte e exige seus próprios checks e ensaio real; o candidato operacional do repositório deverá ser reidentificado no fechamento. As imagens f412652 continuam vinculadas às fontes dos aplicativos, que não mudaram por esse perfil. Não atribuir a esse SHA antigo a validação do launcher novo.
+O perfil Kubernetes Local Windows é incremento posterior, integrado em0286262603fcba2994540d797a45559e31aac07d após seus controles Windows/Linux e cluster CI verdes no SHA0b91d34; ensaio real local ainda pendente. O candidato operacional do repositório deverá ser reidentificado no fechamento. As imagens f412652 continuam vinculadas às fontes dos aplicativos, que não mudaram por esse perfil. Não atribuir a esse SHA antigo a validação do launcher novo.
 
 ## Aceites conferidos
 
@@ -36,7 +36,7 @@ A sonda inicial sem resposta não identificava a causa. Depois de João abrir Do
 1. Docker Linux retomado por João no contexto desktop-linux. Imagens f412652 construídas dos JARs preparados, cujos hashes foram conferidos contra o manifesto local; ausência de delta operacional desde essa revisão foi verificada. Não renomear imagens cf103ee antigas para a nova tag.
 2. Prepare/Activate/Demo com Diagnostics passaram em24/10: health/metrics acessíveis, dois consumidores ACK/prefetch10/1, dois resultados/replays e delta confirmed2 nos dois processos entre baseline/leitura da demo. Fonte: resumos dos comandos executados por João. COUNT mede tentativas e não prova sozinho consumo, commit ou transações únicas; os resultados vieram das verificações separadas do roteiro. Configuração e volumes existentes preservados, sem Down após essa medição.
 3. Para diagnóstico causal sem rota, avaliar roteiro próprio em recursos descartáveis; a demo acima comprova contadores de publicação, não reproduz sozinha returned/nacked/error. Não remover bindings do broker persistente de João.
-4. Implementar/testar o perfil local autorizado em24/10 e validar startup, PVCs, fluxo/replay e parada/recuperação com o mesmo recorte e limites. A exceção local não concede acesso Docker ao agente nem permite executar os scripts CI por mera troca de nome.
+4. Executar/validar localmente o perfil autorizado em24/10 e integrado na PR192: startup, PVCs, fluxo/replay e parada/recuperação com o mesmo recorte e limites. A exceção local não concede acesso Docker ao agente nem permite executar os scripts CI por mera troca de nome.
 5. Quando João retomar a prática, demonstrar entendimento/autonomia. Só então conferir todos os critérios e registrar a decisão final. Este documento não reduz o critério de aprendizado.
 
 Grafana/Prometheus e pesquisa de sandbox continuam adiados. Achados de GnuTLS e correções disponíveis de curl/zlib permanecem na [triagem](../infra/security/TRIAGE.md), sem supressão, promoção automática de runtime ou autorização de implantação externa.

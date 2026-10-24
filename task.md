@@ -8,13 +8,14 @@
 
 ## Agora
 
-- [ ] Integrar perfil Kubernetes Local após checks, depois conduzir Create/Validate/Remove com João, uma ação por vez. Clientes kind0.33/kubectl1.36.4 conferidos;64controles offline e9cenários de ciclo passaram, sem daemon. Execução local/diagnóstico causal por métricas/prática pessoal continuam separados; candidato operacional será reidentificado ao fechar.
+- [ ] Conduzir Create/Validate/Remove com João, uma ação por vez. Perfil Local integrado na PR192/0286262 após controles Windows/Linux e cluster CI verdes; Create solicitado, sem resultado local recebido. Diagnóstico causal por métricas/prática pessoal continuam separados; candidato operacional será reidentificado ao fechar.
 
 ## Próximo
 
 - João pediu adiar prática/explicação em22/10. Preservar o aceite de aprendizado pendente sem novos exercícios nesta execução; continuar trabalho técnico independente. Diagnóstico por métricas e Kubernetes local conservam seus limites/autorização.
 - Se João trouxer erro local ou dúvida, tratar o menor problema demonstrado com teste quando aplicável.
 - Após os aceites restantes, conferir aplicabilidade do corte técnico, atualizar somente o necessário e registrar fechamento sem alegações além da evidência.
+- João pediu planejar demo pública gratuita após os aceites atuais. Opções/limites em docs/PUBLIC_DEMO_PLAN.md; destino e publicação externos ainda não autorizados especificamente. Não substituir o aceite local por deploy ou alterar a arquitetura para encaixar cota sem revisão.
 
 ## Depois
 
