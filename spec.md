@@ -3091,6 +3091,12 @@ Fechamento M01: oito checks verdes no SHA3406d2d315901634d8484f4990d2509a80e1ec9
 
 Artefato12566116281/Inventory40109185999:11.199bytes/SHA256ba3186b64789d4b89af11969cc6c5b623da833604b7fcfd909212a84181be870. Seis arquivos selecionados/nomes únicos/tipos/limites de expansão/UTF-8, checkoutda1692abc555a80565cdf62a2760639de9b27ba2 e paisbf51413/3406d2d viaAPI, manifestos linux/amd64 e hashesJAR conferidos; Gitleaks0 no recorte. Revisão independente confirmou cobertura/identidade/contagens e comparação com artefato12461853306. Pacotes idênticos nos quatro alvos:107/JAR243/imagem, HIGH0CRITICAL0UNKNOWN0;3MEDIUM/JAR33MEDIUM22LOW/imagem. NovoMEDIUM88648/GnuTLS semFixed e85091/zlib comFixed2.3/Statusfixed masInstalled2.2 nas duas imagens. Fontes oficiais e limites registrados na triagem/validação, sem aceite de risco ou inferência de ausência de exposição. Não rehash dos bytes originais de JAR/imagem; CI não é prova de atualização do Docker local de João.
 
+### 9.133 Preparação dos aceites locais e identificação do candidato — 24/10
+
+João pediu conferir/registrar candidato, demonstrar métricas e validar Kubernetes local autorizado. SHA463f9bc94fea86e1f1e09d87e23e69e47aecff2e identificado em docs/V1_CANDIDATE.md; delta desde3406d2d contém somente cinco documentos. Árvores versionadas dos três módulos e checks aplicáveis ao candidato (Inventory40110119178/Scan40110119100 verdes) conferidos; não são novos bytes de JAR/imagem ou execução das oito suítes no SHA documental.
+
+Sonda HTTP loopback com timeout3s por chamada não obteve resposta em health/metrics nas portas8080/8081. Não inferir causa. Preflight Docker foi solicitado para execução de João; agente não acessou daemon/socket/.env. João informou não saber/ainda não ter configurado Kubernetes. Proposta concreta em docs/KUBERNETES_LOCAL_PROPOSAL.md identifica baseline Windows, privilégios/mounts, limites, necessidade de adaptar guards/caminhos e cleanup próprio, sem executar/installar/excluir recursos. Checksums metadata/texto oficiais kind/kubectl conferidos antes de qualquer download executável. Aprovação local ainda não foi dada; permanece a restrição CI de AGENTS§5. Prática explicativa segue adiada, métricas locais e Kubernetes não recebem aceite por esta preparação.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

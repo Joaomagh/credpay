@@ -403,6 +403,8 @@ Concluída na PR187/6f77f8e após os oito checks aplicáveis verdes no SHA3406d2
 
 ### Situação de fechamento em24/10
 
+João solicitou conferir o candidato e executar os aceites de métricas/Kubernetes local. Candidato identificado por SHA em [V1_CANDIDATE.md](V1_CANDIDATE.md), ainda condicionado; sonda HTTP local sem resposta e preflight Docker solicitado. João informou não saber/ainda não ter configurado Kubernetes. [Proposta local](KUBERNETES_LOCAL_PROPOSAL.md) prepara a direção específica, sem presumir extensão da exceção CI, instalar ferramentas ou executar cluster. Explicação pessoal continua adiada.
+
 F01–F04 e M01 estão integrados. Não há correção funcional aberta identificada nesta revisão. Permanecem os aceites locais/pessoais da fila vigente: diagnóstico por métricas, Kubernetes local em ambiente autorizado, entendimento/autonomia e registro final da v1. A prática foi adiada por João; não substituí-la por funcionalidades adicionais nem contar CI como aprendizado pessoal.
 
 Inventário da PR187: quatro alvos com HIGH0/CRITICAL0,3MEDIUM por JAR e33MEDIUM/22LOW por imagem. Novo CVE-2026-88648 em GnuTLS sem correção e disponibilidade de correções oficiais zlib/curl ficam explicitamente na manutenção de runtime, com triagem/limites em infra/security/TRIAGE.md e docs/V1_VALIDATION.md. Não é aceite de vulnerabilidades, implantação externa ou requisito artificial de inventário vazio. Imagens locais de João continuam no corte anterior; a nova aplicação só foi comprovada no CI.
