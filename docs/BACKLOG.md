@@ -399,4 +399,10 @@ Concluída na PR186/bf51413 após Compose/run39884839678 (seis cenários de nave
 
 ### M01 — Preservar identidade na consulta — marco4 / etapa Angular
 
-Falhas observadas: GET aceita UUID abreviado como outra representação, e cliente aceita resposta com UUID diferente do solicitado. Aceite: recusar alias antes da consulta com400 ProblemDetail e recusar resposta divergente antes de exibir/continuar acompanhamento; preservar UUID completo uppercase, consulta válida e contrato financeiro. Reds observados, green local9MVC/35frontend e revisão sem bloqueantes; integração real/gates finais pendentes. Sem dependência, autenticação ou migração nova; spec9.132. Correção reabre a conferência do candidato backend afetado, sem transformar melhorias opcionais em requisito de fechamento.
+Concluída na PR187/6f77f8e após os oito checks aplicáveis verdes no SHA3406d2d. GET recusa UUID abreviado antes da consulta com400 ProblemDetail; cliente recusa resposta divergente antes de exibir/continuar acompanhamento. UUID completo uppercase e contrato financeiro preservados. Reds observados,525testes Transações/35frontend,12fluxo e6browser passaram; revisão sem bloqueantes. Sem dependência, autenticação ou migração nova; spec9.132. Candidato técnico atualizado sem encerrar os aceites pessoais.
+
+### Situação de fechamento em24/10
+
+F01–F04 e M01 estão integrados. Não há correção funcional aberta identificada nesta revisão. Permanecem os aceites locais/pessoais da fila vigente: diagnóstico por métricas, Kubernetes local em ambiente autorizado, entendimento/autonomia e registro final da v1. A prática foi adiada por João; não substituí-la por funcionalidades adicionais nem contar CI como aprendizado pessoal.
+
+Inventário da PR187: quatro alvos com HIGH0/CRITICAL0,3MEDIUM por JAR e33MEDIUM/22LOW por imagem. Novo CVE-2026-88648 em GnuTLS sem correção e disponibilidade de correções oficiais zlib/curl ficam explicitamente na manutenção de runtime, com triagem/limites em infra/security/TRIAGE.md e docs/V1_VALIDATION.md. Não é aceite de vulnerabilidades, implantação externa ou requisito artificial de inventário vazio. Imagens locais de João continuam no corte anterior; a nova aplicação só foi comprovada no CI.

@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- Contraste F04 integrado na PR186/bf51413 com três checks verdes e seis cenários browser. F02/F03 já integradas; evidências em spec9.128–9.131. Aceites pessoais continuam pendentes.
+- Identidade da consulta corrigida no backend e frontend, integrada na PR187/6f77f8e após oito checks verdes no SHA3406d2d:525testes Transações,35Angular,12fluxo e6browser. Contraste F04 já integrado na PR186. Inventário/limites em spec9.131–9.132 e docs/V1_VALIDATION.md.
 
 ## Agora
 
-- [ ] M01: validar no CI e integrar a correção de identidade da consulta no backend e frontend. Reds observados; green local9MVC/35frontend e revisão sem bloqueantes. Evidência em spec9.132; prática continua adiada.
+- [ ] Fechamento da v1 depende dos aceites locais/pessoais ainda não demonstrados: métricas, Kubernetes autorizado, entendimento/autonomia e registro final. Nenhuma implementação funcional aberta após M01; prática adiada a pedido de João.
 
 ## Próximo
 
@@ -18,4 +18,5 @@
 
 ## Depois
 
+- Manutenção de runtime: avaliar imagem oficial atualizada para correções disponíveis de curl/zlib; GnuTLS88648 permanece sem correção, sem dispensa ou promoção automática. Findings preservados na triagem.
 - Pesquisa de sandbox incompleta e painel adiados; referências frontend preservadas. Sem pagamento real, HA ou implantação externa.
