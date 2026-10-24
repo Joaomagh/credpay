@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] Preparar/testar perfil Kubernetes Windows autorizado sem relaxar CI. Endpoint desktop-linux e preflight de recursos recebidos; versões cliente ainda por conferir, cluster não criado. Diagnóstico causal local de falha por métricas permanece separado; candidato identificado sem promoção final, prática explicativa adiada.
+- [ ] Integrar perfil Kubernetes Local após checks, depois conduzir Create/Validate/Remove com João, uma ação por vez. Clientes kind0.33/kubectl1.36.4 conferidos;64controles offline e9cenários de ciclo passaram, sem daemon. Execução local/diagnóstico causal por métricas/prática pessoal continuam separados; candidato operacional será reidentificado ao fechar.
 
 ## Próximo
 

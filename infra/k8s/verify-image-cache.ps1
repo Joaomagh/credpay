@@ -1,9 +1,22 @@
 #requires -Version 7.3
 [CmdletBinding()]
-param([Parameter(Mandatory)][ValidatePattern('^credpay-ci-[0-9]+-[0-9]+$')][string]$Cluster)
+param([Parameter(Mandatory)][string]$Cluster,
+    [ValidateSet('CI','Local')][string]$ExecutionProfile = 'CI')
 
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
+$root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
+. (Join-Path $PSScriptRoot 'local-runtime.ps1')
+$execution = Get-CredPayKubernetesExecution $root $Cluster $ExecutionProfile
+$docker = $execution.Docker
+function ReadPinnedDocker {
+    if ($ExecutionProfile -ceq 'Local') {
+        return Invoke-CredPayLocalTool $execution.Runtime $docker $args
+    }
+    $output = & $docker @args 2>$null | Out-String
+    if ($LASTEXITCODE -ne 0) { throw 'Leitura da imagem/runtime falhou; conteúdo omitido.' }
+    return $output.Trim()
+}
 $images = @(
     @{
         Source = 'postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0'
@@ -15,16 +28,15 @@ $images = @(
     }
 )
 foreach ($image in $images) {
-    $sourceId = (& docker image inspect --format '{{.Id}}' $image.Source 2>$null | Out-String).Trim()
-    if ($LASTEXITCODE -ne 0 -or $sourceId -cnotmatch '^sha256:[0-9a-f]{64}$') {
+    $sourceId = ReadPinnedDocker image inspect --format '{{.Id}}' $image.Source
+    if ($sourceId -cnotmatch '^sha256:[0-9a-f]{64}$') {
         throw 'Imagem fonte pinada não encontrada no host.'
     }
-    $aliasId = (& docker image inspect --format '{{.Id}}' $image.Alias 2>$null | Out-String).Trim()
-    if ($LASTEXITCODE -ne 0 -or $aliasId -cne $sourceId) {
+    $aliasId = ReadPinnedDocker image inspect --format '{{.Id}}' $image.Alias
+    if ($aliasId -cne $sourceId) {
         throw 'Alias local não corresponde à imagem fonte pinada.'
     }
-    $raw = & docker exec "$Cluster-control-plane" crictl --runtime-endpoint unix:///run/containerd/containerd.sock --image-endpoint unix:///run/containerd/containerd.sock inspecti --output json $image.Alias 2>$null | Out-String
-    if ($LASTEXITCODE -ne 0) { throw 'Alias local não encontrado no runtime do node próprio.' }
+    $raw = ReadPinnedDocker exec "$Cluster-control-plane" crictl --runtime-endpoint unix:///run/containerd/containerd.sock --image-endpoint unix:///run/containerd/containerd.sock inspecti --output json $image.Alias
     try { $cached = $raw | ConvertFrom-Json -Depth 100 }
     catch { throw 'Identidade de imagem retornada pelo runtime é ilegível.' }
     if ($cached.status.id -cnotmatch '^sha256:[0-9a-f]{64}$') { throw 'Formato de ID do runtime inesperado.' }

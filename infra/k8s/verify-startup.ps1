@@ -1,11 +1,15 @@
 #requires -Version 7.3
 [CmdletBinding()]
-param([Parameter(Mandatory)][ValidatePattern('^credpay-ci-[0-9]+-[0-9]+$')][string]$Cluster)
+param([Parameter(Mandatory)][string]$Cluster,
+    [ValidateSet('CI','Local')][string]$ExecutionProfile = 'CI')
 
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
 $root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
-$kubeconfig = Join-Path $root ".local/k8s/$Cluster.yaml"
+. (Join-Path $PSScriptRoot 'local-runtime.ps1')
+$execution = Get-CredPayKubernetesExecution $root $Cluster $ExecutionProfile
+$kubeconfig = $execution.Kubeconfig
+$kubectl = $execution.Kubectl
 . (Join-Path $root 'infra/compose/json.ps1')
 
 function Require([bool]$Condition, [string]$Message) { if (-not $Condition) { throw $Message } }
@@ -13,7 +17,7 @@ function WriteStateDiagnostics {
     # Somente nomes/estados/razões; nunca Secret, env, eventos, mensagens ou logs dos containers.
     foreach ($resource in @('pods', 'pvc')) {
         try {
-            $raw = & kubectl --kubeconfig $kubeconfig --context "kind-$Cluster" --namespace credpay --request-timeout=10s get $resource -o json 2>$null | Out-String
+            $raw = & $kubectl --kubeconfig $kubeconfig --context "kind-$Cluster" --namespace credpay --request-timeout=10s get $resource -o json 2>$null | Out-String
             if ($LASTEXITCODE -ne 0) { Write-Host "Kubernetes diagnóstico: $resource indisponível."; continue }
             $objects = Json $raw
             foreach ($item in $objects.items) {
@@ -34,7 +38,7 @@ function WriteStateDiagnostics {
 }
 function Kube {
     $requestTimeout = switch ($args[0]) { 'rollout' { '190s' } 'delete' { '70s' } default { '30s' } }
-    $output = & kubectl --kubeconfig $kubeconfig --context "kind-$Cluster" --namespace credpay "--request-timeout=$requestTimeout" @args 2>&1 | Out-String
+    $output = & $kubectl --kubeconfig $kubeconfig --context "kind-$Cluster" --namespace credpay "--request-timeout=$requestTimeout" @args 2>&1 | Out-String
     if ($LASTEXITCODE -ne 0) {
         $exitCode = $LASTEXITCODE
         # Somente tokens de comandos fixos; nunca argumentos, mensagens, env ou saída do processo.
@@ -82,7 +86,7 @@ function MigrationSnapshot([string]$Service) {
 
 Require (Test-Path $kubeconfig) 'Kubeconfig próprio não encontrado; nunca usar contexto padrão.'
 Require ($env:CREDPAY_IMAGE_TAG -cmatch '^[0-9a-f]{40}$') 'Tag deve ser SHA completo do checkout.'
-$context = & kubectl --kubeconfig $kubeconfig config current-context
+$context = & $kubectl --kubeconfig $kubeconfig config current-context
 Require ($LASTEXITCODE -eq 0 -and $context -ceq "kind-$Cluster") 'Contexto não corresponde ao cluster descartável.'
 
 $null = Kube apply -f (Join-Path $PSScriptRoot 'namespace.yaml')
@@ -90,7 +94,7 @@ foreach ($file in @('config.yaml', 'secret.example.yaml', 'databases.yaml', 'rab
     $null = Kube apply -f (Join-Path $PSScriptRoot $file)
 }
 foreach ($name in @('db-transacoes-0', 'db-processamento-0', 'rabbit-0')) { $null = WaitPod $name }
-$render = & kubectl --kubeconfig $kubeconfig kustomize $PSScriptRoot 2>&1 | Out-String
+$render = & $kubectl --kubeconfig $kubeconfig kustomize $PSScriptRoot 2>&1 | Out-String
 Require ($LASTEXITCODE -eq 0) 'Render Kustomize falhou.'
 $manifest = Join-Path $root ".local/k8s/$Cluster-rendered.yaml"
 [IO.File]::WriteAllText($manifest, $render.Replace('__CREDPAY_TAG__', $env:CREDPAY_IMAGE_TAG), [Text.UTF8Encoding]::new($false))

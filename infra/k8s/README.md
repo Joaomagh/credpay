@@ -1,6 +1,6 @@
 # Kubernetes — startup, persistência e fluxo comprovados no CI
 
-Manifests e roteiro retomados na base atual. João autorizou em2026-10-15 a exceção específica descrita em AGENTS§5. O workflow `.github/workflows/credpay-kubernetes-ci.yml` executa somente em runner hospedado/descartável. O [CI #4](https://github.com/Joaomagh/credpay/actions/runs/38795937792) comprovou startup e persistência reais em99356e4, após correções documentadas em spec§9.93. Não executar node privilegiado no computador de João.
+Manifests e roteiro retomados na base atual. João autorizou em2026-10-15 a exceção específica descrita em AGENTS§5. O workflow `.github/workflows/credpay-kubernetes-ci.yml` executa somente em runner hospedado/descartável. O [CI #4](https://github.com/Joaomagh/credpay/actions/runs/38795937792) comprovou startup e persistência reais em99356e4, após correções documentadas em spec§9.93. Em24/10 João autorizou separadamente a exceção local delimitada: usar somente o [perfil Local Windows](LOCAL.md), com comandos executados por ele e propriedade/configuração próprias, sem conceder acesso Docker ao agente. Os verificadores continuam CI por padrão; não trocar nome/variáveis para contornar esse guard. Essa autorização não comprova execução local.
 
 ## Resultado proposto
 
