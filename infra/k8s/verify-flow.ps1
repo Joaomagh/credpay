@@ -1,13 +1,16 @@
 #requires -Version 7.3
 [CmdletBinding()]
-param([Parameter(Mandatory)][ValidatePattern('^credpay-ci-[0-9]+-[0-9]+$')][string]$Cluster)
+param([Parameter(Mandatory)][string]$Cluster,
+    [ValidateSet('CI','Local')][string]$ExecutionProfile = 'CI')
 
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
 $root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
-$kubeconfig = Join-Path $root ".local/k8s/$Cluster.yaml"
-$marker = Join-Path $root ".local/k8s/$Cluster.created"
-$kubectl = Join-Path $root '.local/bin/kubectl'
+. (Join-Path $PSScriptRoot 'local-runtime.ps1')
+$execution = Get-CredPayKubernetesExecution $root $Cluster $ExecutionProfile
+$kubeconfig = $execution.Kubeconfig
+$marker = $execution.Marker
+$kubectl = $execution.Kubectl
 . (Join-Path $root 'infra/compose/json.ps1')
 $queueNames = @('credpay.processamento.transacao-criada.v1', 'credpay.processamento.transacao-criada.dlq.v1',
     'credpay.transacoes.transacao-processada.v1', 'credpay.transacoes.transacao-processada.dlq.v1')
@@ -95,7 +98,9 @@ function PrepareFlow {
     NoConsumers
     CheckPolicies
     foreach ($service in @('processamento', 'transacoes')) {
-        $null = Kube cp (Join-Path $root "infra/rabbitmq/$service-policies.json") "rabbit-0:/tmp/$service-policies.json"
+        Push-Location $root
+        try { $null = Kube cp "infra/rabbitmq/$service-policies.json" "rabbit-0:/tmp/$service-policies.json" }
+        finally { Pop-Location }
         $null = Kube exec rabbit-0 '--' rabbitmqctl --timeout 10 import_definitions "/tmp/$service-policies.json"
     }
     CheckPreparation
@@ -296,9 +301,11 @@ function CheckPending($Record) {
     Write-Host 'Kubernetes fluxo: processador ausente, PENDENTE preservado, criação ready1/unacked0 e nenhuma decisão/histórico.'
 }
 
-Require ($env:GITHUB_ACTIONS -ceq 'true') 'Fluxo autorizado somente no GitHub CI descartável.'
 Require (Test-Path -LiteralPath $kubeconfig) 'Kubeconfig próprio ausente; contexto padrão nunca será usado.'
-Require ((Test-Path -LiteralPath $marker) -and [IO.File]::ReadAllText($marker) -ceq $Cluster) 'Marcador do cluster próprio ausente ou divergente.'
+if ($ExecutionProfile -ceq 'CI') {
+    Require ($env:GITHUB_ACTIONS -ceq 'true') 'Perfil CI autorizado somente no GitHub CI descartável.'
+    Require ((Test-Path -LiteralPath $marker) -and [IO.File]::ReadAllText($marker) -ceq $Cluster) 'Marcador do cluster próprio ausente ou divergente.'
+}
 Require (Test-Path -LiteralPath $kubectl) 'Cliente pinado do workspace ausente.'
 Require ($env:CREDPAY_IMAGE_TAG -cmatch '^[0-9a-f]{40}$') 'Checkout deve ter SHA completo.'
 $context = & $kubectl --kubeconfig $kubeconfig config current-context

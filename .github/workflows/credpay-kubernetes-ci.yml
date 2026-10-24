@@ -30,7 +30,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  local-controls:
+    name: Local profile controls (${{ matrix.os }})
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Verify offline safety and lifecycle
+        shell: pwsh
+        run: |
+          ./infra/k8s/check-local-safety.ps1
+          ./infra/k8s/check-local-actions.ps1
   kubernetes:
+    needs: local-controls
     name: Startup and persistent Pods in disposable cluster
     runs-on: ubuntu-latest
     timeout-minutes: 20

@@ -1,6 +1,6 @@
 # Proposta de validação Kubernetes local
 
-Preparada em24/10/2026 a pedido de João. **Exceção local delimitada autorizada por João em24/10; implementação/validação do roteiro Windows ainda pendente.** A autorização não comprova criação de cluster, instalação global ou demonstração local.
+Preparada em24/10/2026 a pedido de João. **Exceção local delimitada autorizada por João em24/10; perfil Windows implementado em [LOCAL.md](../infra/k8s/LOCAL.md), execução real ainda pendente.** A autorização e os controles offline não comprovam criação de cluster, instalação global ou demonstração local.
 
 ## Decisão necessária
 
@@ -33,7 +33,7 @@ A autorização recebida inclui essas operações de teste e esse cleanup restri
 
 Necessidade: o kubectl1.32.2 encontrado anteriormente não é a baseline do cluster1.36.4, e os scripts atuais são guardados para CI/Linux. Downloads futuros ficam no workspace, com checksum antes de executar, sem alteração permanente de PATH. Mesmas imagens PostgreSQL/RabbitMQ pinadas e política Never dos manifests existentes; apps construídos da revisão registrada e carregados com identidade conferida.
 
-Fontes conferidas em24/10: [release kind](https://github.com/kubernetes-sigs/kind/releases/tag/v0.33.0), [metadata oficial](https://api.github.com/repos/kubernetes-sigs/kind/releases/tags/v0.33.0), [checksum publicado kind Windows](https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-windows-amd64.sha256sum), [checksum kubectl Windows](https://dl.k8s.io/release/v1.36.4/bin/windows/amd64/kubectl.exe.sha256), [quickstart Windows](https://kind.sigs.k8s.io/docs/user/quick-start/). O digest do asset kind coincide com o checksum publicado. Na preparação inicial foram consultados somente metadata/texto. Após a autorização explícita, os executáveis foram baixados para `.local/k8s-tools/kind.exe` e `kubectl.exe`, com os dois hashes acima conferidos antes de promover os downloads. Não foram executados, instalados globalmente ou acrescentados ao PATH permanente; isso não comprova compatibilidade do roteiro Windows.
+Fontes conferidas em24/10: [release kind](https://github.com/kubernetes-sigs/kind/releases/tag/v0.33.0), [metadata oficial](https://api.github.com/repos/kubernetes-sigs/kind/releases/tags/v0.33.0), [checksum publicado kind Windows](https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-windows-amd64.sha256sum), [checksum kubectl Windows](https://dl.k8s.io/release/v1.36.4/bin/windows/amd64/kubectl.exe.sha256), [quickstart Windows](https://kind.sigs.k8s.io/docs/user/quick-start/). O digest do asset kind coincide com o checksum publicado. Após autorização, binários preparados em `.local/k8s-tools` tiveram seus hashes conferidos. João executou somente versões cliente: kindv0.33.0/go1.26.7/windows-amd64 e kubectlv1.36.4/Kustomizev5.8.1. Nenhuma instalação global/PATH permanente ou cluster é comprovado por esses comandos.
 
 ## Trabalho após autorização
 
