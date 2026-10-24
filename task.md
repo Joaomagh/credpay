@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] Fechamento da v1 depende dos aceites locais/pessoais ainda não demonstrados: métricas, Kubernetes autorizado, entendimento/autonomia e registro final. Nenhuma implementação funcional aberta após M01; prática adiada a pedido de João.
+- [ ] Conduzir aceites locais solicitados por João: preflight Docker pendente de retorno, depois métricas; Kubernetes local sem configuração conhecida e com proposta de exceção específica pendente. Candidato identificado em docs/V1_CANDIDATE.md, sem promoção final; prática explicativa continua adiada.
 
 ## Próximo
 
