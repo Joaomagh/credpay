@@ -35,7 +35,11 @@ function Assert-CredPayLocalNode($Node, $Plan, [string]$ExpectedId = '') {
     Assert-LocalCondition ($Node.image -ceq $Plan.NodeImage -and $Node.privileged -eq $true) 'Node diverge da baseline privilegiada autorizada.'
     Assert-LocalCondition ($Node.userns -ceq '' -and $Node.cgroupns -ceq 'private') 'Namespaces do node divergentes.'
     Assert-LocalCondition (@($Node.devices).Where({$null -ne $_}).Count -eq 0) 'Dispositivo adicional no node.'
-    Assert-LocalCondition ((@($Node.security | Sort-Object) -join ',') -ceq 'apparmor=unconfined,seccomp=unconfined') 'Security options do node divergentes.'
+    # Docker may append label=disable when normalizing a privileged container.
+    # Accept only these complete lists; keep rejecting unknown/duplicate options.
+    $security = @($Node.security | Sort-Object) -join ','
+    Assert-LocalCondition ($security -cin @('apparmor=unconfined,seccomp=unconfined',
+        'apparmor=unconfined,label=disable,seccomp=unconfined')) 'Security options do node divergentes.'
     foreach ($entry in @($Node.env)) {
         Assert-LocalCondition ($entry -notmatch '^(?i:HTTP_PROXY|HTTPS_PROXY|ALL_PROXY|NO_PROXY|KIND_EXPERIMENTAL_CONTAINERD_SNAPSHOTTER)=.+') 'Proxy/experimental encaminhado ao node; conteúdo omitido.'
     }

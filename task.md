@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] Conduzir Create/Validate/Remove com João, uma ação por vez. Perfil Local integrado na PR192/0286262 após controles Windows/Linux e cluster CI verdes; Create solicitado, sem resultado local recebido. Diagnóstico causal por métricas/prática pessoal continuam separados; candidato operacional será reidentificado ao fechar.
+- [ ] Diagnosticar a sessão local preservada em Creating antes de retomar Create/Validate/Remove. João executou Create: parada em node-policy causada pela opção padrão Docker label=disable; correção restrita em revisão/testes, sem alterar marcador ou adotar node por nome. Após integração, reconferir todas as regras em consulta somente leitura; recuperação da criação ainda exige fluxo próprio. Diagnóstico causal por métricas/prática pessoal continuam separados; candidato operacional será reidentificado ao fechar.
 
 ## Próximo
 
