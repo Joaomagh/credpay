@@ -232,7 +232,7 @@ main {
 }
 .heading-meta {
   font:.63rem Consolas,monospace;
-  color:#697882;
+  color:var(--muted);
   letter-spacing:1.5px;
   padding-bottom:6px
 }
@@ -465,7 +465,7 @@ main {
   margin-bottom:23px
 }
 .empty-state .eyebrow {
-  color:#6c7e86;
+  color:var(--muted);
   font-size:.6rem;
   margin-bottom:13px
 }
@@ -577,7 +577,7 @@ main {
 }
 .tile-label {
   font:.63rem Consolas,monospace;
-  color:#637b82;
+  color:var(--muted);
   display:flex;
   align-items:center;
   justify-content:space-between;
@@ -679,6 +679,10 @@ main {
   padding:13px;
   width:100%;
   font:.8rem Consolas,monospace
+}
+.query-input::placeholder {
+  color:var(--muted);
+  opacity:1
 }
 .query-form .button {
   margin-top:23px

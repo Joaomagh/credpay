@@ -3067,6 +3067,16 @@ Primeiras checagens estruturais: tipos Node ausentes foram adicionados após bas
 
 Primeiro CI da PR185/bc47c7e: Frontend7/Scan351 passaram, Compose140/run39882860314/job120184094601 passou Smoke mas browser0executados/runnererror1 por timeout de60s na inicialização do webServer. Experimento mínimo local iniciou somente ngserve4300 com CI=true (sem Docker/navegador Playwright): build desenvolvimento1,89MB rejeitado pelo orçamento800kB de produção que estava em options comuns; caching/prebundling de dev não é usado em CI. Correção operacional: mover os mesmos budgets600/800kB para configuração production e tornar production o default do build; development continua sem otimização. Repetição CI=true abriu4300 e sonda no navegador renderizou a tela, depois sonda/servidor foram encerrados. Não ampliar orçamento de produção ou reduzir cenários. Nova execução remota ainda necessária.
 
+Fechamento F03: no SHA628ca65d68bd480cf6f65505464e789e9a0a7258, Compose141/run39883779001/job120187070892 passou Smoke, persistência down/up e seis cenários browser (6passed/0failed/0skipped/0errors), incluindo desktop/mobile, e cleanup. Frontend8/run39883779146 e Scan352/run39883778963 também verdes; revisão sem bloqueantes, reviews/threads/solicitações vazios e merge clean com SHA esperado. PR185 integrada em1c0d7dc8e69dc7a4a73841b233259eef88a38218. A falha anterior e seu diagnóstico permanecem registrados; não reduzir critérios nem atribuir prática autônoma a João.
+
+### 9.131 Contraste dos textos auxiliares — F04
+
+Objetivo: corrigir quatro pares abaixo do mínimo4,5:1 para texto normal, sem mudar layout/fluxo/dependências. Arquivo de apresentação: frontend/src/styles.css; task/backlog registram o estado. Risco: alegar acessibilidade completa com medição parcial. Referência: https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html.
+
+Antes da edição, teste ad hoc de contraste no navegador com cores computadas dos elementos e fundos conferidos, luminância sRGB linearizada e pesos0,2126/0,7152/0,0722 reprovou: heading-meta #697882 sobre #f8f9ff=4,33; tile-label #637b82 sobre #eff3ff=4,04; empty-state .eyebrow #6c7e86 sobre branco=4,22; query-input::placeholder padrão Chromium #757575 sobre #f5f7ff=4,30. Valores exibidos truncados em duas casas; decisão usa razão sem arredondar. Primeira tentativa do verificador não executou por parseInt indisponível no ambiente DOM restrito; corrigido cálculo para canais numéricos antes de medir, sem mudar a aplicação para obter o red.
+
+Implementação mínima reutiliza --muted #59676a e explicita opacity1 no placeholder. A mesma medição passou:5,59/5,29/5,87/5,49 respectivamente. Mobile390 configurado/375px úteis e desktop1280/1265px úteis, scrollWidth=clientWidth nos dois recortes; viewport restaurado. Capturas ignoradas em .local/frontend/contrast-mobile.png e contrast-desktop.png. Build produção337,81kB/89,93kB estimados, tipos e33testes/6arquivos passaram; limites600/800kB preservados. Revisão independente sem bloqueantes confirmou cascade e recálculo dos quatro pares; git diff --check passou. Gates finais ainda pendentes. Verificação pontual não equivale a auditoria completa WCAG, contraste de todos os estados ou WebKit.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

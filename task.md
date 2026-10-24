@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- Console Angular com criação e consulta, design Stitch responsivo, decimal exato, intenção/retry em memória e consulta limitada.19testes locais e CI Linux, tipos, build e audit0; revisão sem bloqueantes, PR183 e evidências em spec9.127. Isso não encerra os aceites pessoais da v1 backend.
+- F03 integrada na PR185/1c0d7dc: seis cenários de navegador desktop/mobile com serviços reais, sem skips; Compose141, Frontend8 e Scan352 verdes. Recuperação de intenção F02 já integrada na PR184. Evidências em spec9.128–9.130; aceites pessoais continuam pendentes.
 
 ## Agora
 
-- [ ] F03: executar e integrar os seis cenários de navegador contra Compose real no CI. Tipos/descoberta6,33testes app/build/audit e revisão locais passaram; baseline em docs/frontend/BASELINE.md e evidência em spec9.130. F02 integrada na PR184; prática continua adiada.
+- [ ] F04: validar e integrar contraste dos quatro textos auxiliares medidos, mantendo layout e dependências. Evidência antes/depois em spec9.131; prática continua adiada.
 
 ## Próximo
 
