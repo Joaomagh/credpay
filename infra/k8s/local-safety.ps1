@@ -37,9 +37,10 @@ function Assert-CredPayLocalNode($Node, $Plan, [string]$ExpectedId = '') {
     Assert-LocalCondition (@($Node.devices).Where({$null -ne $_}).Count -eq 0) 'Dispositivo adicional no node.'
     # Docker may append label=disable when normalizing a privileged container.
     # Accept only these complete lists; keep rejecting unknown/duplicate options.
-    $security = @($Node.security | Sort-Object) -join ','
-    Assert-LocalCondition ($security -cin @('apparmor=unconfined,seccomp=unconfined',
-        'apparmor=unconfined,label=disable,seccomp=unconfined')) 'Security options do node divergentes.'
+    $security = @($Node.security | Sort-Object)
+    Assert-LocalCondition ($security.Count -in @(2,3) -and $security[0] -ceq 'apparmor=unconfined' -and
+        $security[-1] -ceq 'seccomp=unconfined' -and
+        ($security.Count -eq 2 -or $security[1] -ceq 'label=disable')) 'Security options do node divergentes.'
     foreach ($entry in @($Node.env)) {
         Assert-LocalCondition ($entry -notmatch '^(?i:HTTP_PROXY|HTTPS_PROXY|ALL_PROXY|NO_PROXY|KIND_EXPERIMENTAL_CONTAINERD_SNAPSHOTTER)=.+') 'Proxy/experimental encaminhado ao node; conteúdo omitido.'
     }

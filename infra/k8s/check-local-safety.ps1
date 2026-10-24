@@ -44,6 +44,8 @@ Check 'supported node' { Assert-CredPayLocalNode $node $plan $node.id }
 $desktopNode=CopyFixture $node; $desktopNode.security+= 'label=disable'
 Check 'Desktop privileged node with Docker SELinux normalization' { Assert-CredPayLocalNode $desktopNode $plan $desktopNode.id }
 foreach ($options in @(
+    @('apparmor=unconfined,seccomp=unconfined'),
+    @('apparmor=unconfined,label=disable','seccomp=unconfined'),
     @('seccomp=unconfined','apparmor=unconfined','label=other'),
     @('seccomp=unconfined','apparmor=unconfined','label=disable','label=disable'),
     @('seccomp=unconfined','label=disable'),
