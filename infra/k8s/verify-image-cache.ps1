@@ -8,6 +8,12 @@ $PSNativeCommandUseErrorActionPreference = $false
 $root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 . (Join-Path $PSScriptRoot 'local-runtime.ps1')
 $execution = Get-CredPayKubernetesExecution $root $Cluster $ExecutionProfile
+if ($ExecutionProfile -ceq 'Local') {
+    . (Join-Path $PSScriptRoot 'local-actions.ps1')
+    Assert-CredPayLocalImageCache $execution.Runtime $execution.Owner
+    Write-Host 'Kubernetes: quatro imagens conferidas por origem/plataforma/config hash e IDs CRI correspondentes.'
+    return
+}
 $docker = $execution.Docker
 function ReadPinnedDocker {
     if ($ExecutionProfile -ceq 'Local') {

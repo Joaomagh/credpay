@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] Corrigir/conferir carga de imagens na sessão local Owned. ResumePR195/0a90a31 promoveu após identidade/TLS, mas carga kind falhou node-import/content-missing. Exportação Docker passou; TAR OCI tem referências ausentes de outras plataformas/metadados, não no manifesto Docker. Carga via arquivo linux/amd64 e LoadImages explícito em revisão/CI; depois João executa LoadImages, Validate e Remove uma ação por vez. Diagnóstico causal por métricas/prática pessoal continuam separados; candidato operacional será reidentificado ao fechar.
+- [ ] Corrigir a comparação de identidade da carga local Owned. PR196/b269fe3 resolveu arquivo OCI parcial; importação passou, mas runtime-ids comparava índice Docker com config CRI. João informou os quatro IDs; hashes dos manifestos/configs no TAR confirmam a correspondência amd64. Cadeia origem/plataforma/config/CRI em revisão/CI; depois João executa LoadImages, Validate e Remove uma ação por vez. Diagnóstico causal por métricas/prática pessoal continuam separados; candidato operacional será reidentificado ao fechar.
 
 ## Próximo
 
