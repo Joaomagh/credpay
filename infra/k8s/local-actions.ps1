@@ -24,14 +24,34 @@ function Complete-CredPayLocalImageLoad($Runtime, $Owner) {
     Assert-CredPayLocalLive $Runtime $Owner
     $images=@(Get-CredPayLocalImageSet $Runtime $Owner)
     $plan=$Runtime.Plan
-    $null=Invoke-CredPayLocalTool $Runtime $plan.Kind (@('load','docker-image','--name',$plan.Cluster) + $images) 300
-    for ($i=0;$i -lt 2;$i++) {
-        $cached=Invoke-CredPayLocalTool $Runtime $Runtime.Docker @('exec',"$($plan.Cluster)-control-plane",'crictl','--runtime-endpoint','unix:///run/containerd/containerd.sock','--image-endpoint','unix:///run/containerd/containerd.sock','inspecti','--output','json',$images[$i]) | ConvertFrom-Json -Depth 30
-        Assert-LocalCondition ($cached.status.id -ceq $Owner.appIds[$i]) 'Imagem do aplicativo no node diverge da imagem local.'
+    $expectedIds=@()
+    foreach ($image in $images) {
+        $id=Invoke-CredPayLocalTool $Runtime $Runtime.Docker @('image','inspect','--format','{{.Id}}',$image)
+        Assert-LocalCondition ($id -cmatch '^sha256:[0-9a-f]{64}$') 'Identidade da imagem ilegível antes da exportação.'
+        $expectedIds+=$id
     }
+    $archive=Join-Path $plan.Temp ('images-amd64-' + [Guid]::NewGuid().ToString('N') + '.tar')
+    Assert-CredPayLocalPath $plan.Root $archive
+    Assert-LocalCondition (-not [IO.File]::Exists($archive)) 'Arquivo próprio já existe; não sobrescrever.'
+    $phase='export-amd64'
+    try {
+        # A sparse multi-platform OCI index cannot be imported with kind's --all-platforms.
+        $null=Invoke-CredPayLocalTool $Runtime $Runtime.Docker (@('save','--platform=linux/amd64','--output',$archive) + $images) 300
+        Assert-LocalCondition ([IO.File]::Exists($archive) -and (Get-Item -LiteralPath $archive).Length -gt 0) 'Exportação não produziu arquivo.'
+        $phase='image-import'
+        Assert-CredPayLocalLive $Runtime $Owner
+        $null=Get-CredPayLocalImageSet $Runtime $Owner
+        Assert-CredPayLocalPath $plan.Root $archive
+        $null=Invoke-CredPayLocalTool $Runtime $plan.Kind @('load','image-archive','--name',$plan.Cluster,$archive) 300
+        $phase='runtime-ids'
+        for ($i=0;$i -lt $images.Count;$i++) {
+            $cached=Invoke-CredPayLocalTool $Runtime $Runtime.Docker @('exec',"$($plan.Cluster)-control-plane",'crictl','--runtime-endpoint','unix:///run/containerd/containerd.sock','--image-endpoint','unix:///run/containerd/containerd.sock','inspecti','--output','json',$images[$i]) | ConvertFrom-Json -Depth 30
+            Assert-LocalCondition ($cached.status.id -ceq $expectedIds[$i]) 'Imagem no node diverge da fonte local conferida.'
+        }
+    } catch { throw "Carga local interrompida; fase=$phase; sessão e arquivo próprios preservados; detalhes brutos omitidos." }
 }
 function Invoke-CredPayLocalAction([string]$Action, [string]$ImageTag, [string]$root, [string]$ExpectedNodeId = '') {
-    Assert-LocalCondition ($Action -cin @('Create','Resume','Validate','Remove')) 'Ação local desconhecida; nenhuma operação autorizada.'
+    Assert-LocalCondition ($Action -cin @('Create','Resume','LoadImages','Validate','Remove')) 'Ação local desconhecida; nenhuma operação autorizada.'
     $active=Join-Path $root '.local/k8s/active-local.json'
     Assert-CredPayLocalPath $root $active
 
@@ -124,6 +144,12 @@ function Invoke-CredPayLocalAction([string]$Action, [string]$ImageTag, [string]$
             return
         }
         Assert-CredPayLocalLive $runtime $owner
+        if ($Action -ceq 'LoadImages') {
+            Assert-LocalCondition ($owner.stage -ceq 'Owned') 'LoadImages exige sessão própria Owned, antes de Validate.'
+            Complete-CredPayLocalImageLoad $runtime $owner
+            Write-Host 'Kubernetes local: quatro imagens linux/amd64 carregadas e IDs conferidos; executar Validate separadamente.'
+            return
+        }
         if ($Action -ceq 'Validate') {
             foreach ($script in @('verify-image-cache.ps1','verify-startup.ps1','verify-flow.ps1')) {
                 Assert-CredPayLocalLive $runtime $owner

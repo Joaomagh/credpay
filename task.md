@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] Retomar a sessão local preservada em Creating, após revisão/CI de Resume explícito e ID literal do node conferido por João. PR194/2fd3d58 corrigiu label=disable; João confirmou política completa, daemon original e kubeconfig em leitura. Resume está em testes: registro original/ID/política/TLS/imagens antes da promoção, sem create/delete ou edição manual. Depois conduzir Validate e Remove uma ação por vez. Diagnóstico causal por métricas/prática pessoal continuam separados; candidato operacional será reidentificado ao fechar.
+- [ ] Corrigir/conferir carga de imagens na sessão local Owned. ResumePR195/0a90a31 promoveu após identidade/TLS, mas carga kind falhou node-import/content-missing. Exportação Docker passou; TAR OCI tem referências ausentes de outras plataformas/metadados, não no manifesto Docker. Carga via arquivo linux/amd64 e LoadImages explícito em revisão/CI; depois João executa LoadImages, Validate e Remove uma ação por vez. Diagnóstico causal por métricas/prática pessoal continuam separados; candidato operacional será reidentificado ao fechar.
 
 ## Próximo
 

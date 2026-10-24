@@ -1,6 +1,6 @@
 #requires -Version 7.3
 [CmdletBinding()]
-param([Parameter(Mandatory)][ValidateSet('Create','Resume','Validate','Remove')][string]$Action,
+param([Parameter(Mandatory)][ValidateSet('Create','Resume','LoadImages','Validate','Remove')][string]$Action,
     [string]$ImageTag = $env:CREDPAY_IMAGE_TAG,
     [string]$ExpectedNodeId = '')
 $ErrorActionPreference='Stop'

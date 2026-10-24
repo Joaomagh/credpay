@@ -2,7 +2,7 @@
 
 Perfil autorizado especificamente em [AGENTS§5](../../AGENTS.md) e [proposta](../../docs/KUBERNETES_LOCAL_PROPOSAL.md). Os comandos Docker são executados por João, não pelo agente. O perfil padrão dos verificadores continua `CI`; não definir GITHUB_ACTIONS nem usar um nome CI para executar localmente.
 
-O launcher `local.ps1` oferece Create/Validate/Remove e uma retomada explícita Resume, sem instalação global, alteração permanente de PATH/contexto, leitura de `.env` ou uso do kubeconfig padrão. Exige PowerShell7.3+, Windowsx64, Docker Desktop Linux no endpoint já conferido e os dois executáveis portáteis com os checksums da proposta.
+O launcher `local.ps1` oferece Create/Validate/Remove, retomada explícita Resume e repetição restrita LoadImages, sem instalação global, alteração permanente de PATH/contexto, leitura de `.env` ou uso do kubeconfig padrão. Exige PowerShell7.3+, Windowsx64, Docker Desktop Linux no endpoint já conferido e os dois executáveis portáteis com os checksums da proposta.
 
 ## Antes de executar
 
@@ -51,7 +51,13 @@ Resume exige a sessão ativa e o registro original em Creating, mesmo daemon/nom
 
 Qualquer recusa anterior à promoção mantém Creating. Falha de carga posterior mantém Owned e permite somente cleanup com a identidade novamente conferida. O marker legado não registra exit/fase do kind: readyz comprova prontidão atual e TLS, não sucesso histórico do comando. Essa recuperação é para a sessão própria acompanhada, sob confiança do host/daemon/arquivos; não comprova propriedade contra administrador malicioso nem elimina todas as corridas.
 
-Criação parcial conserva `Creating`, sem adoção ou remoção automática por nome. Validate/Remove continuam recusando Creating; Resume é explícito e exige as verificações acima. Enviar somente a fase/mensagem curta; não editar o marcador, apagar volumes, forjar nome CI ou aumentar privilégios para contornar erro. Falha de carregamento após propriedade comprovada conserva `Owned`, permitindo cleanup restrito após conferir a identidade. Fonte, kubeconfig, Secret, inspect e logs brutos não devem ser publicados.
+### Carga de imagens no Docker Desktop com índice OCI parcial
+
+O kind0.33 importa arquivos com `--all-platforms`. No ensaio local, a exportação das quatro imagens passou, mas o TAR incluiu referências ausentes de outras arquiteturas e metadados; a importação falhou com content-missing. A carga Local agora exporta explicitamente `docker save --platform=linux/amd64` (API1.48+), em TAR GUID próprio no temp da sessão, antes de `kind load image-archive`. Não altera versão/tag, não recompila apps, não muda o daemon e não baixa conteúdo ausente. API sem suporte deve falhar, sem fallback silencioso.
+
+Create/Resume usam esse mesmo fluxo. Se a falha de carga já deixou a sessão Owned, após integração/revisão/CI executar separadamente `./infra/k8s/local.ps1 -Action LoadImages`. Essa ação reconfere propriedade, ID original do node e imagens; exporta somente amd64, reconfere propriedade/fontes antes da importação e compara os IDs das quatro imagens no runtime. Mantém Owned e retorna para um Validate separado. Não cria/deleta cluster nem aceita Creating/Validated. Falha mostra fase export-amd64/image-import/runtime-ids; preserva sessão e arquivo, e uma importação parcial pode alterar o cache antes da recusa. Arquivos próprios ficam ignorados para diagnóstico, sem cleanup recursivo ou exclusão automática.
+
+Criação parcial conserva `Creating`, sem adoção ou remoção automática por nome. Validate/Remove/LoadImages continuam recusando Creating; Resume é explícito e exige as verificações acima. Enviar somente a fase/mensagem curta; não editar o marcador, apagar volumes, forjar nome CI ou aumentar privilégios para contornar erro. Falha de carregamento após propriedade comprovada conserva `Owned`, permitindo cleanup restrito após conferir a identidade. Fonte, kubeconfig, Secret, inspect e logs brutos não devem ser publicados.
 
 Os guards evitam operações acidentais em outro recurso; arquivos locais não são prova criptográfica de propriedade contra alguém que controla host/daemon. Não eliminam todas as janelas de concorrência. Host/VM/node continuam base de confiança; rede Docker não é allowlist de egress, Kubernetes de um node não é HA e essa execução não comprova AI-Jail ou entendimento pessoal.
 

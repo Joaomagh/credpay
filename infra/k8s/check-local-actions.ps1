@@ -17,7 +17,7 @@ function NewFixture {
         $artifacts+=@{path=$file;sha256=(Get-FileHash $full -Algorithm SHA256).Hash.ToLowerInvariant()}
     }
     Write-CredPayLocalJson @{sourceRevision=$tag;artifacts=$artifacts} (Join-Path $directory '.local/evidence/local-acceptance-prepared.json') $directory -New
-    $script:fixture=@{Root=$directory;Created=$false;Existing=$false;FailCreate=$false;BadAlias=$false;BadId=$false;BadCache=$false;BadPolicy=$false;BadReady=$false;CommandCount=0;Events=[Collections.Generic.List[string]]::new()}
+    $script:fixture=@{Root=$directory;Created=$false;Existing=$false;FailCreate=$false;BadAlias=$false;BadId=$false;BadCache=$false;BadPolicy=$false;BadReady=$false;SparseIndex=$false;FailSave=$false;CommandCount=0;Events=[Collections.Generic.List[string]]::new()}
 }
 function Get-CredPayLocalRuntime($Plan) {
     # OS, installed executables and command launch are the external boundaries of this offline control.
@@ -28,6 +28,15 @@ function Invoke-CredPayLocalTool($Runtime,[string]$File,[string[]]$Arguments,[in
     $fixture.CommandCount++
     $p=$Runtime.Plan; $a=$Arguments
     if ($File -ceq 'fixture-docker') {
+        if ($a[0] -ceq 'save') {
+            if ($a[1] -cne '--platform=linux/amd64' -or $a[2] -cne '--output' -or $a.Count -ne 8) { throw 'Expected four-image amd64-only export.' }
+            Assert-CredPayLocalPath $fixture.Root $a[3]
+            if (-not $a[3].StartsWith($p.Temp + [IO.Path]::DirectorySeparatorChar)) { throw 'Archive outside session temp.' }
+            $fixture.Events.Add('save')
+            if ($fixture.FailSave) { throw 'Fixture: export failed.' }
+            [IO.File]::WriteAllText($a[3],'fixture-archive-not-an-image')
+            return ''
+        }
         if ($a[0] -ceq 'info') { return '{"os":"linux","arch":"x86_64","driver":"overlayfs","cpus":12,"memory":12431081472,"id":"fixture-daemon","security":[]}' }
         if ($a[0] -ceq 'image') {
             $reference=$a[-1]
@@ -42,8 +51,9 @@ function Invoke-CredPayLocalTool($Runtime,[string]$File,[string[]]$Arguments,[in
             return ($data | ConvertTo-Json -Depth 30 -Compress)
         }
         if ($a[0] -ceq 'exec') {
-            $letter=if ($a[-1].StartsWith('credpay-transacoes:')) {'a'} else {'b'}
+            $letter=if ($a[-1].StartsWith('credpay-transacoes:')) {'a'} elseif ($a[-1].StartsWith('credpay-processamento:')) {'b'} elseif ($a[-1].StartsWith('credpay-postgres:')) {'c'} else {'d'}
             if ($fixture.BadCache) { $letter='e' }
+            if ($fixture.BadInfraCache -and $a[-1].StartsWith('credpay-rabbit:')) { $letter='e' }
             return (@{status=@{id=('sha256:' + ($letter * 64))}} | ConvertTo-Json -Compress)
         }
     } elseif ($File -ceq $p.Kind) {
@@ -59,7 +69,14 @@ function Invoke-CredPayLocalTool($Runtime,[string]$File,[string[]]$Arguments,[in
                 [IO.File]::WriteAllText($p.Kubeconfig,'fixture-kubeconfig-not-a-credential')
                 return ''
             }
-            load { $fixture.Events.Add('load'); return '' }
+            load {
+                if ($fixture.SparseIndex -and $a[1] -cne 'image-archive') { throw 'Fixture: all-platform import references unavailable content.' }
+                if ($a[1] -ceq 'image-archive') {
+                    if ($a.Count -ne 5 -or $a[2] -cne '--name' -or $a[3] -cne $p.Cluster -or -not [IO.File]::Exists($a[4])) { throw 'Archive or target mismatch.' }
+                    Assert-CredPayLocalPath $fixture.Root $a[4]
+                }
+                $fixture.Events.Add('load'); return ''
+            }
             delete { $fixture.Events.Add('delete'); $fixture.Created=$false; return '' }
         }
     } elseif ($File -ceq $p.Kubectl) {
@@ -160,7 +177,7 @@ Case 'explicit resume finishes images without creating or deleting a cluster' {
     NewInterruptedFixture
     Invoke-CredPayLocalAction Resume $tag $fixture.Root ('a' * 64) 6>$null
     if ((Read-CredPayLocalJson $fixture.Plan.Marker $fixture.Root).stage -cne 'Owned' -or
-        ($fixture.Events -join ',') -cne 'ready,load') { throw 'Recovery did not validate API before image load.' }
+        ($fixture.Events -join ',') -cne 'ready,save,load') { throw 'Recovery did not validate API before image export/load.' }
 }
 foreach ($fault in @('missing-id','wrong-id','bad-policy','bad-daemon','missing-config','bad-ready','bad-alias','wrong-app-ids','missing-original-config')) {
     Case "resume refuses $fault without promoting incomplete ownership" {
@@ -194,5 +211,38 @@ foreach ($fault in @('missing-id','wrong-id','bad-policy','bad-daemon','missing-
         if ((Read-CredPayLocalJson $p.Marker $fixture.Root).stage -cne 'Creating' -or
             $fixture.Events -contains 'load' -or $fixture.Events -contains 'create' -or $fixture.Events -contains 'delete') { throw 'Unproven session changed.' }
     }
+}
+Case 'owned sparse OCI cache loads only amd64 archive' {
+    NewFixture
+    Invoke-CredPayLocalAction Create $tag $fixture.Root 6>$null
+    $fixture.SparseIndex=$true; $fixture.Events.Clear()
+    Invoke-CredPayLocalAction LoadImages $tag $fixture.Root 6>$null
+    if (($fixture.Events -join ',') -cne 'save,load' -or
+        (Read-CredPayLocalJson $fixture.Plan.Marker $fixture.Root).stage -cne 'Owned') { throw 'Image load changed lifecycle or skipped platform export.' }
+}
+Case 'failed platform export never imports or changes owner' {
+    NewFixture; Invoke-CredPayLocalAction Create $tag $fixture.Root 6>$null
+    $fixture.FailSave=$true; $fixture.Events.Clear()
+    MustReject { Invoke-CredPayLocalAction LoadImages $tag $fixture.Root }
+    if (($fixture.Events -join ',') -cne 'save' -or
+        (Read-CredPayLocalJson $fixture.Plan.Marker $fixture.Root).stage -cne 'Owned') { throw 'Import ran after export failure.' }
+}
+foreach ($fault in @('creating','replaced-node','validated')) {
+    Case "LoadImages refuses $fault without exporting or importing" {
+        if ($fault -ceq 'creating') { NewInterruptedFixture }
+        else { NewFixture; Invoke-CredPayLocalAction Create $tag $fixture.Root 6>$null }
+        if ($fault -ceq 'replaced-node') { $fixture.BadId=$true }
+        if ($fault -ceq 'validated') { Invoke-CredPayLocalAction Validate $tag $fixture.Root 6>$null }
+        $fixture.Events.Clear()
+        MustReject { Invoke-CredPayLocalAction LoadImages $tag $fixture.Root }
+        if ($fixture.Events.Count -ne 0) { throw 'Rejected LoadImages mutated the runtime.' }
+    }
+}
+Case 'runtime infrastructure ID mismatch preserves Owned and refuses success' {
+    NewFixture; Invoke-CredPayLocalAction Create $tag $fixture.Root 6>$null
+    $fixture.BadInfraCache=$true; $fixture.Events.Clear()
+    MustReject { Invoke-CredPayLocalAction LoadImages $tag $fixture.Root }
+    if (($fixture.Events -join ',') -cne 'save,load' -or
+        (Read-CredPayLocalJson $fixture.Plan.Marker $fixture.Root).stage -cne 'Owned') { throw 'Runtime identity failure changed ownership.' }
 }
 Write-Host "Local lifecycle: $caseCount offline scenarios passed; commands fictitious, no daemon accessed."
