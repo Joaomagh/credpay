@@ -23,16 +23,16 @@ Essas árvores identificam fontes e configuração versionadas, não os bytes de
 | Inventário e segredos do código testado | [Inventory](https://github.com/Joaomagh/credpay/actions/runs/40109185999), [Scan](https://github.com/Joaomagh/credpay/actions/runs/40109185953); artefato e limites em [V1_VALIDATION](V1_VALIDATION.md) | HIGH0/CRITICAL0 nos quatro alvos; MEDIUM/LOW preservados, sem aceite universal |
 | Checks aplicáveis ao SHA do candidato | [Inventory](https://github.com/Joaomagh/credpay/actions/runs/40110119178), [Scan](https://github.com/Joaomagh/credpay/actions/runs/40110119100) | Verdes; não são nova execução das oito suítes |
 | Demo Compose pessoal anterior | Retornos de João em22/10, imagens cf103ee; jornada e recuperação assistidas documentadas | Histórica; não prova execução local do código novo |
-| Diagnóstico local por métricas | Sonda de24/10 não obteve resposta HTTP nas portas8080/8081; retomada depende do preflight de João | Pendente |
+| Contadores locais de publicação | João construiu imagens f412652 e executou Prepare/Activate/Demo com Diagnostics: healthUP, metricsHTTP200, APROVADA/REJEITADA/replay e confirmed delta2 nos dois apps | Comprovado no ensaio assistido; diagnóstico de falha por métricas ainda separado |
 | Kubernetes local | João autorizou explicitamente a [exceção local delimitada](KUBERNETES_LOCAL_PROPOSAL.md) em24/10; roteiro Windows ainda por implementar/validar | Autorização atendida; execução e aceite local pendentes |
 | Explicação e autonomia pessoais | João adiou a prática; não presumir domínio a partir de testes | Pendente, adiado |
 
-A sonda sem resposta não identifica a causa: aplicativo parado, porta diferente ou problema de conexão continuam hipóteses. Não acessou Docker, `.env` ou kubeconfig padrão.
+A sonda inicial sem resposta não identificava a causa. Depois de João abrir Docker Desktop, desktop-linux respondeu linux e o ensaio acima passou. Preflight Kubernetes informado por João: endpoint npipe:////./pipe/dockerDesktopLinuxEngine, driveroverlayfs,12CPUs, memória12431081472bytes, arquiteturax86_64. Isso não comprova cluster ou compatibilidade do launcher Windows. O agente não acessou Docker, `.env` ou kubeconfig padrão.
 
 ## Sequência de fechamento
 
-1. Retomar o Docker Linux com João; conferir o checkout e usar JARs/imagens correspondentes à revisão registrada. Preservar configuração e volumes existentes.
-2. Executar `Prepare -Diagnostics`, `Activate -Diagnostics` e `Demo -Diagnostics`, uma etapa por vez. Exigir health/metrics acessíveis e delta confirmed de pelo menos2 nos dois processos, sem reiniciá-los entre baseline e leitura. Registrar os resumos reais e o SHA/tag usados.
+1. Docker Linux retomado por João no contexto desktop-linux. Imagens f412652 construídas dos JARs preparados, cujos hashes foram conferidos contra o manifesto local; ausência de delta operacional desde essa revisão foi verificada. Não renomear imagens cf103ee antigas para a nova tag.
+2. Prepare/Activate/Demo com Diagnostics passaram em24/10: health/metrics acessíveis, dois consumidores ACK/prefetch10/1, dois resultados/replays e delta confirmed2 nos dois processos entre baseline/leitura da demo. Fonte: resumos dos comandos executados por João. COUNT mede tentativas e não prova sozinho consumo, commit ou transações únicas; os resultados vieram das verificações separadas do roteiro. Configuração e volumes existentes preservados, sem Down após essa medição.
 3. Para diagnóstico causal sem rota, avaliar roteiro próprio em recursos descartáveis; a demo acima comprova contadores de publicação, não reproduz sozinha returned/nacked/error. Não remover bindings do broker persistente de João.
 4. Implementar/testar o perfil local autorizado em24/10 e validar startup, PVCs, fluxo/replay e parada/recuperação com o mesmo recorte e limites. A exceção local não concede acesso Docker ao agente nem permite executar os scripts CI por mera troca de nome.
 5. Quando João retomar a prática, demonstrar entendimento/autonomia. Só então conferir todos os critérios e registrar a decisão final. Este documento não reduz o critério de aprendizado.
