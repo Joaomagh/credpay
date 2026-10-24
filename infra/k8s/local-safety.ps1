@@ -97,6 +97,7 @@ function Assert-CredPayLocalOwner($Owner, $Plan, $Daemon, $Node) {
 }
 function New-CredPayLocalProcess([string]$File, [string[]]$Arguments, $Plan, [string]$DockerExe, [string]$SystemDirectory) {
     Assert-CredPayLocalPath $Plan.Root $Plan.Directory
+    Assert-CredPayLocalPath $Plan.Root $Plan.Temp
     $start = [Diagnostics.ProcessStartInfo]::new()
     $start.FileName = $File
     $start.WorkingDirectory = $Plan.Root
@@ -110,7 +111,13 @@ function New-CredPayLocalProcess([string]$File, [string[]]$Arguments, $Plan, [st
     $start.Environment.Clear()
     $start.Environment['SystemRoot'] = [IO.Directory]::GetParent($SystemDirectory).FullName
     $start.Environment['WINDIR'] = $start.Environment['SystemRoot']
-    if ($IsWindows) { $start.Environment['ProgramFiles'] = [Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFiles) }
+    $start.Environment['HOME'] = $Plan.Temp
+    if ($IsWindows) {
+        $start.Environment['ProgramFiles'] = [Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFiles)
+        $start.Environment['USERPROFILE'] = $Plan.Temp
+        # PowerShell otherwise treats native .exe files as associated documents.
+        $start.Environment['PATHEXT'] = '.EXE'
+    }
     $start.Environment['PATH'] = @((Split-Path $DockerExe -Parent), (Split-Path $Plan.Kind -Parent), $SystemDirectory) -join [IO.Path]::PathSeparator
     foreach ($key in @('TEMP','TMP','TMPDIR')) { $start.Environment[$key] = $Plan.Temp }
     $start.Environment['DOCKER_HOST'] = $Plan.DockerHost
@@ -123,9 +130,14 @@ function New-CredPayLocalProcess([string]$File, [string[]]$Arguments, $Plan, [st
 function Assert-CredPayLocalEnvironment($EnvironmentMap, $Plan) {
     foreach ($entry in @{
         DOCKER_HOST=$Plan.DockerHost;DOCKER_CONFIG=$Plan.DockerConfig;KUBECONFIG=$Plan.Kubeconfig
-        KIND_EXPERIMENTAL_PROVIDER='docker';CREDPAY_IMAGE_TAG=$Plan.ImageTag
+        KIND_EXPERIMENTAL_PROVIDER='docker';CREDPAY_IMAGE_TAG=$Plan.ImageTag;HOME=$Plan.Temp
     }.GetEnumerator()) {
         Assert-LocalCondition ($EnvironmentMap[$entry.Key] -ceq $entry.Value) 'Perfil Local exige o ambiente isolado do launcher.'
+    }
+    if ($IsWindows) {
+        # PowerShell itself may append .CPL during startup; the Local entry normalizes it.
+        Assert-LocalCondition ($EnvironmentMap['USERPROFILE'] -ceq $Plan.Temp -and
+            $EnvironmentMap['PATHEXT'] -cin @('.EXE','.EXE;.CPL')) 'Perfil Local exige home próprio e extensão executável mínima.'
     }
     foreach ($key in @($EnvironmentMap.Keys)) {
         $name = ([string]$key).ToUpperInvariant()

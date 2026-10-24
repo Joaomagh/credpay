@@ -18,6 +18,8 @@ application-local.yaml
 application-local.properties
 settings.local.xml
 .local/
+# Cache de descoberta legado no workspace; o kubeconfig padrão fica fora desta regra.
+/.kube/cache/
 secrets/
 
 # Material privado de autenticação (exceções exigem revisão explícita)

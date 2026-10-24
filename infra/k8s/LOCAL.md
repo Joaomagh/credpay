@@ -21,6 +21,8 @@ Primeiro, na raiz do CredPay e somente após os checks:
 
 Cria uma sessão exclusiva `credpay-local-<data>-<nonce>`, recusa nome/diretório/sessão existentes, confere ferramentas e imagens, usa configuração Docker vazia própria e ambiente dos filhos por allowlist. Não herda proxies, credenciais, TLS/contextos alternativos ou opções experimentais do usuário. Pulls eventualmente necessários são públicos e pinados; erro não autoriza copiar credenciais para o node.
 
+No Windows, o launcher fornece `PATHEXT=.EXE` aos filhos para o PowerShell executar binários na mesma sessão e capturar stdout/exit. PowerShell pode acrescentar `.CPL` ao iniciar: somente a lista exata `.EXE` ou `.EXE;.CPL` passa no guard, e a entrada Local normaliza para `.EXE` antes dos comandos. Extensões herdadas/arbitrárias continuam recusadas. HOME e USERPROFILE dos filhos apontam apenas para o temp próprio da sessão, contendo também o cache de descoberta do kubectl; o ambiente permanente do usuário permanece inalterado. Cache legado `/.kube/cache/` no workspace foi preservado e ignorado, sem ler kubeconfig padrão nem apagar arquivos. Essa regra não ignora `/.kube/config`.
+
 O node permanece privilegiado conforme a exceção; são conferidos imagem, labels, ID real do container, namespaces, dispositivos, mounts, tmpfs e porta API somente127.0.0.1. Propriedade só passa a `Owned` após conferir daemon/node e kubeconfig próprio com certificado embutido, sem plugins, arquivos de credencial externos ou TLS inseguro. As quatro imagens são carregadas; as imagens dos apps no runtime precisam ter os mesmos IDs do host. Isso não rehash os JARs dentro da imagem nem inventaria o node/infraestrutura.
 
 Após o resumo de criação, executar separadamente:

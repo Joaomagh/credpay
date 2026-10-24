@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- Ensaio local de contadores com João: imagens f412652, Prepare/Activate/Demo com Diagnostics passaram, confirmed delta2 nos dois apps e APROVADA/REJEITADA/replay. Evidência e limites em spec9.135; não equivale a diagnóstico local de returned/error ou entendimento autônomo.
+- LoadImages passou no Docker Desktop de João após PR197/50a50a4: quatro imagens amd64 carregadas e cadeia de identidade conferida. Validate confirmou novamente as quatro imagens; startup parou na chamada nativa do contexto, antes dos recursos. Evidências e limites em spec9.136.4/5.
 
 ## Agora
 
-- [ ] Corrigir a comparação de identidade da carga local Owned. PR196/b269fe3 resolveu arquivo OCI parcial; importação passou, mas runtime-ids comparava índice Docker com config CRI. João informou os quatro IDs; hashes dos manifestos/configs no TAR confirmam a correspondência amd64. Cadeia origem/plataforma/config/CRI em revisão/CI; depois João executa LoadImages, Validate e Remove uma ação por vez. Diagnóstico causal por métricas/prática pessoal continuam separados; candidato operacional será reidentificado ao fechar.
+- [ ] Concluir revisão/CI do ambiente mínimo Windows: PATHEXT explícito para .exe, home dos filhos no temp próprio e cache contido. Controle sem Docker reproduziu a falha; 78 controles Windows passaram após ajuste. Depois João reconfere contexto e executa Validate/Remove uma ação por vez. Diagnóstico causal por métricas/prática pessoal continuam separados; candidato operacional será reidentificado ao fechar.
 
 ## Próximo
 
