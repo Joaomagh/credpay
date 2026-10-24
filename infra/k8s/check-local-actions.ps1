@@ -17,7 +17,7 @@ function NewFixture {
         $artifacts+=@{path=$file;sha256=(Get-FileHash $full -Algorithm SHA256).Hash.ToLowerInvariant()}
     }
     Write-CredPayLocalJson @{sourceRevision=$tag;artifacts=$artifacts} (Join-Path $directory '.local/evidence/local-acceptance-prepared.json') $directory -New
-    $script:fixture=@{Root=$directory;Created=$false;Existing=$false;FailCreate=$false;BadAlias=$false;BadId=$false;BadCache=$false;CommandCount=0;Events=[Collections.Generic.List[string]]::new()}
+    $script:fixture=@{Root=$directory;Created=$false;Existing=$false;FailCreate=$false;BadAlias=$false;BadId=$false;BadCache=$false;BadPolicy=$false;BadReady=$false;CommandCount=0;Events=[Collections.Generic.List[string]]::new()}
 }
 function Get-CredPayLocalRuntime($Plan) {
     # OS, installed executables and command launch are the external boundaries of this offline control.
@@ -38,6 +38,7 @@ function Invoke-CredPayLocalTool($Runtime,[string]$File,[string[]]$Arguments,[in
         if ($a[0] -ceq 'inspect') {
             $identity=if ($fixture.BadId) { 'f' * 64 } else { 'a' * 64 }
             $data=@{id=$identity;cluster=$p.Cluster;role='control-plane';image=$p.NodeImage;privileged=$true;userns='';cgroupns='private';devices=@();security=@('seccomp=unconfined','apparmor=unconfined');env=@();tmpfs=@{'/run'='';'/tmp'=''};mounts=@(@{Type='volume';Destination='/var';Name='fixture-volume';RW=$true},@{Type='bind';Destination='/lib/modules';Source='/lib/modules';RW=$false});ports=@{'6443/tcp'=@(@{HostIp='127.0.0.1';HostPort='54321'})}}
+            if ($fixture.BadPolicy) { $data.security+= 'unexpected=fixture' }
             return ($data | ConvertTo-Json -Depth 30 -Compress)
         }
         if ($a[0] -ceq 'exec') {
@@ -63,6 +64,11 @@ function Invoke-CredPayLocalTool($Runtime,[string]$File,[string[]]$Arguments,[in
         }
     } elseif ($File -ceq $p.Kubectl) {
         if ($a -contains 'version') { return '{"clientVersion":{"gitVersion":"v1.36.4"}}' }
+        if ($a -contains '--raw=/readyz') {
+            $fixture.Events.Add('ready')
+            if ($fixture.BadReady) { throw 'Fixture: TLS/API unavailable.' }
+            return 'ok'
+        }
         $context="kind-$($p.Cluster)"
         return (@{'current-context'=$context;contexts=@(@{name=$context;context=@{cluster=$context;user=$context}});clusters=@(@{name=$context;cluster=@{server='https://127.0.0.1:54321';'certificate-authority-data'='fixture'}});users=@(@{name=$context;user=@{'client-certificate-data'='fixture';'client-key-data'='fixture'}})} | ConvertTo-Json -Depth 30 -Compress)
     } elseif ($File -ceq 'fixture-pwsh') {
@@ -143,5 +149,50 @@ Case 'failed image load keeps ownership and permits scoped cleanup' {
     if ((Read-CredPayLocalJson $fixture.Plan.Marker $fixture.Root).stage -cne 'Owned') { throw 'Proven ownership lost.' }
     Invoke-CredPayLocalAction Remove $tag $fixture.Root 6>$null
     if (-not ($fixture.Events -contains 'delete')) { throw 'Owned partial resources could not be removed.' }
+}
+function NewInterruptedFixture {
+    NewFixture; $fixture.BadPolicy=$true
+    MustReject { Invoke-CredPayLocalAction Create $tag $fixture.Root }
+    $fixture.BadPolicy=$false
+    $fixture.Events.Clear()
+}
+Case 'explicit resume finishes images without creating or deleting a cluster' {
+    NewInterruptedFixture
+    Invoke-CredPayLocalAction Resume $tag $fixture.Root ('a' * 64) 6>$null
+    if ((Read-CredPayLocalJson $fixture.Plan.Marker $fixture.Root).stage -cne 'Owned' -or
+        ($fixture.Events -join ',') -cne 'ready,load') { throw 'Recovery did not validate API before image load.' }
+}
+foreach ($fault in @('missing-id','wrong-id','bad-policy','bad-daemon','missing-config','bad-ready','bad-alias','wrong-app-ids','missing-original-config')) {
+    Case "resume refuses $fault without promoting incomplete ownership" {
+        NewInterruptedFixture
+        $expected='a' * 64
+        $p=$fixture.Plan
+        switch ($fault) {
+            missing-id { $expected='' }
+            wrong-id { $expected='b' * 64 }
+            bad-policy { $fixture.BadPolicy=$true }
+            bad-daemon {
+                $o=Read-CredPayLocalJson $p.Marker $fixture.Root; $o.daemonId='other-daemon'
+                Write-CredPayLocalJson $o $p.Marker $fixture.Root
+            }
+            missing-config {
+                Assert-CredPayLocalPath $fixture.Root $p.Kubeconfig
+                Remove-Item -LiteralPath $p.Kubeconfig
+            }
+            bad-ready { $fixture.BadReady=$true }
+            bad-alias { $fixture.BadAlias=$true }
+            wrong-app-ids {
+                $o=Read-CredPayLocalJson $p.Marker $fixture.Root; $o.appIds[0]='sha256:' + ('e' * 64)
+                Write-CredPayLocalJson $o $p.Marker $fixture.Root
+            }
+            missing-original-config {
+                $o=Read-CredPayLocalJson $p.Marker $fixture.Root; $o.kubeconfig='other'
+                Write-CredPayLocalJson $o $p.Marker $fixture.Root
+            }
+        }
+        MustReject { Invoke-CredPayLocalAction Resume $tag $fixture.Root $expected }
+        if ((Read-CredPayLocalJson $p.Marker $fixture.Root).stage -cne 'Creating' -or
+            $fixture.Events -contains 'load' -or $fixture.Events -contains 'create' -or $fixture.Events -contains 'delete') { throw 'Unproven session changed.' }
+    }
 }
 Write-Host "Local lifecycle: $caseCount offline scenarios passed; commands fictitious, no daemon accessed."
