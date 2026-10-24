@@ -2,6 +2,15 @@
 
 **Estado técnico de18/10, revalidado em22/10/2026:** PR178/ea175e1 integrou oito checks verdes no head7e4233d. Inventory122 conserva quatro alvos completos selecionados107pacotes/JAR243/imagem, HIGH0/CRITICAL0, MEDIUM3/JAR e MEDIUM32/LOW22/imagem; achados iguais ao Inventory111, sem supressão. Detalhes, identidade, DBs e limites em [V1_VALIDATION.md](../../docs/V1_VALIDATION.md). Este corte não substitui um inventário atualizado após a retomada22/10, não cobre infraestrutura externa e não fecha ensaio ou revisão histórica. A migração B08.6c e seus aceites posteriores substituem os estados preparatórios abaixo.
 
+## Atualização de24/10 — inventário da PR187
+
+Inventory/run40109185999, artefato12566116281, conserva os mesmos pacotes dos quatro alvos do corte22/10 e HIGH0/CRITICAL0. JARs permanecem com3MEDIUM; cada imagem passa de32 para33MEDIUM, conservando22LOW. Identidade, bases, hash, cobertura e limites em [V1_VALIDATION.md](../../docs/V1_VALIDATION.md). A correção de identidade HTTP não altera runtime nem resolve os achados abaixo.
+
+- **CVE-2026-88648 / libgnutls30t64 3.8.3-1.1ubuntu3.6:** novo MEDIUM nas duas imagens, sem Fixed. [Ubuntu](https://ubuntu.com/security/CVE-2026-88648) informa gnutls28/Noble vulnerável com correção adiada; a descrição envolve validação X.509 e controle de uma CA subordinada. A nota registra contestação pelo upstream e ausência de correção, o que não equivale a dispensa ou prova de inaplicabilidade. A exposição concreta dos consumidores nativos nesta imagem ainda não foi estabelecida; preservar achado e acompanhar atualização oficial. Nenhum PoC executado, patch próprio ou disposição de risco aprovada.
+- **CVE-2026-85091 / zlib1g 1:1.3.dfsg-3.1ubuntu2.2:** ID já presente, agora Fixed1:1.3.dfsg-3.1ubuntu2.3/Statusfixed. [Ubuntu](https://ubuntu.com/security/CVE-2026-85091) confirma essa correção para Noble. Instalado permanece2.2; Statusfixed indica disponibilidade, não remediação instalada. Preservar a severidade MEDIUM do inventário e as informações oficiais próprias, sem reclassificar o relatório. Avaliar atualização de imagem oficial junto das correções curl já documentadas, com baseline/testes/novo inventário antes de promover candidata. Não modificar pacotes manualmente na imagem ou alegar correção sem execução.
+
+As fontes oficiais foram consultadas em24/10. Não há novos IDs nos JARs, mudança de pacote instalado ou exclusão de scanner. Manutenção de runtime e acompanhamento do achado sem correção permanecem explícitos; integração da correção HTTP não autoriza implantação externa ou aceita essas vulnerabilidades.
+
 ## Histórico inicial — 2026-10-08
 
 **Estado consolidado em 2026-10-09:** JDBC integrado na PR #127; Inventory #13 registra HIGH0/JAR1/imagem e CRITICAL2/alvo. Os três IDs restantes e a proposta de publicação estão no final deste documento. As tabelas e preparações anteriores preservam o histórico.
