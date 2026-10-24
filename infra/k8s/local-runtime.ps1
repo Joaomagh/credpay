@@ -1,5 +1,9 @@
 #requires -Version 7.3
 . (Join-Path $PSScriptRoot 'local-safety.ps1')
+function Initialize-CredPayLocalEnvironment($Plan) {
+    Assert-CredPayLocalEnvironment ([Environment]::GetEnvironmentVariables('Process')) $Plan
+    if ($IsWindows) { $env:PATHEXT='.EXE' }
+}
 
 function Read-CredPayLocalJson([string]$Path, [string]$Root) {
     Assert-CredPayLocalPath $Root $Path
@@ -67,7 +71,7 @@ function Get-CredPayKubernetesExecution([string]$Root, [string]$Cluster, [string
     }
     Assert-LocalCondition ($ExecutionProfile -ceq 'Local') 'Perfil Kubernetes desconhecido.'
     $plan=New-CredPayLocalPlan $Root $Cluster $env:CREDPAY_IMAGE_TAG
-    Assert-CredPayLocalEnvironment ([Environment]::GetEnvironmentVariables('Process')) $plan
+    Initialize-CredPayLocalEnvironment $plan
     $owner=Read-CredPayLocalJson $plan.Marker $Root
     Assert-LocalCondition ($owner.stage -cin @('Owned','Validated')) 'Criação local incompleta; não adotar ou remover por nome.'
     $runtime=Get-CredPayLocalRuntime $plan

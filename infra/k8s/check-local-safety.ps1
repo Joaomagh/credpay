@@ -121,8 +121,32 @@ Check 'private child environment' {
     if ($start.UseShellExecute -or -not $start.CreateNoWindow -or $start.WorkingDirectory -cne $root -or
         $start.Environment['DOCKER_CONFIG'] -cne $plan.DockerConfig -or $start.Environment['DOCKER_HOST'] -cne $plan.DockerHost -or
         $start.Environment.ContainsKey('HTTP_PROXY') -or $start.Environment.ContainsKey('DOCKER_CONTEXT') -or
-        $start.Environment.ContainsKey('DOCKER_TLS_VERIFY') -or $start.Environment.ContainsKey('USERPROFILE') -or
+        $start.Environment.ContainsKey('DOCKER_TLS_VERIFY') -or
+        ($IsWindows -and $start.Environment['USERPROFILE'] -cne $plan.Temp) -or
+        (-not $IsWindows -and $start.Environment.ContainsKey('USERPROFILE')) -or
         ($IsWindows -and -not $start.Environment.ContainsKey('ProgramFiles'))) { throw 'Unsafe child environment.' }
+}
+Check 'private child home is the session temp' {
+    if ($start.Environment['HOME'] -cne $plan.Temp) { throw 'Home outside private session.' }
+}
+Check 'Windows native executable recognition is minimal and explicit' {
+    if (($IsWindows -and $start.Environment['PATHEXT'] -cne '.EXE') -or
+        (-not $IsWindows -and $start.Environment.ContainsKey('PATHEXT'))) { throw 'Executable extension environment is unsafe.' }
+}
+$nativeProbe=Join-Path $controls 'native.ps1'
+[IO.File]::WriteAllText($nativeProbe, @'
+param($Executable)
+$ErrorActionPreference='Stop'
+$PSNativeCommandUseErrorActionPreference=$false
+# Refuse before invocation when the extension is absent: never open a detached document/window.
+if ($IsWindows -and $env:PATHEXT -cnotin @('.EXE','.EXE;.CPL')) { throw 'Native extension is missing.' }
+$result=@(& $Executable -NoLogo -NoProfile -Command '[Console]::Write("native-output"); exit 7')
+if ($LASTEXITCODE -ne 7 -or $result.Count -ne 1 -or $result[0] -cne 'native-output') { throw 'Native output/exit was not captured.' }
+[Console]::Write('native-probe-passed')
+'@)
+$nativeStart=New-CredPayLocalProcess $pwsh @('-NoLogo','-NoProfile','-File',$nativeProbe,$pwsh) $plan (Join-Path $controls 'docker.exe') $systemDirectory
+Check 'actual child PowerShell captures native output and nonzero exit' {
+    if ((Invoke-CredPayLocalProcess $nativeStart 10) -cne 'native-probe-passed') { throw 'Native invocation unavailable.' }
 }
 Check 'literal arguments reach child' {
     $actual=@((Invoke-CredPayLocalProcess $start 10) | ConvertFrom-Json)
@@ -142,9 +166,10 @@ Check 'nonzero exit is refused without raw stderr' {
     try { $null=Invoke-CredPayLocalProcess $failed 10 } catch { $refused=$_.Exception.Message -like '*exit=7*' -and $_.Exception.Message -notlike '*fixture-error*' }
     if (-not $refused) { throw 'Exit status or redaction changed.' }
 }
-$environment=@{DOCKER_HOST=$plan.DockerHost;DOCKER_CONFIG=$plan.DockerConfig;KUBECONFIG=$plan.Kubeconfig;KIND_EXPERIMENTAL_PROVIDER='docker';CREDPAY_IMAGE_TAG=$tag}
+$environment=@{DOCKER_HOST=$plan.DockerHost;DOCKER_CONFIG=$plan.DockerConfig;KUBECONFIG=$plan.Kubeconfig;KIND_EXPERIMENTAL_PROVIDER='docker';CREDPAY_IMAGE_TAG=$tag;HOME=$plan.Temp}
+if ($IsWindows) { $environment.USERPROFILE=$plan.Temp; $environment.PATHEXT='.EXE' }
 Check 'supported verifier environment' { Assert-CredPayLocalEnvironment $environment $plan }
-foreach ($field in @('DOCKER_HOST','DOCKER_CONFIG','KUBECONFIG','KIND_EXPERIMENTAL_PROVIDER','CREDPAY_IMAGE_TAG')) {
+foreach ($field in @('DOCKER_HOST','DOCKER_CONFIG','KUBECONFIG','KIND_EXPERIMENTAL_PROVIDER','CREDPAY_IMAGE_TAG','HOME') + $(if ($IsWindows) { @('USERPROFILE','PATHEXT') })) {
     $bad=@{}+$environment; $bad[$field]='other'
     Check "reject verifier $field" { Assert-CredPayLocalEnvironment $bad $plan } $true
 }
@@ -153,8 +178,8 @@ foreach ($field in @('DOCKER_CONTEXT','DOCKER_TLS_VERIFY','https_proxy','DOCKER_
     Check "reject inherited $field" { Assert-CredPayLocalEnvironment $bad $plan } $true
 }
 $entry=Join-Path $controls 'entry.ps1'
-[IO.File]::WriteAllText($entry, 'param($Library,$Root,$Cluster,$Tag); . $Library; $p=New-CredPayLocalPlan $Root $Cluster $Tag; Assert-CredPayLocalEnvironment ([Environment]::GetEnvironmentVariables("Process")) $p; if ($IsWindows -and -not $env:ProgramFiles) { throw "ProgramFiles missing" }; [Console]::Write("child-environment-ready")')
-$entryStart=New-CredPayLocalProcess $pwsh @('-NoProfile','-File',$entry,(Join-Path $PSScriptRoot 'local-safety.ps1'),$root,$name,$tag) $plan (Join-Path $controls 'docker.exe') $systemDirectory
+[IO.File]::WriteAllText($entry, 'param($Library,$Root,$Cluster,$Tag); . $Library; $p=New-CredPayLocalPlan $Root $Cluster $Tag; Initialize-CredPayLocalEnvironment $p; if ($IsWindows -and (-not $env:ProgramFiles -or $env:PATHEXT -cne ".EXE")) { throw "Native entry environment missing" }; [Console]::Write("child-environment-ready")')
+$entryStart=New-CredPayLocalProcess $pwsh @('-NoProfile','-File',$entry,(Join-Path $PSScriptRoot 'local-runtime.ps1'),$root,$name,$tag) $plan (Join-Path $controls 'docker.exe') $systemDirectory
 Check 'verifier entry accepts actual isolated child environment' {
     if ((Invoke-CredPayLocalProcess $entryStart 10) -cne 'child-environment-ready') { throw 'Verifier environment unavailable.' }
 }
