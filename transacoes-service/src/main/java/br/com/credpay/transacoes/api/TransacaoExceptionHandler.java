@@ -32,7 +32,7 @@ class TransacaoExceptionHandler {
         return problem;
     }
 
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ExceptionHandler({MethodArgumentTypeMismatchException.class, IdTransacaoInvalidoException.class})
     ProblemDetail tratarTipoDeArgumentoInvalido() {
         var problem = ProblemDetail.forStatusAndDetail(
                 HttpStatus.BAD_REQUEST, "id deve ser um UUID válido");

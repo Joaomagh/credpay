@@ -395,4 +395,8 @@ Concluída na PR185/1c0d7dc: seis cenários desktop/mobile Chromium contra Compo
 
 ### F04 — Contraste dos textos auxiliares
 
-Medição anterior no Chromium reprovou quatro pares texto/fundo abaixo de4,5:1. Reutilizar --muted sem alterar layout/dependência, comprovar os quatro contrastes após ajuste, conferir mobile sem overflow e build/testes/CI. Escopo restrito aos textos medidos; não é auditoria completa WCAG. Evidência em spec9.131; integração pendente.
+Concluída na PR186/bf51413 após Compose/run39884839678 (seis cenários de navegador), Frontend/run39884839665 e Scan/run39884839634 verdes no SHA71a4772; revisão sem bloqueantes. Quatro pares passaram de4,04–4,33 para5,29–5,87:1, com layout/dependências preservados. Escopo restrito aos textos medidos; não é auditoria completa WCAG. Evidência em spec9.131.
+
+### M01 — Preservar identidade na consulta — marco4 / etapa Angular
+
+Falhas observadas: GET aceita UUID abreviado como outra representação, e cliente aceita resposta com UUID diferente do solicitado. Aceite: recusar alias antes da consulta com400 ProblemDetail e recusar resposta divergente antes de exibir/continuar acompanhamento; preservar UUID completo uppercase, consulta válida e contrato financeiro. Reds observados, green local9MVC/35frontend e revisão sem bloqueantes; integração real/gates finais pendentes. Sem dependência, autenticação ou migração nova; spec9.132. Correção reabre a conferência do candidato backend afetado, sem transformar melhorias opcionais em requisito de fechamento.

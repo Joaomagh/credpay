@@ -172,6 +172,36 @@ class TransacaoControllerTest {
     }
 
     @Test
+    void deveRejeitarIdAbreviadoSemConsultarOutraIdentidade() throws Exception {
+        var idNormalizado = UUID.fromString("00000001-0001-0001-0001-000000000001");
+        when(buscarTransacao.executar(idNormalizado))
+                .thenReturn(new BuscarTransacao.Resultado(
+                        idNormalizado, new BigDecimal("10.00"),
+                        Currency.getInstance("BRL"), StatusTransacao.PENDENTE));
+
+        mockMvc.perform(get("/transacoes/1-1-1-1-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.detail").value("id deve ser um UUID válido"));
+
+        verifyNoInteractions(buscarTransacao);
+    }
+
+    @Test
+    void deveAceitarIdCompletoComLetrasMaiusculas() throws Exception {
+        when(buscarTransacao.executar(TRANSACAO_ID))
+                .thenReturn(new BuscarTransacao.Resultado(
+                        TRANSACAO_ID, new BigDecimal("10.00"),
+                        Currency.getInstance("BRL"), StatusTransacao.PENDENTE));
+
+        mockMvc.perform(get("/transacoes/{id}", TRANSACAO_ID.toString().toUpperCase(java.util.Locale.ROOT)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(TRANSACAO_ID.toString()));
+
+        verify(buscarTransacao).executar(TRANSACAO_ID);
+    }
+
+    @Test
     void deveRetornarRequisicaoInvalidaSemConsultar_quandoIdForMalformado() throws Exception {
         var idMalformado = "nao-e-uuid";
 

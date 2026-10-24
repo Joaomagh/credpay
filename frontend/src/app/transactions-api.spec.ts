@@ -73,6 +73,21 @@ describe('HTTP real e acompanhamento limitado', () => {
     http.expectOne('/transacoes/' + id).flush(raw('DESCONHECIDA'));
     expect(rejected).toBe(true);
   });
+  it('não entrega o resultado de outra transação na consulta por ID', () => {
+    const other = '12345678-1234-1234-1234-123456789abc';
+    const received: string[] = [];
+    let rejected = false;
+    api.get(id).subscribe({ next: t => received.push(t.id), error: () => rejected = true });
+    http.expectOne('/transacoes/' + id).flush(raw('APROVADA').replace(id, other));
+    expect(received).toEqual([]);
+    expect(rejected).toBe(true);
+  });
+  it('reconhece o mesmo UUID sem distinguir maiúsculas de minúsculas', () => {
+    let received = '';
+    api.get(id.toUpperCase()).subscribe(t => received = t.id);
+    http.expectOne('/transacoes/' + id.toUpperCase()).flush(raw('APROVADA'));
+    expect(received).toBe(id);
+  });
   it('cancela GET em voo no unsubscribe e limita uma requisição sem resposta a 8 segundos', async () => {
     vi.useFakeTimers();
     const sub = api.watch(id).subscribe();

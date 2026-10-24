@@ -62,8 +62,8 @@ public class TransacaoController {
     }
 
     @GetMapping("/{id}")
-    ResponseEntity<TransacaoResponse> buscar(@PathVariable UUID id) {
-        var resultado = buscarTransacao.executar(id);
+    ResponseEntity<TransacaoResponse> buscar(@PathVariable String id) {
+        var resultado = buscarTransacao.executar(converterId(id));
         var response = new TransacaoResponse(
                 resultado.id(),
                 resultado.valor(),
@@ -71,6 +71,18 @@ public class TransacaoController {
                 resultado.status().name());
 
         return ResponseEntity.ok(response);
+    }
+
+    private UUID converterId(String valor) {
+        try {
+            var id = UUID.fromString(valor);
+            if (!id.toString().equalsIgnoreCase(valor)) {
+                throw new IllegalArgumentException();
+            }
+            return id;
+        } catch (IllegalArgumentException exception) {
+            throw new IdTransacaoInvalidoException(exception);
+        }
     }
 
     private Currency converterMoeda(String codigo) {

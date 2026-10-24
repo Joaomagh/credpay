@@ -26,7 +26,12 @@ export class TransactionsApi {
   }
   get(id: string): Observable<Transaction> {
     return this.http.get('/transacoes/' + encodeURIComponent(id), { responseType: 'text' })
-      .pipe(timeout(8000), map(decode));
+      .pipe(timeout(8000), map(decode), map(transaction => {
+        if (transaction.id.toLowerCase() !== id.toLowerCase()) {
+          throw new Error('Resposta da API pertence a outra transação.');
+        }
+        return transaction;
+      }));
   }
   watch(id: string): Observable<Transaction> {
     return this.get(id).pipe(
