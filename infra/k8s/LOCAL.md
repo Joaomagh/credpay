@@ -2,7 +2,7 @@
 
 Perfil autorizado especificamente em [AGENTS§5](../../AGENTS.md) e [proposta](../../docs/KUBERNETES_LOCAL_PROPOSAL.md). Os comandos Docker são executados por João, não pelo agente. O perfil padrão dos verificadores continua `CI`; não definir GITHUB_ACTIONS nem usar um nome CI para executar localmente.
 
-O launcher `local.ps1` oferece três ações, sem instalação global, alteração permanente de PATH/contexto, leitura de `.env` ou uso do kubeconfig padrão. Exige PowerShell7.3+, Windowsx64, Docker Desktop Linux no endpoint já conferido e os dois executáveis portáteis com os checksums da proposta.
+O launcher `local.ps1` oferece Create/Validate/Remove e uma retomada explícita Resume, sem instalação global, alteração permanente de PATH/contexto, leitura de `.env` ou uso do kubeconfig padrão. Exige PowerShell7.3+, Windowsx64, Docker Desktop Linux no endpoint já conferido e os dois executáveis portáteis com os checksums da proposta.
 
 ## Antes de executar
 
@@ -41,9 +41,17 @@ Remove somente o cluster cujo daemonID/nodeID/labels/imagem/mounts/API/kubeconfi
 
 ## Falhas e limites
 
-O Docker pode normalizar o node privilegiado acrescentando `label=disable` às opções seccomp/apparmor do kind. O guard aceita somente a lista completa original ou essa lista com a opção adicional exata, sem opções desconhecidas ou duplicadas. Isso descreve o node privilegiado já autorizado, sem alterar os Pods CredPay. Se uma criação anterior parou em `node-policy`, esta correção não promove seu registro `Creating`: não repetir Create, editar owner ou executar Validate/Remove. Reconferir a política em consulta somente leitura e preparar recuperação com identidade comprovada antes de qualquer mutação.
+O Docker pode normalizar o node privilegiado acrescentando `label=disable` às opções seccomp/apparmor do kind. O guard aceita somente a lista completa original ou essa lista com a opção adicional exata, sem opções desconhecidas ou duplicadas. Isso descreve o node privilegiado já autorizado, sem alterar os Pods CredPay. A PR194/2fd3d58 corrigiu essa recusa após red1/70 e red2/72 encontrados na revisão; controles finais72+9, Windows/Linux e cluster CI40133435967 passaram. João reconferiu a política completa, daemon original e kubeconfig somente em leitura; não houve promoção do registro por essas consultas.
 
-Criação parcial conserva `Creating`, sem adoção ou remoção automática por nome. Enviar somente a fase/mensagem curta; não editar o marcador, apagar volumes, forjar nome CI ou aumentar privilégios para contornar erro. Falha de carregamento após propriedade comprovada conserva `Owned`, permitindo cleanup restrito após conferir a identidade. Fonte, kubeconfig, Secret, inspect e logs brutos não devem ser publicados.
+### Retomada da falha pós-criação conferida
+
+Para o caso acompanhado de `node-policy`, uma consulta somente leitura deve identificar o ID completo do node. Depois da revisão/CI da retomada e com esse ID literal, João pode executar `./infra/k8s/local.ps1 -Action Resume -ExpectedNodeId <ID-completo-conferido>`; o marcador `<...>` não é um comando copiável. Não selecionar por nome, editar owner ou repetir Create.
+
+Resume exige a sessão ativa e o registro original em Creating, mesmo daemon/nome/tag/kubeconfig, nodeId original ainda vazio e duas identidades de imagem. Reconfere ID fornecido, node único, política completa, kubeconfig loopback e fontes/aliases pinados existentes. Consulta `/readyz` via kubectl, com TLS e credenciais próprias do kubeconfig, timeout15s, sem imprimir configuração/credenciais. Só promove Owned no disco após essa resposta e nova conferência de propriedade; carrega as mesmas quatro imagens e compara os IDs dos apps no runtime. Não cria/deleta cluster, não baixa imagens, não muda aliases e não executa Validate automaticamente.
+
+Qualquer recusa anterior à promoção mantém Creating. Falha de carga posterior mantém Owned e permite somente cleanup com a identidade novamente conferida. O marker legado não registra exit/fase do kind: readyz comprova prontidão atual e TLS, não sucesso histórico do comando. Essa recuperação é para a sessão própria acompanhada, sob confiança do host/daemon/arquivos; não comprova propriedade contra administrador malicioso nem elimina todas as corridas.
+
+Criação parcial conserva `Creating`, sem adoção ou remoção automática por nome. Validate/Remove continuam recusando Creating; Resume é explícito e exige as verificações acima. Enviar somente a fase/mensagem curta; não editar o marcador, apagar volumes, forjar nome CI ou aumentar privilégios para contornar erro. Falha de carregamento após propriedade comprovada conserva `Owned`, permitindo cleanup restrito após conferir a identidade. Fonte, kubeconfig, Secret, inspect e logs brutos não devem ser publicados.
 
 Os guards evitam operações acidentais em outro recurso; arquivos locais não são prova criptográfica de propriedade contra alguém que controla host/daemon. Não eliminam todas as janelas de concorrência. Host/VM/node continuam base de confiança; rede Docker não é allowlist de egress, Kubernetes de um node não é HA e essa execução não comprova AI-Jail ou entendimento pessoal.
 

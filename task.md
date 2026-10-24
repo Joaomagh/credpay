@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] Diagnosticar a sessão local preservada em Creating antes de retomar Create/Validate/Remove. João executou Create: parada em node-policy causada pela opção padrão Docker label=disable; correção restrita em revisão/testes, sem alterar marcador ou adotar node por nome. Após integração, reconferir todas as regras em consulta somente leitura; recuperação da criação ainda exige fluxo próprio. Diagnóstico causal por métricas/prática pessoal continuam separados; candidato operacional será reidentificado ao fechar.
+- [ ] Retomar a sessão local preservada em Creating, após revisão/CI de Resume explícito e ID literal do node conferido por João. PR194/2fd3d58 corrigiu label=disable; João confirmou política completa, daemon original e kubeconfig em leitura. Resume está em testes: registro original/ID/política/TLS/imagens antes da promoção, sem create/delete ou edição manual. Depois conduzir Validate e Remove uma ação por vez. Diagnóstico causal por métricas/prática pessoal continuam separados; candidato operacional será reidentificado ao fechar.
 
 ## Próximo
 

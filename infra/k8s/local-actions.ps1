@@ -1,7 +1,37 @@
 #requires -Version 7.3
 # Functions only; native commands are dispatched by local-runtime.ps1.
-function Invoke-CredPayLocalAction([string]$Action, [string]$ImageTag, [string]$root) {
-    Assert-LocalCondition ($Action -cin @('Create','Validate','Remove')) 'Ação local desconhecida; nenhuma operação autorizada.'
+function Get-CredPayLocalInfraImages {
+    return @(
+        @{Source='postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0';Alias='credpay-postgres:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0'},
+        @{Source='rabbitmq:4.3.5-management-alpine@sha256:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1';Alias='credpay-rabbit:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1'})
+}
+function Get-CredPayLocalImageSet($Runtime, $Owner) {
+    $images=@("credpay-transacoes:$($Runtime.Plan.ImageTag)","credpay-processamento:$($Runtime.Plan.ImageTag)")
+    Assert-LocalCondition (@($Owner.appIds).Count -eq 2) 'Registro das imagens originais incompleto.'
+    for ($i=0;$i -lt 2;$i++) {
+        $id=Invoke-CredPayLocalTool $Runtime $Runtime.Docker @('image','inspect','--format','{{.Id}}',$images[$i])
+        Assert-LocalCondition ($id -cmatch '^sha256:[0-9a-f]{64}$' -and $id -ceq $Owner.appIds[$i]) 'Imagem do aplicativo diverge da criação original.'
+    }
+    foreach ($image in @(Get-CredPayLocalInfraImages)) {
+        $id=Invoke-CredPayLocalTool $Runtime $Runtime.Docker @('image','inspect','--format','{{.Id}}',$image.Source)
+        $aliasId=Invoke-CredPayLocalTool $Runtime $Runtime.Docker @('image','inspect','--format','{{.Id}}',$image.Alias)
+        Assert-LocalCondition ($id -cmatch '^sha256:[0-9a-f]{64}$' -and $aliasId -ceq $id) 'Alias existente diverge da fonte; não sobrescrever.'
+        $images+=$image.Alias
+    }
+    return $images
+}
+function Complete-CredPayLocalImageLoad($Runtime, $Owner) {
+    Assert-CredPayLocalLive $Runtime $Owner
+    $images=@(Get-CredPayLocalImageSet $Runtime $Owner)
+    $plan=$Runtime.Plan
+    $null=Invoke-CredPayLocalTool $Runtime $plan.Kind (@('load','docker-image','--name',$plan.Cluster) + $images) 300
+    for ($i=0;$i -lt 2;$i++) {
+        $cached=Invoke-CredPayLocalTool $Runtime $Runtime.Docker @('exec',"$($plan.Cluster)-control-plane",'crictl','--runtime-endpoint','unix:///run/containerd/containerd.sock','--image-endpoint','unix:///run/containerd/containerd.sock','inspecti','--output','json',$images[$i]) | ConvertFrom-Json -Depth 30
+        Assert-LocalCondition ($cached.status.id -ceq $Owner.appIds[$i]) 'Imagem do aplicativo no node diverge da imagem local.'
+    }
+}
+function Invoke-CredPayLocalAction([string]$Action, [string]$ImageTag, [string]$root, [string]$ExpectedNodeId = '') {
+    Assert-LocalCondition ($Action -cin @('Create','Resume','Validate','Remove')) 'Ação local desconhecida; nenhuma operação autorizada.'
     $active=Join-Path $root '.local/k8s/active-local.json'
     Assert-CredPayLocalPath $root $active
 
@@ -36,9 +66,7 @@ function Invoke-CredPayLocalAction([string]$Action, [string]$ImageTag, [string]$
             Assert-LocalCondition ($id -cmatch '^sha256:[0-9a-f]{64}$') 'Imagem do aplicativo ausente ou ilegível.'
             $appIds+=$id
         }
-        $infra=@(
-            @{Source='postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0';Alias='credpay-postgres:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0'},
-            @{Source='rabbitmq:4.3.5-management-alpine@sha256:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1';Alias='credpay-rabbit:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1'})
+        $infra=@(Get-CredPayLocalInfraImages)
         foreach ($image in $infra) {
             try { $id=Invoke-CredPayLocalTool $runtime $runtime.Docker @('image','inspect','--format','{{.Id}}',$image.Source) }
             catch { $null=Invoke-CredPayLocalTool $runtime $runtime.Docker @('pull',$image.Source) 300; $id=Invoke-CredPayLocalTool $runtime $runtime.Docker @('image','inspect','--format','{{.Id}}',$image.Source) }
@@ -63,12 +91,7 @@ function Invoke-CredPayLocalAction([string]$Action, [string]$ImageTag, [string]$
             Assert-CredPayLocalLive $runtime $owner
             Write-CredPayLocalJson $owner $plan.Marker $root
             $phase='image-load'
-            $null=Invoke-CredPayLocalTool $runtime $plan.Kind (@('load','docker-image','--name',$cluster) + $appImages + @($infra.Alias)) 300
-            $phase='app-cache'
-            for ($i=0;$i -lt 2;$i++) {
-                $cached=Invoke-CredPayLocalTool $runtime $runtime.Docker @('exec',"$cluster-control-plane",'crictl','--runtime-endpoint','unix:///run/containerd/containerd.sock','--image-endpoint','unix:///run/containerd/containerd.sock','inspecti','--output','json',$appImages[$i]) | ConvertFrom-Json -Depth 30
-                Assert-LocalCondition ($cached.status.id -ceq $appIds[$i]) 'Imagem do aplicativo no node diverge da imagem local.'
-            }
+            Complete-CredPayLocalImageLoad $runtime $owner
             Write-Host "Kubernetes local: cluster=$cluster; propriedade/node/API loopback conferidos; quatro imagens carregadas."
         } catch { throw "Criação/carregamento local interrompido; fase=$phase; sessão preservada. Não adotar ou remover recurso por nome. Envie somente esta mensagem para diagnóstico." }
     } else {
@@ -77,6 +100,29 @@ function Invoke-CredPayLocalAction([string]$Action, [string]$ImageTag, [string]$
         $plan=New-CredPayLocalPlan $root $session.cluster $session.imageTag
         $owner=Read-CredPayLocalJson $plan.Marker $root
         $runtime=Get-CredPayLocalRuntime $plan
+        if ($Action -ceq 'Resume') {
+            Assert-LocalCondition ($ExpectedNodeId -cmatch '^[0-9a-f]{64}$') 'Resume exige o ID completo do node conferido; não selecionar somente por nome.'
+            Assert-LocalCondition ($owner.schema -eq 1 -and $owner.stage -ceq 'Creating' -and
+                $owner.cluster -ceq $plan.Cluster -and $owner.imageTag -ceq $plan.ImageTag -and
+                $owner.nodeId -ceq '' -and $owner.kubeconfig -ceq $plan.Kubeconfig) 'Registro de criação original incompleto ou divergente.'
+            Assert-CredPayLocalPath $root $plan.Kubeconfig
+            Assert-LocalCondition ([IO.File]::Exists($plan.Kubeconfig)) 'Kubeconfig original ausente; não recuperar por nome.'
+            $daemon=Get-CredPayLocalDaemon $runtime
+            Assert-LocalCondition ($daemon.id -ceq $owner.daemonId) 'Daemon diferente da criação original.'
+            $node=Get-CredPayLocalNode $runtime
+            Assert-CredPayLocalNode $node $plan $ExpectedNodeId
+            # Only a candidate in memory: do not promote the on-disk marker yet.
+            $owner.nodeId=$ExpectedNodeId; $owner.stage='Owned'
+            Assert-CredPayLocalLive $runtime $owner
+            $null=Get-CredPayLocalImageSet $runtime $owner
+            $ready=Invoke-CredPayLocalTool $runtime $plan.Kubectl @('--kubeconfig',$plan.Kubeconfig,'--request-timeout=15s','get','--raw=/readyz')
+            Assert-LocalCondition ($ready -ceq 'ok') 'API original não confirmou prontidão; sessão incompleta preservada.'
+            Assert-CredPayLocalLive $runtime $owner
+            Write-CredPayLocalJson $owner $plan.Marker $root
+            Complete-CredPayLocalImageLoad $runtime $owner
+            Write-Host 'Kubernetes local: retomada conferida; quatro imagens carregadas; executar Validate separadamente.'
+            return
+        }
         Assert-CredPayLocalLive $runtime $owner
         if ($Action -ceq 'Validate') {
             foreach ($script in @('verify-image-cache.ps1','verify-startup.ps1','verify-flow.ps1')) {
