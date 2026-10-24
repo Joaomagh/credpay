@@ -11,6 +11,8 @@ Registro de 24/10/2026. **Identificado para validação; ainda não promovido a 
 
 Essas árvores identificam fontes e configuração versionadas, não os bytes de JARs ou imagens reconstruídos. Não renomear uma imagem antiga para a tag deste candidato. Uma mudança relevante reabre seus checks e a identificação do candidato.
 
+O perfil Kubernetes Local Windows é incremento posterior a esse corte e exige seus próprios checks e ensaio real; o candidato operacional do repositório deverá ser reidentificado no fechamento. As imagens f412652 continuam vinculadas às fontes dos aplicativos, que não mudaram por esse perfil. Não atribuir a esse SHA antigo a validação do launcher novo.
+
 ## Aceites conferidos
 
 | Aceite | Evidência | Estado |
@@ -24,7 +26,7 @@ Essas árvores identificam fontes e configuração versionadas, não os bytes de
 | Checks aplicáveis ao SHA do candidato | [Inventory](https://github.com/Joaomagh/credpay/actions/runs/40110119178), [Scan](https://github.com/Joaomagh/credpay/actions/runs/40110119100) | Verdes; não são nova execução das oito suítes |
 | Demo Compose pessoal anterior | Retornos de João em22/10, imagens cf103ee; jornada e recuperação assistidas documentadas | Histórica; não prova execução local do código novo |
 | Contadores locais de publicação | João construiu imagens f412652 e executou Prepare/Activate/Demo com Diagnostics: healthUP, metricsHTTP200, APROVADA/REJEITADA/replay e confirmed delta2 nos dois apps | Comprovado no ensaio assistido; diagnóstico de falha por métricas ainda separado |
-| Kubernetes local | João autorizou explicitamente a [exceção local delimitada](KUBERNETES_LOCAL_PROPOSAL.md) em24/10; roteiro Windows ainda por implementar/validar | Autorização atendida; execução e aceite local pendentes |
+| Kubernetes local | João autorizou a exceção, confirmou clientes/recursos e o [perfil Windows](../infra/k8s/LOCAL.md) foi implementado | Autorização e preflight atendidos; execução e aceite local pendentes |
 | Explicação e autonomia pessoais | João adiou a prática; não presumir domínio a partir de testes | Pendente, adiado |
 
 A sonda inicial sem resposta não identificava a causa. Depois de João abrir Docker Desktop, desktop-linux respondeu linux e o ensaio acima passou. Preflight Kubernetes informado por João: endpoint npipe:////./pipe/dockerDesktopLinuxEngine, driveroverlayfs,12CPUs, memória12431081472bytes, arquiteturax86_64. Isso não comprova cluster ou compatibilidade do launcher Windows. O agente não acessou Docker, `.env` ou kubeconfig padrão.
