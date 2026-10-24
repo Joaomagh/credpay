@@ -41,6 +41,8 @@ Remove somente o cluster cujo daemonID/nodeID/labels/imagem/mounts/API/kubeconfi
 
 ## Falhas e limites
 
+O Docker pode normalizar o node privilegiado acrescentando `label=disable` às opções seccomp/apparmor do kind. O guard aceita somente a lista completa original ou essa lista com a opção adicional exata, sem opções desconhecidas ou duplicadas. Isso descreve o node privilegiado já autorizado, sem alterar os Pods CredPay. Se uma criação anterior parou em `node-policy`, esta correção não promove seu registro `Creating`: não repetir Create, editar owner ou executar Validate/Remove. Reconferir a política em consulta somente leitura e preparar recuperação com identidade comprovada antes de qualquer mutação.
+
 Criação parcial conserva `Creating`, sem adoção ou remoção automática por nome. Enviar somente a fase/mensagem curta; não editar o marcador, apagar volumes, forjar nome CI ou aumentar privilégios para contornar erro. Falha de carregamento após propriedade comprovada conserva `Owned`, permitindo cleanup restrito após conferir a identidade. Fonte, kubeconfig, Secret, inspect e logs brutos não devem ser publicados.
 
 Os guards evitam operações acidentais em outro recurso; arquivos locais não são prova criptográfica de propriedade contra alguém que controla host/daemon. Não eliminam todas as janelas de concorrência. Host/VM/node continuam base de confiança; rede Docker não é allowlist de egress, Kubernetes de um node não é HA e essa execução não comprova AI-Jail ou entendimento pessoal.

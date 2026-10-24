@@ -41,6 +41,20 @@ $node = [pscustomobject]@{
     ports=[pscustomobject]@{'6443/tcp'=@(@{HostIp='127.0.0.1';HostPort='54321'})}
 }
 Check 'supported node' { Assert-CredPayLocalNode $node $plan $node.id }
+$desktopNode=CopyFixture $node; $desktopNode.security+= 'label=disable'
+Check 'Desktop privileged node with Docker SELinux normalization' { Assert-CredPayLocalNode $desktopNode $plan $desktopNode.id }
+foreach ($options in @(
+    @('apparmor=unconfined,seccomp=unconfined'),
+    @('apparmor=unconfined,label=disable','seccomp=unconfined'),
+    @('seccomp=unconfined','apparmor=unconfined','label=other'),
+    @('seccomp=unconfined','apparmor=unconfined','label=disable','label=disable'),
+    @('seccomp=unconfined','label=disable'),
+    @('apparmor=unconfined','label=disable'),
+    @('seccomp=unconfined','apparmor=unconfined','label=disable','unknown=value')
+)) {
+    $bad=CopyFixture $node; $bad.security=$options
+    Check "reject unexpected security options $($options -join ',')" { Assert-CredPayLocalNode $bad $plan } $true
+}
 Check 'reject replaced node' { Assert-CredPayLocalNode $node $plan ('b' * 64) } $true
 foreach ($field in @('cluster','role','image','userns','cgroupns')) {
     $bad = CopyFixture $node; $bad.$field='other'
