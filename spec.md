@@ -3105,6 +3105,16 @@ Preflight executado por João: docker --context default version --format retorno
 
 Preparação autorizada das ferramentas: WindowsX64 conferido, kind.exe/kubectl.exe baixados das URLs oficiais da baseline para .local/k8s-tools, primeiro em arquivos temporários próprios e promovidos somente após SHA256 igual ao esperado. Arquivo preexistente divergente seria preservado e recusado; nenhum binário foi executado ou instalação/PATH global alterado. Segunda leitura Get-FileHash confirmou ambos. Baseline registrada antes do download em9.133/proposta; revisão documental independente sem bloqueantes, diff/UTF-8 e hook a conferir antes de publicar. Configuração/documentação operacional, sem red artificial de domínio.
 
+### 9.135 Contadores reais no Compose local e preflight Kubernetes — 24/10
+
+Fonte: respostas de João na conversa; comandos Docker executados por ele. Desktop-linux retornou linux e foi selecionado somente no processo, via Environment.SetEnvironmentVariable. Tagf412652af18674c781f867d01240cf6012a35e4b corresponde aos JARs do manifesto .local/evidence/local-acceptance-prepared.json; antes de orientar o build, hashes dos dois JARs e ausência de delta em serviços/Compose/imagens/Rabbit desde essa revisão foram conferidos. João informou build das duas imagens com essa tag. Não houve renomeação das imagens cf103ee ou inspeção do daemon pelo agente.
+
+Primeiro Prepare recusou PowerShell5.1 por requires7.3, antes da execução do roteiro. João abriu o PowerShell7 instalado como filho da mesma sessão, preservando pasta/contexto/tag. Prepare -Diagnostics passou nas duas fases: appsUID10001/mounts0/privilegedfalse/healthUP, metricsHTTP200, flags false/exchanges produtoras/consumidores0 e quatro filas quorum/políticas/bindings. Activate -Diagnostics passou health/metrics e consumidores2/ACK/prefetch10/1. Demo -Diagnostics passou APROVADA/REJEITADA/replay POST original estável e confirmed delta transacoes=2,processamento=2.
+
+Isso comprova acesso às métricas e incremento de tentativas confirmed durante a demo nos processos ativos; não é contagem de transações únicas nem prova isolada de consumo/commit. GET/replay são verificações separadas do roteiro. Não cobre returned/nacked/error locais, diagnóstico causal de indisponibilidade, crash abrupto, inventário dos bytes locais ou entendimento autônomo. Sem remoção/recriação de volumes, acesso a .env/daemon pelo agente ou Down após a medição; solicitado manter ambiente ligado. A demo grava dados fictícios no ambiente existente.
+
+Preflight Kubernetes informado por João: endpointnpipe:////./pipe/dockerDesktopLinuxEngine; driveroverlayfs,cpus12,memoryBytes12431081472,archx86_64. Apenas consultas de conexão/recursos, sem cluster/configuração global criados. Perfil Windows, versões cliente e validação de cluster continuam próximos passos, sob a exceção já autorizada. task/candidato/backlog atualizados sem declarar v1 final.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

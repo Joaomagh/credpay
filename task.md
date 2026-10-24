@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- Identidade da consulta corrigida no backend e frontend, integrada na PR187/6f77f8e após oito checks verdes no SHA3406d2d:525testes Transações,35Angular,12fluxo e6browser. Contraste F04 já integrado na PR186. Inventário/limites em spec9.131–9.132 e docs/V1_VALIDATION.md.
+- Ensaio local de contadores com João: imagens f412652, Prepare/Activate/Demo com Diagnostics passaram, confirmed delta2 nos dois apps e APROVADA/REJEITADA/replay. Evidência e limites em spec9.135; não equivale a diagnóstico local de returned/error ou entendimento autônomo.
 
 ## Agora
 
-- [ ] Retomar Docker Desktop com João: preflight default falhou por named pipe ausente; aguardar teste desktop-linux após “Engine running”, depois métricas. Exceção Kubernetes local delimitada autorizada, sem acesso Docker pelo agente; preparar/testar perfil Windows sem relaxar CI. Candidato identificado, sem promoção final; prática explicativa continua adiada.
+- [ ] Preparar/testar perfil Kubernetes Windows autorizado sem relaxar CI. Endpoint desktop-linux e preflight de recursos recebidos; versões cliente ainda por conferir, cluster não criado. Diagnóstico causal local de falha por métricas permanece separado; candidato identificado sem promoção final, prática explicativa adiada.
 
 ## Próximo
 
