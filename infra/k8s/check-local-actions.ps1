@@ -3,6 +3,7 @@
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'local-runtime.ps1')
 . (Join-Path $PSScriptRoot 'local-actions.ps1')
+. (Join-Path $PSScriptRoot 'image-archive-fixture.ps1')
 $repo=(Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $tag='f412652af18674c781f867d01240cf6012a35e4b'
 $script:caseCount=0
@@ -18,6 +19,8 @@ function NewFixture {
     }
     Write-CredPayLocalJson @{sourceRevision=$tag;artifacts=$artifacts} (Join-Path $directory '.local/evidence/local-acceptance-prepared.json') $directory -New
     $script:fixture=@{Root=$directory;Created=$false;Existing=$false;FailCreate=$false;BadAlias=$false;BadId=$false;BadCache=$false;BadPolicy=$false;BadReady=$false;SparseIndex=$false;FailSave=$false;CommandCount=0;Events=[Collections.Generic.List[string]]::new()}
+    $references=@("credpay-transacoes:$tag","credpay-processamento:$tag") + @((Get-CredPayLocalInfraImages).Alias)
+    $fixture.ImageFixture=New-CredPayImageFixture $directory $references
 }
 function Get-CredPayLocalRuntime($Plan) {
     # OS, installed executables and command launch are the external boundaries of this offline control.
@@ -34,15 +37,16 @@ function Invoke-CredPayLocalTool($Runtime,[string]$File,[string[]]$Arguments,[in
             if (-not $a[3].StartsWith($p.Temp + [IO.Path]::DirectorySeparatorChar)) { throw 'Archive outside session temp.' }
             $fixture.Events.Add('save')
             if ($fixture.FailSave) { throw 'Fixture: export failed.' }
-            [IO.File]::WriteAllText($a[3],'fixture-archive-not-an-image')
+            Copy-Item -LiteralPath $fixture.ImageFixture.Archive -Destination $a[3]
             return ''
         }
         if ($a[0] -ceq 'info') { return '{"os":"linux","arch":"x86_64","driver":"overlayfs","cpus":12,"memory":12431081472,"id":"fixture-daemon","security":[]}' }
         if ($a[0] -ceq 'image') {
             $reference=$a[-1]
-            $letter=if ($reference.StartsWith('credpay-transacoes:')) {'a'} elseif ($reference.StartsWith('credpay-processamento:')) {'b'} elseif ($reference.Contains('postgres')) {'c'} else {'d'}
-            if ($fixture.BadAlias -and $reference.StartsWith('credpay-postgres:')) { $letter='e' }
-            return ('sha256:' + ($letter * 64))
+            $index=if ($reference.StartsWith('credpay-transacoes:')) {0} elseif ($reference.StartsWith('credpay-processamento:')) {1} elseif ($reference.Contains('postgres')) {2} else {3}
+            if ($a -contains '--platform=linux/amd64') { return (@{id=$fixture.ImageFixture.SelectedIds[$index];os='linux';arch='amd64'} | ConvertTo-Json -Compress) }
+            if ($fixture.BadAlias -and $reference.StartsWith('credpay-postgres:')) { return 'sha256:' + ('e' * 64) }
+            return $fixture.ImageFixture.SourceIds[$index]
         }
         if ($a[0] -ceq 'inspect') {
             $identity=if ($fixture.BadId) { 'f' * 64 } else { 'a' * 64 }
@@ -51,10 +55,11 @@ function Invoke-CredPayLocalTool($Runtime,[string]$File,[string[]]$Arguments,[in
             return ($data | ConvertTo-Json -Depth 30 -Compress)
         }
         if ($a[0] -ceq 'exec') {
-            $letter=if ($a[-1].StartsWith('credpay-transacoes:')) {'a'} elseif ($a[-1].StartsWith('credpay-processamento:')) {'b'} elseif ($a[-1].StartsWith('credpay-postgres:')) {'c'} else {'d'}
-            if ($fixture.BadCache) { $letter='e' }
-            if ($fixture.BadInfraCache -and $a[-1].StartsWith('credpay-rabbit:')) { $letter='e' }
-            return (@{status=@{id=('sha256:' + ($letter * 64))}} | ConvertTo-Json -Compress)
+            $index=if ($a[-1].StartsWith('credpay-transacoes:')) {0} elseif ($a[-1].StartsWith('credpay-processamento:')) {1} elseif ($a[-1].StartsWith('credpay-postgres:')) {2} else {3}
+            $id=$fixture.ImageFixture.ConfigIds[$index]
+            if ($fixture.RuntimeIndexId) { $id=$fixture.ImageFixture.SourceIds[$index] }
+            if ($fixture.BadCache -or ($fixture.BadInfraCache -and $index -eq 3)) { $id='sha256:' + ('e' * 64) }
+            return (@{status=@{id=$id}} | ConvertTo-Json -Compress)
         }
     } elseif ($File -ceq $p.Kind) {
         switch ($a[0]) {
@@ -244,5 +249,30 @@ Case 'runtime infrastructure ID mismatch preserves Owned and refuses success' {
     MustReject { Invoke-CredPayLocalAction LoadImages $tag $fixture.Root }
     if (($fixture.Events -join ',') -cne 'save,load' -or
         (Read-CredPayLocalJson $fixture.Plan.Marker $fixture.Root).stage -cne 'Owned') { throw 'Runtime identity failure changed ownership.' }
+}
+Case 'persisted image proof rechecks archive and runtime without mutations' {
+    NewFixture; Invoke-CredPayLocalAction Create $tag $fixture.Root 6>$null
+    $fixture.Events.Clear()
+    $p=$fixture.Plan; $runtime=Get-CredPayLocalRuntime $p; $owner=Read-CredPayLocalJson $p.Marker $fixture.Root
+    Assert-CredPayLocalImageCache $runtime $owner
+    if ($fixture.Events.Count) { throw 'Proof validation mutated the runtime.' }
+}
+foreach ($fault in @('missing-proof','outside-archive','wrong-proof-node','corrupt-archive','runtime-index')) {
+    Case "image proof refuses $fault and permits owned cleanup" {
+        NewFixture; Invoke-CredPayLocalAction Create $tag $fixture.Root 6>$null
+        $p=$fixture.Plan; $runtime=Get-CredPayLocalRuntime $p; $owner=Read-CredPayLocalJson $p.Marker $fixture.Root
+        $path=Join-Path $p.Directory 'image-proof.json'
+        $proof=Read-CredPayLocalJson $path $fixture.Root
+        switch ($fault) {
+            missing-proof { Assert-CredPayLocalPath $fixture.Root $path; Remove-Item -LiteralPath $path }
+            outside-archive { $proof.archive=Join-Path $fixture.Root '../outside.tar'; Write-CredPayLocalJson $proof $path $fixture.Root }
+            wrong-proof-node { $proof.nodeId='f' * 64; Write-CredPayLocalJson $proof $path $fixture.Root }
+            corrupt-archive { Assert-CredPayLocalPath $fixture.Root $proof.archive; [IO.File]::WriteAllText($proof.archive,'not-an-archive') }
+            runtime-index { $fixture.RuntimeIndexId=$true }
+        }
+        MustReject { Assert-CredPayLocalImageCache $runtime $owner }
+        Invoke-CredPayLocalAction Remove $tag $fixture.Root 6>$null
+        if ((Read-CredPayLocalJson $p.Marker $fixture.Root).stage -cne 'Removed') { throw 'Image proof failure prevented owned cleanup.' }
+    }
 }
 Write-Host "Local lifecycle: $caseCount offline scenarios passed; commands fictitious, no daemon accessed."

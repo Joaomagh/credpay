@@ -1,5 +1,6 @@
 #requires -Version 7.3
 # Functions only; native commands are dispatched by local-runtime.ps1.
+. (Join-Path $PSScriptRoot 'image-archive.ps1')
 function Get-CredPayLocalInfraImages {
     return @(
         @{Source='postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0';Alias='credpay-postgres:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0'},
@@ -20,16 +21,40 @@ function Get-CredPayLocalImageSet($Runtime, $Owner) {
     }
     return $images
 }
+function Get-CredPayLocalSelectedIds($Runtime,[string[]]$Images) {
+    $ids=@()
+    foreach ($image in $Images) {
+        $format='{"id":{{json .Id}},"os":{{json .Os}},"arch":{{json .Architecture}}}'
+        $selected=Invoke-CredPayLocalTool $Runtime $Runtime.Docker @('image','inspect','--platform=linux/amd64','--format',$format,$image) | ConvertFrom-Json
+        Assert-LocalCondition ($selected.id -cmatch '^sha256:[0-9a-f]{64}$' -and $selected.os -ceq 'linux' -and $selected.arch -ceq 'amd64') 'Imagem selecionada fora da baseline linux/amd64.'
+        $ids+=$selected.id
+    }
+    return $ids
+}
+function Assert-CredPayLocalRuntimeConfigIds($Runtime,[string[]]$Images,[string[]]$ConfigIds) {
+    Assert-LocalCondition ($Images.Count -eq 4 -and $ConfigIds.Count -eq 4) 'Conjunto de IDs de config incompleto.'
+    for ($i=0;$i -lt 4;$i++) {
+        $cached=Invoke-CredPayLocalTool $Runtime $Runtime.Docker @('exec',"$($Runtime.Plan.Cluster)-control-plane",'crictl','--runtime-endpoint','unix:///run/containerd/containerd.sock','--image-endpoint','unix:///run/containerd/containerd.sock','inspecti','--output','json',$Images[$i]) | ConvertFrom-Json -Depth 30
+        Assert-LocalCondition ($ConfigIds[$i] -cmatch '^sha256:[0-9a-f]{64}$' -and $cached.status.id -ceq $ConfigIds[$i]) 'Config no runtime não corresponde à imagem selecionada e exportada.'
+    }
+}
+function Assert-CredPayLocalImageCache($Runtime,$Owner) {
+    Assert-CredPayLocalLive $Runtime $Owner
+    $plan=$Runtime.Plan
+    $proof=Read-CredPayLocalJson (Join-Path $plan.Directory 'image-proof.json') $plan.Root
+    Assert-LocalCondition ($proof.schema -eq 1 -and $proof.cluster -ceq $plan.Cluster -and
+        $proof.nodeId -ceq $Owner.nodeId -and $proof.imageTag -ceq $plan.ImageTag) 'Registro da prova de imagens divergente.'
+    Assert-CredPayLocalPath $plan.Temp $proof.archive
+    $images=@(Get-CredPayLocalImageSet $Runtime $Owner)
+    $selectedIds=@(Get-CredPayLocalSelectedIds $Runtime $images)
+    $configIds=@(Get-CredPayArchiveConfigIds $plan.Root $proof.archive $images $selectedIds)
+    Assert-CredPayLocalRuntimeConfigIds $Runtime $images $configIds
+}
 function Complete-CredPayLocalImageLoad($Runtime, $Owner) {
     Assert-CredPayLocalLive $Runtime $Owner
     $images=@(Get-CredPayLocalImageSet $Runtime $Owner)
     $plan=$Runtime.Plan
-    $expectedIds=@()
-    foreach ($image in $images) {
-        $id=Invoke-CredPayLocalTool $Runtime $Runtime.Docker @('image','inspect','--format','{{.Id}}',$image)
-        Assert-LocalCondition ($id -cmatch '^sha256:[0-9a-f]{64}$') 'Identidade da imagem ilegível antes da exportação.'
-        $expectedIds+=$id
-    }
+    $selectedIds=@(Get-CredPayLocalSelectedIds $Runtime $images)
     $archive=Join-Path $plan.Temp ('images-amd64-' + [Guid]::NewGuid().ToString('N') + '.tar')
     Assert-CredPayLocalPath $plan.Root $archive
     Assert-LocalCondition (-not [IO.File]::Exists($archive)) 'Arquivo próprio já existe; não sobrescrever.'
@@ -38,16 +63,19 @@ function Complete-CredPayLocalImageLoad($Runtime, $Owner) {
         # A sparse multi-platform OCI index cannot be imported with kind's --all-platforms.
         $null=Invoke-CredPayLocalTool $Runtime $Runtime.Docker (@('save','--platform=linux/amd64','--output',$archive) + $images) 300
         Assert-LocalCondition ([IO.File]::Exists($archive) -and (Get-Item -LiteralPath $archive).Length -gt 0) 'Exportação não produziu arquivo.'
-        $phase='image-import'
+        $phase='archive-identity'
         Assert-CredPayLocalLive $Runtime $Owner
         $null=Get-CredPayLocalImageSet $Runtime $Owner
+        $currentIds=@(Get-CredPayLocalSelectedIds $Runtime $images)
+        Assert-LocalCondition ((ConvertTo-Json -InputObject $selectedIds -Compress) -ceq (ConvertTo-Json -InputObject $currentIds -Compress)) 'Plataforma selecionada mudou durante exportação.'
+        $configIds=@(Get-CredPayArchiveConfigIds $plan.Root $archive $images $selectedIds)
+        $phase='image-import'
+        Assert-CredPayLocalLive $Runtime $Owner
         Assert-CredPayLocalPath $plan.Root $archive
         $null=Invoke-CredPayLocalTool $Runtime $plan.Kind @('load','image-archive','--name',$plan.Cluster,$archive) 300
         $phase='runtime-ids'
-        for ($i=0;$i -lt $images.Count;$i++) {
-            $cached=Invoke-CredPayLocalTool $Runtime $Runtime.Docker @('exec',"$($plan.Cluster)-control-plane",'crictl','--runtime-endpoint','unix:///run/containerd/containerd.sock','--image-endpoint','unix:///run/containerd/containerd.sock','inspecti','--output','json',$images[$i]) | ConvertFrom-Json -Depth 30
-            Assert-LocalCondition ($cached.status.id -ceq $expectedIds[$i]) 'Imagem no node diverge da fonte local conferida.'
-        }
+        Assert-CredPayLocalRuntimeConfigIds $Runtime $images $configIds
+        Write-CredPayLocalJson @{schema=1;cluster=$plan.Cluster;nodeId=$Owner.nodeId;imageTag=$plan.ImageTag;archive=$archive} (Join-Path $plan.Directory 'image-proof.json') $plan.Root
     } catch { throw "Carga local interrompida; fase=$phase; sessão e arquivo próprios preservados; detalhes brutos omitidos." }
 }
 function Invoke-CredPayLocalAction([string]$Action, [string]$ImageTag, [string]$root, [string]$ExpectedNodeId = '') {
