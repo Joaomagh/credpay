@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- F03 integrada na PR185/1c0d7dc: seis cenários de navegador desktop/mobile com serviços reais, sem skips; Compose141, Frontend8 e Scan352 verdes. Recuperação de intenção F02 já integrada na PR184. Evidências em spec9.128–9.130; aceites pessoais continuam pendentes.
+- Contraste F04 integrado na PR186/bf51413 com três checks verdes e seis cenários browser. F02/F03 já integradas; evidências em spec9.128–9.131. Aceites pessoais continuam pendentes.
 
 ## Agora
 
-- [ ] F04: validar e integrar contraste dos quatro textos auxiliares medidos, mantendo layout e dependências. Evidência antes/depois em spec9.131; prática continua adiada.
+- [ ] M01: validar no CI e integrar a correção de identidade da consulta no backend e frontend. Reds observados; green local9MVC/35frontend e revisão sem bloqueantes. Evidência em spec9.132; prática continua adiada.
 
 ## Próximo
 

@@ -108,10 +108,9 @@ class TransacaoHttpTest {
                 .andExpect(header().doesNotExist("Location"));
     }
 
-    @Test
-    void buscar_deveRetornar400_quandoIdForMalformado() throws Exception {
-        var idMalformado = "nao-e-uuid";
-
+    @ParameterizedTest
+    @ValueSource(strings = {"nao-e-uuid", "1-1-1-1-1"})
+    void buscar_deveRetornar400_quandoIdForMalformado(String idMalformado) throws Exception {
         mockMvc.perform(get("/transacoes/{id}", idMalformado))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
