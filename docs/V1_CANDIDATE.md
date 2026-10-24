@@ -24,7 +24,7 @@ Essas árvores identificam fontes e configuração versionadas, não os bytes de
 | Checks aplicáveis ao SHA do candidato | [Inventory](https://github.com/Joaomagh/credpay/actions/runs/40110119178), [Scan](https://github.com/Joaomagh/credpay/actions/runs/40110119100) | Verdes; não são nova execução das oito suítes |
 | Demo Compose pessoal anterior | Retornos de João em22/10, imagens cf103ee; jornada e recuperação assistidas documentadas | Histórica; não prova execução local do código novo |
 | Diagnóstico local por métricas | Sonda de24/10 não obteve resposta HTTP nas portas8080/8081; retomada depende do preflight de João | Pendente |
-| Kubernetes local | João informou não saber/ainda não ter configurado; [proposta específica](KUBERNETES_LOCAL_PROPOSAL.md) | Pendente de direção e execução, não autorizado pela exceção CI |
+| Kubernetes local | João autorizou explicitamente a [exceção local delimitada](KUBERNETES_LOCAL_PROPOSAL.md) em24/10; roteiro Windows ainda por implementar/validar | Autorização atendida; execução e aceite local pendentes |
 | Explicação e autonomia pessoais | João adiou a prática; não presumir domínio a partir de testes | Pendente, adiado |
 
 A sonda sem resposta não identifica a causa: aplicativo parado, porta diferente ou problema de conexão continuam hipóteses. Não acessou Docker, `.env` ou kubeconfig padrão.
@@ -34,7 +34,7 @@ A sonda sem resposta não identifica a causa: aplicativo parado, porta diferente
 1. Retomar o Docker Linux com João; conferir o checkout e usar JARs/imagens correspondentes à revisão registrada. Preservar configuração e volumes existentes.
 2. Executar `Prepare -Diagnostics`, `Activate -Diagnostics` e `Demo -Diagnostics`, uma etapa por vez. Exigir health/metrics acessíveis e delta confirmed de pelo menos2 nos dois processos, sem reiniciá-los entre baseline e leitura. Registrar os resumos reais e o SHA/tag usados.
 3. Para diagnóstico causal sem rota, avaliar roteiro próprio em recursos descartáveis; a demo acima comprova contadores de publicação, não reproduz sozinha returned/nacked/error. Não remover bindings do broker persistente de João.
-4. Definir um ambiente Kubernetes local autorizado e validar startup, PVCs, fluxo/replay e parada/recuperação com o mesmo recorte e limites. O plano local não autoriza executar o node privilegiado.
+4. Implementar/testar o perfil local autorizado em24/10 e validar startup, PVCs, fluxo/replay e parada/recuperação com o mesmo recorte e limites. A exceção local não concede acesso Docker ao agente nem permite executar os scripts CI por mera troca de nome.
 5. Quando João retomar a prática, demonstrar entendimento/autonomia. Só então conferir todos os critérios e registrar a decisão final. Este documento não reduz o critério de aprendizado.
 
 Grafana/Prometheus e pesquisa de sandbox continuam adiados. Achados de GnuTLS e correções disponíveis de curl/zlib permanecem na [triagem](../infra/security/TRIAGE.md), sem supressão, promoção automática de runtime ou autorização de implantação externa.

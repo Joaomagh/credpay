@@ -3097,6 +3097,14 @@ João pediu conferir/registrar candidato, demonstrar métricas e validar Kuberne
 
 Sonda HTTP loopback com timeout3s por chamada não obteve resposta em health/metrics nas portas8080/8081. Não inferir causa. Preflight Docker foi solicitado para execução de João; agente não acessou daemon/socket/.env. João informou não saber/ainda não ter configurado Kubernetes. Proposta concreta em docs/KUBERNETES_LOCAL_PROPOSAL.md identifica baseline Windows, privilégios/mounts, limites, necessidade de adaptar guards/caminhos e cleanup próprio, sem executar/installar/excluir recursos. Checksums metadata/texto oficiais kind/kubectl conferidos antes de qualquer download executável. Aprovação local ainda não foi dada; permanece a restrição CI de AGENTS§5. Prática explicativa segue adiada, métricas locais e Kubernetes não recebem aceite por esta preparação.
 
+### 9.134 Autorização local recebida e preflight Docker indisponível — 24/10
+
+João respondeu explicitamente “Autorizar somente essa exceção local delimitada” à propostaKUBERNETES_LOCAL_PROPOSAL na revisãof412652. Autorização registrada em AGENTS§5 e status de proposta/candidato/task/backlog atualizado; não solicitar novamente o mesmo escopo. Não autoriza acesso Docker pelo agente ou ampliação de mounts/privilégios/destinos. Implementação do perfil Windows e execução/aceite local continuam pendentes.
+
+Preflight executado por João: docker --context default version --format retornou erro citando pipe docker_engine inexistente. O texto genérico menciona elevação, mas não prova necessidade de administrador nem causa do daemon indisponível. Experimento mínimo solicitado: abrir Docker Desktop/aguardar Engine running e consultar desktop-linux explicitamente. Não mudar permanentemente contexto, permissões, instalação, dados ou configuração para contornar a falha; agente não acessou daemon/socket.
+
+Preparação autorizada das ferramentas: WindowsX64 conferido, kind.exe/kubectl.exe baixados das URLs oficiais da baseline para .local/k8s-tools, primeiro em arquivos temporários próprios e promovidos somente após SHA256 igual ao esperado. Arquivo preexistente divergente seria preservado e recusado; nenhum binário foi executado ou instalação/PATH global alterado. Segunda leitura Get-FileHash confirmou ambos. Baseline registrada antes do download em9.133/proposta; revisão documental independente sem bloqueantes, diff/UTF-8 e hook a conferir antes de publicar. Configuração/documentação operacional, sem red artificial de domínio.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
