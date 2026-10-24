@@ -1,10 +1,10 @@
 # Proposta de validação Kubernetes local
 
-Preparada em24/10/2026 a pedido de João. **Pendente de autorização específica e de implementação/validação do roteiro Windows.** Nenhum cluster, ferramenta ou alteração global foi criado por esta proposta.
+Preparada em24/10/2026 a pedido de João. **Exceção local delimitada autorizada por João em24/10; implementação/validação do roteiro Windows ainda pendente.** A autorização não comprova criação de cluster, instalação global ou demonstração local.
 
 ## Decisão necessária
 
-[AGENTS.md §5](../AGENTS.md) determina: “Não usar modo privilegiado”. A exceção de15/10 abrange somente o runner hospedado e descartável do CI. O pedido genérico de validar localmente não será tratado como autorização para ampliar essa exceção.
+[AGENTS.md §5](../AGENTS.md) determina: “Não usar modo privilegiado”. A exceção de15/10 abrange somente o runner hospedado e descartável do CI. Após revisar esta proposta na revisão f412652, João respondeu “Autorizar somente essa exceção local delimitada”. A nova exceção específica está registrada em AGENTS§5; não foi inferida do pedido genérico de validar localmente e não precisa ser solicitada novamente.
 
 A rota proposta usa um único cluster kind descartável no Docker Desktop Linux já instalado. Os comandos que acessam o daemon serão executados por João no PowerShell; o agente prepara e revisa arquivos/comandos e interpreta os resumos. Não concede acesso Docker/socket ao agente.
 
@@ -21,7 +21,7 @@ A rota proposta usa um único cluster kind descartável no Docker Desktop Linux 
 - API e port-forward somente127.0.0.1, sem Ingress/LoadBalancer/portas públicas. Sem alterações de firewall, acesso externo, serviço pago ou instalação global.
 - Somente dados fictícios novos. A validação pode recriar os Pods próprios e escalar apenas os Deployments desse cluster. Após o ensaio, remover somente o cluster de teste cuja propriedade foi comprovada, descartando seus dados; sem prune, purge, wildcard, remoção de volumes Compose existentes ou alteração de outros projetos.
 
-A autorização solicitada incluirá essas operações de teste e esse cleanup restrito. Ela não dispensa baseline, testes, revisão ou triagem de achados; não aceita automaticamente vulnerabilidades de qualquer imagem. Antes da execução, verificar os recursos disponíveis e o impacto no Docker Desktop.
+A autorização recebida inclui essas operações de teste e esse cleanup restrito. Ela não dispensa baseline, testes, revisão ou triagem de achados; não aceita automaticamente vulnerabilidades de qualquer imagem. Antes da execução, verificar os recursos disponíveis e o impacto no Docker Desktop.
 
 ## Baseline antes de qualquer download
 
@@ -33,7 +33,7 @@ A autorização solicitada incluirá essas operações de teste e esse cleanup r
 
 Necessidade: o kubectl1.32.2 encontrado anteriormente não é a baseline do cluster1.36.4, e os scripts atuais são guardados para CI/Linux. Downloads futuros ficam no workspace, com checksum antes de executar, sem alteração permanente de PATH. Mesmas imagens PostgreSQL/RabbitMQ pinadas e política Never dos manifests existentes; apps construídos da revisão registrada e carregados com identidade conferida.
 
-Fontes conferidas em24/10: [release kind](https://github.com/kubernetes-sigs/kind/releases/tag/v0.33.0), [metadata oficial](https://api.github.com/repos/kubernetes-sigs/kind/releases/tags/v0.33.0), [checksum publicado kind Windows](https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-windows-amd64.sha256sum), [checksum kubectl Windows](https://dl.k8s.io/release/v1.36.4/bin/windows/amd64/kubectl.exe.sha256), [quickstart Windows](https://kind.sigs.k8s.io/docs/user/quick-start/). O digest do asset kind coincide com o checksum publicado; somente metadata/texto foram consultados, sem download dos executáveis.
+Fontes conferidas em24/10: [release kind](https://github.com/kubernetes-sigs/kind/releases/tag/v0.33.0), [metadata oficial](https://api.github.com/repos/kubernetes-sigs/kind/releases/tags/v0.33.0), [checksum publicado kind Windows](https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-windows-amd64.sha256sum), [checksum kubectl Windows](https://dl.k8s.io/release/v1.36.4/bin/windows/amd64/kubectl.exe.sha256), [quickstart Windows](https://kind.sigs.k8s.io/docs/user/quick-start/). O digest do asset kind coincide com o checksum publicado. Na preparação inicial foram consultados somente metadata/texto. Após a autorização explícita, os executáveis foram baixados para `.local/k8s-tools/kind.exe` e `kubectl.exe`, com os dois hashes acima conferidos antes de promover os downloads. Não foram executados, instalados globalmente ou acrescentados ao PATH permanente; isso não comprova compatibilidade do roteiro Windows.
 
 ## Trabalho após autorização
 

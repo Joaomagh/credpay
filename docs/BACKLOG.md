@@ -403,7 +403,7 @@ Concluída na PR187/6f77f8e após os oito checks aplicáveis verdes no SHA3406d2
 
 ### Situação de fechamento em24/10
 
-João solicitou conferir o candidato e executar os aceites de métricas/Kubernetes local. Candidato identificado por SHA em [V1_CANDIDATE.md](V1_CANDIDATE.md), ainda condicionado; sonda HTTP local sem resposta e preflight Docker solicitado. João informou não saber/ainda não ter configurado Kubernetes. [Proposta local](KUBERNETES_LOCAL_PROPOSAL.md) prepara a direção específica, sem presumir extensão da exceção CI, instalar ferramentas ou executar cluster. Explicação pessoal continua adiada.
+João solicitou conferir o candidato e executar os aceites de métricas/Kubernetes local. Candidato identificado por SHA em [V1_CANDIDATE.md](V1_CANDIDATE.md), ainda condicionado; sonda HTTP local sem resposta. Preflight default falhou por named pipe ausente em24/10; solicitado abrir Docker Desktop e testar desktop-linux, sem presumir necessidade de administrador. João informou não saber/ainda não ter configurado Kubernetes e depois autorizou explicitamente a [exceção local delimitada](KUBERNETES_LOCAL_PROPOSAL.md), registrada em AGENTS§5. Roteiro Windows e execução local permanecem pendentes; agente continua sem acesso ao daemon. Explicação pessoal continua adiada.
 
 F01–F04 e M01 estão integrados. Não há correção funcional aberta identificada nesta revisão. Permanecem os aceites locais/pessoais da fila vigente: diagnóstico por métricas, Kubernetes local em ambiente autorizado, entendimento/autonomia e registro final da v1. A prática foi adiada por João; não substituí-la por funcionalidades adicionais nem contar CI como aprendizado pessoal.
 

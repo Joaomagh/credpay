@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] Conduzir aceites locais solicitados por João: preflight Docker pendente de retorno, depois métricas; Kubernetes local sem configuração conhecida e com proposta de exceção específica pendente. Candidato identificado em docs/V1_CANDIDATE.md, sem promoção final; prática explicativa continua adiada.
+- [ ] Retomar Docker Desktop com João: preflight default falhou por named pipe ausente; aguardar teste desktop-linux após “Engine running”, depois métricas. Exceção Kubernetes local delimitada autorizada, sem acesso Docker pelo agente; preparar/testar perfil Windows sem relaxar CI. Candidato identificado, sem promoção final; prática explicativa continua adiada.
 
 ## Próximo
 
