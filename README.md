@@ -15,7 +15,7 @@ Cada capacidade entra em um incremento pequeno, testado e documentado. Assim, o 
 
 Para entender o produto, os problemas técnicos e as escolhas, leia [Entenda o CredPay](docs/ENTENDA_O_CREDPAY.md).
 
-O fechamento da v1 prioriza o backend: [validação técnica do candidato](docs/V1_VALIDATION.md) tem oito checks verdes no corte registrado; o inventário de22/10 manteve HIGH0/CRITICAL0 nos quatro alvos, com demais achados visíveis. João completou a primeira demo local com Compose em 22/10 e aceitou a revisão histórica delimitada, preservando seis conteúdos não verificados. Em25/10, a validação Kubernetes local assistida passou: persistência após recriação dos Pods, aprovação/rejeição, replay e recuperação causal; [roteiro e limites](infra/k8s/LOCAL.md). Falta encerrar o cluster de teste; explicação autônoma, diagnóstico causal por métricas e autonomia operacional continuam pendentes. Por decisão dele em18/10/2026, a pesquisa de sandbox do agente fica para etapa posterior, com [evidências e lacunas preservadas](docs/SANDBOX_NOBLE_FINDINGS.md). O core experimental não foi aceito nem liberado para uso pelo agente; não há alegação de isolamento. João retomou a etapa Angular em22/10: o [console responsivo](frontend/README.md) tem criação e consulta por ID, com roteiro e limites próprios. A jornada assistida no navegador comprovou aprovação, rejeição, recibo recuperado após reload e conclusão do mesmo pedido após parada/reinício do processador; frontend não altera os aceites pessoais restantes da v1 backend. O painel continua adiado.
+O fechamento da v1 prioriza o backend: [validação técnica do candidato](docs/V1_VALIDATION.md) tem oito checks verdes no corte registrado; o inventário de22/10 manteve HIGH0/CRITICAL0 nos quatro alvos, com demais achados visíveis. João completou a primeira demo local com Compose em 22/10 e aceitou a revisão histórica delimitada, preservando seis conteúdos não verificados. Em25/10, a validação Kubernetes local assistida passou: persistência após recriação dos Pods, aprovação/rejeição, replay e recuperação causal; [roteiro e limites](infra/k8s/LOCAL.md). O cluster de teste foi removido com Compose e volumes preservados; explicação autônoma, diagnóstico causal por métricas e autonomia operacional continuam pendentes. Por decisão dele em18/10/2026, a pesquisa de sandbox do agente fica para etapa posterior, com [evidências e lacunas preservadas](docs/SANDBOX_NOBLE_FINDINGS.md). O core experimental não foi aceito nem liberado para uso pelo agente; não há alegação de isolamento. João retomou a etapa Angular em22/10: o [console responsivo](frontend/README.md) tem criação e consulta por ID, com roteiro e limites próprios. A jornada assistida no navegador comprovou aprovação, rejeição, recibo recuperado após reload e conclusão do mesmo pedido após parada/reinício do processador; frontend não altera os aceites pessoais restantes da v1 backend. O painel continua adiado.
 
 ## Status atual
 
@@ -84,7 +84,7 @@ O projeto está na fase de fluxo assíncrono confiável: os dois aplicativos rea
 | Documentado | threat model e baseline conservadora do sandbox AI-Jail |
 | Documentado | contrato `TransacaoCriada` v1 e garantia de entrega pelo menos uma vez via outbox |
 | Documentado | baseline RabbitMQ com propriedade da topologia, confirms/returns, retry e DLQ |
-| Comprovado no CI e em ensaio local assistido | Kubernetes: startup/persistência, preparo antes de consumo, POST/GET APROVADA/REJEITADA, replay e recuperação após parada do processador; [limites e roteiro local](infra/k8s/LOCAL.md). Cleanup local ainda pendente |
+| Comprovado no CI e em ensaio local assistido | Kubernetes: startup/persistência, preparo antes de consumo, POST/GET APROVADA/REJEITADA, replay e recuperação após parada do processador; [limites e roteiro local](infra/k8s/LOCAL.md). Cleanup restrito ao cluster próprio também concluído |
 | Fora do aceite atual | coordenação entre réplicas publicadoras e CD externo; servidores Prometheus/Grafana adiados por João para depois da v1 |
 
 O estado técnico detalhado e as evidências red/green estão em [`spec.md`](spec.md). A única próxima tarefa fica em [`task.md`](task.md).
@@ -309,7 +309,7 @@ O core diagnóstico foi construído e os primeiros controles de filesystem, ambi
 | 3 | regras de domínio em TDD e primeira integração PostgreSQL | concluída |
 | 4 | API, fluxo assíncrono, idempotência, outbox, retry e DLQ | fluxo principal e transporte causal FALHOU comprovados em teste controlado; autoridade operacional bloqueada |
 | 5 | experimentos de falha e resiliência | recuperação comprovada nos cenários documentados; fechamento de qualidade pendente |
-| 6 | Kubernetes e observabilidade | startup/persistência e fluxo/falha/recuperação comprovados no CI descartável e em Validate local assistido; cleanup local pendente, diagnóstico HTTP existente e painel adiado da v1 |
+| 6 | Kubernetes e observabilidade | startup/persistência e fluxo/falha/recuperação comprovados no CI descartável e em Validate local assistido; cleanup próprio concluído, diagnóstico HTTP existente e painel adiado da v1 |
 | 7 | evolução do CI, CD e roteiro de demonstração | CI, imagens e Compose comprovados; roteiro disponível, ensaio e fechamento pendentes |
 
 O plano detalhado e os critérios de saída estão em [`CREDPAY_PLAN.md`](CREDPAY_PLAN.md).

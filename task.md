@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- João concluiu Validate no Kubernetes local em25/10: imagens, startup, persistência após recriação dos Pods, APROVADA/REJEITADA/replay e recuperação causal passaram. Cluster mantido até Remove explícito; evidência e limites em spec9.136.6.
+- João concluiu Validate no Kubernetes local em25/10: imagens, startup, persistência após recriação dos Pods, APROVADA/REJEITADA/replay e recuperação causal passaram. Remove também passou: somente o cluster próprio removido, Compose e volumes preservados. Evidência e limites em spec9.136.6.
 
 ## Agora
 
-- [ ] João executa Remove para encerrar somente o cluster descartável validado; conferir o resumo antes de registrar cleanup. Diagnóstico causal por métricas/prática pessoal continuam separados; candidato operacional será reidentificado ao fechar.
+- [ ] Preparar diagnóstico causal local por métricas em recursos próprios descartáveis, sem alterar bindings do broker Compose existente; definir teste, roteiro e cleanup delimitado antes da execução por João. Diagnóstico causal por métricas/prática pessoal continuam separados; candidato operacional será reidentificado ao fechar.
 
 ## Próximo
 
