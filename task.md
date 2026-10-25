@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- Ambiente mínimo Windows integrado pela PR198/db363eb após revisão e CI verdes. João reconferiu o contexto: via process igual=True; via native exit=0, partes=1, igual=True. Carga das quatro imagens já comprovada; evidências e limites em spec9.136.4/5.
+- João concluiu Validate no Kubernetes local em25/10: imagens, startup, persistência após recriação dos Pods, APROVADA/REJEITADA/replay e recuperação causal passaram. Remove também passou: somente o cluster próprio removido, Compose e volumes preservados. Evidência e limites em spec9.136.6.
 
 ## Agora
 
-- [ ] João executa Validate no cluster próprio; após conferir o resultado, Remove separadamente. Contexto passou após a correção; startup/fluxo/cleanup locais ainda sem aceite. Diagnóstico causal por métricas/prática pessoal continuam separados; candidato operacional será reidentificado ao fechar.
+- [ ] Preparar diagnóstico causal local por métricas em recursos próprios descartáveis, sem alterar bindings do broker Compose existente; definir teste, roteiro e cleanup delimitado antes da execução por João. Diagnóstico causal por métricas/prática pessoal continuam separados; candidato operacional será reidentificado ao fechar.
 
 ## Próximo
 
