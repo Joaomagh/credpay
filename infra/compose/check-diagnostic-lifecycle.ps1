@@ -30,7 +30,10 @@ function Invoke-CredPayDiagnosticTool($Runtime,[string]$File,[string[]]$Argument
     }
     if($File -cne 'fixture-docker') { throw 'Unknown tool; no native fallback' }
     if($a[0] -ceq 'info') { return (@{id=$(if($fixture.WrongDaemon){'different-daemon'}else{'fixture-daemon'});os='linux';arch='amd64';driver='overlayfs';cpus=12;memory=12GB;security=@()} | ConvertTo-Json -Compress) }
-    if($a[0] -ceq 'image') { return ('sha256:'+('f'*64)+'/linux/amd64') }
+    if($a[0] -ceq 'image') {
+        if($a -contains '--platform=linux/amd64') { throw 'Fictitious runner API1.48 does not implement platform selector' }
+        return ('sha256:'+('f'*64)+'/linux/amd64')
+    }
     if($a[0] -ceq 'compose') {
         if($a -notcontains 'down' -or $a -notcontains '--volumes' -or $a -contains '--remove-orphans') { throw 'Unexpected mutation' }
         $fixture.Created=$false; return ''

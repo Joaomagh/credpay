@@ -221,7 +221,8 @@ function Get-CredPayDiagnosticImages($Runtime) {
         'rabbitmq:4.3.5-management-alpine@sha256:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1')
     $ids=@()
     foreach($reference in $references) {
-        $value=Invoke-CredPayDiagnosticTool $Runtime $Runtime.Docker @('image','inspect','--platform=linux/amd64','--format','{{.Id}}/{{.Os}}/{{.Architecture}}',$reference)
+        # Same native amd64 daemon before/after; freeze opaque source IDs, never compare to CRI/config IDs.
+        $value=Invoke-CredPayDiagnosticTool $Runtime $Runtime.Docker @('image','inspect','--format','{{.Id}}/{{.Os}}/{{.Architecture}}',$reference)
         Assert-LocalCondition ($value -cmatch '^sha256:[0-9a-f]{64}/linux/amd64$') 'Imagem amd64 ausente/divergente; construir/carregar antes, sem pull automático.'
         $ids+=$value
     }

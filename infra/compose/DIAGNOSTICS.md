@@ -2,7 +2,7 @@
 
 Roteiro para executar **somente após revisão, CI e integração** do launcher. João executa os comandos Docker no Windows/PowerShell7.3+; o agente não acessa o daemon local. Não é preciso habilitar Kubernetes, instalar ferramenta ou fornecer credencial real.
 
-O experimento usa as mesmas quatro imagens linux/amd64 já construídas/carregadas: dois apps com tag SHA completa, PostgreSQL e RabbitMQ pinados no Compose. Não baixa nem recompila imagens automaticamente; `image inspect --platform` exige API1.49+. O exemplo abaixo usa f412652, cujas fontes dos apps permanecem iguais; uma alteração de aplicativo exige nova preparação e tag correta, sem retaggear imagem antiga.
+O experimento usa as mesmas quatro imagens linux/amd64 já construídas/carregadas: dois apps com tag SHA completa, PostgreSQL e RabbitMQ pinados no Compose. Não baixa nem recompila imagens automaticamente. Confere plataforma nativa do daemon/imagens e congela os IDs locais opacos antes/depois; não compara índice com config/CRI nem carrega imagens em outro runtime. Não exige seletor de plataforma API1.49; o percurso Kubernetes conserva seu guard próprio. O exemplo abaixo usa f412652, cujas fontes dos apps permanecem iguais; uma alteração de aplicativo exige nova preparação e tag correta, sem retaggear imagem antiga.
 
 ## Uma ação por vez
 
