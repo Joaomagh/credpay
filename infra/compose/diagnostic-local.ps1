@@ -66,7 +66,7 @@ function Get-CredPayDiagnosticOverride($Plan) {
 }
 function Get-CredPayDiagnosticRuntime($Plan) {
     if($IsWindows) {
-        $docker=(Get-Command docker.exe -CommandType Application -ErrorAction Stop).Source
+        $docker=(Get-Command docker.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
         $expected=Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFiles)) 'Docker/Docker/resources/bin/docker.exe'
         Assert-LocalCondition ([IO.Path]::GetFullPath($docker) -ieq [IO.Path]::GetFullPath($expected)) 'Docker CLI fora da instalação Desktop prevista.'
         $compose=Join-Path (Split-Path $docker -Parent) 'docker-compose.exe'
@@ -74,7 +74,7 @@ function Get-CredPayDiagnosticRuntime($Plan) {
         $hostAddress='npipe:////./pipe/dockerDesktopLinuxEngine'
     } else {
         Assert-LocalCondition ($env:GITHUB_ACTIONS -ceq 'true' -and $env:RUNNER_OS -ceq 'Linux') 'Execução Linux deste launcher permitida somente no CI hospedado.'
-        $docker=(Get-Command docker -CommandType Application -ErrorAction Stop).Source
+        $docker=(Get-Command docker -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
         $hostAddress='unix:///var/run/docker.sock'
     }
     $config=Read-CredPayLocalJson (Join-Path $Plan.DockerConfig 'config.json') $Plan.Root
@@ -111,7 +111,9 @@ function Invoke-CredPayDiagnosticTool($Runtime,[string]$File,[string[]]$Argument
     return (Invoke-CredPayLocalProcess (New-CredPayDiagnosticProcess $Runtime $File $Arguments) $Timeout)
 }
 function Get-CredPayDiagnosticDaemon($Runtime) {
+    $script:diagnosticLaunchPhase='daemon-tool'
     $data=Invoke-CredPayDiagnosticTool $Runtime $Runtime.Docker @('info','--format','{"id":{{json .ID}},"os":{{json .OSType}},"arch":{{json .Architecture}},"driver":{{json .Driver}},"cpus":{{.NCPU}},"memory":{{.MemTotal}},"security":{{json .SecurityOptions}}}') | ConvertFrom-Json
+    $script:diagnosticLaunchPhase='daemon-policy'
     Assert-CredPayLocalDaemon $data
     return $data.id
 }
