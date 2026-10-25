@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- Diagnóstico causal descartável passou no CI40222821313/head4819b55: returned delta1 em cada publicador, PENDENTE/outbox original, recuperação causal, persistência e cleanup próprios; seis jornadas de navegador também passaram. Controles Windows/Linux e Scan40222821310 verdes, revisão sem bloqueantes. Roteiro em infra/compose/DIAGNOSTICS.md; evidência/limites em spec9.138.
+- João concluiu Run/Remove do diagnóstico causal local em25/10, com imagens f412652: returned delta3 nos dois publicadores, PENDENTE/outbox original, recuperação sem duplicação e persistência após down/up. Somente recursos próprios removidos, credpay-demo preservado. Evidência e limites em spec9.138.1; prova CI anterior em9.138.
 
 ## Agora
 
-- [ ] Após integrar o registro, João executa Run do diagnóstico causal com imagens f412652; conferir resumo, depois solicitar Remove próprio separadamente. CI não substitui a prova no Docker Desktop. Prática pessoal continua adiada; candidato operacional será reidentificado ao fechar.
+- [ ] Concluir a revisão/checks do registro local e do candidato operacional condicionado e07f0aa. Após integração, decisão final da v1 aguarda os critérios pessoais, adiados por João. Manutenção de runtime e proposta de demo pública conservam seus requisitos próprios, sem criar recursos externos.
 
 ## Próximo
 
