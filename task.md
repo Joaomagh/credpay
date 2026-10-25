@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- LoadImages passou no Docker Desktop de João após PR197/50a50a4: quatro imagens amd64 carregadas e cadeia de identidade conferida. Validate confirmou novamente as quatro imagens; startup parou na chamada nativa do contexto, antes dos recursos. Evidências e limites em spec9.136.4/5.
+- Ambiente mínimo Windows integrado pela PR198/db363eb após revisão e CI verdes. João reconferiu o contexto: via process igual=True; via native exit=0, partes=1, igual=True. Carga das quatro imagens já comprovada; evidências e limites em spec9.136.4/5.
 
 ## Agora
 
-- [ ] Concluir revisão/CI do ambiente mínimo Windows: PATHEXT explícito para .exe, home dos filhos no temp próprio e cache contido. Controle sem Docker reproduziu a falha; 78 controles Windows passaram após ajuste. Depois João reconfere contexto e executa Validate/Remove uma ação por vez. Diagnóstico causal por métricas/prática pessoal continuam separados; candidato operacional será reidentificado ao fechar.
+- [ ] João executa Validate no cluster próprio; após conferir o resultado, Remove separadamente. Contexto passou após a correção; startup/fluxo/cleanup locais ainda sem aceite. Diagnóstico causal por métricas/prática pessoal continuam separados; candidato operacional será reidentificado ao fechar.
 
 ## Próximo
 
