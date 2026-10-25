@@ -182,7 +182,7 @@ function Get-CredPayDiagnosticInputs([string]$Root) {
     foreach($name in @('compose.yaml','compose.diagnostics.yaml','.env.example')) {
         $path=Join-Path $Root "infra/compose/$name"
         Assert-CredPayLocalPath $Root $path
-        Assert-LocalCondition ((Get-Item -LiteralPath $path).Length -le 1MB) 'Entrada Compose excede limite.'
+        Assert-LocalCondition ((Get-Item -LiteralPath $path -Force).Length -le 1MB) 'Entrada Compose excede limite.'
         $hashes[$name]=(Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
     }
     return $hashes

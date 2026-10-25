@@ -10,6 +10,10 @@ function NewFixture {
     $null=New-Item -ItemType Directory -Path $directory
     $null=New-Item -ItemType Directory -Path (Join-Path $directory 'infra/compose')
     foreach($name in @('compose.yaml','compose.diagnostics.yaml','.env.example')) { [IO.File]::WriteAllText((Join-Path $directory "infra/compose/$name"),'fictitious-input') }
+    if($IsWindows) {
+        $hidden=Get-Item -LiteralPath (Join-Path $directory 'infra/compose/.env.example') -Force
+        $hidden.Attributes=$hidden.Attributes -bor [IO.FileAttributes]::Hidden
+    }
     $script:fixture=@{Root=$directory;Created=$false;Existing=$false;FailSmoke=$false;Replacement=$false;External=$false;WrongDaemon=$false;Commands=[Collections.Generic.List[string]]::new()}
 }
 function Get-CredPayDiagnosticRuntime($Plan) { $fixture.Plan=$Plan; return @{Plan=$Plan;Docker='fixture-docker';HostAddress='fixture-host';Pwsh='fixture-pwsh'} }
