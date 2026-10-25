@@ -15,6 +15,7 @@ if($env:HOME -cne $ExpectedHome -or $env:DOCKER_CONFIG -cne $ExpectedDockerConfi
     $env:DOCKER_HOST -cne 'fixture-no-daemon' -or $env:CREDPAY_NEGATIVE_SECRET -or
     $env:DOCKER_CONTEXT -or $env:HTTP_PROXY -or $env:HTTPS_PROXY -or $Literal -cne '{"a":"with spaces"}') { throw 'Fixture environment or arguments changed' }
 if($IsWindows -and ($env:USERPROFILE -cne $ExpectedHome -or $env:PATHEXT -cnotin @('.EXE','.EXE;.CPL'))) { throw 'Native environment unavailable' }
+[Console]::Error.WriteLine('fictitious CLI warning, not response data')
 [Console]::Write('fixture-process-ok')
 '@)
 $saved=$env:CREDPAY_NEGATIVE_SECRET

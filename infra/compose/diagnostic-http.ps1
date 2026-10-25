@@ -1,4 +1,12 @@
 # Pure parsing for curl --include --write-out; never returns raw errors.
+function DiagnosticComposeStdout([string[]]$Arguments) {
+    Require ($null -ne $diagnosticScope -and $Arguments[0] -ceq 'exec') 'HTTP exige o projeto diagnóstico próprio.'
+    $runtime=$diagnosticScope.Runtime
+    $null=Assert-CredPayDiagnosticScope $runtime $diagnosticScope.Owner
+    # CLI diagnostics on stderr are not an HTTP header; keep the streams separate.
+    if($runtime.Compose) { return (Invoke-CredPayDiagnosticTool $runtime $runtime.Compose (@($composeArgs | Select-Object -Skip 1)+$Arguments)) }
+    return (Invoke-CredPayDiagnosticTool $runtime $runtime.Docker ($composeArgs+$Arguments))
+}
 function Read-CredPayDiagnosticHttp([string]$Text) {
     $message='Resposta HTTP interna inválida; conteúdo omitido.'
     $stage='size'; $script:diagnosticHttpStatus=0

@@ -25,7 +25,7 @@ if($FaultDiagnostics -and $Project -cmatch '^credpay-diag-') {
 $composeArgs = @('compose', '--project-name', $Project, '--env-file', (Join-Path $PSScriptRoot $EnvFile),
     '--file', (Join-Path $PSScriptRoot 'compose.yaml'))
 if ($Diagnostics) { $composeArgs += @('--file', (Join-Path $PSScriptRoot 'compose.diagnostics.yaml')) }
-if($null -ne $diagnosticScope) { $composeArgs+=@('--file',$diagnosticScope.Runtime.Plan.Overlay) }
+if($null -ne $diagnosticScope) { $composeArgs+=@('--file',$diagnosticScope.Runtime.Plan.Overlay,'--ansi','never') }
 $apps = @('transacoes', 'processamento')
 $queueNames = @('credpay.processamento.transacao-criada.v1', 'credpay.processamento.transacao-criada.dlq.v1',
     'credpay.transacoes.transacao-processada.v1', 'credpay.transacoes.transacao-processada.dlq.v1')
@@ -218,7 +218,7 @@ function Request([string]$Method, [string]$Url, [string]$Key = '', [string]$Valu
             $curl+=@('--header','Content-Type: application/json','--header',"Idempotency-Key: $Key",'--data',('{"valor":'+$Value+',"moeda":"BRL"}'))
         }
         $script:diagnosticHttpFailure='transport'
-        return (Read-CredPayDiagnosticHttp (Compose @curl))
+        return (Read-CredPayDiagnosticHttp (DiagnosticComposeStdout $curl))
     }
     try {
         if ($Method -ceq 'POST') {
