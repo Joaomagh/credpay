@@ -230,6 +230,7 @@ function Get-CredPayDiagnosticPort {
     try { $listener.Start(); return $listener.LocalEndpoint.Port } finally { $listener.Stop() }
 }
 function Invoke-CredPayDiagnosticAction([string]$Action,[string]$Tag,[string]$Root,[int]$TxPort=0,[int]$ProcPort=0) {
+    $script:diagnosticLaunchPhase='plan'
     Assert-LocalCondition ($Action -cin @('Run','Remove')) 'Ação diagnóstica desconhecida.'
     $active=Join-Path $Root '.local/compose-diagnostics/active.json'
     Assert-CredPayLocalPath $Root $active
@@ -244,9 +245,12 @@ function Invoke-CredPayDiagnosticAction([string]$Action,[string]$Tag,[string]$Ro
         $null=New-Item -ItemType Directory -Path $p.Directory,$p.Temp,$p.DockerConfig
         Write-CredPayLocalJson ([pscustomobject]@{}) (Join-Path $p.DockerConfig 'config.json') $Root -New
         Write-CredPayLocalJson (Get-CredPayDiagnosticOverride $p) $p.Overlay $Root -New
-        $runtime=Get-CredPayDiagnosticRuntime $p
+        $script:diagnosticLaunchPhase='runtime'; $runtime=Get-CredPayDiagnosticRuntime $p
+        $script:diagnosticLaunchPhase='daemon'
         $daemon=Get-CredPayDiagnosticDaemon $runtime
+        $script:diagnosticLaunchPhase='images'
         $images=@(Get-CredPayDiagnosticImages $runtime)
+        $script:diagnosticLaunchPhase='namespace'
         $inventory=Get-CredPayDiagnosticInventory $runtime
         Assert-LocalCondition ((Get-CredPayDiagnosticIdentity $inventory) -ceq '') 'Projeto diagnóstico já possui recursos; não adotar.'
         $owner=@{schema=1;stage='Creating';project=$project;nonce=$nonce;tag=$Tag;txPort=$TxPort;procPort=$ProcPort;daemonId=$daemon;
@@ -254,6 +258,7 @@ function Invoke-CredPayDiagnosticAction([string]$Action,[string]$Tag,[string]$Ro
         Write-CredPayLocalJson $owner $p.Marker $Root -New
         Write-CredPayLocalJson @{project=$project} $active $Root -New
         $success=$false; $phase='smoke'
+        $script:diagnosticLaunchPhase='smoke'
         try {
             Write-Host 'Diagnóstico local: projeto exclusivo, dados fictícios e rede interna; iniciando preparo/falha/recuperação.'
             $output=Invoke-CredPayDiagnosticTool $runtime $runtime.Pwsh @('-NoLogo','-NoProfile','-File',(Join-Path $Root 'infra/compose/demo.ps1'),'-Action','Smoke','-Project',$project,'-EnvFile','.env.example','-Diagnostics','-FaultDiagnostics') 1200
@@ -280,18 +285,21 @@ function Invoke-CredPayDiagnosticAction([string]$Action,[string]$Tag,[string]$Ro
         }
         Write-Host 'Diagnóstico local: dois publicadores, retorno sem rota e recuperação causal conferidos; executar Remove separadamente.'
     } else {
+        $script:diagnosticLaunchPhase='cleanup-session'
         $pointer=Read-CredPayLocalJson $active $Root
         $session=Read-CredPayDiagnosticSession $Root $pointer.project; $p=$session.Plan; $owner=$session.Owner
         Assert-LocalCondition ($owner.stage -ceq 'Owned') 'Criação incompleta; revisar propriedade, sem adotar/remover por nome.'
         $runtime=Get-CredPayDiagnosticRuntime $p
-        $actual=Assert-CredPayDiagnosticScope $runtime $owner
+        $script:diagnosticLaunchPhase='cleanup-inventory'; $actual=Assert-CredPayDiagnosticScope $runtime $owner
         Assert-CredPayDiagnosticRemoval $owner.inventory $actual
         $again=Assert-CredPayDiagnosticScope $runtime $owner
         Assert-CredPayDiagnosticRemoval $actual $again
         $arguments=@('compose','--project-name',$p.Project,'--env-file',(Join-Path $Root 'infra/compose/.env.example'),
             '--file',(Join-Path $Root 'infra/compose/compose.yaml'),'--file',(Join-Path $Root 'infra/compose/compose.diagnostics.yaml'),'--file',$p.Overlay,'down','--volumes','--timeout','30')
+        $script:diagnosticLaunchPhase='cleanup-down'
         if($runtime.Compose) { $null=Invoke-CredPayDiagnosticTool $runtime $runtime.Compose @($arguments | Select-Object -Skip 1) 180 }
         else { $null=Invoke-CredPayDiagnosticTool $runtime $runtime.Docker $arguments 180 }
+        $script:diagnosticLaunchPhase='cleanup-absence'
         Assert-LocalCondition ((Get-CredPayDiagnosticIdentity (Get-CredPayDiagnosticInventory $runtime)) -ceq '') 'Recursos próprios ainda presentes; preservar sessão.'
         $owner.stage='Removed'; Write-CredPayLocalJson $owner $p.Marker $Root
         Assert-CredPayLocalPath $Root $active; Remove-Item -LiteralPath $active

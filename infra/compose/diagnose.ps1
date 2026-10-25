@@ -6,4 +6,7 @@ $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'diagnostic-local.ps1')
 $root=(Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 try { Invoke-CredPayDiagnosticAction $Action $ImageTag $root $TxPort $ProcPort }
-catch { throw 'Diagnóstico local interrompido; sessão/evidências preservadas. Envie somente a última fase/resumo seguro; não exporte logs/env.' }
+catch {
+    $phase=if($script:diagnosticLaunchPhase -cmatch '^[a-z-]{1,40}$') { $script:diagnosticLaunchPhase } else { 'entry' }
+    throw "Diagnóstico local interrompido; fase=$phase; sessão/evidências preservadas; detalhes brutos omitidos."
+}
