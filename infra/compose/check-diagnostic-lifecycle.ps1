@@ -65,8 +65,7 @@ function Invoke-CredPayDiagnosticTool($Runtime,[string]$File,[string[]]$Argument
             $row=@{Id=$containerId;Name="/$($p.Project)-$service-1";Service=$service;Project=$p.Project;Nonce=$nonce;Privileged=$false;
                 User='';Mounts=@();Bindings=$null;Networks=@{("$($p.Project)_default")=@{}};Caps=$null;Security=$null;Devices=$null}
             if($index -lt 2) {
-                $port=if($index -eq 0) { $p.TxPort } else { $p.ProcPort }
-                $row.User='10001:10001'; $row.Bindings=@{'8080/tcp'=@(@{HostIp='127.0.0.1';HostPort=[string]$port})}; $row.Caps=@('ALL'); $row.Security=@('no-new-privileges:true')
+                $row.User='10001:10001'; $row.Caps=@('ALL'); $row.Security=@('no-new-privileges:true')
             } else { $row.Mounts=@(@{Type='volume';Name=$volumes[$index-2];Destination=$(if($index -eq 4){'/var/lib/rabbitmq'}else{'/var/lib/postgresql/data'})}) }
             return ($row | ConvertTo-Json -Depth 15 -Compress)
         }
@@ -85,7 +84,7 @@ function Check([string]$Name,[scriptblock]$Action) {
 }
 NewFixture
 Check 'run records real projected inventory without automatic cleanup' {
-    Invoke-CredPayDiagnosticAction Run $tag $fixture.Root 18080 18081
+    Invoke-CredPayDiagnosticAction Run $tag $fixture.Root
     $s=Read-CredPayDiagnosticSession $fixture.Root $fixture.Plan.Project
     if($s.Owner.result -cne 'Validated' -or $s.Owner.inventory.Containers.Count -ne 5 -or -not $fixture.Created -or @($fixture.Commands | Where-Object { $_ -match ' down ' }).Count) { throw 'Missing lifecycle proof' }
 }
@@ -127,7 +126,7 @@ Check 'remove exact recorded resources and active pointer only' {
 NewFixture; $fixture.FailSmoke=$true
 Check 'partial failure records owned resources for separate cleanup' {
     $refused=$false
-    try { Invoke-CredPayDiagnosticAction Run $tag $fixture.Root 18080 18081 } catch { $refused=$true }
+    try { Invoke-CredPayDiagnosticAction Run $tag $fixture.Root } catch { $refused=$true }
     $s=Read-CredPayDiagnosticSession $fixture.Root $fixture.Plan.Project
     if(-not $refused -or $s.Owner.stage -cne 'Owned' -or $s.Owner.result -cne 'Failed' -or -not $fixture.Created) { throw 'Partial state lost' }
     Invoke-CredPayDiagnosticAction Remove '' $fixture.Root
@@ -135,7 +134,7 @@ Check 'partial failure records owned resources for separate cleanup' {
 foreach($restoration in @('verified','unverified')) {
     NewFixture; $fixture.FailSmoke=$true; $fixture.Restoration=$restoration
     Check "sanitized restoration state crosses launcher boundary $restoration" {
-        $captured=@(& { try { Invoke-CredPayDiagnosticAction Run $tag $fixture.Root 18080 18081 } catch { } } 6>&1)
+        $captured=@(& { try { Invoke-CredPayDiagnosticAction Run $tag $fixture.Root } catch { } } 6>&1)
         $summary=($captured | ForEach-Object { [string]$_ }) -join '|'
         if($summary -notlike "*restauração=$restoration*" -or $summary -like '*private text*') { throw 'Restoration state hidden or raw error leaked' }
     }
@@ -143,7 +142,7 @@ foreach($restoration in @('verified','unverified')) {
 NewFixture; $fixture.Existing=$true
 Check 'existing foreign namespace refuses all mutations' {
     $refused=$false
-    try { Invoke-CredPayDiagnosticAction Run $tag $fixture.Root 18080 18081 } catch { $refused=$true }
+    try { Invoke-CredPayDiagnosticAction Run $tag $fixture.Root } catch { $refused=$true }
     if(-not $refused -or $fixture.Created -or @($fixture.Commands | Where-Object { $_ -match '-FaultDiagnostics| down ' }).Count) { throw 'Foreign project mutated' }
 }
 Write-Host "Diagnostic lifecycle: $checks offline scenarios passed; actual files/projection, fictitious commands only."

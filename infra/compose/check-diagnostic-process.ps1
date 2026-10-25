@@ -4,7 +4,7 @@ $ErrorActionPreference='Stop'
 $repo=(Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $root=Join-Path $repo ('.local/compose-process-controls/'+[Guid]::NewGuid().ToString('N'))
 $null=New-Item -ItemType Directory -Path $root
-$p=New-CredPayDiagnosticPlan $root 'credpay-diag-20261025-a1b2c3d4' ('a'*40) ('b'*32) 18080 18081
+$p=New-CredPayDiagnosticPlan $root 'credpay-diag-20261025-a1b2c3d4' ('a'*40) ('b'*32)
 $null=New-Item -ItemType Directory -Path $p.Temp,$p.DockerConfig -Force
 $runtime=@{Plan=$p;Docker=(Join-Path $p.Temp 'not-docker.exe');HostAddress='fixture-no-daemon';Pwsh=(Get-Process -Id $PID).Path}
 $probe=Join-Path $p.Temp 'probe.ps1'
@@ -24,9 +24,9 @@ try {
 } finally { $env:CREDPAY_NEGATIVE_SECRET=$saved }
 if($start.UseShellExecute -or -not $start.CreateNoWindow -or $start.Environment.ContainsKey('CREDPAY_NEGATIVE_SECRET')) { throw 'Inherited environment or shell execution' }
 if((Invoke-CredPayLocalProcess $start 10) -cne 'fixture-process-ok') { throw 'Actual isolated child failed' }
-foreach($bad in @(@('../outside',('a'*40),('b'*32),18080,18081),@('credpay-ci-1-1',('a'*40),('b'*32),18080,18081),
-    @($p.Project,'latest',('b'*32),18080,18081),@($p.Project,('a'*40),'nonce',18080,18081),
-    @($p.Project,('a'*40),('b'*32),80,18081),@($p.Project,('a'*40),('b'*32),18080,18080))) {
+foreach($bad in @(@('../outside',('a'*40),('b'*32)),@('credpay-ci-1-1',('a'*40),('b'*32)),
+    @($p.Project,'latest',('b'*32)),@($p.Project,('a'*40),'nonce'),
+    @('CREDPAY-diag-20261025-a1b2c3d4',('a'*40),('b'*32)),@($p.Project,('a'*39),('b'*32)))) {
     $refused=$false
     try { $null=New-CredPayDiagnosticPlan $root @bad } catch { $refused=$true }
     if(-not $refused) { throw 'Unsafe plan accepted' }

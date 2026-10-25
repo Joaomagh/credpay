@@ -14,11 +14,10 @@ function Assert-CredPayDiagnosticInventory($Plan,$Inventory) {
         Assert-LocalCondition ($c.Privileged -eq $false -and @($c.Devices).Count -eq 0 -and
             @($c.Networks).Count -eq 1 -and $c.Networks[0] -ceq "$($Plan.Project)_default") 'Privilégios/rede/dispositivos divergentes.'
         if($c.Service -cin @('transacoes','processamento')) {
-            $port=if($c.Service -ceq 'transacoes') { $Plan.TxPort } else { $Plan.ProcPort }
             Assert-LocalCondition ($c.User -ceq '10001:10001' -and @($c.Mounts).Count -eq 0 -and
-                @($c.Ports).Count -eq 1 -and $c.Ports[0].Ip -ceq '127.0.0.1' -and [int]$c.Ports[0].Port -eq $port -and
+                @($c.Ports).Count -eq 0 -and
                 @($c.Caps).Count -eq 1 -and $c.Caps[0] -ceq 'ALL' -and @($c.Security).Count -eq 1 -and
-                $c.Security[0] -ceq 'no-new-privileges:true') 'Apps exigem UID10001, mounts0, loopback e capabilities removidas.'
+                $c.Security[0] -ceq 'no-new-privileges:true') 'Apps exigem UID10001, mounts0, nenhuma porta publicada e capabilities removidas.'
         } else {
             $volume=if($c.Service -ceq 'rabbit') { "$($Plan.Project)_rabbit-data" } elseif($c.Service -ceq 'db-transacoes') { "$($Plan.Project)_transacoes-data" } else { "$($Plan.Project)_processamento-data" }
             $destination=if($c.Service -ceq 'rabbit') { '/var/lib/rabbitmq' } else { '/var/lib/postgresql/data' }
@@ -48,23 +47,28 @@ function Get-CredPayDiagnosticIdentity($Inventory) {
 function Assert-CredPayDiagnosticRemoval($Expected,$Actual) {
     Assert-LocalCondition ((Get-CredPayDiagnosticIdentity $Expected) -ceq (Get-CredPayDiagnosticIdentity $Actual)) 'Recursos mudaram desde o registro; remoção recusada.'
 }
-function New-CredPayDiagnosticPlan([string]$Root,[string]$Project,[string]$Tag,[string]$Nonce,[int]$TxPort,[int]$ProcPort) {
+function New-CredPayDiagnosticPlan([string]$Root,[string]$Project,[string]$Tag,[string]$Nonce) {
     Assert-LocalCondition ($Project -cmatch '^credpay-diag-[0-9]{8}-[0-9a-f]{8}$' -and $Nonce -cmatch '^[0-9a-f]{32}$' -and
-        $Tag -cmatch '^[0-9a-f]{40}$' -and $TxPort -ge 1024 -and $TxPort -le 65535 -and $ProcPort -ge 1024 -and $ProcPort -le 65535 -and $TxPort -ne $ProcPort) 'Plano diagnóstico inválido.'
+        $Tag -cmatch '^[0-9a-f]{40}$') 'Plano diagnóstico inválido.'
     $directory=Join-Path $Root ".local/compose-diagnostics/$Project"
     foreach($path in @($directory,(Join-Path $directory 'temp'),(Join-Path $directory 'docker'),(Join-Path $directory 'override.json'))) { Assert-CredPayLocalPath $Root $path }
-    return @{Root=$Root;Project=$Project;Tag=$Tag;Nonce=$Nonce;TxPort=$TxPort;ProcPort=$ProcPort;Directory=$directory;
-        Temp=(Join-Path $directory 'temp');DockerConfig=(Join-Path $directory 'docker');Marker=(Join-Path $directory 'owner.json');Overlay=(Join-Path $directory 'override.json')}
+    return @{Root=$Root;Project=$Project;Tag=$Tag;Nonce=$Nonce;Directory=$directory;
+        Temp=(Join-Path $directory 'temp');DockerConfig=(Join-Path $directory 'docker');Marker=(Join-Path $directory 'owner.json');Overlay=(Join-Path $directory 'override.yaml')}
 }
 function Get-CredPayDiagnosticOverride($Plan) {
-    $labels=@{'io.credpay.diagnostics.session'=$Plan.Nonce}
-    $services=@{}
-    foreach($service in @('transacoes','processamento','db-transacoes','db-processamento','rabbit')) { $services[$service]=@{labels=$labels} }
-    $volumes=@{}
-    foreach($volume in @('transacoes-data','processamento-data','rabbit-data')) { $volumes[$volume]=@{labels=$labels} }
-    return @{services=$services;volumes=$volumes;networks=@{default=@{internal=$true;labels=$labels}}}
+    $lines=@('services:')
+    foreach($service in @('transacoes','processamento','db-transacoes','db-processamento','rabbit')) {
+        $lines+="  ${service}:"
+        if($service -cin @('transacoes','processamento')) { $lines+='    ports: !reset []' }
+        $lines+=@('    labels:',"      io.credpay.diagnostics.session: '$($Plan.Nonce)'")
+    }
+    $lines+='volumes:'
+    foreach($volume in @('transacoes-data','processamento-data','rabbit-data')) { $lines+=@("  ${volume}:",'    labels:',"      io.credpay.diagnostics.session: '$($Plan.Nonce)'") }
+    $lines+=@('networks:','  default:','    internal: true','    labels:',"      io.credpay.diagnostics.session: '$($Plan.Nonce)'")
+    return ($lines -join "`n")+"`n"
 }
 function Get-CredPayDiagnosticRuntime($Plan) {
+    $compose=$null
     if($IsWindows) {
         $docker=(Get-Command docker.exe -CommandType Application -ErrorAction Stop | Select-Object -First 1).Source
         $expected=Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFiles)) 'Docker/Docker/resources/bin/docker.exe'
@@ -102,7 +106,6 @@ function New-CredPayDiagnosticProcess($Runtime,[string]$File,[string[]]$Argument
     foreach($key in @('TEMP','TMP','TMPDIR')) { $start.Environment[$key]=$p.Temp }
     $start.Environment['DOCKER_HOST']=$Runtime.HostAddress; $start.Environment['DOCKER_CONFIG']=$p.DockerConfig
     $start.Environment['CREDPAY_IMAGE_TAG']=$p.Tag; $start.Environment['CREDPAY_DIAG_NONCE']=$p.Nonce
-    $start.Environment['TX_HTTP_PORT']=[string]$p.TxPort; $start.Environment['PROC_HTTP_PORT']=[string]$p.ProcPort
     # All values are the same fictitious accounts as .env.example; never inherit real credentials.
     foreach($entry in @{TX_DB_USER='credpay_tx';TX_DB_PASSWORD='demo_tx_only';PROC_DB_USER='credpay_proc';PROC_DB_PASSWORD='demo_proc_only';RABBIT_USER='credpay_demo';RABBIT_PASSWORD='demo_rabbit_only';BRL_LIMIT='100.00'}.GetEnumerator()) { $start.Environment[$entry.Key]=$entry.Value }
     return $start
@@ -111,10 +114,12 @@ function Invoke-CredPayDiagnosticTool($Runtime,[string]$File,[string[]]$Argument
     return (Invoke-CredPayLocalProcess (New-CredPayDiagnosticProcess $Runtime $File $Arguments) $Timeout)
 }
 function Get-CredPayDiagnosticDaemon($Runtime) {
+    $previous=$script:diagnosticLaunchPhase
     $script:diagnosticLaunchPhase='daemon-tool'
     $data=Invoke-CredPayDiagnosticTool $Runtime $Runtime.Docker @('info','--format','{"id":{{json .ID}},"os":{{json .OSType}},"arch":{{json .Architecture}},"driver":{{json .Driver}},"cpus":{{.NCPU}},"memory":{{.MemTotal}},"security":{{json .SecurityOptions}}}') | ConvertFrom-Json
     $script:diagnosticLaunchPhase='daemon-policy'
     Assert-CredPayLocalDaemon $data
+    $script:diagnosticLaunchPhase=$previous
     return $data.id
 }
 function Get-CredPayDiagnosticInventory($Runtime) {
@@ -165,7 +170,7 @@ function Get-CredPayDiagnosticInventory($Runtime) {
 function Read-CredPayDiagnosticSession([string]$Root,[string]$Project) {
     Assert-LocalCondition ($Project -cmatch '^credpay-diag-[0-9]{8}-[0-9a-f]{8}$') 'Projeto diagnóstico inválido.'
     $record=Read-CredPayLocalJson (Join-Path $Root ".local/compose-diagnostics/$Project/owner.json") $Root
-    $p=New-CredPayDiagnosticPlan $Root $Project $record.tag $record.nonce $record.txPort $record.procPort
+    $p=New-CredPayDiagnosticPlan $Root $Project $record.tag $record.nonce
     Assert-LocalCondition ($record.schema -eq 1 -and $record.project -ceq $Project -and $record.stage -cin @('Creating','Owned') -and
         $record.daemonId -cmatch '^[a-zA-Z0-9:-]{8,100}$' -and $record.overlayHash -cmatch '^[0-9a-f]{64}$') 'Registro diagnóstico incompleto.'
     Assert-LocalCondition ((Get-FileHash -LiteralPath $p.Overlay -Algorithm SHA256).Hash.ToLowerInvariant() -ceq $record.overlayHash) 'Overlay alterado; operação recusada.'
@@ -199,8 +204,7 @@ function Assert-CredPayDiagnosticInputs([string]$Root,$Expected) {
 function Get-CredPayDiagnosticChild([string]$Root,[string]$Project) {
     $session=Read-CredPayDiagnosticSession $Root $Project; $p=$session.Plan
     Assert-LocalCondition ($env:CREDPAY_DIAG_NONCE -ceq $p.Nonce -and $env:CREDPAY_IMAGE_TAG -ceq $p.Tag -and
-        $env:DOCKER_CONFIG -ceq $p.DockerConfig -and $env:HOME -ceq $p.Temp -and
-        $env:TX_HTTP_PORT -ceq [string]$p.TxPort -and $env:PROC_HTTP_PORT -ceq [string]$p.ProcPort) 'Diagnóstico exige ambiente isolado do launcher.'
+        $env:DOCKER_CONFIG -ceq $p.DockerConfig -and $env:HOME -ceq $p.Temp) 'Diagnóstico exige ambiente isolado do launcher.'
     foreach($key in [Environment]::GetEnvironmentVariables('Process').Keys) {
         $name=([string]$key).ToUpperInvariant()
         Assert-LocalCondition ($name -notin @('HTTP_PROXY','HTTPS_PROXY','ALL_PROXY','NO_PROXY') -and
@@ -228,11 +232,7 @@ function Get-CredPayDiagnosticImages($Runtime) {
     }
     return $ids
 }
-function Get-CredPayDiagnosticPort {
-    $listener=[Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback,0)
-    try { $listener.Start(); return $listener.LocalEndpoint.Port } finally { $listener.Stop() }
-}
-function Invoke-CredPayDiagnosticAction([string]$Action,[string]$Tag,[string]$Root,[int]$TxPort=0,[int]$ProcPort=0) {
+function Invoke-CredPayDiagnosticAction([string]$Action,[string]$Tag,[string]$Root) {
     $script:diagnosticLaunchPhase='plan'
     Assert-LocalCondition ($Action -cin @('Run','Remove')) 'Ação diagnóstica desconhecida.'
     $active=Join-Path $Root '.local/compose-diagnostics/active.json'
@@ -241,13 +241,12 @@ function Invoke-CredPayDiagnosticAction([string]$Action,[string]$Tag,[string]$Ro
         Assert-LocalCondition (-not (Test-Path -LiteralPath $active)) 'Há ensaio diagnóstico registrado; não sobrescrever sessão.'
         $nonce=[Guid]::NewGuid().ToString('N')
         $project='credpay-diag-'+[DateTime]::UtcNow.ToString('yyyyMMdd')+'-'+$nonce.Substring(0,8)
-        if($TxPort -eq 0) { $TxPort=Get-CredPayDiagnosticPort }
-        if($ProcPort -eq 0) { do { $ProcPort=Get-CredPayDiagnosticPort } while($ProcPort -eq $TxPort) }
-        $p=New-CredPayDiagnosticPlan $Root $project $Tag $nonce $TxPort $ProcPort
+        $p=New-CredPayDiagnosticPlan $Root $project $Tag $nonce
         Assert-LocalCondition (-not (Test-Path -LiteralPath $p.Directory)) 'Diretório diagnóstico já existe.'
         $null=New-Item -ItemType Directory -Path $p.Directory,$p.Temp,$p.DockerConfig
         Write-CredPayLocalJson ([pscustomobject]@{}) (Join-Path $p.DockerConfig 'config.json') $Root -New
-        Write-CredPayLocalJson (Get-CredPayDiagnosticOverride $p) $p.Overlay $Root -New
+        $stream=[IO.File]::Open($p.Overlay,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write)
+        try { $bytes=[Text.Encoding]::UTF8.GetBytes((Get-CredPayDiagnosticOverride $p)); $stream.Write($bytes,0,$bytes.Length) } finally { $stream.Dispose() }
         $script:diagnosticLaunchPhase='runtime'; $runtime=Get-CredPayDiagnosticRuntime $p
         $script:diagnosticLaunchPhase='daemon'
         $daemon=Get-CredPayDiagnosticDaemon $runtime
@@ -256,7 +255,7 @@ function Invoke-CredPayDiagnosticAction([string]$Action,[string]$Tag,[string]$Ro
         $script:diagnosticLaunchPhase='namespace'
         $inventory=Get-CredPayDiagnosticInventory $runtime
         Assert-LocalCondition ((Get-CredPayDiagnosticIdentity $inventory) -ceq '') 'Projeto diagnóstico já possui recursos; não adotar.'
-        $owner=@{schema=1;stage='Creating';project=$project;nonce=$nonce;tag=$Tag;txPort=$TxPort;procPort=$ProcPort;daemonId=$daemon;
+        $owner=@{schema=1;stage='Creating';project=$project;nonce=$nonce;tag=$Tag;daemonId=$daemon;
             overlayHash=(Get-FileHash -LiteralPath $p.Overlay -Algorithm SHA256).Hash.ToLowerInvariant();inputs=(Get-CredPayDiagnosticInputs $Root);images=$images;inventory=$inventory;result='NotRun'}
         Write-CredPayLocalJson $owner $p.Marker $Root -New
         Write-CredPayLocalJson @{project=$project} $active $Root -New

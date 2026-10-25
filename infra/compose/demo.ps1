@@ -19,6 +19,7 @@ if ($FaultDiagnostics) { . (Join-Path $PSScriptRoot 'diagnostic-evidence.ps1') }
 $diagnosticScope=$null
 if($FaultDiagnostics -and $Project -cmatch '^credpay-diag-') {
     . (Join-Path $PSScriptRoot 'diagnostic-local.ps1')
+    . (Join-Path $PSScriptRoot 'diagnostic-http.ps1')
     $diagnosticScope=Get-CredPayDiagnosticChild $root $Project
 }
 $composeArgs = @('compose', '--project-name', $Project, '--env-file', (Join-Path $PSScriptRoot $EnvFile),
@@ -202,6 +203,18 @@ function Activate {
 }
 
 function Request([string]$Method, [string]$Url, [string]$Key = '', [string]$Value = '') {
+    if($null -ne $diagnosticScope) {
+        $uri=[Uri]$Url
+        Require ($uri.Scheme -ceq 'http' -and $uri.Host -cin $apps -and $uri.Port -eq 8080 -and $uri.UserInfo -ceq '') 'Destino HTTP interno fora do roteiro.'
+        $curl=@('exec','-T',$uri.Host,'curl','--silent','--show-error','--max-time','3','--noproxy','*','--max-redirs','0',
+            '--include','--write-out',"`n%{http_code}",'--request',$Method,'--url',('http://127.0.0.1:8080'+$uri.PathAndQuery))
+        if($Method -ceq 'POST') {
+            $parsedKey=[Guid]::Empty
+            Require ([Guid]::TryParseExact($Key,'D',[ref]$parsedKey) -and $Value -cmatch '^[0-9]+(\.[0-9]{1,3})?$') 'Pedido fictício fora do roteiro.'
+            $curl+=@('--header','Content-Type: application/json','--header',"Idempotency-Key: $Key",'--data',('{"valor":'+$Value+',"moeda":"BRL"}'))
+        }
+        return (Read-CredPayDiagnosticHttp (Compose @curl))
+    }
     try {
         if ($Method -ceq 'POST') {
             return Invoke-WebRequest -Method POST -Uri $Url -Headers @{'Idempotency-Key'=$Key} -ContentType 'application/json' `
@@ -290,6 +303,11 @@ try {
     foreach ($app in $apps) { Require ($config.services.$app.image -cmatch ('^credpay-' + $app + ':[0-9a-f]{40}$')) 'Tag de imagem deve ser SHA completo.' }
     $urls = @{}
     foreach ($app in $apps) {
+        if($null -ne $diagnosticScope) {
+            Require (@($config.services.$app.ports | Where-Object { $null -ne $_ }).Count -eq 0) 'Diagnóstico não publica portas no host.'
+            $urls[$app]="http://${app}:8080"
+            continue
+        }
         $port = @($config.services.$app.ports)[0]
         Require ($port.host_ip -ceq '127.0.0.1' -and [int]$port.published -gt 0) 'HTTP deve estar vinculado ao loopback.'
         $urls[$app] = "http://127.0.0.1:$($port.published)"

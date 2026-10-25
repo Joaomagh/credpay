@@ -1,9 +1,9 @@
 #requires -Version 7.3
 $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'diagnostic-local.ps1')
-$p=@{Project='credpay-diag-20261025-1234abcd';Nonce=('a'*32);TxPort=18080;ProcPort=18081}
+$p=@{Project='credpay-diag-20261025-1234abcd';Nonce=('a'*32)}
 function Fixture {
-    return @{Containers=@(@{Id=('b'*64);Name="$($p.Project)-transacoes-1";Service='transacoes';Project=$p.Project;Nonce=$p.Nonce;Privileged=$false;User='10001:10001';Mounts=@();Ports=@(@{Ip='127.0.0.1';Port=18080});Networks=@("$($p.Project)_default");Caps=@('ALL');Security=@('no-new-privileges:true');Devices=@()});
+    return @{Containers=@(@{Id=('b'*64);Name="$($p.Project)-transacoes-1";Service='transacoes';Project=$p.Project;Nonce=$p.Nonce;Privileged=$false;User='10001:10001';Mounts=@();Ports=@();Networks=@("$($p.Project)_default");Caps=@('ALL');Security=@('no-new-privileges:true');Devices=@()});
         Volumes=@(@{Name="$($p.Project)_transacoes-data";Created='created:2026-10-25T00:00:00Z';Project=$p.Project;Nonce=$p.Nonce;Driver='local';Options=@{}});
         Networks=@(@{Name="$($p.Project)_default";Id=('c'*64);Project=$p.Project;Nonce=$p.Nonce;Internal=$true;Driver='bridge';Containers=@('b'*64)})}
 }
