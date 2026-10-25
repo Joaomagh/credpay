@@ -30,10 +30,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  diagnostic-controls:
+    name: Diagnostic controls (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Offline refusal, ownership and lifecycle
+        shell: pwsh
+        run: |
+          ./infra/compose/check-diagnostic-fault.ps1
+          ./infra/compose/check-diagnostic-local.ps1
+          ./infra/compose/check-diagnostic-lifecycle.ps1
+          ./infra/compose/check-diagnostic-process.ps1
+          ./infra/compose/check-diagnostic-http.ps1
+          ./infra/compose/check-smoke-refusal.ps1
   compose:
     name: Prepare, activate and preserve local data
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 25
+    needs: diagnostic-controls
     env:
       CREDPAY_IMAGE_TAG: ${{ github.sha }}
       COMPOSE_PROJECT_NAME: credpay-ci-${{ github.run_id }}-${{ github.run_attempt }}
@@ -80,6 +101,10 @@ jobs:
           $PSVersionTable.PSVersion.ToString()
           docker compose version
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          docker version --format 'Docker client={{.Client.Version}} API={{.Client.APIVersion}}; server={{.Server.Version}} API={{.Server.APIVersion}}'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          docker info --format 'Docker OS={{.OSType}}; arch={{.Architecture}}; driver={{.Driver}}; cpus={{.NCPU}}; memory={{.MemTotal}}'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           docker compose --env-file infra/compose/.env.example -f infra/compose/compose.yaml config --quiet
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           docker compose --env-file infra/compose/.env.example -f infra/compose/compose.yaml -f infra/compose/compose.diagnostics.yaml config --quiet
@@ -98,7 +123,14 @@ jobs:
         run: docker compose --env-file infra/compose/.env.example -f infra/compose/compose.yaml build transacoes processamento
       - name: Verify phases, flow and persistence
         shell: pwsh
-        run: ./infra/compose/demo.ps1 -Action Smoke -Project $env:COMPOSE_PROJECT_NAME -EnvFile .env.example -Diagnostics
+        run: |
+          docker pull postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          docker pull rabbitmq:4.3.5-management-alpine@sha256:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./infra/compose/diagnose.ps1 -Action Run -ImageTag $env:CREDPAY_IMAGE_TAG
+          ./infra/compose/diagnose.ps1 -Action Remove
+          ./infra/compose/demo.ps1 -Action Smoke -Project $env:COMPOSE_PROJECT_NAME -EnvFile .env.example -Diagnostics
       - name: Prepare verified Node runtime for browser tests
         shell: bash
         run: |
@@ -130,6 +162,9 @@ jobs:
         if: always()
         shell: pwsh
         run: |
+          if (Test-Path -LiteralPath .local/compose-diagnostics/active.json) {
+            ./infra/compose/diagnose.ps1 -Action Remove
+          }
           if ($env:COMPOSE_PROJECT_NAME -cnotmatch '^credpay-ci-[0-9]+-[0-9]+$') { throw 'Invalid CI project' }
           docker compose --project-name $env:COMPOSE_PROJECT_NAME --env-file infra/compose/.env.example -f infra/compose/compose.yaml -f infra/compose/compose.diagnostics.yaml down --volumes --timeout 30
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

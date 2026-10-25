@@ -26,6 +26,7 @@ O perfil Kubernetes Local Windows é incremento posterior, iniciado em0286262603
 | Checks aplicáveis ao SHA do candidato | [Inventory](https://github.com/Joaomagh/credpay/actions/runs/40110119178), [Scan](https://github.com/Joaomagh/credpay/actions/runs/40110119100) | Verdes; não são nova execução das oito suítes |
 | Demo Compose pessoal anterior | Retornos de João em22/10, imagens cf103ee; jornada e recuperação assistidas documentadas | Histórica; não prova execução local do código novo |
 | Contadores locais de publicação | João construiu imagens f412652 e executou Prepare/Activate/Demo com Diagnostics: healthUP, metricsHTTP200, APROVADA/REJEITADA/replay e confirmed delta2 nos dois apps | Comprovado no ensaio assistido; diagnóstico de falha por métricas ainda separado |
+| Diagnóstico causal por métricas | [Compose CI40222821313](https://github.com/Joaomagh/credpay/actions/runs/40222821313): returned delta1 nos dois publicadores, PENDENTE/outbox original e recuperação causal; [roteiro descartável](../infra/compose/DIAGNOSTICS.md) | Implementado e comprovado no CI; Run/Remove por João ainda pendentes |
 | Kubernetes local | João executou Validate do [perfil Windows](../infra/k8s/LOCAL.md): startup, persistência, fluxo/replay e recuperação causal passaram em25/10; detalhes em spec§9.136.6 | Validate e Remove próprios comprovados; percurso operacional assistido concluído |
 | Explicação e autonomia pessoais | João adiou a prática; não presumir domínio a partir de testes | Pendente, adiado |
 

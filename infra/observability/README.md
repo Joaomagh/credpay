@@ -56,4 +56,6 @@ O Smoke do CI usa projeto/volumes novos, sem publicações concorrentes externas
 
 ## Retorno sem rota nos JARs reais
 
+O [roteiro causal descartável no Compose](../compose/DIAGNOSTICS.md) prepara esse diagnóstico no Windows: dois publicadores, returned por HTTP, outbox/GET pendentes e recuperação causal após restaurar a rota. Projeto, rede e volumes são próprios, sem publicar portas no host nem alterar bindings do broker persistente de João. Exige revisão/CI/integração antes do ensaio; não declarar aceite local a partir dos controles offline.
+
 A fixture FluxoCredPayE2E habilita diagnostics explicitamente e contém dois cenários adicionais, um por publicador. Retira somente o binding do broker descartável, consulta returned por HTTP e exige PENDENTE/outbox pendente íntegra. O finally restaura o binding; depois exige o evento original recuperado, decisão preservada e unicidade nas cinco tabelas. São seis casos no total; a prova remota passou no Flow CI84/run38019765157, com seis casos e zero falhas/erros/skips. Não cobre nack/error, crash abrupto ou HA.

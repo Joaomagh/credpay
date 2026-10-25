@@ -4,7 +4,8 @@ param(
     [Parameter(Mandatory)][ValidateSet('Prepare', 'Activate', 'Demo', 'Smoke', 'Down')][string]$Action,
     [ValidatePattern('^credpay-[a-z0-9][a-z0-9-]{0,40}$')][string]$Project = 'credpay-demo',
     [ValidateSet('.env', '.env.example')][string]$EnvFile = '.env',
-    [switch]$Diagnostics
+    [switch]$Diagnostics,
+    [switch]$FaultDiagnostics
 )
 
 $ErrorActionPreference = 'Stop'
@@ -12,9 +13,19 @@ $PSNativeCommandUseErrorActionPreference = $false
 $root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 . (Join-Path $PSScriptRoot 'json.ps1')
 . (Join-Path $PSScriptRoot 'metrics.ps1')
+. (Join-Path $PSScriptRoot 'diagnostic-fault.ps1')
+if ($FaultDiagnostics) { Assert-CredPayFaultMode $Action $Project $EnvFile $Diagnostics }
+if ($FaultDiagnostics) { . (Join-Path $PSScriptRoot 'diagnostic-evidence.ps1') }
+$diagnosticScope=$null
+if($FaultDiagnostics -and $Project -cmatch '^credpay-diag-') {
+    . (Join-Path $PSScriptRoot 'diagnostic-local.ps1')
+    . (Join-Path $PSScriptRoot 'diagnostic-http.ps1')
+    $diagnosticScope=Get-CredPayDiagnosticChild $root $Project
+}
 $composeArgs = @('compose', '--project-name', $Project, '--env-file', (Join-Path $PSScriptRoot $EnvFile),
     '--file', (Join-Path $PSScriptRoot 'compose.yaml'))
 if ($Diagnostics) { $composeArgs += @('--file', (Join-Path $PSScriptRoot 'compose.diagnostics.yaml')) }
+if($null -ne $diagnosticScope) { $composeArgs+=@('--file',$diagnosticScope.Runtime.Plan.Overlay,'--ansi','never') }
 $apps = @('transacoes', 'processamento')
 $queueNames = @('credpay.processamento.transacao-criada.v1', 'credpay.processamento.transacao-criada.dlq.v1',
     'credpay.transacoes.transacao-processada.v1', 'credpay.transacoes.transacao-processada.dlq.v1')
@@ -25,9 +36,28 @@ $policies = @('processamento', 'transacoes' | ForEach-Object {
 function Require([bool]$Condition, [string]$Message) {
     if (-not $Condition) { throw $Message }
 }
+function DiagnosticProgress([string]$Phase,[string]$Category='running',[string]$Restoration='not-attempted') {
+    if($null -eq $diagnosticScope) { return }
+    Require ($Phase -cmatch '^[a-z-]{1,60}$' -and $Category -cin @('running','binding','outbox','http','metric','scope','unclassified','complete')) 'Fase diagnóstica inválida.'
+    Require ($Restoration -cin @('not-attempted','verified','unverified')) 'Estado de restauração inválido.'
+    $plan=$diagnosticScope.Runtime.Plan
+    $http=if($script:diagnosticHttpFailure -cin @('none','destination','transport','size','last-status','header-separator','status-line','header-field')) { $script:diagnosticHttpFailure } else { 'none' }
+    $httpStatus=[int]$script:diagnosticHttpStatus
+    if($httpStatus -lt 0 -or $httpStatus -gt 599) { $httpStatus=0 }
+    Write-CredPayLocalJson @{phase=$Phase;category=$Category;restoration=$Restoration;http=$http;httpStatus=$httpStatus} (Join-Path $plan.Directory 'progress.json') $plan.Root
+}
 
 function Compose {
-    $output = & docker @composeArgs @args 2>&1 | Out-String
+    $operationArguments=@($args)
+    if($null -ne $diagnosticScope -and ($args[0] -cin @('up','stop','down','cp') -or
+        ($args[0] -ceq 'exec' -and (@($args) -contains 'eval' -or @($args) -contains 'import_definitions')))) {
+        $null=Assert-CredPayDiagnosticScope $diagnosticScope.Runtime $diagnosticScope.Owner
+    }
+    if($FaultDiagnostics -and $args[0] -ceq 'up') { $operationArguments=@('up','--pull','never')+@($args | Select-Object -Skip 1) }
+    if($null -ne $diagnosticScope -and $diagnosticScope.Runtime.Compose) {
+        $directArgs=@($composeArgs | Select-Object -Skip 1)
+        $output=& $diagnosticScope.Runtime.Compose @directArgs @operationArguments 2>&1 | Out-String
+    } else { $output = & docker @composeArgs @operationArguments 2>&1 | Out-String }
     if ($LASTEXITCODE -ne 0) {
         throw "Docker Compose falhou em '$($args[0])', exit=$LASTEXITCODE; manter consumo desligado e diagnosticar localmente sem exportar env/logs."
     }
@@ -176,12 +206,26 @@ function Activate {
 }
 
 function Request([string]$Method, [string]$Url, [string]$Key = '', [string]$Value = '') {
+    if($null -ne $diagnosticScope) {
+        $script:diagnosticHttpFailure='destination'
+        $uri=[Uri]$Url
+        Require ($uri.Scheme -ceq 'http' -and $uri.Host -cin $apps -and $uri.Port -eq 8080 -and $uri.UserInfo -ceq '') 'Destino HTTP interno fora do roteiro.'
+        $curl=@('exec','-T',$uri.Host,'curl','--silent','--show-error','--max-time','3','--noproxy','*','--max-redirs','0',
+            '--include','--write-out',"`n%{http_code}",'--request',$Method,'--url',('http://127.0.0.1:8080'+$uri.PathAndQuery))
+        if($Method -ceq 'POST') {
+            $parsedKey=[Guid]::Empty
+            Require ([Guid]::TryParseExact($Key,'D',[ref]$parsedKey) -and $Value -cmatch '^[0-9]+(\.[0-9]{1,3})?$') 'Pedido fictício fora do roteiro.'
+            $curl+=@('--header','Content-Type: application/json','--header',"Idempotency-Key: $Key",'--data',('{"valor":'+$Value+',"moeda":"BRL"}'))
+        }
+        $script:diagnosticHttpFailure='transport'
+        return (Read-CredPayDiagnosticHttp (DiagnosticComposeStdout $curl))
+    }
     try {
         if ($Method -ceq 'POST') {
             return Invoke-WebRequest -Method POST -Uri $Url -Headers @{'Idempotency-Key'=$Key} -ContentType 'application/json' `
-                -Body ('{"valor":' + $Value + ',"moeda":"BRL"}') -TimeoutSec 3 -SkipHttpErrorCheck
+                -Body ('{"valor":' + $Value + ',"moeda":"BRL"}') -TimeoutSec 3 -SkipHttpErrorCheck -MaximumRedirection 0 -NoProxy
         }
-        return Invoke-WebRequest -Method GET -Uri $Url -TimeoutSec 3 -SkipHttpErrorCheck
+        return Invoke-WebRequest -Method GET -Uri $Url -TimeoutSec 3 -SkipHttpErrorCheck -MaximumRedirection 0 -NoProxy
     } catch { throw 'Requisição HTTP falhou; corpo/credenciais omitidos.' }
 }
 
@@ -255,13 +299,20 @@ function WaitPublicationMetrics($Baselines) {
 
 $savedTopology = $env:CREDPAY_TOPOLOGY_ENABLED
 $savedFlow = $env:CREDPAY_FLOW_ENABLED
+$smokeOwned = $false
 try {
+    DiagnosticProgress 'config'
     $env:CREDPAY_TOPOLOGY_ENABLED = 'false'
     $env:CREDPAY_FLOW_ENABLED = 'false'
     $config = Json (Compose config --format json)
     foreach ($app in $apps) { Require ($config.services.$app.image -cmatch ('^credpay-' + $app + ':[0-9a-f]{40}$')) 'Tag de imagem deve ser SHA completo.' }
     $urls = @{}
     foreach ($app in $apps) {
+        if($null -ne $diagnosticScope) {
+            Require (@($config.services.$app.ports | Where-Object { $null -ne $_ }).Count -eq 0) 'Diagnóstico não publica portas no host.'
+            $urls[$app]="http://${app}:8080"
+            continue
+        }
         $port = @($config.services.$app.ports)[0]
         Require ($port.host_ip -ceq '127.0.0.1' -and [int]$port.published -gt 0) 'HTTP deve estar vinculado ao loopback.'
         $urls[$app] = "http://127.0.0.1:$($port.published)"
@@ -275,14 +326,26 @@ try {
             Require ((Compose ps --all -q) -ceq '') 'Smoke exige projeto descartável sem containers anteriores.'
             $volumesBefore = @(& docker volume ls --quiet --filter "label=com.docker.compose.project=$Project")
             Require ($LASTEXITCODE -eq 0 -and $volumesBefore.Count -eq 0) 'Smoke exige projeto sem volumes anteriores.'
+            $networksBefore = @(& docker network ls --quiet --filter "label=com.docker.compose.project=$Project")
+            Require ($LASTEXITCODE -eq 0 -and $networksBefore.Count -eq 0) 'Smoke exige projeto sem redes anteriores.'
+            $smokeOwned = $true
+            DiagnosticProgress 'prepare'
             Prepare
+            DiagnosticProgress 'activate'
             Activate
+            DiagnosticProgress 'demo'
             $records = @(Demo)
+            if ($FaultDiagnostics) {
+                foreach ($publisher in $apps) { DiagnosticProgress "fault-$publisher"; Invoke-CredPayMetricFault $publisher }
+            }
             $volumes = @(& docker volume ls --quiet --filter "label=com.docker.compose.project=$Project" | Sort-Object)
             Require ($LASTEXITCODE -eq 0 -and $volumes.Count -eq 3) 'Esperados três volumes próprios.'
             $null = Compose down --timeout 30
+            DiagnosticProgress 'persistence-prepare'
             Prepare
+            DiagnosticProgress 'persistence-activate'
             Activate
+            DiagnosticProgress 'persistence-check'
             foreach ($record in $records) {
                 Require ((WaitFinal $record.Location $record.Status) -ceq $record.Final) 'GET persistido mudou após down/up.'
                 $replay = Request 'POST' "$($urls.transacoes)/transacoes" $record.Key $record.Value
@@ -291,10 +354,19 @@ try {
             $volumesAfter = @(& docker volume ls --quiet --filter "label=com.docker.compose.project=$Project" | Sort-Object)
             Require ($LASTEXITCODE -eq 0 -and ($volumesAfter -join ',') -ceq ($volumes -join ',')) 'Volumes mudaram após down/up.'
             Write-Host 'Compose: down/up conservou três volumes, GET final e POST original dos dois resultados.'
+            DiagnosticProgress 'complete' 'complete'
         }
     }
 } catch {
-    if ($Action -in @('Prepare', 'Activate', 'Smoke')) {
+    if($null -ne $diagnosticScope) {
+        $progressPath=Join-Path $diagnosticScope.Runtime.Plan.Directory 'progress.json'
+        $progress=if(Test-Path -LiteralPath $progressPath) { Read-CredPayLocalJson $progressPath $root } else { @{phase='startup'} }
+        $category=if($_.Exception.Message -match '(?i)binding|rota') { 'binding' } elseif($_.Exception.Message -match '(?i)outbox|causalidade|registros') { 'outbox' }
+            elseif($_.Exception.Message -match '(?i)HTTP|GET|POST') { 'http' } elseif($_.Exception.Message -match '(?i)métrica|contador|returned') { 'metric' }
+            elseif($_.Exception.Message -match '(?i)propriedade|daemon|container|volume|recurso') { 'scope' } else { 'unclassified' }
+        DiagnosticProgress $progress.phase $category (Get-CredPayFaultRestoration $_.Exception.Message)
+    }
+    if ($Action -in @('Prepare', 'Activate') -or ($Action -ceq 'Smoke' -and $smokeOwned)) {
         try { $null = Compose stop transacoes processamento } catch { Write-Warning 'Não foi possível parar apps; verificar o projeto antes de continuar.' }
     }
     throw
