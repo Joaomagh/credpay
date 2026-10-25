@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- Ambiente mínimo Windows integrado pela PR198/db363eb após revisão e CI verdes. João reconferiu o contexto: via process igual=True; via native exit=0, partes=1, igual=True. Carga das quatro imagens já comprovada; evidências e limites em spec9.136.4/5.
+- João concluiu Validate no Kubernetes local em25/10: imagens, startup, persistência após recriação dos Pods, APROVADA/REJEITADA/replay e recuperação causal passaram. Cluster mantido até Remove explícito; evidência e limites em spec9.136.6.
 
 ## Agora
 
-- [ ] João executa Validate no cluster próprio; após conferir o resultado, Remove separadamente. Contexto passou após a correção; startup/fluxo/cleanup locais ainda sem aceite. Diagnóstico causal por métricas/prática pessoal continuam separados; candidato operacional será reidentificado ao fechar.
+- [ ] João executa Remove para encerrar somente o cluster descartável validado; conferir o resumo antes de registrar cleanup. Diagnóstico causal por métricas/prática pessoal continuam separados; candidato operacional será reidentificado ao fechar.
 
 ## Próximo
 
