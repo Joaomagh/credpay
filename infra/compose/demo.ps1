@@ -41,7 +41,10 @@ function DiagnosticProgress([string]$Phase,[string]$Category='running',[string]$
     Require ($Phase -cmatch '^[a-z-]{1,60}$' -and $Category -cin @('running','binding','outbox','http','metric','scope','unclassified','complete')) 'Fase diagnóstica inválida.'
     Require ($Restoration -cin @('not-attempted','verified','unverified')) 'Estado de restauração inválido.'
     $plan=$diagnosticScope.Runtime.Plan
-    Write-CredPayLocalJson @{phase=$Phase;category=$Category;restoration=$Restoration} (Join-Path $plan.Directory 'progress.json') $plan.Root
+    $http=if($script:diagnosticHttpFailure -cin @('none','destination','transport','size','last-status','header-separator','status-line','header-field')) { $script:diagnosticHttpFailure } else { 'none' }
+    $httpStatus=[int]$script:diagnosticHttpStatus
+    if($httpStatus -lt 0 -or $httpStatus -gt 599) { $httpStatus=0 }
+    Write-CredPayLocalJson @{phase=$Phase;category=$Category;restoration=$Restoration;http=$http;httpStatus=$httpStatus} (Join-Path $plan.Directory 'progress.json') $plan.Root
 }
 
 function Compose {
@@ -204,6 +207,7 @@ function Activate {
 
 function Request([string]$Method, [string]$Url, [string]$Key = '', [string]$Value = '') {
     if($null -ne $diagnosticScope) {
+        $script:diagnosticHttpFailure='destination'
         $uri=[Uri]$Url
         Require ($uri.Scheme -ceq 'http' -and $uri.Host -cin $apps -and $uri.Port -eq 8080 -and $uri.UserInfo -ceq '') 'Destino HTTP interno fora do roteiro.'
         $curl=@('exec','-T',$uri.Host,'curl','--silent','--show-error','--max-time','3','--noproxy','*','--max-redirs','0',
@@ -213,6 +217,7 @@ function Request([string]$Method, [string]$Url, [string]$Key = '', [string]$Valu
             Require ([Guid]::TryParseExact($Key,'D',[ref]$parsedKey) -and $Value -cmatch '^[0-9]+(\.[0-9]{1,3})?$') 'Pedido fictício fora do roteiro.'
             $curl+=@('--header','Content-Type: application/json','--header',"Idempotency-Key: $Key",'--data',('{"valor":'+$Value+',"moeda":"BRL"}'))
         }
+        $script:diagnosticHttpFailure='transport'
         return (Read-CredPayDiagnosticHttp (Compose @curl))
     }
     try {

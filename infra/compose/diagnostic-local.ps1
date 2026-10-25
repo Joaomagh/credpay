@@ -51,7 +51,7 @@ function New-CredPayDiagnosticPlan([string]$Root,[string]$Project,[string]$Tag,[
     Assert-LocalCondition ($Project -cmatch '^credpay-diag-[0-9]{8}-[0-9a-f]{8}$' -and $Nonce -cmatch '^[0-9a-f]{32}$' -and
         $Tag -cmatch '^[0-9a-f]{40}$') 'Plano diagnóstico inválido.'
     $directory=Join-Path $Root ".local/compose-diagnostics/$Project"
-    foreach($path in @($directory,(Join-Path $directory 'temp'),(Join-Path $directory 'docker'),(Join-Path $directory 'override.json'))) { Assert-CredPayLocalPath $Root $path }
+    foreach($path in @($directory,(Join-Path $directory 'temp'),(Join-Path $directory 'docker'),(Join-Path $directory 'override.yaml'))) { Assert-CredPayLocalPath $Root $path }
     return @{Root=$Root;Project=$Project;Tag=$Tag;Nonce=$Nonce;Directory=$directory;
         Temp=(Join-Path $directory 'temp');DockerConfig=(Join-Path $directory 'docker');Marker=(Join-Path $directory 'owner.json');Overlay=(Join-Path $directory 'override.yaml')}
 }
@@ -280,6 +280,8 @@ function Invoke-CredPayDiagnosticAction([string]$Action,[string]$Tag,[string]$Ro
                     if($progress.phase -cmatch '^[a-z-]{1,60}$' -and $progress.category -cin @('running','binding','outbox','http','metric','scope','unclassified','complete') -and
                         $progress.restoration -cin @('not-attempted','verified','unverified')) {
                         Write-Host "Diagnóstico local: fase=$($progress.phase); categoria=$($progress.category); restauração=$($progress.restoration); detalhes brutos omitidos."
+                        if($progress.http -cin @('none','destination','transport','size','last-status','header-separator','status-line','header-field') -and
+                            [int]$progress.httpStatus -ge 0 -and [int]$progress.httpStatus -le 599) { Write-Host "Diagnóstico HTTP interno: etapa=$($progress.http); status=$([int]$progress.httpStatus); corpo/headers omitidos." }
                     }
                 }
                 Write-Host "Diagnóstico local: falha na fase=$phase; sessão preservada para revisão/Remove próprio."
