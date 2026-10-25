@@ -8,7 +8,7 @@
 
 ## Agora
 
-- [ ] Preparar diagnóstico causal local por métricas em recursos próprios descartáveis, sem alterar bindings do broker Compose existente; definir teste, roteiro e cleanup delimitado antes da execução por João. Diagnóstico causal por métricas/prática pessoal continuam separados; candidato operacional será reidentificado ao fechar.
+- [ ] Concluir revisão/CI do diagnóstico causal descartável no Compose: returned nos dois publicadores, PENDENTE/outbox original e recuperação com prova causal. Controles offline passaram, incluindo recusa Smoke sem mutação e config alterada antes de cleanup. Roteiro em infra/compose/DIAGNOSTICS.md; somente após integração João executa Run e depois Remove separadamente. Aceite local/prática pessoal continuam separados; candidato será reidentificado ao fechar.
 
 ## Próximo
 
