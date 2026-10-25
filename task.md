@@ -4,11 +4,11 @@
 
 ## Último incremento
 
-- João concluiu Validate no Kubernetes local em25/10: imagens, startup, persistência após recriação dos Pods, APROVADA/REJEITADA/replay e recuperação causal passaram. Remove também passou: somente o cluster próprio removido, Compose e volumes preservados. Evidência e limites em spec9.136.6.
+- Diagnóstico causal descartável passou no CI40222821313/head4819b55: returned delta1 em cada publicador, PENDENTE/outbox original, recuperação causal, persistência e cleanup próprios; seis jornadas de navegador também passaram. Controles Windows/Linux e Scan40222821310 verdes, revisão sem bloqueantes. Roteiro em infra/compose/DIAGNOSTICS.md; evidência/limites em spec9.138.
 
 ## Agora
 
-- [ ] Concluir revisão/CI do diagnóstico causal descartável no Compose: returned nos dois publicadores, PENDENTE/outbox original e recuperação com prova causal. Controles offline passaram, incluindo recusa Smoke sem mutação e config alterada antes de cleanup. Roteiro em infra/compose/DIAGNOSTICS.md; somente após integração João executa Run e depois Remove separadamente. Aceite local/prática pessoal continuam separados; candidato será reidentificado ao fechar.
+- [ ] Após integrar o registro, João executa Run do diagnóstico causal com imagens f412652; conferir resumo, depois solicitar Remove próprio separadamente. CI não substitui a prova no Docker Desktop. Prática pessoal continua adiada; candidato operacional será reidentificado ao fechar.
 
 ## Próximo
 
