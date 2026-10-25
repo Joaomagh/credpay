@@ -18,7 +18,10 @@ function Invoke-CredPayDiagnosticTool($Runtime,[string]$File,[string[]]$Argument
     if($File -ceq 'fixture-pwsh') {
         if($a -notcontains '-FaultDiagnostics' -or $a -notcontains '.env.example' -or $a -notcontains $p.Project) { throw 'Wrong child contract' }
         $fixture.Created=$true
-        if($fixture.FailSmoke) { throw 'Fictitious smoke failure; private text' }
+        if($fixture.FailSmoke) {
+            if($fixture.Restoration) { Write-CredPayLocalJson @{phase='fault-transacoes';category='binding';restoration=$fixture.Restoration} (Join-Path $p.Directory 'progress.json') $p.Root }
+            throw 'Fictitious smoke failure; private text'
+        }
         return 'Fictitious smoke completed; no real application.'
     }
     if($File -cne 'fixture-docker') { throw 'Unknown tool; no native fallback' }
@@ -121,6 +124,14 @@ Check 'partial failure records owned resources for separate cleanup' {
     $s=Read-CredPayDiagnosticSession $fixture.Root $fixture.Plan.Project
     if(-not $refused -or $s.Owner.stage -cne 'Owned' -or $s.Owner.result -cne 'Failed' -or -not $fixture.Created) { throw 'Partial state lost' }
     Invoke-CredPayDiagnosticAction Remove '' $fixture.Root
+}
+foreach($restoration in @('verified','unverified')) {
+    NewFixture; $fixture.FailSmoke=$true; $fixture.Restoration=$restoration
+    Check "sanitized restoration state crosses launcher boundary $restoration" {
+        $captured=@(& { try { Invoke-CredPayDiagnosticAction Run $tag $fixture.Root 18080 18081 } catch { } } 6>&1)
+        $summary=($captured | ForEach-Object { [string]$_ }) -join '|'
+        if($summary -notlike "*restauração=$restoration*" -or $summary -like '*private text*') { throw 'Restoration state hidden or raw error leaked' }
+    }
 }
 NewFixture; $fixture.Existing=$true
 Check 'existing foreign namespace refuses all mutations' {

@@ -5,6 +5,11 @@ function Assert-CredPayFaultMode($Action,$Project,$EnvFile,[bool]$Diagnostics) {
         throw 'FaultDiagnostics exige Smoke descartável próprio, dados de exemplo e Diagnostics.'
     }
 }
+function Get-CredPayFaultRestoration([string]$Message) {
+    if($Message -cmatch '^Diagnóstico interrompido; fase=[a-z-]+; restauração da rota NÃO comprovada; detalhes omitidos\.$') { return 'unverified' }
+    if($Message -cmatch '^Diagnóstico interrompido; fase=[a-z-]+; rota restaurada; detalhes omitidos\.$') { return 'verified' }
+    return 'not-attempted'
+}
 function Invoke-CredPayMetricFault([string]$Publisher) {
     if ($Publisher -cnotin @('transacoes','processamento')) { throw 'Publicador fora do diagnóstico.' }
     $phase='baseline'; $failed=$false; $restored=$false; $changed=$false
@@ -35,6 +40,7 @@ function Invoke-CredPayMetricFault([string]$Publisher) {
         } else { $restored=$true }
     }
     if (-not $restored) { throw "Diagnóstico interrompido; fase=$phase; restauração da rota NÃO comprovada; detalhes omitidos." }
+    if ($failed -and -not $changed) { throw "Diagnóstico interrompido; fase=$phase; rota não alterada; detalhes omitidos." }
     if ($failed) { throw "Diagnóstico interrompido; fase=$phase; rota restaurada; detalhes omitidos." }
     try { AssertFaultProcessesStable; ConfirmFaultRecovery $record $Publisher $snapshot; AssertFaultProcessesStable }
     catch { throw 'Diagnóstico interrompido; fase=recovery; rota restaurada; detalhes omitidos.' }

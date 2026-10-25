@@ -270,8 +270,9 @@ function Invoke-CredPayDiagnosticAction([string]$Action,[string]$Tag,[string]$Ro
                 $progressPath=Join-Path $p.Directory 'progress.json'
                 if(Test-Path -LiteralPath $progressPath) {
                     $progress=Read-CredPayLocalJson $progressPath $Root
-                    if($progress.phase -cmatch '^[a-z-]{1,60}$' -and $progress.category -cin @('running','binding','outbox','http','metric','scope','unclassified','complete')) {
-                        Write-Host "Diagnóstico local: fase=$($progress.phase); categoria=$($progress.category); detalhes brutos omitidos."
+                    if($progress.phase -cmatch '^[a-z-]{1,60}$' -and $progress.category -cin @('running','binding','outbox','http','metric','scope','unclassified','complete') -and
+                        $progress.restoration -cin @('not-attempted','verified','unverified')) {
+                        Write-Host "Diagnóstico local: fase=$($progress.phase); categoria=$($progress.category); restauração=$($progress.restoration); detalhes brutos omitidos."
                     }
                 }
                 Write-Host "Diagnóstico local: falha na fase=$phase; sessão preservada para revisão/Remove próprio."

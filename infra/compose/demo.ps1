@@ -35,11 +35,12 @@ $policies = @('processamento', 'transacoes' | ForEach-Object {
 function Require([bool]$Condition, [string]$Message) {
     if (-not $Condition) { throw $Message }
 }
-function DiagnosticProgress([string]$Phase,[string]$Category='running') {
+function DiagnosticProgress([string]$Phase,[string]$Category='running',[string]$Restoration='not-attempted') {
     if($null -eq $diagnosticScope) { return }
     Require ($Phase -cmatch '^[a-z-]{1,60}$' -and $Category -cin @('running','binding','outbox','http','metric','scope','unclassified','complete')) 'Fase diagnóstica inválida.'
+    Require ($Restoration -cin @('not-attempted','verified','unverified')) 'Estado de restauração inválido.'
     $plan=$diagnosticScope.Runtime.Plan
-    Write-CredPayLocalJson @{phase=$Phase;category=$Category} (Join-Path $plan.Directory 'progress.json') $plan.Root
+    Write-CredPayLocalJson @{phase=$Phase;category=$Category;restoration=$Restoration} (Join-Path $plan.Directory 'progress.json') $plan.Root
 }
 
 function Compose {
@@ -340,7 +341,7 @@ try {
         $category=if($_.Exception.Message -match '(?i)binding|rota') { 'binding' } elseif($_.Exception.Message -match '(?i)outbox|causalidade|registros') { 'outbox' }
             elseif($_.Exception.Message -match '(?i)HTTP|GET|POST') { 'http' } elseif($_.Exception.Message -match '(?i)métrica|contador|returned') { 'metric' }
             elseif($_.Exception.Message -match '(?i)propriedade|daemon|container|volume|recurso') { 'scope' } else { 'unclassified' }
-        DiagnosticProgress $progress.phase $category
+        DiagnosticProgress $progress.phase $category (Get-CredPayFaultRestoration $_.Exception.Message)
     }
     if ($Action -in @('Prepare', 'Activate') -or ($Action -ceq 'Smoke' -and $smokeOwned)) {
         try { $null = Compose stop transacoes processamento } catch { Write-Warning 'Não foi possível parar apps; verificar o projeto antes de continuar.' }

@@ -11,8 +11,9 @@ function ResetFixture {
     $script:binding=$true; $script:metric=0; $script:failed=$false
     $script:restoreFails=$false; $script:restart=$false
     $script:decrease=$false; $script:badPending=$false; $script:reads=0
+    $script:badReady=$false
 }
-function CheckMetricFaultReady { $script:trace.Add('ready') }
+function CheckMetricFaultReady { $script:trace.Add('ready'); if($script:badReady) { throw 'Fictitious failed baseline' } }
 function AssertFaultProcessesStable {}
 function ReadFaultCount($Publisher) {
     $script:reads++
@@ -89,6 +90,17 @@ foreach($bad in @(
         try { Assert-CredPayFaultMode @bad } catch { $rejected=$true }
         if(-not $rejected) { throw 'Fault destination accepted' }
     }
+}
+ResetFixture; $script:badReady=$true
+Check 'baseline refusal does not claim route restoration' {
+    $message=''
+    try { Invoke-CredPayMetricFault 'transacoes' } catch { $message=$_.Exception.Message }
+    if($message -cne 'Diagnóstico interrompido; fase=baseline; rota não alterada; detalhes omitidos.' -or $script:trace.Contains('binding=True')) { throw 'Restoration claimed without attempt' }
+}
+foreach($pair in @(@('Diagnóstico interrompido; fase=create; rota restaurada; detalhes omitidos.','verified'),
+    @('Diagnóstico interrompido; fase=create; restauração da rota NÃO comprovada; detalhes omitidos.','unverified'),
+    @('fictitious private text rota restaurada','not-attempted'))) {
+    Check 'restoration projection only accepts exact safe error format' { if((Get-CredPayFaultRestoration $pair[0]) -cne $pair[1]) { throw 'Wrong safe state' } }
 }
 Check 'fault mode accepts fresh CI target contract' { Assert-CredPayFaultMode 'Smoke' 'credpay-ci-12-1' '.env.example' $true }
 if($script:failures.Count) { throw "Fault controls: failed=$($script:failures.Count)/$script:cases; cases=$($script:failures -join ', ')" }
