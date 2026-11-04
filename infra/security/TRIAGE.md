@@ -11,6 +11,12 @@ Inventory/run40109185999, artefato12566116281, conserva os mesmos pacotes dos qu
 
 As fontes oficiais foram consultadas em24/10. Não há novos IDs nos JARs, mudança de pacote instalado ou exclusão de scanner. Manutenção de runtime e acompanhamento do achado sem correção permanecem explícitos; integração da correção HTTP não autoriza implantação externa ou aceita essas vulnerabilidades.
 
+## Candidata de manutenção — 04/11/2026
+
+Temurin `21.0.13_9-jre-noble` mantém a linha Java 21 e Ubuntu Noble. A imagem oficial informa índice `sha256:0eda5830ed7b669abc246a8dc520ea8a23cab06f9a8d4b6964109e2f2394e46f` e manifesto Linux/amd64 `sha256:db724162e4ff5f71fa0a2815026314d9e5e0e9a139f49be1d4717e6930e93341`. A candidata anterior de 25/10 trazia curl corrigido em seu SBOM, com zlib ainda em `1:1.3.dfsg-3.1ubuntu2.2`. [Registro oficial](https://hub.docker.com/layers/library/eclipse-temurin/21.0.13_9-jre-noble/images/sha256-db724162e4ff5f71fa0a2815026314d9e5e0e9a139f49be1d4717e6930e93341) · [Receita fixada](https://github.com/adoptium/containers/blob/a240a79c19afb3da535529e29ab3156d5c08a6e0/21/jre/ubuntu/noble/Dockerfile)
+
+O smoke deve confirmar `curl` e `libcurl4t64` em `8.5.0-2ubuntu10.16`, `zlib1g` em `1:1.3.dfsg-3.1ubuntu2.3` e preservar as versões corrigidas de OpenSSL nos dois aplicativos. O inventário completo deve verificar a composição, os achados removidos e os novos achados antes da promoção. O achado de GnuTLS segue em triagem. [Aviso curl](https://ubuntu.com/security/notices/USN-8932-1) · [Aviso zlib](https://ubuntu.com/security/notices/USN-8954-1)
+
 ## Histórico inicial — 2026-10-08
 
 **Estado consolidado em 2026-10-09:** JDBC integrado na PR #127; Inventory #13 registra HIGH0/JAR1/imagem e CRITICAL2/alvo. Os três IDs restantes e a proposta de publicação estão no final deste documento. As tabelas e preparações anteriores preservam o histórico.
