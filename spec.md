@@ -3269,6 +3269,12 @@ O Angular tem um modo explícito `contas` que exige confirmação de sessão ant
 
 O frontend informa `X-CredPay-Conta` na criação e na consulta autenticadas. Quando o cabeçalho vem de uma tela com contexto antigo, a API devolve 401 antes de criar ou consultar. A autorização continua baseada na conta autenticada e na propriedade persistida. O red Angular abriu Nova transação em vez de redirecionar ao login. O [red HTTP](https://github.com/Joaomagh/credpay/actions/runs/41899509961) retornou 200 em vez de 401 com um identificador de conta divergente. A [PR #212](https://github.com/Joaomagh/credpay/pull/212) acrescenta cenários Angular de troca e expiração, e prova HTTP separada com sessões reais. O ensaio integrado de duas contas no navegador fica registrado como pendência.
 
+### 9.147 Ensaio de navegador com duas contas
+
+O Compose CI executa primeiro os seis cenários legados. Em seguida, o roteiro `frontend/e2e/run-contas.mjs` exige o nome do projeto descartável da execução, grava duas contas fictícias com hashes PBKDF2 e recria somente Transações com o perfil `sessao-demo`. A API continua publicada em loopback no runner. O modo Angular `contas` executa o mesmo caso em desktop e mobile. Os dados seguem o cleanup do projeto Compose do job.
+
+A jornada verifica aprovação pelo processador, logout em outra aba da mesma sessão, resposta 404 para B consultando um UUID de A e retomada do recibo por A sem repetir POST. O reporter exige seis casos do perfil legado e dois do perfil de contas em invocações separadas. A saída pública conserva nomes estáticos, etapas com falha e contagens. Credenciais fictícias são geradas por execução e fornecidas ao navegador por ambiente de processo. Traço, vídeo e screenshot ficam desligados nesse job.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

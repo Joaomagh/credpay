@@ -15,17 +15,18 @@
 - Criação e idempotência por conta na PR #210. Contrato e regressão em spec§9.144.
 - Tela de entrada e saída com contexto de sessão na PR #211. Evidência e recorte em spec§9.145.
 - Rotas autenticadas, recibos por conta e proteção contra contexto divergente na PR #212. Evidência em spec§9.146.
+- Jornada com duas contas no navegador e na pilha real exercitada pelo Compose CI. Roteiro em spec§9.147.
 
 ## Agora
 
 - [ ] Aceite pessoal da v1 permanece adiado. O roteiro está em docs/DEMO.md e as evidências assistidas em docs/V1_VALIDATION.md.
-- [ ] Validar login, criação, consulta e isolamento de recibos com duas contas no navegador e a API real.
+- [ ] Limitar expansão de valores monetários compactos e definir limites de abuso para a demo com contas.
 
 ## Próximo
 
 - Depois dos aceites pessoais, conferir a aplicabilidade das evidências e registrar a decisão final sobre o candidato técnico 51f8476.
 - Acompanhar os achados GnuTLS registrados no inventário e na triagem.
-- Limites de abuso e critérios de publicação da demo com contas.
+- Critérios de publicação da demo com contas.
 
 ## Depois
 

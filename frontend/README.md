@@ -24,7 +24,7 @@ Com o serviço de transações no perfil `sessao-demo` e uma conta fictícia pro
 npm.cmd start -- --configuration contas
 ```
 
-Abra `/entrar`. A tela confirma a sessão no servidor e libera o console para a conta verificada. Criação e consulta carregam o identificador da conta esperada e retornam à entrada quando a sessão deixa de ser válida. O recibo salvo na aba reaparece somente quando a mesma conta entra novamente. O console revalida a identidade ao receber foco e reage a login e logout em outras abas da mesma origem quando `BroadcastChannel` está disponível. A prova com duas contas e API real no mesmo ensaio de navegador está no [backlog](../docs/BACKLOG.md#contas-individuais-e-segurança-da-demo-pública).
+Abra `/entrar`. A tela confirma a sessão no servidor e libera o console para a conta verificada. Criação e consulta carregam o identificador da conta esperada e retornam à entrada quando a sessão deixa de ser válida. O recibo salvo na aba reaparece somente quando a mesma conta entra novamente. O console revalida a identidade ao receber foco e reage a login e logout em outras abas da mesma origem quando `BroadcastChannel` está disponível. O Compose CI prepara duas contas fictícias em seu projeto descartável para exercitar essa jornada em desktop e mobile.
 
 ## Teste manual no navegador
 
