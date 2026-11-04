@@ -17,6 +17,12 @@ Temurin `21.0.13_9-jre-noble` mantém a linha Java 21 e Ubuntu Noble. A imagem o
 
 O smoke deve confirmar `curl` e `libcurl4t64` em `8.5.0-2ubuntu10.16`, `zlib1g` em `1:1.3.dfsg-3.1ubuntu2.3` e preservar as versões corrigidas de OpenSSL nos dois aplicativos. O inventário completo deve verificar a composição, os achados removidos e os novos achados antes da promoção. O achado de GnuTLS segue em triagem. [Aviso curl](https://ubuntu.com/security/notices/USN-8932-1) · [Aviso zlib](https://ubuntu.com/security/notices/USN-8954-1)
 
+## Baseline proposta para a sessão de contas
+
+O serviço de transações precisa de filtros servlet, autenticação por credenciais e sessão HTTP para a evolução com contas. A proposta é usar `spring-security-config` e `spring-security-web` alinhados pelo BOM de Spring Security em `7.0.8`, atualização de manutenção na mesma linha 7.0 gerenciada pelo Boot 4.0.8. O perfil experimental registra explicitamente a cadeia de filtros. A promoção exige revisar o inventário dos quatro alvos e testar o perfil de sessão e o fluxo local anterior. [Release oficial](https://spring.io/blog/2026/10/23/spring-security-maintenance-releases/) · [Gerenciamento de versões](https://docs.spring.io/spring-security/reference/7.0/getting-spring-security.html)
+
+O primeiro recorte usa PBKDF2-HMAC-SHA256 com 600.000 iterações, salt por senha e armazenamento de hash no PostgreSQL. A decisão usa a implementação do Spring Security e a criptografia do JDK. Os testes usam dados fictícios. O perfil fica restrito à validação local de sessão até o aceite de autorização por dono e de controles de abuso. [OWASP Password Storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)
+
 ## Histórico inicial — 2026-10-08
 
 **Estado consolidado em 2026-10-09:** JDBC integrado na PR #127; Inventory #13 registra HIGH0/JAR1/imagem e CRITICAL2/alvo. Os três IDs restantes e a proposta de publicação estão no final deste documento. As tabelas e preparações anteriores preservam o histórico.
