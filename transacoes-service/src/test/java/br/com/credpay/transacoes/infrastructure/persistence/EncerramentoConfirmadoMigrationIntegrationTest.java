@@ -46,9 +46,12 @@ class EncerramentoConfirmadoMigrationIntegrationTest {
 
         atual.migrate();
 
-        assertThat(atual.info().current().getVersion().getVersion()).isEqualTo("9");
+        assertThat(atual.info().current().getVersion().getVersion()).isEqualTo("10");
         assertThat(jdbc.queryForObject("SELECT count(*) FROM contas", Integer.class)).isZero();
-        assertThat(jdbc.queryForList("SELECT * FROM transacoes ORDER BY id")).isEqualTo(transacoes);
+        assertThat(jdbc.queryForList("SELECT id, valor, moeda, status FROM transacoes ORDER BY id"))
+                .isEqualTo(transacoes);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM transacoes WHERE conta_id IS NOT NULL", Integer.class))
+                .isZero();
         assertThat(jdbc.queryForList("SELECT * FROM outbox_eventos ORDER BY event_id")).isEqualTo(criacoes);
         var depois = jdbc.queryForList("SELECT * FROM historico_transacoes ORDER BY event_id");
         assertThat(depois).hasSameSizeAs(antes);

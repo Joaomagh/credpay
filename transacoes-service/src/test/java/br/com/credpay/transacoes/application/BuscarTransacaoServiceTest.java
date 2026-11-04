@@ -25,27 +25,27 @@ class BuscarTransacaoServiceTest {
         var service = new BuscarTransacaoService(repository);
         var transacao = Transacao.criar(
                 TRANSACAO_ID, new BigDecimal("10.00"), Currency.getInstance("BRL"));
-        when(repository.buscarPorId(TRANSACAO_ID)).thenReturn(Optional.of(transacao));
+        when(repository.buscarPorIdNaConta(TRANSACAO_ID, null)).thenReturn(Optional.of(transacao));
 
-        var resultado = service.executar(TRANSACAO_ID);
+        var resultado = service.executar(TRANSACAO_ID, null);
 
         assertThat(resultado.id()).isEqualTo(TRANSACAO_ID);
         assertThat(resultado.valor()).isEqualByComparingTo("10.00");
         assertThat(resultado.valor().scale()).isEqualTo(2);
         assertThat(resultado.moeda()).isEqualTo(Currency.getInstance("BRL"));
         assertThat(resultado.status()).isEqualTo(StatusTransacao.PENDENTE);
-        verify(repository).buscarPorId(TRANSACAO_ID);
+        verify(repository).buscarPorIdNaConta(TRANSACAO_ID, null);
     }
 
     @Test
     void executar_deveFalhar_quandoTransacaoNaoExistir() {
         var repository = mock(TransacaoRepository.class);
         var service = new BuscarTransacaoService(repository);
-        when(repository.buscarPorId(TRANSACAO_ID)).thenReturn(Optional.empty());
+        when(repository.buscarPorIdNaConta(TRANSACAO_ID, null)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.executar(TRANSACAO_ID))
+        assertThatThrownBy(() -> service.executar(TRANSACAO_ID, null))
                 .isInstanceOf(TransacaoNaoEncontradaException.class)
                 .hasMessage("transação não encontrada");
-        verify(repository).buscarPorId(TRANSACAO_ID);
+        verify(repository).buscarPorIdNaConta(TRANSACAO_ID, null);
     }
 }

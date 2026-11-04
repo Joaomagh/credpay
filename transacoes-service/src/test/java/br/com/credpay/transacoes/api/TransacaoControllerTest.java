@@ -203,7 +203,7 @@ class TransacaoControllerTest {
     void deveBuscarTransacaoPorId() throws Exception {
         var valor = new BigDecimal("10.00");
         var moeda = Currency.getInstance("BRL");
-        when(buscarTransacao.executar(TRANSACAO_ID))
+        when(buscarTransacao.executar(TRANSACAO_ID, null))
                 .thenReturn(new BuscarTransacao.Resultado(
                         TRANSACAO_ID, valor, moeda, StatusTransacao.PENDENTE));
 
@@ -215,12 +215,12 @@ class TransacaoControllerTest {
                 .andExpect(jsonPath("$.moeda").value("BRL"))
                 .andExpect(jsonPath("$.status").value("PENDENTE"));
 
-        verify(buscarTransacao).executar(TRANSACAO_ID);
+        verify(buscarTransacao).executar(TRANSACAO_ID, null);
     }
 
     @Test
     void deveRetornarNaoEncontradaParaIdAusente() throws Exception {
-        when(buscarTransacao.executar(TRANSACAO_ID))
+        when(buscarTransacao.executar(TRANSACAO_ID, null))
                 .thenThrow(new TransacaoNaoEncontradaException());
 
         mockMvc.perform(get("/transacoes/{id}", TRANSACAO_ID))
@@ -232,13 +232,13 @@ class TransacaoControllerTest {
                 .andExpect(jsonPath("$.detail").value("transação não encontrada"))
                 .andExpect(jsonPath("$.instance").value("/transacoes/" + TRANSACAO_ID));
 
-        verify(buscarTransacao).executar(TRANSACAO_ID);
+        verify(buscarTransacao).executar(TRANSACAO_ID, null);
     }
 
     @Test
     void deveRejeitarIdAbreviadoSemConsultarOutraIdentidade() throws Exception {
         var idNormalizado = UUID.fromString("00000001-0001-0001-0001-000000000001");
-        when(buscarTransacao.executar(idNormalizado))
+        when(buscarTransacao.executar(idNormalizado, null))
                 .thenReturn(new BuscarTransacao.Resultado(
                         idNormalizado, new BigDecimal("10.00"),
                         Currency.getInstance("BRL"), StatusTransacao.PENDENTE));
@@ -253,7 +253,7 @@ class TransacaoControllerTest {
 
     @Test
     void deveAceitarIdCompletoComLetrasMaiusculas() throws Exception {
-        when(buscarTransacao.executar(TRANSACAO_ID))
+        when(buscarTransacao.executar(TRANSACAO_ID, null))
                 .thenReturn(new BuscarTransacao.Resultado(
                         TRANSACAO_ID, new BigDecimal("10.00"),
                         Currency.getInstance("BRL"), StatusTransacao.PENDENTE));
@@ -262,7 +262,7 @@ class TransacaoControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(TRANSACAO_ID.toString()));
 
-        verify(buscarTransacao).executar(TRANSACAO_ID);
+        verify(buscarTransacao).executar(TRANSACAO_ID, null);
     }
 
     @Test

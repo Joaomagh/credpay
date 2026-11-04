@@ -20,6 +20,9 @@ class TransacaoEntity {
     @Id
     private UUID id;
 
+    @Column(name = "conta_id")
+    private UUID contaId;
+
     @Column(nullable = false, columnDefinition = "numeric")
     private BigDecimal valor;
 

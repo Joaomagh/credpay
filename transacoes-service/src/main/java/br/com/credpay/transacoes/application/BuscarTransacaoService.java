@@ -16,8 +16,8 @@ class BuscarTransacaoService implements BuscarTransacao {
 
     @Override
     @Transactional(readOnly = true)
-    public Resultado executar(UUID id) {
-        var transacao = repository.buscarPorId(id)
+    public Resultado executar(UUID id, UUID contaId) {
+        var transacao = repository.buscarPorIdNaConta(id, contaId)
                 .orElseThrow(TransacaoNaoEncontradaException::new);
 
         return new Resultado(

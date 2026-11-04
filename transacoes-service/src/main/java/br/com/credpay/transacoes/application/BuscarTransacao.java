@@ -8,7 +8,7 @@ import br.com.credpay.transacoes.domain.StatusTransacao;
 
 public interface BuscarTransacao {
 
-    Resultado executar(UUID id);
+    Resultado executar(UUID id, UUID contaId);
 
     record Resultado(UUID id, BigDecimal valor, Currency moeda, StatusTransacao status) {
     }

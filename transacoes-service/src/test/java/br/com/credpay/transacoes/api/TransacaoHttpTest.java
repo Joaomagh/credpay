@@ -94,6 +94,21 @@ class TransacaoHttpTest {
     }
 
     @Test
+    void buscar_deveRetornar404_quandoTransacaoPertencerAConta() throws Exception {
+        var conta = UUID.randomUUID();
+        var transacao = UUID.randomUUID();
+        jdbcTemplate.update("INSERT INTO contas (id, usuario, senha_hash) VALUES (?, ?, repeat('0', 96))",
+                conta, "conta-" + conta);
+        jdbcTemplate.update("""
+                INSERT INTO transacoes (id, valor, moeda, status, conta_id) VALUES (?, 10.00, 'BRL', 'PENDENTE', ?)
+                """, transacao, conta);
+
+        mockMvc.perform(get("/transacoes/{id}", transacao))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("transação não encontrada"));
+    }
+
+    @Test
     void buscar_deveRetornar404_quandoIdNaoExistir() throws Exception {
         var id = UUID.fromString("7b8b61c2-9f63-4d74-9f8d-89cb52de0ed9");
 

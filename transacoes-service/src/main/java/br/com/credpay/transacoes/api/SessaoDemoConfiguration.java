@@ -1,5 +1,7 @@
 package br.com.credpay.transacoes.api;
 
+import java.util.UUID;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.web.servlet.DelegatingFilterProxyRegistrationBean;
@@ -13,7 +15,6 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.password.Pbkdf2PasswordEncoder;
@@ -44,9 +45,9 @@ class SessaoDemoConfiguration {
     @Bean
     SecurityFilterChain filtrosDaSessao(HttpSecurity http, JdbcTemplate jdbc, PasswordEncoder encoder) {
         var autenticador = new DaoAuthenticationProvider(usuario -> jdbc.query("""
-                SELECT usuario, senha_hash FROM contas WHERE usuario = ?
-                """, (rs, linha) -> User.withUsername(rs.getString("usuario"))
-                .password(rs.getString("senha_hash")).roles("DEMO").build(), usuario)
+                SELECT id, usuario, senha_hash FROM contas WHERE usuario = ?
+                """, (rs, linha) -> new ContaDemoPrincipal(rs.getObject("id", UUID.class),
+                        rs.getString("usuario"), rs.getString("senha_hash")), usuario)
                 .stream().findFirst().orElseThrow(() -> new UsernameNotFoundException("Conta inválida")));
         autenticador.setPasswordEncoder(encoder);
 
@@ -55,7 +56,7 @@ class SessaoDemoConfiguration {
                 .requestCache(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(acesso -> acesso
                         .requestMatchers(HttpMethod.GET, "/auth/csrf", "/actuator/health").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/auth/sessao").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/auth/sessao", "/transacoes/{id}").authenticated()
                         .anyRequest().denyAll())
                 .exceptionHandling(erros -> erros.authenticationEntryPoint(
                         (req, resp, erro) -> resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED)))

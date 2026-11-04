@@ -15,5 +15,8 @@ public interface TransacaoRepository {
 
     Optional<Transacao> buscarPorId(UUID id);
 
+    // Escopo HTTP. Conta nula seleciona registros legados sem dono.
+    Optional<Transacao> buscarPorIdNaConta(UUID id, UUID contaId);
+
     Optional<Transacao> buscarPorChaveIdempotencia(UUID chaveIdempotencia);
 }

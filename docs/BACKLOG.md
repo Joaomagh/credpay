@@ -439,4 +439,4 @@ João indicou preferência por contas individuais para a demonstração. O candi
 
 SonarQube pode entrar em um incremento de análise estática e cobertura com baseline própria. GitHub Actions segue como pipeline de referência. Jenkins pode ser avaliado em laboratório separado se houver objetivo de aprender a operação de um controlador e seus agentes. [OWASP API1](https://api-security.owasp.org/editions/2023/en/0xa1-broken-object-level-authorization/) · [OWASP API4](https://api-security.owasp.org/editions/2023/en/0xa4-unrestricted-resource-consumption/) · [Spring Security e CSRF](https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html)
 
-O incremento de sessão local está na [PR #208](https://github.com/Joaomagh/credpay/pull/208). A autorização por dono, a idempotência por conta e o console autenticado seguem na sequência acima.
+O incremento de sessão local está na [PR #208](https://github.com/Joaomagh/credpay/pull/208). A consulta com autorização por dono está na [PR #209](https://github.com/Joaomagh/credpay/pull/209). A etapa 2 depende ainda da criação autenticada e da idempotência por conta.

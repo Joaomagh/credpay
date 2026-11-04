@@ -2,6 +2,7 @@ package br.com.credpay.transacoes.api;
 
 import java.math.BigDecimal;
 import java.net.URI;
+import java.security.Principal;
 import java.util.Currency;
 import java.util.UUID;
 
@@ -62,8 +63,8 @@ public class TransacaoController {
     }
 
     @GetMapping("/{id}")
-    ResponseEntity<TransacaoResponse> buscar(@PathVariable String id) {
-        var resultado = buscarTransacao.executar(converterId(id));
+    ResponseEntity<TransacaoResponse> buscar(@PathVariable String id, Principal principal) {
+        var resultado = buscarTransacao.executar(converterId(id), ContaDemoPrincipal.idDaConta(principal));
         var response = new TransacaoResponse(
                 resultado.id(),
                 resultado.valor(),
