@@ -1,0 +1,20 @@
+{
+  "name": "credpay",
+  "interface": {
+    "displayName": "CredPay"
+  },
+  "plugins": [
+    {
+      "name": "credpay-frontend-qa",
+      "source": {
+        "source": "local",
+        "path": "./plugins/credpay-frontend-qa"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
