@@ -3223,6 +3223,8 @@ O [red de Images CI](https://github.com/Joaomagh/credpay/actions/runs/4184268242
 
 Com `ubuntu-latest` resolvido para Ubuntu 26.04, a validação rejeitou a identidade do relatório de imagem tanto no [inventário da base antiga](https://github.com/Joaomagh/credpay/actions/runs/41842682417) quanto no [da candidata](https://github.com/Joaomagh/credpay/actions/runs/41843150917). O inventário fixa o runner Ubuntu 24.04, usado no último [corte válido](https://github.com/Joaomagh/credpay/actions/runs/40109185999). Os critérios de identidade, arquitetura, cobertura e publicação dos quatro alvos continuam obrigatórios. O perfil Ubuntu 26.04 permanece fora do recorte validado desse workflow.
 
+No [ensaio Kubernetes em Ubuntu 26.04](https://github.com/Joaomagh/credpay/actions/runs/41843150919), a criação do cluster avançou até a importação das imagens dos apps e o `ctr` recusou um digest ausente no conteúdo exportado. O job real fixa Ubuntu 24.04, plataforma da [execução de referência](https://github.com/Joaomagh/credpay/actions/runs/40123736365). O workflow mantém os controles locais multiplataforma e os testes de startup, persistência, falha, recuperação e cleanup do cluster descartável.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
