@@ -14,11 +14,12 @@
 - Consulta por conta no perfil de sessão na PR #209. Contrato, migração e teste de regressão em spec§9.143.
 - Criação e idempotência por conta na PR #210. Contrato e regressão em spec§9.144.
 - Tela de entrada e saída com contexto de sessão na PR #211. Evidência e recorte em spec§9.145.
+- Rotas autenticadas, recibos por conta e proteção contra contexto divergente na PR #212. Evidência em spec§9.146.
 
 ## Agora
 
 - [ ] Aceite pessoal da v1 permanece adiado. O roteiro está em docs/DEMO.md e as evidências assistidas em docs/V1_VALIDATION.md.
-- [ ] Vincular criação, consulta e recuperação de intenção à sessão Angular. Testar troca de conta e expiração na jornada.
+- [ ] Validar login, criação, consulta e isolamento de recibos com duas contas no navegador e a API real.
 
 ## Próximo
 

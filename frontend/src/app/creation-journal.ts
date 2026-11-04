@@ -2,6 +2,9 @@ import { DOCUMENT, Injectable, inject } from '@angular/core';
 import { Intent, Transaction, UUID, amount } from './transaction';
 
 const JOURNAL_ENTRY = 'credpay.creation.v1';
+function entry(accountId?: string): string {
+  return accountId ? `${JOURNAL_ENTRY}.${accountId}` : JOURNAL_ENTRY;
+}
 export interface SavedCreation { version: 1; intent: Intent; receipt: Transaction | null }
 export class InvalidCreationRecord extends Error {}
 
@@ -43,19 +46,19 @@ export class CreationJournal {
     if (!view) throw new Error('Storage unavailable');
     return view.sessionStorage;
   }
-  load(): SavedCreation | null {
-    const raw = this.storage().getItem(JOURNAL_ENTRY);
+  load(accountId?: string): SavedCreation | null {
+    const raw = this.storage().getItem(entry(accountId));
     if (raw === null) return null;
     try {
       if (raw.length > 65536) throw new InvalidCreationRecord();
       return validate(JSON.parse(raw) as unknown);
     } catch { throw new InvalidCreationRecord(); }
   }
-  save(intent: Intent, receipt: Transaction | null): void {
+  save(intent: Intent, receipt: Transaction | null, accountId?: string): void {
     const saved = validate({version: 1, intent, receipt});
     const raw = JSON.stringify(saved);
     if (raw.length > 65536) throw new Error('Storage record too large');
-    this.storage().setItem(JOURNAL_ENTRY, raw);
+    this.storage().setItem(entry(accountId), raw);
   }
-  clear(): void { this.storage().removeItem(JOURNAL_ENTRY); }
+  clear(accountId?: string): void { this.storage().removeItem(entry(accountId)); }
 }

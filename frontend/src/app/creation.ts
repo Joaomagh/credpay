@@ -1,13 +1,19 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import { Intent, Transaction, amount } from './transaction';
 import { TransactionsApi } from './transactions-api';
 import { CreationJournal, InvalidCreationRecord } from './creation-journal';
+import { SessionContext } from './session-context';
 
-@Injectable({ providedIn: 'root' })
+@Injectable()
 export class Creation {
   private readonly api = inject(TransactionsApi);
   private readonly journal = inject(CreationJournal);
+  private readonly context = inject(SessionContext);
+  private readonly account = this.context.required ? this.context.session() : null;
+  private readonly destroy = inject(DestroyRef);
+  readonly permitted = computed(() => this.context.matches(this.account));
   value = '250,00';
   readonly intent = signal<Intent | null>(null);
   readonly result = signal<Transaction | null>(null);
@@ -17,8 +23,13 @@ export class Creation {
   readonly restored = signal(false);
 
   constructor() {
+    if (!this.permitted()) {
+      this.blocked.set(true);
+      this.error.set('Entre na sua conta para recuperar uma intenção.');
+      return;
+    }
     try {
-      const saved = this.journal.load();
+      const saved = this.journal.load(this.account?.id);
       if (saved) {
         this.intent.set(saved.intent); this.result.set(saved.receipt);
         this.value = saved.intent.valor; this.restored.set(true);
@@ -31,14 +42,14 @@ export class Creation {
     }
   }
   submit(): void {
-    if (this.busy() || this.result() || this.blocked()) return;
+    if (!this.permitted() || this.busy() || this.result() || this.blocked()) return;
     let intent = this.intent();
     if (!this.intent()) {
       const valor = amount(this.value);
       if (!valor) { this.error.set('Informe um valor positivo, sem separador de milhar. Exemplo: 250,00.'); return; }
       intent = { key: crypto.randomUUID(), valor, moeda: 'BRL' };
     }
-    try { this.journal.save(intent!, null); }
+    try { this.journal.save(intent!, null, this.account?.id); }
     catch {
       this.blocked.set(true);
       this.error.set('Não foi possível guardar a intenção no armazenamento desta aba. Nenhum pedido foi enviado nesta tentativa. Verifique a permissão ou o espaço e recarregue a página para retomar o registro salvo, quando disponível.');
@@ -47,10 +58,12 @@ export class Creation {
     this.intent.set(intent);
     this.error.set('');
     this.busy.set(true);
-    this.api.create(this.intent()!).pipe(finalize(() => this.busy.set(false))).subscribe({
+    this.api.create(this.intent()!, this.account).pipe(
+      takeUntilDestroyed(this.destroy), finalize(() => this.busy.set(false))
+    ).subscribe({
       next: t => {
         this.result.set(t);
-        try { this.journal.save(intent!, t); }
+        try { this.journal.save(intent!, t, this.account?.id); }
         catch { this.error.set('Pedido recebido, mas não conseguimos guardar o recibo nesta aba. Copie o identificador e consulte o estado atual; a intenção anterior continua preservada quando disponível.'); }
       },
       error: e => this.error.set(e.status === 409
@@ -61,8 +74,8 @@ export class Creation {
     });
   }
   reset(): void {
-    if (this.busy()) return;
-    try { this.journal.clear(); }
+    if (!this.permitted() || this.busy()) return;
+    try { this.journal.clear(this.account?.id); }
     catch {
       this.blocked.set(true);
       this.error.set('Não conseguimos limpar o armazenamento da intenção anterior. Ela foi mantida; não iniciamos outra intenção. Verifique a permissão do navegador e tente novamente.');

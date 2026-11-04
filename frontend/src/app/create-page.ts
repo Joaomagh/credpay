@@ -7,6 +7,7 @@ import { TransactionCard } from './transaction-card';
 
 @Component({
   selector: 'cp-create', imports: [FormsModule, RouterLink, Icon, TransactionCard],
+  providers: [Creation],
   templateUrl: './create-page.html'
 })
 export class CreatePage { readonly creation = inject(Creation); }
