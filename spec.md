@@ -3215,6 +3215,12 @@ Em 04/11/2026, com autorização de João para executar a ativação local do `c
 
 No navegador integrado, uma transação fictícia de R$ 50,001 recebeu recibo `PENDENTE`. O reload na mesma aba recuperou o mesmo UUID, com o botão de criação desabilitado. A consulta mostrou `APROVADA` com o mesmo UUID e valor exato. Outra aba enviou R$ 150,001 e a consulta mostrou `REJEITADA` com o respectivo UUID e valor exato. Um UUID válido ausente apresentou “Transação não encontrada” e removeu o resultado anterior da tela. Uma consulta independente pelo mesmo proxy confirmou HTTP 404. A contagem de POSTs durante o reload pertence à evidência automatizada anterior. Este ensaio conclui o QA manual integrado do frontend e o aceite pessoal da v1 permanece adiado.
 
+### 9.140 Atualização de manutenção das imagens Java
+
+A atualização usa a imagem oficial Temurin 21.0.13+9 para Ubuntu Noble com o mesmo índice fixado nos dois serviços. O [registro de imagens](infra/images/README.md) identifica o manifesto Linux/amd64. A [triagem](infra/security/TRIAGE.md) conserva a motivação e as versões esperadas. O smoke consulta os pacotes de dentro dos containers e preserva as verificações de usuário, mounts, privilégios, health e fluxo.
+
+O [red de Images CI](https://github.com/Joaomagh/credpay/actions/runs/41842682429), head `9af8a53`, executou o teste sobre a base antiga. A única falha foi a asserção de pacotes, que encontrou curl/libcurl4t64 `8.5.0-2ubuntu10.15` e zlib1g `1:1.3.dfsg-3.1ubuntu2.2`. A nova imagem entra depois desse red. O aceite exige smoke positivo nos dois serviços, regressão dos fluxos e comparação do inventário completo com o corte anterior. Os checks e o resultado do inventário ficam na [PR #205](https://github.com/Joaomagh/credpay/pull/205). O corte da demo local e o aceite pessoal da v1 têm evidências separadas.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
