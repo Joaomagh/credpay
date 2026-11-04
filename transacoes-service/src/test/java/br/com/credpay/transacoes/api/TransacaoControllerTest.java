@@ -74,6 +74,26 @@ class TransacaoControllerTest {
     }
 
     @Test
+    void deveRejeitarCorpoAcimaDoLimiteAntesDeCriarTransacao() throws Exception {
+        var valor = new BigDecimal("10.00");
+        var moeda = Currency.getInstance("BRL");
+        when(criarTransacao.executar(CHAVE_IDEMPOTENCIA, valor, moeda))
+                .thenReturn(new Resultado(TRANSACAO_ID, valor, moeda, StatusTransacao.PENDENTE));
+
+        var json = "{\"valor\":10.00,\"moeda\":\"BRL\"}";
+        var corpo = json + " ".repeat(8193 - json.length());
+        mockMvc.perform(post("/transacoes")
+                        .header("Idempotency-Key", CHAVE_IDEMPOTENCIA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(corpo))
+                .andExpect(status().is(413))
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.status").value(413));
+
+        verifyNoInteractions(criarTransacao);
+    }
+
+    @Test
     void deveRejeitarCriacaoSemChaveIdempotencia() throws Exception {
         mockMvc.perform(post("/transacoes")
                         .contentType(MediaType.APPLICATION_JSON)
