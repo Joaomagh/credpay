@@ -161,6 +161,8 @@ p {
   grid-template-columns:225px minmax(0,1fr);
   min-height:calc(100dvh - 137px)
 }
+.app-layout:has(cp-login) { grid-template-columns: minmax(0, 1fr); }
+.app-layout:has(cp-login) > .sidebar { display: none; }
 .sidebar {
   border-right:1px solid var(--line);
   padding:38px 20px;

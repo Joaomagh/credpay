@@ -1,6 +1,7 @@
 package br.com.credpay.transacoes.api;
 
 import java.security.Principal;
+import java.util.UUID;
 
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.web.csrf.CsrfToken;
@@ -19,10 +20,10 @@ class SessaoDemoController {
     }
 
     @GetMapping("/sessao")
-    Sessao sessao(Principal principal) {
-        return new Sessao(principal.getName());
+    Sessao sessao(Principal principal, CsrfToken csrf) {
+        return new Sessao(ContaDemoPrincipal.idDaConta(principal), principal.getName(), csrf.getToken());
     }
 
-    record Sessao(String usuario) {
+    record Sessao(UUID id, String usuario, String csrf) {
     }
 }

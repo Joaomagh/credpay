@@ -1,0 +1,33 @@
+<section class="auth-page" aria-labelledby="auth-heading">
+  <div class="auth-intro">
+    <span class="eyebrow"><cp-icon name="shield" /> ACESSO À DEMONSTRAÇÃO</span>
+    <p class="auth-title">Console de transações</p>
+    <p>Conheça o CredPay com dados fictícios. A conta individual separa as transações de cada visitante.</p>
+    <span class="auth-tag">CREDPAY · AMBIENTE DE DEMONSTRAÇÃO</span>
+  </div>
+  <div class="auth-card">
+    <span class="eyebrow">CONTA CREDPAY</span>
+    <h1 id="auth-heading">{{ sessao() ? 'Sessão ativa' : 'Entre na sua conta' }}</h1>
+    @if (sessao(); as conta) {
+      <p>Você entrou como <strong>{{ conta.usuario }}</strong>.</p>
+      <button class="button primary" type="button" [disabled]="busy()" (click)="sair()">
+        {{ busy() ? 'Encerrando sessão…' : 'Sair da conta' }}
+      </button>
+    } @else {
+      <p>Use as credenciais da sua conta de demonstração.</p>
+      <form (ngSubmit)="entrar()" [attr.aria-busy]="busy()">
+        <label for="usuario">Usuário</label>
+        <input id="usuario" name="usuario" autocomplete="username" autocapitalize="none" spellcheck="false"
+          [(ngModel)]="usuario" maxlength="64" required>
+        <label for="senha">Senha</label>
+        <input id="senha" name="senha" type="password" autocomplete="current-password"
+          [(ngModel)]="senha" maxlength="128" required>
+        <button class="button primary" type="submit" [disabled]="busy()">
+          {{ busy() ? 'Verificando…' : 'Entrar' }} <cp-icon name="arrow" />
+        </button>
+      </form>
+    }
+    <p class="auth-error" role="alert">{{ error() }}</p>
+    <p class="auth-note" role="status">{{ note() }}</p>
+  </div>
+</section>

@@ -1,6 +1,6 @@
 # CredPay — Console Angular
 
-Duas telas responsivas a partir das referências Stitch: **Nova transação** e **Consultar**. Criação por POST real e acompanhamento por GET; não há servidor de respostas simuladas, autenticação, extrato ou pagamentos reais.
+O console tem as telas **Nova transação** e **Consultar**, com criação por POST real e acompanhamento por GET. A tela **Entrar** exercita a autenticação do perfil local de contas. O ambiente usa dados fictícios.
 
 ## Executar no PowerShell
 
@@ -14,7 +14,11 @@ npm.cmd start
 
 Abra http://127.0.0.1:4200. Para parar o servidor frontend, use Ctrl+C. Nenhuma CLI global é necessária.
 
-Para criar/consultar dados, o backend precisa estar preparado e ativado conforme [roteiro Compose](../infra/compose/README.md). O frontend usa proxy de desenvolvimento somente para `/transacoes`, direcionado a `http://127.0.0.1:8080`; sem abrir CORS ou expor a aplicação na rede. Se a porta da API foi alterada, ajuste explicitamente `proxy.conf.json`. A página abre sem backend, mas os pedidos retornarão erro de comunicação. O proxy é configuração de desenvolvimento; hospedar o bundle de produção exige configuração própria de origem e fallback das rotas, fora desta entrega.
+Para criar e consultar dados no modo padrão, prepare e ative o backend conforme o [roteiro Compose](../infra/compose/README.md). O proxy de desenvolvimento encaminha `/transacoes` e `/auth/**` para `http://127.0.0.1:8080`, na mesma origem do console e em loopback. Se a porta da API foi alterada, ajuste `proxy.conf.json`. O proxy é configuração de desenvolvimento. Hospedar o bundle exige configuração própria de origem e fallback das rotas.
+
+## Entrada no perfil de contas
+
+Abra `/entrar` com o serviço de transações em `sessao-demo` e uma conta fictícia já provisionada. A tela solicita o token CSRF, envia as credenciais em formulário e confirma a sessão no servidor. Recarregar consulta a sessão atual. Sair usa o token da sessão confirmada. A integração da sessão com as telas de criação, consulta e recuperação de recibos está no [backlog](../docs/BACKLOG.md#contas-individuais-e-segurança-da-demo-pública).
 
 ## Teste manual no navegador
 

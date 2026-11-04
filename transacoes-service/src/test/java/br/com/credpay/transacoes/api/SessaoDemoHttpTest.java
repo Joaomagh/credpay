@@ -168,7 +168,11 @@ class SessaoDemoHttpTest {
                     transacaoLegada);
             assertThat(get(clienteA, "/transacoes/" + transacaoLegada).statusCode()).isEqualTo(404);
             assertThat(post(clienteA, "/auth/logout", "", csrfAntes)).isEqualTo(403);
-            var csrfDepois = csrf(clienteA);
+            var sessaoA = json.readTree(get(clienteA, "/auth/sessao").body());
+            assertThat(sessaoA.path("id").asText()).isEqualTo(jdbc.queryForObject(
+                    "SELECT id FROM contas WHERE usuario = 'conta-a'", UUID.class).toString());
+            var csrfDepois = sessaoA.path("csrf").asText();
+            assertThat(post(clienteB, "/auth/logout", "", csrfDepois)).isEqualTo(403);
             assertThat(post(clienteA, "/auth/logout", "", csrfDepois)).isEqualTo(204);
             assertThat(get(clienteA, "/auth/sessao").statusCode()).isEqualTo(401);
             conferirConta(clienteB, "conta-b");
