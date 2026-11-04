@@ -190,9 +190,9 @@ class TransacaoRepositoryIntegrationTest {
         var transacoes = new TransactionTemplate(transactionManager);
 
         transacoes.executeWithoutResult(
-                status -> repository.inserir(chaveIdempotencia, transacao));
+                status -> repository.inserir(null, chaveIdempotencia, transacao));
         Optional<Transacao> encontrada = transacoes.execute(
-                status -> repository.buscarPorChaveIdempotencia(chaveIdempotencia));
+                status -> repository.buscarPorChaveIdempotencia(null, chaveIdempotencia));
 
         assertThat(encontrada).isPresent();
         var persistida = encontrada.orElseThrow();
@@ -217,15 +217,15 @@ class TransacaoRepositoryIntegrationTest {
         var transacoes = new TransactionTemplate(transactionManager);
 
         transacoes.executeWithoutResult(
-                status -> repository.inserir(chaveIdempotencia, original));
+                status -> repository.inserir(null, chaveIdempotencia, original));
 
         assertThatThrownBy(() -> transacoes.executeWithoutResult(
-                status -> repository.inserir(chaveIdempotencia, duplicada)))
+                status -> repository.inserir(null, chaveIdempotencia, duplicada)))
                 .isInstanceOf(DataIntegrityViolationException.class)
-                .hasStackTraceContaining("idempotencias_transacao_pkey");
+                .hasStackTraceContaining("uq_idempotencias_transacao_chave_conta");
 
         Optional<Transacao> encontrada = transacoes.execute(
-                status -> repository.buscarPorChaveIdempotencia(chaveIdempotencia));
+                status -> repository.buscarPorChaveIdempotencia(null, chaveIdempotencia));
         assertThat(encontrada).isPresent();
         assertThat(encontrada.orElseThrow().id()).isEqualTo(original.id());
         Optional<Transacao> transacaoDuplicada = transacoes.execute(

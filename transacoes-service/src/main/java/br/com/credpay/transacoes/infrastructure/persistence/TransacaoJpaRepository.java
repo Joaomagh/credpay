@@ -21,18 +21,19 @@ class TransacaoJpaRepository implements TransacaoRepository {
     }
 
     @Override
-    public void inserir(UUID chaveIdempotencia, Transacao transacao) {
-        entityManager.persist(new IdempotenciaTransacaoEntity(chaveIdempotencia, transacao));
+    public void inserir(UUID contaId, UUID chaveIdempotencia, Transacao transacao) {
+        entityManager.persist(new IdempotenciaTransacaoEntity(contaId, chaveIdempotencia, transacao));
     }
 
     @Override
-    public void bloquearChaveIdempotencia(UUID chaveIdempotencia) {
+    public void bloquearChaveIdempotencia(UUID contaId, UUID chaveIdempotencia) {
+        var escopo = contaId == null ? chaveIdempotencia.toString() : contaId + ":" + chaveIdempotencia;
         entityManager.createNativeQuery("""
                         SELECT 1
                         FROM pg_advisory_xact_lock(
                             hashtextextended(CAST(:chave AS text), 0))
                         """, Long.class)
-                .setParameter("chave", chaveIdempotencia.toString())
+                .setParameter("chave", escopo)
                 .getSingleResult();
     }
 
@@ -54,9 +55,14 @@ class TransacaoJpaRepository implements TransacaoRepository {
     }
 
     @Override
-    public Optional<Transacao> buscarPorChaveIdempotencia(UUID chaveIdempotencia) {
-        return Optional.ofNullable(entityManager.find(
-                        IdempotenciaTransacaoEntity.class, chaveIdempotencia))
-                .map(IdempotenciaTransacaoEntity::paraDominio);
+    public Optional<Transacao> buscarPorChaveIdempotencia(UUID contaId, UUID chaveIdempotencia) {
+        return Optional.ofNullable(entityManager.createQuery("""
+                        SELECT i FROM IdempotenciaTransacaoEntity i JOIN FETCH i.transacao t
+                        WHERE i.chave = :chave AND i.contaId IS NOT DISTINCT FROM :contaId
+                          AND t.contaId IS NOT DISTINCT FROM :contaId
+                        """, IdempotenciaTransacaoEntity.class)
+                .setParameter("chave", chaveIdempotencia)
+                .setParameter("contaId", contaId)
+                .getSingleResultOrNull()).map(IdempotenciaTransacaoEntity::paraDominio);
     }
 }

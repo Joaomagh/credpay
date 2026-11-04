@@ -109,7 +109,7 @@ class SolicitarEncerramentoIntegrationTest {
     @Test
     void executar_deveGravarPedidoEIntencao_semMudarTransacaoOuRespostaOriginal() throws Exception {
         var chave = UUID.randomUUID();
-        var original = criar.executar(chave, new BigDecimal("75.00"), Currency.getInstance("BRL"));
+        var original = criar.executar(null, chave, new BigDecimal("75.00"), Currency.getInstance("BRL"));
         var transacao = jdbc.queryForMap("SELECT * FROM transacoes");
         var criacao = jdbc.queryForMap("SELECT * FROM outbox_eventos");
         var historico = jdbc.queryForList("SELECT * FROM historico_transacoes");
@@ -155,7 +155,7 @@ class SolicitarEncerramentoIntegrationTest {
         assertThat(jdbc.queryForMap("SELECT * FROM transacoes")).isEqualTo(transacao);
         assertThat(jdbc.queryForMap("SELECT * FROM outbox_eventos")).isEqualTo(criacao);
         assertThat(jdbc.queryForList("SELECT * FROM historico_transacoes")).isEqualTo(historico);
-        assertThat(criar.executar(chave, new BigDecimal("75.0"), Currency.getInstance("BRL"))).isEqualTo(original);
+        assertThat(criar.executar(null, chave, new BigDecimal("75.0"), Currency.getInstance("BRL"))).isEqualTo(original);
     }
 
     @Test
@@ -169,7 +169,7 @@ class SolicitarEncerramentoIntegrationTest {
     @ParameterizedTest
     @EnumSource(value = StatusTransacao.class, names = {"APROVADA", "REJEITADA"})
     void executar_deveRecusarTransacaoFinal_semAlterarVencedor(StatusTransacao estado) {
-        var original = criar.executar(UUID.randomUUID(), new BigDecimal("75.00"), Currency.getInstance("BRL"));
+        var original = criar.executar(null, UUID.randomUUID(), new BigDecimal("75.00"), Currency.getInstance("BRL"));
         var criacao = jdbc.queryForObject("SELECT event_id FROM outbox_eventos", UUID.class);
         aplicar.executar(new TransacaoProcessadaRecebida(UUID.randomUUID(), original.id(),
                 Instant.parse("2026-10-14T18:00:00.123456789Z"), original.id(), criacao, estado));
@@ -188,7 +188,7 @@ class SolicitarEncerramentoIntegrationTest {
     @ParameterizedTest
     @ValueSource(strings = {"ausente", "tipo", "versao", "ambigua"})
     void executar_deveRecusarCriacaoNaoUnivoca_semEscrita(String cenario) {
-        var original = criar.executar(UUID.randomUUID(), new BigDecimal("75.00"), Currency.getInstance("BRL"));
+        var original = criar.executar(null, UUID.randomUUID(), new BigDecimal("75.00"), Currency.getInstance("BRL"));
         switch (cenario) {
             case "ausente" -> jdbc.update("DELETE FROM outbox_eventos");
             case "tipo" -> jdbc.update("UPDATE outbox_eventos SET event_type = 'OutroEvento'");
@@ -219,7 +219,7 @@ class SolicitarEncerramentoIntegrationTest {
     @ParameterizedTest
     @ValueSource(strings = {"PENDENTE", "APROVADA", "REJEITADA"})
     void executar_deveRepetirPedidoOriginal_antesDoEstadoOuRelogio(String estado) {
-        var original = criar.executar(UUID.randomUUID(), new BigDecimal("75.00"), Currency.getInstance("BRL"));
+        var original = criar.executar(null, UUID.randomUUID(), new BigDecimal("75.00"), Currency.getInstance("BRL"));
         var pedidoId = UUID.randomUUID();
         var evidencia = UUID.randomUUID();
         var pedido = solicitar.executar(pedidoId, original.id(), evidencia);
@@ -247,8 +247,8 @@ class SolicitarEncerramentoIntegrationTest {
     @ParameterizedTest
     @ValueSource(strings = {"evidencia", "transacao", "pedido"})
     void executar_deveRecusarPedidoDivergente_semSubstituirOriginal(String campo) {
-        var original = criar.executar(UUID.randomUUID(), new BigDecimal("75.00"), Currency.getInstance("BRL"));
-        var outra = criar.executar(UUID.randomUUID(), new BigDecimal("20.00"), Currency.getInstance("BRL"));
+        var original = criar.executar(null, UUID.randomUUID(), new BigDecimal("75.00"), Currency.getInstance("BRL"));
+        var outra = criar.executar(null, UUID.randomUUID(), new BigDecimal("20.00"), Currency.getInstance("BRL"));
         var pedidoId = UUID.randomUUID();
         var evidencia = UUID.randomUUID();
         solicitar.executar(pedidoId, original.id(), evidencia);
@@ -272,8 +272,8 @@ class SolicitarEncerramentoIntegrationTest {
             "intencao_orfa", "agregado_intencao", "tipo_intencao", "versao_intencao", "payload_intencao",
             "nano_intencao"})
     void banco_deveRecusarQuebraDeCausalidadeOuEstrutura_semAlterarPar(String cenario) {
-        var original = criar.executar(UUID.randomUUID(), new BigDecimal("75.00"), Currency.getInstance("BRL"));
-        var outra = criar.executar(UUID.randomUUID(), new BigDecimal("20.00"), Currency.getInstance("BRL"));
+        var original = criar.executar(null, UUID.randomUUID(), new BigDecimal("75.00"), Currency.getInstance("BRL"));
+        var outra = criar.executar(null, UUID.randomUUID(), new BigDecimal("20.00"), Currency.getInstance("BRL"));
         solicitar.executar(UUID.randomUUID(), original.id(), UUID.randomUUID());
         var antes = jdbc.queryForMap("SELECT * FROM pedidos_encerramento");
         var intencao = jdbc.queryForMap("SELECT * FROM outbox_pedidos_encerramento");
@@ -308,7 +308,7 @@ class SolicitarEncerramentoIntegrationTest {
 
     @Test
     void banco_deveImpedirSegundoPedidoDaMesmaTransacao() {
-        var original = criar.executar(UUID.randomUUID(), new BigDecimal("75.00"), Currency.getInstance("BRL"));
+        var original = criar.executar(null, UUID.randomUUID(), new BigDecimal("75.00"), Currency.getInstance("BRL"));
         solicitar.executar(UUID.randomUUID(), original.id(), UUID.randomUUID());
 
         assertThatThrownBy(() -> jdbc.update("""
@@ -324,7 +324,7 @@ class SolicitarEncerramentoIntegrationTest {
 
     @Test
     void executar_deveReverterPedidoEIntencao_quandoSegundaEscritaFalhar_ePermitirRetry() {
-        var original = criar.executar(UUID.randomUUID(), new BigDecimal("75.00"), Currency.getInstance("BRL"));
+        var original = criar.executar(null, UUID.randomUUID(), new BigDecimal("75.00"), Currency.getInstance("BRL"));
         var transacao = jdbc.queryForMap("SELECT * FROM transacoes");
         var criacao = jdbc.queryForMap("SELECT * FROM outbox_eventos");
         var pedido = UUID.randomUUID();
@@ -346,7 +346,7 @@ class SolicitarEncerramentoIntegrationTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void executar_deveSerializarPedidosConcorrentes(boolean equivalente) throws Exception {
-        var original = criar.executar(UUID.randomUUID(), new BigDecimal("75.00"), Currency.getInstance("BRL"));
+        var original = criar.executar(null, UUID.randomUUID(), new BigDecimal("75.00"), Currency.getInstance("BRL"));
         var pedido = UUID.randomUUID();
         var evidencia = UUID.randomUUID();
         var disputa = disputar(Etapa.PEDIDO, false, () -> solicitar.executar(pedido, original.id(), evidencia),
@@ -368,7 +368,7 @@ class SolicitarEncerramentoIntegrationTest {
     @ParameterizedTest
     @ValueSource(strings = {"financeiro_commit", "pedido_commit", "financeiro_rollback", "pedido_rollback"})
     void executar_devePreservarOrdemRealDeCommit_semCongelarTransacao(String cenario) throws Exception {
-        var original = criar.executar(UUID.randomUUID(), new BigDecimal("75.00"), Currency.getInstance("BRL"));
+        var original = criar.executar(null, UUID.randomUUID(), new BigDecimal("75.00"), Currency.getInstance("BRL"));
         var criacao = jdbc.queryForObject("SELECT event_id FROM outbox_eventos", UUID.class);
         var entrada = new TransacaoProcessadaRecebida(UUID.randomUUID(), original.id(), clock.instante,
                 original.id(), criacao, StatusTransacao.APROVADA);

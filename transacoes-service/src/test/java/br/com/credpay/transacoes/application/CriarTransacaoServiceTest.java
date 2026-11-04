@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -46,13 +47,13 @@ class CriarTransacaoServiceTest {
                 objectMapper);
         var valor = new BigDecimal(quantia);
         var moeda = Currency.getInstance(codigoMoeda);
-        when(repository.buscarPorChaveIdempotencia(CHAVE_IDEMPOTENCIA)).thenReturn(Optional.empty());
+        when(repository.buscarPorChaveIdempotencia(null, CHAVE_IDEMPOTENCIA)).thenReturn(Optional.empty());
 
-        var resultado = service.executar(CHAVE_IDEMPOTENCIA, valor, moeda);
+        var resultado = service.executar(null, CHAVE_IDEMPOTENCIA, valor, moeda);
 
-        verify(repository).bloquearChaveIdempotencia(CHAVE_IDEMPOTENCIA);
+        verify(repository).bloquearChaveIdempotencia(null, CHAVE_IDEMPOTENCIA);
         var transacaoPersistida = ArgumentCaptor.forClass(Transacao.class);
-        verify(repository).inserir(eq(CHAVE_IDEMPOTENCIA), transacaoPersistida.capture());
+        verify(repository).inserir(isNull(), eq(CHAVE_IDEMPOTENCIA), transacaoPersistida.capture());
         assertThat(resultado.id()).isEqualTo(transacaoPersistida.getValue().id());
         assertThat(resultado.valor()).isEqualByComparingTo(valor);
         assertThat(resultado.valor().scale()).isEqualTo(valor.scale());
@@ -92,11 +93,11 @@ class CriarTransacaoServiceTest {
                 UUID.fromString("44fe8ae7-47a6-45f2-bf6c-46a83ee782ee"),
                 new BigDecimal("10.00"),
                 Currency.getInstance("BRL"));
-        when(repository.buscarPorChaveIdempotencia(CHAVE_IDEMPOTENCIA))
+        when(repository.buscarPorChaveIdempotencia(null, CHAVE_IDEMPOTENCIA))
                 .thenReturn(Optional.of(original));
 
         var resultado = service.executar(
-                CHAVE_IDEMPOTENCIA,
+                null, CHAVE_IDEMPOTENCIA,
                 new BigDecimal(quantia),
                 Currency.getInstance(codigoMoeda));
 
@@ -105,7 +106,7 @@ class CriarTransacaoServiceTest {
         assertThat(resultado.valor().scale()).isEqualTo(2);
         assertThat(resultado.moeda()).isEqualTo(original.moeda());
         assertThat(resultado.status()).isEqualTo(original.status());
-        verify(repository, never()).inserir(eq(CHAVE_IDEMPOTENCIA), any(Transacao.class));
+        verify(repository, never()).inserir(isNull(), eq(CHAVE_IDEMPOTENCIA), any(Transacao.class));
         verifyNoInteractions(outboxRepository);
     }
 
@@ -120,16 +121,16 @@ class CriarTransacaoServiceTest {
                 UUID.fromString("44fe8ae7-47a6-45f2-bf6c-46a83ee782ee"),
                 new BigDecimal("10.00"),
                 Currency.getInstance("BRL"));
-        when(repository.buscarPorChaveIdempotencia(CHAVE_IDEMPOTENCIA))
+        when(repository.buscarPorChaveIdempotencia(null, CHAVE_IDEMPOTENCIA))
                 .thenReturn(Optional.of(original));
 
         assertThatThrownBy(() -> service.executar(
-                CHAVE_IDEMPOTENCIA,
+                null, CHAVE_IDEMPOTENCIA,
                 new BigDecimal(quantia),
                 Currency.getInstance(codigoMoeda)))
                 .isInstanceOf(ConflitoIdempotenciaException.class)
                 .hasMessage("chave de idempotência já utilizada com outro payload");
-        verify(repository, never()).inserir(eq(CHAVE_IDEMPOTENCIA), any(Transacao.class));
+        verify(repository, never()).inserir(isNull(), eq(CHAVE_IDEMPOTENCIA), any(Transacao.class));
         verifyNoInteractions(outboxRepository);
     }
 
@@ -140,17 +141,17 @@ class CriarTransacaoServiceTest {
         var outbox = mock(OutboxRepository.class);
         var original = Transacao.criar(UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"))
                 .concluir(estado);
-        when(repository.buscarPorChaveIdempotencia(CHAVE_IDEMPOTENCIA)).thenReturn(Optional.of(original));
+        when(repository.buscarPorChaveIdempotencia(null, CHAVE_IDEMPOTENCIA)).thenReturn(Optional.of(original));
         var service = novoService(repository, outbox);
 
-        var resultado = service.executar(CHAVE_IDEMPOTENCIA, new BigDecimal("123.45"), Currency.getInstance("BRL"));
+        var resultado = service.executar(null, CHAVE_IDEMPOTENCIA, new BigDecimal("123.45"), Currency.getInstance("BRL"));
 
         assertThat(resultado.id()).isEqualTo(original.id());
         assertThat(resultado.valor()).isEqualTo(new BigDecimal("123.450"));
         assertThat(resultado.moeda()).isEqualTo(original.moeda());
         assertThat(resultado.status()).isEqualTo(StatusTransacao.PENDENTE);
         assertThat(original.status()).isEqualTo(estado);
-        verify(repository, never()).inserir(eq(CHAVE_IDEMPOTENCIA), any(Transacao.class));
+        verify(repository, never()).inserir(isNull(), eq(CHAVE_IDEMPOTENCIA), any(Transacao.class));
         verifyNoInteractions(outbox);
     }
 

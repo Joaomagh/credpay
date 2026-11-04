@@ -39,6 +39,7 @@ class EncerramentoConfirmadoMigrationIntegrationTest {
     @Test
     void migrar_deveConservarFinanceiroExistente_eAceitarInsertAnteriorSemColunasNovas() {
         var transacoes = jdbc.queryForList("SELECT * FROM transacoes ORDER BY id");
+        var chaves = jdbc.queryForList("SELECT chave, transacao_id FROM idempotencias_transacao ORDER BY chave");
         var criacoes = jdbc.queryForList("SELECT * FROM outbox_eventos ORDER BY event_id");
         var antes = jdbc.queryForList("SELECT * FROM historico_transacoes ORDER BY event_id");
         var atual = Flyway.configure().dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
@@ -46,12 +47,16 @@ class EncerramentoConfirmadoMigrationIntegrationTest {
 
         atual.migrate();
 
-        assertThat(atual.info().current().getVersion().getVersion()).isEqualTo("10");
+        assertThat(atual.info().current().getVersion().getVersion()).isEqualTo("11");
         assertThat(jdbc.queryForObject("SELECT count(*) FROM contas", Integer.class)).isZero();
         assertThat(jdbc.queryForList("SELECT id, valor, moeda, status FROM transacoes ORDER BY id"))
                 .isEqualTo(transacoes);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM transacoes WHERE conta_id IS NOT NULL", Integer.class))
                 .isZero();
+        assertThat(jdbc.queryForList("SELECT chave, transacao_id FROM idempotencias_transacao ORDER BY chave"))
+                .isEqualTo(chaves);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM idempotencias_transacao WHERE conta_id IS NOT NULL",
+                Integer.class)).isZero();
         assertThat(jdbc.queryForList("SELECT * FROM outbox_eventos ORDER BY event_id")).isEqualTo(criacoes);
         var depois = jdbc.queryForList("SELECT * FROM historico_transacoes ORDER BY event_id");
         assertThat(depois).hasSameSizeAs(antes);
@@ -72,6 +77,8 @@ class EncerramentoConfirmadoMigrationIntegrationTest {
         var criacao = UUID.randomUUID();
         var instante = Instant.parse("2026-10-14T18:00:00.123456789Z");
         jdbc.update("INSERT INTO transacoes (id, valor, moeda, status) VALUES (?, 123.450, 'BRL', ?)", transacao, estado);
+        jdbc.update("INSERT INTO idempotencias_transacao (chave, transacao_id) VALUES (?, ?)",
+                UUID.randomUUID(), transacao);
         var payload = """
                 {"eventId":"%s","eventType":"TransacaoCriada","eventVersion":1,"occurredAt":"%s",
                  "correlationId":"%s","data":{"transactionId":"%s","amount":"123.450",

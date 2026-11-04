@@ -100,6 +100,6 @@ class CriarTransacaoConcorrenciaIntegrationTest {
             throws InterruptedException {
         inicio.await();
         return criarTransacao.executar(
-                chave, new BigDecimal("10.00"), Currency.getInstance("BRL"));
+                null, chave, new BigDecimal("10.00"), Currency.getInstance("BRL"));
     }
 }

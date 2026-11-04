@@ -12,17 +12,18 @@
 - Limite de 8 KiB na criação HTTP, com red reproduzido e regressão na PR #207. Proposta de contas individuais e seus critérios no backlog.
 - Primeiro recorte de sessão local com contas fictícias na PR #208. Evidência e limites em spec§9.142.
 - Consulta por conta no perfil de sessão na PR #209. Contrato, migração e teste de regressão em spec§9.143.
+- Criação e idempotência por conta na PR #210. Contrato e regressão em spec§9.144.
 
 ## Agora
 
 - [ ] Aceite pessoal da v1 permanece adiado. O roteiro está em docs/DEMO.md e as evidências assistidas em docs/V1_VALIDATION.md.
-- [ ] Criar transações no perfil de contas e isolar a idempotência por conta e chave.
+- [ ] Integrar o console Angular à sessão e testar troca de conta, expiração e recuperação de intenção.
 
 ## Próximo
 
 - Depois dos aceites pessoais, conferir a aplicabilidade das evidências e registrar a decisão final sobre o candidato técnico 51f8476.
 - Acompanhar os achados GnuTLS registrados no inventário e na triagem.
-- Console autenticado com troca de sessão, recuperação de intenção por conta e teste com duas contas.
+- Limites de abuso e critérios de publicação da demo com contas.
 
 ## Depois
 

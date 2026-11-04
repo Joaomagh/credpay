@@ -152,7 +152,7 @@ class AplicarResultadoIntegrationTest {
     }
 
     private TransacaoProcessadaRecebida preparar(StatusTransacao estado) {
-        var transacao = criar.executar(UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"));
+        var transacao = criar.executar(null, UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"));
         var causa = jdbc.queryForObject("SELECT event_id FROM outbox_eventos WHERE aggregate_id = ?",
                 UUID.class, transacao.id());
         return new TransacaoProcessadaRecebida(UUID.randomUUID(), transacao.id(),

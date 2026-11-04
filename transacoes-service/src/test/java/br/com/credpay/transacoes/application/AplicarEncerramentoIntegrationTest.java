@@ -361,7 +361,7 @@ class AplicarEncerramentoIntegrationTest {
     }
 
     private RespostaEncerramentoRecebida entrada(RespostaEncerramentoRecebida.Resultado resultado) {
-        var transacao = criar.executar(UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"));
+        var transacao = criar.executar(null, UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"));
         var pedido = solicitar.executar(UUID.randomUUID(), transacao.id(), UUID.randomUUID());
         return new RespostaEncerramentoRecebida(UUID.randomUUID(), transacao.id(), pedido.creationEventId(),
                 Instant.parse("2026-10-14T18:00:00.123456789Z"), transacao.id(), pedido.eventId(), resultado,
