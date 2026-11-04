@@ -149,6 +149,33 @@ class TransacaoHttpTest {
     }
 
     @ParameterizedTest
+    @ValueSource(strings = {"1e8192", "1e-8191"})
+    void criar_deveRecusarValorCompactoQueExcedeLimiteDecimal(String valor) throws Exception {
+        var chave = UUID.randomUUID();
+        var eventosAntes = jdbcTemplate.queryForObject("SELECT count(*) FROM outbox_eventos", Long.class);
+        mockMvc.perform(postTransacoes(chave).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"valor\":%s,\"moeda\":\"BRL\"}".formatted(valor)))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.detail").value("valor excede 8192 caracteres na forma decimal"))
+                .andExpect(header().doesNotExist("Location"));
+        assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM idempotencias_transacao WHERE chave = ?",
+                Long.class, chave)).isZero();
+        assertThat(jdbcTemplate.queryForObject("SELECT count(*) FROM outbox_eventos", Long.class)).isEqualTo(eventosAntes);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"1e8191", "1e-8190"})
+    void criar_deveAceitarAExpansaoDecimalNoLimite(String valor) throws Exception {
+        var resposta = mockMvc.perform(postTransacoes().contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"valor\":%s,\"moeda\":\"BRL\"}".formatted(valor)))
+                .andExpect(status().isCreated()).andReturn().getResponse();
+        var id = UUID.fromString(objectMapper.readTree(resposta.getContentAsByteArray()).path("id").asText());
+        assertThat(jdbcTemplate.queryForObject("""
+                SELECT length(payload #>> '{data,amount}') FROM outbox_eventos WHERE aggregate_id = ?
+                """, Integer.class, id)).isEqualTo(8192);
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {"10.00", "10"})
     void criar_deveRetornar201ComStatusPendente_quandoTransacaoForValida(String valor) throws Exception {
         var response = mockMvc.perform(postTransacoes()
