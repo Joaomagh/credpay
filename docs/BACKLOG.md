@@ -419,3 +419,5 @@ Inventário da PR187: quatro alvos com HIGH0/CRITICAL0,3MEDIUM por JAR e33MEDIUM
 ### QA manual do frontend — 04/11/2026
 
 Skill e catálogo local adicionados para repetir a verificação de Nova transação e Consultar. O teste no navegador confirmou erros de valor zero e UUID inválido, recuperação de intenção após falha de comunicação, navegação, foco e ausência de rolagem horizontal nos dois tamanhos exercitados. A API local estava indisponível. A próxima rodada de QA com backend ativo cobre aprovação, rejeição, consulta de UUID ausente e reload do recibo. As evidências integradas anteriores permanecem registradas. O ensaio pessoal e a decisão final da v1 continuam pendentes. [Roteiro de QA](../plugins/credpay-frontend-qa/skills/credpay-frontend/SKILL.md) · [Evidência](../spec.md#9139-roteiro-e-qa-manual-do-console-angular)
+
+Atualização de 04/11/2026: QA manual integrado concluído com o backend local ativo e dados fictícios. Aprovação, rejeição, UUID inexistente e retomada do recibo após reload passaram. O aceite pessoal e a decisão final da v1 seguem pendentes. [Evidência](../spec.md#91391-aceite-manual-integrado-no-navegador)

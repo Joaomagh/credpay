@@ -3209,6 +3209,12 @@ Em 04/11/2026, sobre a main `6dc51f5`, a API local na porta 8080 não respondeu.
 
 O plugin local empacota a [skill do frontend](plugins/credpay-frontend-qa/skills/credpay-frontend/SKILL.md) no [catálogo do projeto](.agents/plugins/marketplace.json). A skill foi exercitada via controle de navegador integrado. A instalação pelo diretório do aplicativo é uma verificação separada.
 
+### 9.139.1 Aceite manual integrado no navegador
+
+Em 04/11/2026, com autorização de João para executar a ativação local do `credpay-demo`, o Docker Desktop Linux foi usado no contexto `desktop-linux` com as imagens `f412652` já construídas. `Prepare` e `Activate` concluíram as três fases, com quatro filas quorum, dois consumidores, ACK obrigatório, prefetch 10/1 e os dois health checks em `UP`. O projeto ficou ativo para demonstração.
+
+No navegador integrado, uma transação fictícia de R$ 50,001 recebeu recibo `PENDENTE`. O reload na mesma aba recuperou o mesmo UUID, com o botão de criação desabilitado. A consulta mostrou `APROVADA` com o mesmo UUID e valor exato. Outra aba enviou R$ 150,001 e a consulta mostrou `REJEITADA` com o respectivo UUID e valor exato. Um UUID válido ausente apresentou “Transação não encontrada” e removeu o resultado anterior da tela. Uma consulta independente pelo mesmo proxy confirmou HTTP 404. A contagem de POSTs durante o reload pertence à evidência automatizada anterior. Este ensaio conclui o QA manual integrado do frontend e o aceite pessoal da v1 permanece adiado.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
