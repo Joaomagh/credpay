@@ -8,6 +8,7 @@
 - A apresentação do projeto e o relatório do backlog foram atualizados em README.md e docs/ENTENDA_O_CREDPAY.md.
 
 - QA manual integrado concluído com o backend local ativo: aprovação, rejeição, UUID ausente e retomada do recibo. Evidência em spec§9.139.1.
+- Atualização de runtime Temurin 21 Noble preparada com teste de versões instaladas e red observado. Aceite da candidata depende dos checks e do inventário na PR #205.
 
 ## Agora
 
@@ -16,7 +17,7 @@
 ## Próximo
 
 - Depois dos aceites pessoais, conferir a aplicabilidade das evidências e registrar a decisão final sobre o candidato operacional e07f0aa.
-- Acompanhar as correções oficiais de curl, zlib e GnuTLS em infra/security/TRIAGE.md. Revalidar os alvos afetados antes de promover uma imagem.
+- Revisar o inventário da candidata em infra/security/TRIAGE.md e acompanhar GnuTLS. Considerar o novo runtime na revisão do corte da v1 após os aceites.
 
 ## Depois
 

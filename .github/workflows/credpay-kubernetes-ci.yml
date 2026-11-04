@@ -50,7 +50,7 @@ jobs:
   kubernetes:
     needs: local-controls
     name: Startup and persistent Pods in disposable cluster
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
       CREDPAY_IMAGE_TAG: ${{ github.sha }}

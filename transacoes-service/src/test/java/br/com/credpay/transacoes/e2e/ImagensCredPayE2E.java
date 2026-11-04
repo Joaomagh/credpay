@@ -148,11 +148,13 @@ class ImagensCredPayE2E {
         assertThat(info.getMounts()).as("nenhum mount no aplicativo: " + servico).isEmpty();
         assertThat(info.getHostConfig().getPrivileged()).as("sem modo privilegiado: " + servico).isFalse();
         var pacotes = aplicativo.execInContainer("dpkg-query", "-W", "-f=${Package}=${Version}\\n",
-                "libssl3t64", "openssl");
+                "libssl3t64", "openssl", "curl", "libcurl4t64", "zlib1g");
         assertThat(pacotes.getExitCode()).as("consulta de pacotes da imagem: " + servico).isZero();
-        assertThat(pacotes.getStdout().lines()).as("baseline OpenSSL corrigida: " + servico)
-                .containsExactlyInAnyOrder("libssl3t64=3.0.13-0ubuntu3.16", "openssl=3.0.13-0ubuntu3.16");
-        System.out.println("ImagensCredPayE2E: " + servico + " OpenSSL/libssl3t64=3.0.13-0ubuntu3.16");
+        var versoes = pacotes.getStdout().lines().toList();
+        assertThat(versoes).as("baseline de pacotes corrigidos: " + servico)
+                .containsExactlyInAnyOrder("libssl3t64=3.0.13-0ubuntu3.16", "openssl=3.0.13-0ubuntu3.16",
+                        "curl=8.5.0-2ubuntu10.16", "libcurl4t64=8.5.0-2ubuntu10.16", "zlib1g=1:1.3.dfsg-3.1ubuntu2.3");
+        System.out.println("ImagensCredPayE2E: " + servico + " pacotes=" + String.join(", ", versoes));
         System.out.println("ImagensCredPayE2E: " + servico + " uid=10001, mounts=0, privileged=false, health=UP");
     }
 
