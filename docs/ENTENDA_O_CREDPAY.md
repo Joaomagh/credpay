@@ -1,87 +1,49 @@
-# Entenda o CredPay
+# CredPay — relatório do projeto e do backlog
 
-CredPay é um simulador de backend para processamento assíncrono de transações. O usuário envia uma transação fictícia, o sistema a registra, outro serviço aplica uma regra de limite e o resultado fica disponível para consulta. Não movimenta dinheiro real; aprovação aqui é o resultado da regra didática, sem análise de crédito, saldo ou liquidação financeira.
+Relatório atualizado em 4 de novembro de 2026 com base nas evidências registradas no repositório. Projeto de portfólio de **João Pedro Magalhães**, responsável pela direção, pelas decisões de escopo e arquitetura e pelos aceites locais. [Perfil no GitHub](https://github.com/Joaomagh)
 
-## Um exemplo completo
+## O que é o CredPay
 
-A interface atual é uma API HTTP, usada por programas ou ferramentas de requisição; não há frontend na v1. O limite é configurado por moeda e vale para cada transação: não representa saldo de uma conta e não diminui depois de uma aprovação.
+É um simulador de processamento assíncrono de transações. Você abre o console Angular, informa um valor fictício, recebe um identificador e acompanha o resultado. Nos exemplos abaixo, a regra está configurada com um limite de R$ 100. Um pedido de R$ 50 é aprovado e um de R$ 150 é rejeitado. O limite é aplicado a cada transação e permanece igual após a aprovação. O projeto usa dados fictícios e simula a decisão por valor.
 
-Com BRL e um limite configurado de R$ 100 por transação:
+### Da tela até o resultado
 
-1. Um cliente envia uma transação de R$ 50 e uma chave de idempotência.
-2. O serviço de transações valida os dados, grava PENDENTE e responde que o pedido foi registrado.
-3. A intenção de processamento segue pelo RabbitMQ.
-4. O processador aplica o limite e grava APROVADA.
-5. Um evento de resultado retorna ao serviço de transações, que atualiza estado e histórico.
-6. A consulta passa a mostrar APROVADA. Uma transação de R$ 150 segue o mesmo percurso, com REJEITADA.
+1. O Angular chama `POST /transacoes` com o valor, a moeda e uma chave de idempotência.
+2. O serviço de transações grava o pedido como `PENDENTE` e a intenção de emitir `TransacaoCriada` no mesmo commit do PostgreSQL. A API retorna `201 Created` e o UUID.
+3. O publicador entrega o evento ao RabbitMQ. O serviço de processamento consome a mensagem, aplica a regra e grava a decisão junto com a intenção de publicar `TransacaoProcessada`.
+4. O resultado volta pelo RabbitMQ. O primeiro serviço atualiza o estado e registra o histórico. A tela consulta `GET /transacoes/{id}` para mostrar a informação atual.
 
-A resposta inicial não precisa esperar o processamento. Existe um intervalo em que a consulta mostra PENDENTE: é a consistência eventual. Repetir o mesmo pedido com a mesma chave mantém a resposta original; consultar o identificador mostra o estado atual.
+O POST pode responder antes da aprovação porque seu compromisso é registrar o pedido. A decisão acontece em segundo plano. Se o navegador perder a resposta e reenviar o mesmo pedido com a mesma chave, recebe o recibo original. O GET pelo UUID informa o estado mais recente, inclusive depois de o pedido sair de `PENDENTE`.
 
-## O problema técnico que resolvemos
+## Onde está o trabalho de engenharia
 
-O desafio é manter banco de dados e mensagens coerentes diante de falhas. Uma conexão pode cair, um serviço pode parar e uma mensagem pode chegar mais de uma vez. Precisamos preservar a transação registrada, evitar decisões/históricos duplicados e permitir recuperação nos cenários documentados.
+| Problema | Decisão aplicada | Evidência |
+| --- | --- | --- |
+| O banco confirma a criação e a publicação falha | Os dados e a intenção de publicar ficam no mesmo commit, via outbox transacional em cada serviço | Retorno sem rota preservou a intenção original. Após restaurar o vínculo no RabbitMQ, o mesmo evento foi recuperado |
+| O cliente repete o POST ou o broker reentrega o evento | Chave de idempotência no HTTP, identidade dos eventos e constraints/locks nas gravações | Replay preservou o recibo original. Duplicatas equivalentes preservaram decisão e histórico |
+| O processador para com um pedido em andamento | Filas duráveis, ack após commit e tentativas limitadas | A transação ficou pendente e concluiu com o mesmo UUID quando o processador voltou |
+| É preciso explicar por que um pedido ficou pendente | Métricas de confirmação/retorno, cruzadas com estado, outbox e filas | No teste local, o contador de retornos subiu três vezes em cada publicador durante seu cenário de falha. O delta conta tentativas. A unicidade foi verificada separadamente nos registros |
+| Uma alteração pode quebrar contrato ou operação | Testes de domínio, HTTP e integração com infraestrutura real, mais cenários do navegador e verificações de CI | Os cortes, os cenários e seus limites estão nas evidências da v1 |
 
-| Situação | Solução aplicada | Por que isso importa |
-|---|---|---|
-| Pedido HTTP repetido por timeout | Chave de idempotência; mesmo pedido repete a resposta, conteúdo diferente gera conflito | A repetição não cria outra transação |
-| Banco grava, mas RabbitMQ está indisponível | Transactional Outbox: dados e intenção de evento ficam no mesmo commit local | A intenção permanece durável para uma publicação posterior |
-| Mensagem chega novamente | Consumidor confere identidade/conteúdo e reaproveita resultado equivalente | Reentrega não duplica decisão ou histórico; conflito não sobrescreve dados |
-| Duas tentativas concorrentes | Transações, constraints e locks nas identidades relevantes | A consistência não depende apenas de uma consulta feita antes da gravação |
-| Processador indisponível | Mensagem durável e transação PENDENTE; recuperação após reinício comprovada | Indisponibilidade técnica não inventa uma rejeição financeira |
-| Falha temporária ou mensagem problemática | Retry limitado e fila de mensagens com falha, a DLQ | Tentativas têm limite e o problema pode ser investigado/recuperado |
-| Confirmação de consumo antes de salvar | Listener conclui depois do commit; ack após dados duráveis | Reentrega pode ser tratada sem perder o resultado já persistido |
+Os serviços têm responsabilidade e bancos separados. Isso permite exercitar fronteiras e falhas de comunicação, com o custo de operar dois aplicativos, dois bancos e um broker. A outbox preserva a intenção de publicar, e a idempotência protege a aplicação quando a entrega ocorre mais de uma vez. [Validação da v1](V1_VALIDATION.md) · [Diagnóstico por métricas](../infra/observability/README.md)
 
-Outbox não elimina duplicatas: uma queda entre publicar e marcar a intenção pode repetir o evento. Por isso a entrega é pelo menos uma vez e os consumidores são idempotentes. Banco e broker não participam de uma transação distribuída única.
+## Entregas verificadas
 
-## Tecnologias e motivo de cada escolha
+- **Backend.** Criação, aprovação/rejeição, consulta por UUID, replay, concorrência, rollback, reentrega e recuperação nos cenários registrados. O esgotamento de tentativas pode manter o pedido pendente para recuperação. A aplicação de `FALHOU` tem prova em teste controlado. O início operacional geral está fora da API. [Confirmação de falha](CONFIRMACAO_FALHA.md)
+- **Frontend.** Criação e consulta responsivas com a API real. O console recupera o recibo após recarregar a aba e acompanha a evolução da mesma transação. O CI cobre seis cenários no Chromium em desktop e celular. [Console Angular](../frontend/README.md)
+- **Infraestrutura local.** Compose, Kubernetes com kind e diagnóstico causal por métricas passaram nos ensaios assistidos. Os testes confirmaram persistência, recuperação e remoção dos recursos descartáveis próprios. [Validação da v1](V1_VALIDATION.md) · [Kubernetes local](../infra/k8s/LOCAL.md)
+- **Candidato.** O corte operacional `e07f0aa` está identificado e condicionado aos aceites finais. As provas locais e os inventários mantêm a identidade de cada corte. [Candidato da v1](V1_CANDIDATE.md)
 
-| Aplicado | Papel no projeto |
-|---|---|
-| Java 21 / Spring Boot 4 / Maven | Implementar, configurar e empacotar os dois aplicativos backend |
-| Dois serviços, com dados próprios | Separar entrada/consulta da decisão; praticar fronteiras e comunicação distribuída |
-| PostgreSQL/JPA/JDBC/Flyway | Persistir dados reais, proteger invariantes e evoluir schema por migrations versionadas |
-| BigDecimal e java.time | Representar dinheiro e instantes com regras explícitas de precisão |
-| RabbitMQ/Spring AMQP | Transportar eventos e estudar confirmação, reentrega, retry e DLQ |
-| Separação domínio/aplicação/infraestrutura | Manter regras de negócio distinguíveis de HTTP, banco e broker |
-| TDD/JUnit/AssertJ/Testcontainers | Construir comportamentos com testes e verificar banco/broker reais nas integrações |
-| GitHub Actions/Checkstyle | Executar verificações repetíveis e impedir violações de estilo estabelecidas |
-| Gitleaks e inventário Trivy | Detectar padrões de segredo e vulnerabilidades; registrar achados e priorizar correções |
-| Docker/Compose | Executar os aplicativos com suas dependências e provar preservação de dados após down/up |
+## O que falta
 
-A escolha de dois serviços aumenta a complexidade, mas atende ao objetivo de estudar sistemas distribuídos. Para uma aplicação pequena sem esse objetivo, um único aplicativo poderia reduzir custos de desenvolvimento e operação.
+| Ordem | Item | Como saber que terminou |
+| --- | --- | --- |
+| 1 | **B08.5b · Aceite pessoal, adiado a pedido de João** | João executa o roteiro com autonomia e explica, em suas palavras, por que o POST volta pendente, onde entra a fila e como a transação se recupera com o mesmo UUID. [Roteiro](DEMO.md) |
+| 2 | **B08 · Fechamento da v1, condicionado ao aceite pessoal** | Conferir o SHA, os checks aplicáveis, a triagem e as evidências. Registrar a decisão de fechamento após os aceites. Se o código ou a baseline mudar, revalidar os cenários afetados. [Candidato da v1](V1_CANDIDATE.md) |
+| Em paralelo | **Manutenção de segurança** | Avaliar uma imagem oficial com as correções de curl e zlib registradas na triagem. Confirmar os pacotes instalados e repetir os testes e o inventário de cada alvo afetado antes de promover a imagem. Acompanhar o achado de GnuTLS registrado sem correção naquele corte. [Triagem](../infra/security/TRIAGE.md) |
+| Etapa de portfólio | **Link público gratuito para recrutadores** | Definir e autorizar o destino. Provar que o Angular e a pilha Java/PostgreSQL/RabbitMQ funcionam dentro do orçamento zero, inclusive no primeiro acesso após ociosidade. Validar HTTPS e jornada em desktop e celular, com dados fictícios e recursos administrativos internos. [Plano da demo pública](PUBLIC_DEMO_PLAN.md) |
+| Depois da v1 | **Painel e pesquisa de isolamento** | Prometheus/Grafana e a pesquisa de sandbox seguem adiados. Retomadas exigem seus próprios testes e análise de segurança. [Backlog](BACKLOG.md) |
 
-## Por que fizemos este projeto
+A revisão histórica foi aceita no recorte acessível. Um log e cinco artefatos continuam marcados como **não verificados** e voltam à análise se forem recuperados. [Limites da validação](V1_VALIDATION.md)
 
-O objetivo aprovado é aprendizado demonstrável e portfólio Java backend. O domínio de transações foi escolhido porque obriga decisões sobre valores, duplicação, concorrência, persistência e falhas. O resultado esperado é conseguir executar o sistema, explicar as escolhas, demonstrar testes e discutir limites em uma entrevista.
-
-Não existe validação de mercado ou cliente real registrada. O problema resolvido até agora é de engenharia: fluxo assíncrono consistente nos cenários testados. Métricas de negócio como receita ou redução de fraude não foram medidas.
-
-## A regra FALHOU escolhida em 2026-10-08
-
-João aprovou a direção recomendada: esgotar as tentativas não torna a transação automaticamente FALHOU. Ela continua PENDENTE e pode ser recuperada. FALHOU representa uma falha técnica confirmada como irrecuperável, e é terminal.
-
-A confirmação causal de FALHOU foi implementada e testada em cenário controlado na PR150: pedido, processamento, resposta, replay e recuperação. O início operacional genérico permanece indisponível, sem endpoint administrativo. Aprovação/rejeição pelo limite e falha técnica são conceitos diferentes.
-
-## O que já podemos demonstrar e o que falta
-
-O CI já demonstrou criação/consulta, aprovação/rejeição, duplicatas/replay, concorrência, rollback, reentrega e recuperação nos casos registrados. Imagens demonstraram o fluxo; Compose também comprovou preservação após down/up. João também completou Build/Prepare/Activate/Demo/Down local em22/10, com aprovação/rejeição/replay. Isso não cobre toda janela de crash possível, recuperação local ou Kubernetes no computador dele.
-
-Métricas HTTP opt-in e diagnóstico, confirmação controlada de FALHOU e fluxo/falha/recuperação Kubernetes no CI estão integrados. Checks e inventários do candidato têm corte explícito, e a primeira demo Compose local passou. João aceitou a revisão de publicação delimitada em22/10, preservando seis conteúdos não verificados. Continuam pendentes explicação autônoma, diagnóstico por métricas, autonomia operacional e Kubernetes local. João adiou o painel e retomou o frontend em22/10; o console já percorreu aprovação/rejeição e recuperação assistida com o backend local. Em18/10 também separou a pesquisa de sandbox do aceite da v1, preservando achados e sem liberar o core experimental. A fila vigente está em [BACKLOG.md](BACKLOG.md); não há percentual recalculado a partir de PRs.
-
-## Recorte histórico de etapas e estimativa
-
-A tabela abaixo preserva o recorte anterior às entregas e decisões de15–18/10/2026. Seus percentuais e pendências não representam o estado atual nem são critérios vigentes de fechamento.
-
-| Etapa | Concluído | Restante | O que faltava naquele recorte |
-|---|---:|---:|---|
-| Governança e isolamento do ambiente | 30% | 70% | Executar sandbox e comprovar restrições de acesso, privilégios e rede |
-| Fundação reproduzível | 95% | 5% | Confirmar o quickstart no computador de João com Docker Linux disponível |
-| Primeiro comportamento com TDD | 100% | 0% | Aceite atendido; manter a disciplina nos próximos comportamentos |
-| Fluxo assíncrono confiável | 95% | 5% | Refinar e testar a confirmação de falha irrecuperável |
-| Qualidade e resiliência | 75% | 25% | Tratar dívida relevante e consolidar cenários de falha, recuperação e limites |
-| Kubernetes e observabilidade | 5% | 95% | Executar cluster local, provar fluxo/persistência e criar métricas/painel úteis |
-| Entrega e portfólio | 65% | 35% | Tratar achados de dependências/imagens, revisar publicação e ensaiar a demo |
-
-Os percentuais usam pesos de escopo diferentes, registrados no backlog. Não devem ser somados ou usados como prazo. No estado atual, a fila de fechamento acima substitui essas pendências históricas; o fluxo principal já foi demonstrado. O projeto só encerra quando os critérios do plano forem cumpridos, inclusive João conseguir explicar e executar o trabalho.
-
-Para executar a demonstração e localizar as evidências, consultar [o roteiro](DEMO.md), [o backlog](BACKLOG.md) e [a especificação](../spec.md).
+Na revisão documental, a fila vigente não apresenta correção funcional aberta no fluxo principal ou no console. O estado da v1 é **candidato operacional com aceites técnicos locais assistidos concluídos**. A prática autônoma e a decisão final seguem pendentes. O link público é uma etapa separada de apresentação. [Backlog detalhado](BACKLOG.md)
