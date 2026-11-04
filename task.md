@@ -13,11 +13,12 @@
 - Primeiro recorte de sessão local com contas fictícias na PR #208. Evidência e limites em spec§9.142.
 - Consulta por conta no perfil de sessão na PR #209. Contrato, migração e teste de regressão em spec§9.143.
 - Criação e idempotência por conta na PR #210. Contrato e regressão em spec§9.144.
+- Tela de entrada e saída com contexto de sessão na PR #211. Evidência e recorte em spec§9.145.
 
 ## Agora
 
 - [ ] Aceite pessoal da v1 permanece adiado. O roteiro está em docs/DEMO.md e as evidências assistidas em docs/V1_VALIDATION.md.
-- [ ] Integrar o console Angular à sessão e testar troca de conta, expiração e recuperação de intenção.
+- [ ] Vincular criação, consulta e recuperação de intenção à sessão Angular. Testar troca de conta e expiração na jornada.
 
 ## Próximo
 

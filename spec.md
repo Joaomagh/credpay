@@ -3257,6 +3257,12 @@ A V11 mantém o vínculo anterior entre chave e transação e usa `transacao_id`
 
 No [red](https://github.com/Joaomagh/credpay/actions/runs/41894459423), head `3f548bc`, o POST com sessão e CSRF retornou 403 em vez de 201. Foi a única falha em 533 testes. A [PR #210](https://github.com/Joaomagh/credpay/pull/210) inclui replay concorrente, acesso entre contas, CSRF de outra sessão, conflito de payload e regressão do escopo legado.
 
+### 9.145 Entrada e saída no console Angular
+
+O console oferece `/entrar` com formulário rotulado e feedback de autenticação. O proxy de desenvolvimento mantém as chamadas `/auth/**` na mesma origem. O componente consulta a sessão atual, envia as credenciais no corpo do login, apaga a senha do formulário no envio e mantém o contexto confirmado apenas em memória. `GET /auth/sessao` reúne UUID, usuário e token CSRF da mesma sessão. O logout usa esse token para evitar que uma aba antiga encerre outra conta. Um 403 no logout descarta a identidade exibida e orienta nova entrada.
+
+O teste red do Angular reproduziu o redirecionamento de `/entrar` para Nova transação. O [red do backend](https://github.com/Joaomagh/credpay/actions/runs/41897134429) encontrou a resposta sem UUID, única falha entre 533 testes. A [PR #211](https://github.com/Joaomagh/credpay/pull/211) inclui a prova HTTP de que o token obtido com a conta A não encerra a conta B. A revisão manual em navegador local conferiu desktop, viewport de 390 px, foco por teclado, envio vazio e indisponibilidade do perfil de sessão. A prova completa das transações autenticadas no navegador depende do vínculo das rotas e do armazenamento com a conta.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
