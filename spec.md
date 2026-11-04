@@ -3225,6 +3225,12 @@ Com `ubuntu-latest` resolvido para Ubuntu 26.04, a validação rejeitou a identi
 
 No [ensaio Kubernetes em Ubuntu 26.04](https://github.com/Joaomagh/credpay/actions/runs/41843150919), a criação do cluster avançou até a importação das imagens dos apps e o `ctr` recusou um digest ausente no conteúdo exportado. O job real fixa Ubuntu 24.04, plataforma da [execução de referência](https://github.com/Joaomagh/credpay/actions/runs/40123736365). O workflow mantém os controles locais multiplataforma e os testes de startup, persistência, falha, recuperação e cleanup do cluster descartável.
 
+### 9.141 Limite do corpo de criação HTTP
+
+`POST /transacoes` aceita até 8.192 bytes de corpo. Acima do limite, devolve HTTP 413 com Problem Details antes do caso de uso. O MVC rejeita comprimento declarado excessivo e lê no máximo 8.193 bytes para limitar também corpos sem `Content-Length`. O mesmo conversor JSON interpreta requisições dentro do limite. O limite se aplica à criação e complementa os controles de recursos da futura demo pública. [OWASP API4](https://api-security.owasp.org/editions/2023/en/0xa4-unrestricted-resource-consumption/)
+
+No [red do CI](https://github.com/Joaomagh/credpay/actions/runs/41849088060), head `d5106d2`, o corpo válido de 8.193 bytes recebeu HTTP 201. Foi a única falha entre 526 testes. O teste local offline compilou, mas o executor JUnit Platform Launcher 6.0.3 estava ausente do cache. A [PR #207](https://github.com/Joaomagh/credpay/pull/207) inclui regressões para comprimento ausente e para o limite exato. O candidato anterior `51f8476` conserva o seu recorte de validação.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

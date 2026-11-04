@@ -425,3 +425,16 @@ Atualização de 04/11/2026: QA manual integrado concluído com o backend local 
 ### Manutenção do runtime — 04/11/2026
 
 Imagem oficial Temurin atualizada e integrada na PR #205 após oito checks. O smoke confirmou curl e zlib corrigidos, e o inventário preservou a cobertura dos quatro alvos com zero HIGH/CRITICAL. GnuTLS segue em triagem. O corte técnico vigente e o aceite pessoal restante estão no [candidato da v1](V1_CANDIDATE.md).
+
+### Contas individuais e segurança da demo pública
+
+João indicou preferência por contas individuais para a demonstração. O candidato da v1 conserva seu recorte local. A evolução com contas exige um novo corte e validação própria.
+
+| Ordem | Incremento | Critério de aceite |
+| --- | --- | --- |
+| 1 | Sessão no serviço de transações | Contas fictícias para teste, senha com hash, login e logout reais, sessão renovada ao autenticar e invalidada ao sair. Cookie HttpOnly, proteção CSRF e HTTPS com cookie Secure para o perfil externo. |
+| 2 | Autorização por dono | O servidor deriva a identidade da sessão. Conta A cria e consulta sua transação. Conta B recebe o mesmo 404 de um UUID ausente. A idempotência e o lock de criação consideram conta e chave, inclusive em concorrência. Dados antigos sem dono ficam fora da API autenticada. |
+| 3 | Console Angular | Login responsivo com a skill do frontend, mensagens genéricas, foco por teclado, logout e expiração. A intenção e o recibo pertencem à conta. Trocar de sessão não pode revelar o recibo da conta anterior ou enviar outro POST. Teste com duas contas no navegador e API real. |
+| 4 | Controles antes de abrir a demo | Limites de tentativas de login e orçamento de requisições do POST/GET, levando em conta o polling do console. Verificar 429, limites de corpo e valores compactos com expoente, isolamento da infraestrutura e expiração dos dados fictícios. Disponibilização e eventual cadastro público ficam condicionados a essa prova. |
+
+SonarQube pode entrar em um incremento de análise estática e cobertura com baseline própria. GitHub Actions segue como pipeline de referência. Jenkins pode ser avaliado em laboratório separado se houver objetivo de aprender a operação de um controlador e seus agentes. [OWASP API1](https://api-security.owasp.org/editions/2023/en/0xa1-broken-object-level-authorization/) · [OWASP API4](https://api-security.owasp.org/editions/2023/en/0xa4-unrestricted-resource-consumption/) · [Spring Security e CSRF](https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html)
