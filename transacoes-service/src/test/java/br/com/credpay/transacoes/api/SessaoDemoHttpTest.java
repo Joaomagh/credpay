@@ -89,7 +89,10 @@ class SessaoDemoHttpTest {
 
             assertThat(post(clienteB, "/auth/login", formulario("conta-b", senhaB), csrf(clienteB))).isEqualTo(204);
             conferirConta(clienteB, "conta-b");
-            assertThat(get(clienteA, "/transacoes/" + UUID.randomUUID()).statusCode()).isEqualTo(403);
+            var transacaoLegada = UUID.randomUUID();
+            jdbc.update("INSERT INTO transacoes (id, valor, moeda, status) VALUES (?, 10.00, 'BRL', 'PENDENTE')",
+                    transacaoLegada);
+            assertThat(get(clienteA, "/transacoes/" + transacaoLegada).statusCode()).isEqualTo(404);
             assertThat(post(clienteA, "/auth/logout", "", csrfAntes)).isEqualTo(403);
             var csrfDepois = csrf(clienteA);
             assertThat(post(clienteA, "/transacoes", "", csrfDepois)).isEqualTo(403);
