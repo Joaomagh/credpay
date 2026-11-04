@@ -18,7 +18,7 @@ Uma demonstração acessível pode facilitar a apresentação do trabalho. Isso 
 
 Fontes: [Angular no Netlify](https://docs.netlify.com/build/frameworks/framework-setup-guides/angular/), [Netlify Free](https://docs.netlify.com/manage/accounts-and-billing/billing/billing-for-credit-based-plans/credit-based-pricing-plans/), [Vercel Hobby](https://vercel.com/docs/plans/hobby), [Cloudflare Pages](https://developers.cloudflare.com/pages/platform/limits/).
 
-Publicar o frontend sozinho não disponibiliza os dois serviços Java. O proxy de desenvolvimento do Angular também não é configuração de produção. Precisaremos testar build estático, fallback de `/nova` e `/consultar`, destino HTTPS e proxy/CORS restritos, mantendo URL pública da API separada de senhas e conexões de banco/broker. Segredos não entram no bundle Angular.
+Para a demo com contas, o ponto de entrada público precisa servir o Angular e encaminhar `/auth/**` e `/transacoes/**` na mesma origem HTTPS. A configuração deve dar fallback ao Angular em `/entrar`, `/nova` e `/consultar`, e preservar os cabeçalhos de sessão e contexto de conta nas rotas da API. O proxy de desenvolvimento atende ao ensaio local. Banco, broker e segredos ficam na infraestrutura do backend.
 
 ## Backend: onde o gratuito precisa ser comprovado
 
@@ -40,7 +40,7 @@ Vercel também documenta runtime de containers em beta. Portanto, não é corret
 
 1. Escolher conta/região/plano e um orçamento máximo explícito com João; preservar teto zero quando essa for a opção, sem ativar upgrade/recarga/serviço pago automaticamente. Confirmar disponibilidade antes de adaptar arquitetura.
 2. Provar os dois serviços, bancos e broker no destino escolhido: primeiro acesso após ociosidade, POST/PENDENTE→GET final, replay e recuperação. Se houver suspensão, a interface precisa explicá-la antes de enviar o pedido; não declarar disponibilidade contínua.
-3. Definir HTTPS/ingress para a API pública, limites de requisição/armazenamento e ciclo dos dados fictícios. Bancos, AMQP/management e métricas administrativas ficam internos. Revalidar dependências/imagens/achados no ambiente real; não copiar o perfil Diagnostics para exposição pública.
+3. Definir HTTPS e cookie `Secure`, provisionamento das contas, expiração de sessões e ciclo dos dados fictícios. Os limites do perfil local valem por instância. Conferir a identidade de origem no proxy e as cotas no destino. Bancos, AMQP, management, diagnósticos e métricas administrativas ficam internos. Revalidar dependências, imagens e achados no ambiente real.
 4. Preparar configuração, testes e rollback revisáveis; só então obter autorização específica para a publicação no destino. Fazer smoke externo em desktop/mobile e conferir rotas, idempotência e decimal exato. Nenhum domínio pago ou Kubernetes cloud é requisito automático.
 
 O objetivo é uma demo honesta que o visitante consiga abrir e entender. Deploy não comprova aprendizado de João, não encerra pendências de segurança e não transforma dados fictícios em um serviço financeiro real.
