@@ -46,7 +46,8 @@ class EncerramentoConfirmadoMigrationIntegrationTest {
 
         atual.migrate();
 
-        assertThat(atual.info().current().getVersion().getVersion()).isEqualTo("8");
+        assertThat(atual.info().current().getVersion().getVersion()).isEqualTo("9");
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM contas", Integer.class)).isZero();
         assertThat(jdbc.queryForList("SELECT * FROM transacoes ORDER BY id")).isEqualTo(transacoes);
         assertThat(jdbc.queryForList("SELECT * FROM outbox_eventos ORDER BY event_id")).isEqualTo(criacoes);
         var depois = jdbc.queryForList("SELECT * FROM historico_transacoes ORDER BY event_id");
