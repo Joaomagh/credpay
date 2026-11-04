@@ -9,6 +9,7 @@
 
 - QA manual integrado concluído com o backend local ativo: aprovação, rejeição, UUID ausente e retomada do recibo. Evidência em spec§9.139.1.
 - Manutenção de runtime Temurin 21 Noble integrada na PR #205 após oito checks. Inventário e corte técnico registrados em docs/V1_VALIDATION.md e docs/V1_CANDIDATE.md.
+- Limite de 8 KiB na criação HTTP, com red reproduzido e regressão na PR #207. Proposta de contas individuais e seus critérios no backlog.
 
 ## Agora
 
@@ -18,6 +19,7 @@
 
 - Depois dos aceites pessoais, conferir a aplicabilidade das evidências e registrar a decisão final sobre o candidato técnico 51f8476.
 - Acompanhar os achados GnuTLS registrados no inventário e na triagem.
+- Evolução com contas individuais: começar pela sessão e validar autorização por dono antes de habilitar o console autenticado para a demo pública.
 
 ## Depois
 

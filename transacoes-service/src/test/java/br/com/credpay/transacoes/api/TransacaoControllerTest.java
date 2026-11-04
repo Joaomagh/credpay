@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.Currency;
 import java.util.UUID;
 
@@ -26,6 +27,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.MockMvcPrint;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -91,6 +93,48 @@ class TransacaoControllerTest {
                 .andExpect(jsonPath("$.status").value(413));
 
         verifyNoInteractions(criarTransacao);
+    }
+
+    @Test
+    void deveRejeitarCorpoAcimaDoLimiteSemContentLength() throws Exception {
+        var json = "{\"valor\":10.00,\"moeda\":\"BRL\"}";
+        var corpo = json + " ".repeat(8193 - json.length());
+
+        mockMvc.perform(contexto -> {
+            var request = new MockHttpServletRequest(contexto, "POST", "/transacoes") {
+                @Override
+                public int getContentLength() {
+                    return -1;
+                }
+
+                @Override
+                public long getContentLengthLong() {
+                    return -1;
+                }
+            };
+            request.addHeader("Idempotency-Key", CHAVE_IDEMPOTENCIA.toString());
+            request.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            request.setContent(corpo.getBytes(StandardCharsets.UTF_8));
+            return request;
+        }).andExpect(status().is(413));
+
+        verifyNoInteractions(criarTransacao);
+    }
+
+    @Test
+    void deveAceitarCorpoValidoComExatamente8192Bytes() throws Exception {
+        var valor = new BigDecimal("10.00");
+        var moeda = Currency.getInstance("BRL");
+        when(criarTransacao.executar(CHAVE_IDEMPOTENCIA, valor, moeda))
+                .thenReturn(new Resultado(TRANSACAO_ID, valor, moeda, StatusTransacao.PENDENTE));
+        var json = "{\"valor\":10.00,\"moeda\":\"BRL\"}";
+
+        mockMvc.perform(post("/transacoes")
+                        .header("Idempotency-Key", CHAVE_IDEMPOTENCIA)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json + " ".repeat(8192 - json.length())))
+                .andExpect(status().isCreated());
+        verify(criarTransacao).executar(CHAVE_IDEMPOTENCIA, valor, moeda);
     }
 
     @Test
