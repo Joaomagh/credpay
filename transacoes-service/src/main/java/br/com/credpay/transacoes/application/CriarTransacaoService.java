@@ -15,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 class CriarTransacaoService implements CriarTransacao {
 
+    private static final int LIMITE_CARACTERES_DECIMAIS = 8192;
+
     private final TransacaoRepository repository;
     private final OutboxRepository outboxRepository;
     private final Clock clock;
@@ -35,6 +37,7 @@ class CriarTransacaoService implements CriarTransacao {
     @Transactional
     public Resultado executar(UUID contaId, UUID chaveIdempotencia, BigDecimal valor, Currency moeda) {
         var candidata = Transacao.criar(UUID.randomUUID(), valor, moeda);
+        conferirTamanhoDecimal(candidata.valor());
         repository.bloquearChaveIdempotencia(contaId, chaveIdempotencia);
         var existente = repository.buscarPorChaveIdempotencia(contaId, chaveIdempotencia);
 
@@ -50,6 +53,16 @@ class CriarTransacaoService implements CriarTransacao {
         repository.inserir(contaId, chaveIdempotencia, candidata);
         outboxRepository.adicionar(criarEvento(candidata));
         return paraResultado(candidata);
+    }
+
+    private static void conferirTamanhoDecimal(BigDecimal valor) {
+        long escala = valor.scale();
+        long inteiros = Math.max(1, valor.precision() - escala);
+        long comprimento = escala > 0 ? inteiros + 1 + escala : inteiros;
+        if (comprimento > LIMITE_CARACTERES_DECIMAIS) {
+            throw new IllegalArgumentException(
+                    "valor excede " + LIMITE_CARACTERES_DECIMAIS + " caracteres na forma decimal");
+        }
     }
 
     private EventoOutbox criarEvento(Transacao transacao) {

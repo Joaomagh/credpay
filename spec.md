@@ -3275,6 +3275,12 @@ O Compose CI executa primeiro os seis cenários legados. Em seguida, o roteiro `
 
 A jornada verifica aprovação pelo processador, logout em outra aba da mesma sessão, resposta 404 para B consultando um UUID de A e retomada do recibo por A sem repetir POST. O reporter exige seis casos do perfil legado e dois do perfil de contas em invocações separadas. A saída pública conserva nomes estáticos, etapas com falha e contagens. Credenciais fictícias são geradas por execução e fornecidas ao navegador por ambiente de processo. Traço, vídeo e screenshot ficam desligados nesse job.
 
+### 9.148 Limite de expansão decimal na criação
+
+O corpo do POST já tem limite de 8 KiB. O serviço de criação também limita o valor positivo a 8192 caracteres na forma decimal sem expoente. Calcula esse comprimento a partir da precisão e da escala, usando `long`, antes do lock de idempotência e de construir a string do evento. Acima da fronteira, responde 422 sem persistir o pedido ou o evento. Valores na fronteira mantêm a precisão. A leitura de transações já persistidas continua disponível.
+
+No [red](https://github.com/Joaomagh/credpay/actions/runs/41904144197), `1e8192` e `1e-8191` foram aceitos com 201. Foram as duas falhas em 537 testes. A [PR #214](https://github.com/Joaomagh/credpay/pull/214) verifica a fronteira de 8192, ausência de recibo e evento em rejeição e escalas `Integer.MIN_VALUE` e `Integer.MAX_VALUE` sem chamar repositório. [OWASP API4](https://api-security.owasp.org/editions/2023/en/0xa4-unrestricted-resource-consumption/)
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

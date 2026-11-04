@@ -12,6 +12,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -25,12 +26,27 @@ import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 class CriarTransacaoServiceTest {
 
     private static final UUID CHAVE_IDEMPOTENCIA =
             UUID.fromString("03714dde-d152-47f0-97f0-82171ffbe150");
+
+    @ParameterizedTest
+    @ValueSource(ints = {Integer.MIN_VALUE, Integer.MAX_VALUE})
+    void executar_deveRecusarEscalaExtremaAntesDeBloquearOuPersistir(int escala) {
+        var repository = mock(TransacaoRepository.class);
+        var outbox = mock(OutboxRepository.class);
+        var service = novoService(repository, outbox);
+        var valor = new BigDecimal(BigInteger.ONE, escala);
+
+        assertThatThrownBy(() -> service.executar(null, CHAVE_IDEMPOTENCIA, valor, Currency.getInstance("BRL")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("valor excede 8192 caracteres na forma decimal");
+        verifyNoInteractions(repository, outbox);
+    }
 
     @ParameterizedTest
     @CsvSource({"10.00, BRL", "123.456, USD"})
