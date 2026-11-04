@@ -1,23 +1,22 @@
 # CredPay — Tarefas
 
-> Um incremento = um resultado verificável. Prioridades em docs/BACKLOG.md; evidências em spec.md.
+> Um incremento = um resultado verificável. Prioridades em docs/BACKLOG.md e evidências em spec.md.
 
 ## Último incremento
 
-- Diagnóstico causal descartável passou no CI40222821313/head4819b55: returned delta1 em cada publicador, PENDENTE/outbox original, recuperação causal, persistência e cleanup próprios; seis jornadas de navegador também passaram. Controles Windows/Linux e Scan40222821310 verdes, revisão sem bloqueantes. Roteiro em infra/compose/DIAGNOSTICS.md; evidência/limites em spec9.138.
+- João concluiu o diagnóstico causal local com as imagens f412652. Os dois publicadores recuperaram o evento original após retorno sem rota, sem duplicação. O ensaio confirmou persistência após down/up e remoção exclusiva dos recursos de teste.
+- A apresentação do projeto e o relatório do backlog foram atualizados em README.md e docs/ENTENDA_O_CREDPAY.md.
 
 ## Agora
 
-- [ ] Após integrar o registro, João executa Run do diagnóstico causal com imagens f412652; conferir resumo, depois solicitar Remove próprio separadamente. CI não substitui a prova no Docker Desktop. Prática pessoal continua adiada; candidato operacional será reidentificado ao fechar.
+- [ ] Aguardar João retomar o aceite pessoal da v1 com o roteiro em docs/DEMO.md. A execução assistida de Compose, Kubernetes e diagnóstico local está registrada em docs/V1_VALIDATION.md.
 
 ## Próximo
 
-- João pediu adiar prática/explicação em22/10. Preservar o aceite de aprendizado pendente sem novos exercícios nesta execução; continuar trabalho técnico independente. Diagnóstico por métricas e Kubernetes local conservam seus limites/autorização.
-- Se João trouxer erro local ou dúvida, tratar o menor problema demonstrado com teste quando aplicável.
-- Após os aceites restantes, conferir aplicabilidade do corte técnico, atualizar somente o necessário e registrar fechamento sem alegações além da evidência.
-- João pediu planejar demo pública gratuita após os aceites atuais. Opções/limites em docs/PUBLIC_DEMO_PLAN.md; destino e publicação externos ainda não autorizados especificamente. Não substituir o aceite local por deploy ou alterar a arquitetura para encaixar cota sem revisão.
+- Depois dos aceites pessoais, conferir a aplicabilidade das evidências e registrar a decisão final sobre o candidato operacional e07f0aa.
+- Acompanhar as correções oficiais de curl, zlib e GnuTLS em infra/security/TRIAGE.md. Revalidar os alvos afetados antes de promover uma imagem.
 
 ## Depois
 
-- Manutenção de runtime: avaliar imagem oficial atualizada para correções disponíveis de curl/zlib; GnuTLS88648 permanece sem correção, sem dispensa ou promoção automática. Findings preservados na triagem.
-- Pesquisa de sandbox incompleta e painel adiados; referências frontend preservadas. Sem pagamento real, HA ou implantação externa.
+- Demo pública gratuita após escolher e autorizar o destino. Critérios de publicação em docs/PUBLIC_DEMO_PLAN.md.
+- Painel e pesquisa de sandbox seguem adiados.
