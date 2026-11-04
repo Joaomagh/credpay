@@ -57,6 +57,7 @@ class SessaoDemoConfiguration {
                 .authorizeHttpRequests(acesso -> acesso
                         .requestMatchers(HttpMethod.GET, "/auth/csrf", "/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/auth/sessao", "/transacoes/{id}").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/transacoes").authenticated()
                         .anyRequest().denyAll())
                 .exceptionHandling(erros -> erros.authenticationEntryPoint(
                         (req, resp, erro) -> resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED)))

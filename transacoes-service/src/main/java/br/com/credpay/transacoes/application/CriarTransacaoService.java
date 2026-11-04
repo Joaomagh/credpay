@@ -33,10 +33,10 @@ class CriarTransacaoService implements CriarTransacao {
 
     @Override
     @Transactional
-    public Resultado executar(UUID chaveIdempotencia, BigDecimal valor, Currency moeda) {
+    public Resultado executar(UUID contaId, UUID chaveIdempotencia, BigDecimal valor, Currency moeda) {
         var candidata = Transacao.criar(UUID.randomUUID(), valor, moeda);
-        repository.bloquearChaveIdempotencia(chaveIdempotencia);
-        var existente = repository.buscarPorChaveIdempotencia(chaveIdempotencia);
+        repository.bloquearChaveIdempotencia(contaId, chaveIdempotencia);
+        var existente = repository.buscarPorChaveIdempotencia(contaId, chaveIdempotencia);
 
         if (existente.isPresent()) {
             var transacao = existente.orElseThrow();
@@ -47,7 +47,7 @@ class CriarTransacaoService implements CriarTransacao {
             return paraResultado(transacao);
         }
 
-        repository.inserir(chaveIdempotencia, candidata);
+        repository.inserir(contaId, chaveIdempotencia, candidata);
         outboxRepository.adicionar(criarEvento(candidata));
         return paraResultado(candidata);
     }

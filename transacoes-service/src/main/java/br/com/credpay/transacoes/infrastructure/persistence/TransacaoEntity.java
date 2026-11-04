@@ -37,7 +37,12 @@ class TransacaoEntity {
     }
 
     TransacaoEntity(Transacao transacao) {
+        this(transacao, null);
+    }
+
+    TransacaoEntity(Transacao transacao, UUID contaId) {
         id = transacao.id();
+        this.contaId = contaId;
         valor = transacao.valor();
         moeda = transacao.moeda().getCurrencyCode();
         status = transacao.status();

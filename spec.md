@@ -3249,6 +3249,14 @@ A autorização de leitura está na fronteira HTTP. O consumidor de resultados e
 
 O [red](https://github.com/Joaomagh/credpay/actions/runs/41891681386), head `769b0cc`, encontrou 403 no lugar de 404 para uma sessão que consultou uma transação legada. Foi a única falha em 530 testes. A [PR #209](https://github.com/Joaomagh/credpay/pull/209) acrescenta casos de consulta por duas sessões independentes, perfil legado e migração com dados preservados.
 
+### 9.144 Criação de transações e idempotência por conta
+
+O `POST /transacoes` no perfil `sessao-demo` exige sessão e token CSRF válido. O serviço usa o UUID da conta autenticada para gravar o dono. A chave recebida no cabeçalho é escopada pela conta. A mesma conta e o mesmo pedido recuperam o recibo original `PENDENTE`, e uma mudança no pedido resulta em 409. Outra conta pode usar a mesma chave para criar seu próprio pedido.
+
+A V11 mantém o vínculo anterior entre chave e transação e usa `transacao_id` como chave primária do recibo. A unicidade de `(chave, conta_id)` trata dois valores nulos como iguais, preservando a unicidade do escopo legado. O lock transacional usa o par conta e chave, com o valor anterior do lock no escopo anônimo. A consulta do recibo verifica o mesmo escopo no vínculo e na transação. O dono é gravado no serviço de transações. O contrato RabbitMQ conserva o UUID global da transação e o evento de criação é salvo na mesma transação do banco.
+
+No [red](https://github.com/Joaomagh/credpay/actions/runs/41894459423), head `3f548bc`, o POST com sessão e CSRF retornou 403 em vez de 201. Foi a única falha em 533 testes. A [PR #210](https://github.com/Joaomagh/credpay/pull/210) inclui replay concorrente, acesso entre contas, CSRF de outra sessão, conflito de payload e regressão do escopo legado.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

@@ -134,7 +134,7 @@ class PublicarOutboxIntegrationTest {
 
         try {
             var transacao = criarTransacao.executar(
-                    UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"));
+                    null, UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"));
             var eventId = jdbcTemplate.queryForObject(
                     "SELECT event_id FROM outbox_eventos WHERE aggregate_id = ?",
                     UUID.class, transacao.id());
@@ -188,7 +188,7 @@ class PublicarOutboxIntegrationTest {
 
         try {
             var transacao = criarTransacao.executar(
-                    UUID.randomUUID(), new BigDecimal("10.00"), Currency.getInstance("BRL"));
+                    null, UUID.randomUUID(), new BigDecimal("10.00"), Currency.getInstance("BRL"));
             var eventId = jdbcTemplate.queryForObject(
                     "SELECT event_id FROM outbox_eventos WHERE aggregate_id = ?",
                     UUID.class, transacao.id());

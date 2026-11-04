@@ -94,18 +94,29 @@ class TransacaoHttpTest {
     }
 
     @Test
-    void buscar_deveRetornar404_quandoTransacaoPertencerAConta() throws Exception {
+    void perfilLegado_deveIgnorarTransacaoEChaveVinculadasAConta() throws Exception {
         var conta = UUID.randomUUID();
         var transacao = UUID.randomUUID();
+        var chave = UUID.randomUUID();
         jdbcTemplate.update("INSERT INTO contas (id, usuario, senha_hash) VALUES (?, ?, repeat('0', 96))",
                 conta, "conta-" + conta);
         jdbcTemplate.update("""
                 INSERT INTO transacoes (id, valor, moeda, status, conta_id) VALUES (?, 10.00, 'BRL', 'PENDENTE', ?)
                 """, transacao, conta);
+        jdbcTemplate.update("""
+                INSERT INTO idempotencias_transacao (chave, transacao_id, conta_id) VALUES (?, ?, ?)
+                """, chave, transacao, conta);
 
         mockMvc.perform(get("/transacoes/{id}", transacao))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("transação não encontrada"));
+        var legado = mockMvc.perform(postTransacoes(chave).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"valor\":10.00,\"moeda\":\"BRL\"}"))
+                .andExpect(status().isCreated()).andReturn().getResponse();
+        assertThat(legado.getHeader("Location")).isNotEqualTo("/transacoes/" + transacao);
+        mockMvc.perform(postTransacoes(chave).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"valor\":10.00,\"moeda\":\"BRL\"}"))
+                .andExpect(status().isCreated()).andExpect(content().string(legado.getContentAsString()));
     }
 
     @Test

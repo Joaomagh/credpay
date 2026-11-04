@@ -112,8 +112,14 @@ class SessaoDemoHttpTest {
                     .isEqualTo(204);
             var csrfA = csrf(clienteA);
             var csrfB = csrf(clienteB);
-            var primeira = criar(clienteA, chave, "10.00", csrfA);
+            assertThat(criar(clienteB, chave, "11.00", csrfA).statusCode()).isEqualTo(403);
+            var envio1 = clienteA.sendAsync(pedido(chave, "10.00", csrfA), HttpResponse.BodyHandlers.ofString());
+            var envio2 = clienteA.sendAsync(pedido(chave, "10.00", csrfA), HttpResponse.BodyHandlers.ofString());
+            var primeira = envio1.join();
+            var simultanea = envio2.join();
             assertThat(primeira.statusCode()).isEqualTo(201);
+            assertThat(simultanea.statusCode()).isEqualTo(201);
+            assertThat(simultanea.body()).isEqualTo(primeira.body());
             var replay = criar(clienteA, chave, "10.0", csrfA);
             assertThat(replay.statusCode()).isEqualTo(201);
             assertThat(replay.body()).isEqualTo(primeira.body());
@@ -124,6 +130,9 @@ class SessaoDemoHttpTest {
             var caminhoA = primeira.headers().firstValue("Location").orElseThrow();
             var caminhoB = outra.headers().firstValue("Location").orElseThrow();
             assertThat(caminhoB).isNotEqualTo(caminhoA);
+            var transacaoA = UUID.fromString(json.readTree(primeira.body()).path("id").asText());
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM outbox_eventos WHERE aggregate_id = ?",
+                    Integer.class, transacaoA)).isEqualTo(1);
             assertThat(get(clienteA, caminhoA).statusCode()).isEqualTo(200);
             assertThat(get(clienteB, caminhoB).statusCode()).isEqualTo(200);
             assertThat(get(clienteA, caminhoB).statusCode()).isEqualTo(404);
@@ -199,13 +208,16 @@ class SessaoDemoHttpTest {
     }
 
     private HttpResponse<String> criar(HttpClient cliente, UUID chave, String valor, String csrf) throws Exception {
-        var requisicao = requisicao("/transacoes")
+        return cliente.send(pedido(chave, valor, csrf), HttpResponse.BodyHandlers.ofString());
+    }
+
+    private HttpRequest pedido(UUID chave, String valor, String csrf) {
+        return requisicao("/transacoes")
                 .header("Content-Type", "application/json")
                 .header("Idempotency-Key", chave.toString())
                 .header("X-CSRF-TOKEN", csrf)
                 .POST(HttpRequest.BodyPublishers.ofString("{\"valor\":%s,\"moeda\":\"BRL\"}".formatted(valor)))
                 .build();
-        return cliente.send(requisicao, HttpResponse.BodyHandlers.ofString());
     }
 
     private int post(HttpClient cliente, String caminho, String corpo, String csrf) throws Exception {

@@ -52,7 +52,7 @@ class TransacaoControllerTest {
         var valor = new BigDecimal("10.00");
         var moeda = Currency.getInstance("BRL");
 
-        when(criarTransacao.executar(CHAVE_IDEMPOTENCIA, valor, moeda))
+        when(criarTransacao.executar(null, CHAVE_IDEMPOTENCIA, valor, moeda))
                 .thenReturn(new Resultado(TRANSACAO_ID, valor, moeda, StatusTransacao.PENDENTE));
 
         mockMvc.perform(post("/transacoes")
@@ -72,14 +72,14 @@ class TransacaoControllerTest {
                 .andExpect(jsonPath("$.moeda").value("BRL"))
                 .andExpect(jsonPath("$.status").value("PENDENTE"));
 
-        verify(criarTransacao).executar(CHAVE_IDEMPOTENCIA, valor, moeda);
+        verify(criarTransacao).executar(null, CHAVE_IDEMPOTENCIA, valor, moeda);
     }
 
     @Test
     void deveRejeitarCorpoAcimaDoLimiteAntesDeCriarTransacao() throws Exception {
         var valor = new BigDecimal("10.00");
         var moeda = Currency.getInstance("BRL");
-        when(criarTransacao.executar(CHAVE_IDEMPOTENCIA, valor, moeda))
+        when(criarTransacao.executar(null, CHAVE_IDEMPOTENCIA, valor, moeda))
                 .thenReturn(new Resultado(TRANSACAO_ID, valor, moeda, StatusTransacao.PENDENTE));
 
         var json = "{\"valor\":10.00,\"moeda\":\"BRL\"}";
@@ -125,7 +125,7 @@ class TransacaoControllerTest {
     void deveAceitarCorpoValidoComExatamente8192Bytes() throws Exception {
         var valor = new BigDecimal("10.00");
         var moeda = Currency.getInstance("BRL");
-        when(criarTransacao.executar(CHAVE_IDEMPOTENCIA, valor, moeda))
+        when(criarTransacao.executar(null, CHAVE_IDEMPOTENCIA, valor, moeda))
                 .thenReturn(new Resultado(TRANSACAO_ID, valor, moeda, StatusTransacao.PENDENTE));
         var json = "{\"valor\":10.00,\"moeda\":\"BRL\"}";
 
@@ -134,7 +134,7 @@ class TransacaoControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json + " ".repeat(8192 - json.length())))
                 .andExpect(status().isCreated());
-        verify(criarTransacao).executar(CHAVE_IDEMPOTENCIA, valor, moeda);
+        verify(criarTransacao).executar(null, CHAVE_IDEMPOTENCIA, valor, moeda);
     }
 
     @Test
@@ -178,7 +178,7 @@ class TransacaoControllerTest {
     void deveRetornarConflito_quandoChaveForReutilizadaComOutroPayload() throws Exception {
         var valor = new BigDecimal("10.00");
         var moeda = Currency.getInstance("BRL");
-        when(criarTransacao.executar(CHAVE_IDEMPOTENCIA, valor, moeda))
+        when(criarTransacao.executar(null, CHAVE_IDEMPOTENCIA, valor, moeda))
                 .thenThrow(new ConflitoIdempotenciaException());
 
         mockMvc.perform(post("/transacoes")
@@ -196,7 +196,7 @@ class TransacaoControllerTest {
                 .andExpect(jsonPath("$.detail")
                         .value("chave de idempotência já utilizada com outro payload"));
 
-        verify(criarTransacao).executar(CHAVE_IDEMPOTENCIA, valor, moeda);
+        verify(criarTransacao).executar(null, CHAVE_IDEMPOTENCIA, valor, moeda);
     }
 
     @Test

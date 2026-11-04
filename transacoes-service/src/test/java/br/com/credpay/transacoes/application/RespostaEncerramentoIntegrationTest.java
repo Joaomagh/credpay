@@ -87,7 +87,7 @@ class RespostaEncerramentoIntegrationTest {
     void inserir_devePreservarRespostaCompletaAposCommit_semAplicarEstado(
             RespostaEncerramentoRecebida.Resultado resultado) {
         var chave = UUID.randomUUID();
-        var original = criar.executar(chave, new BigDecimal("75.00"), Currency.getInstance("BRL"));
+        var original = criar.executar(null, chave, new BigDecimal("75.00"), Currency.getInstance("BRL"));
         var pedido = solicitar.executar(UUID.randomUUID(), original.id(), UUID.randomUUID());
         var transacao = jdbc.queryForMap("SELECT * FROM transacoes WHERE id = ?", original.id());
         var historico = jdbc.queryForList("SELECT * FROM historico_transacoes WHERE transaction_id = ?", original.id());
@@ -117,7 +117,7 @@ class RespostaEncerramentoIntegrationTest {
                 .isEqualTo(historico);
         assertThat(jdbc.queryForMap("SELECT * FROM pedidos_encerramento WHERE event_id = ?", pedido.eventId()))
                 .isEqualTo(snapshotPedido);
-        assertThat(criar.executar(chave, new BigDecimal("75.0"), Currency.getInstance("BRL"))).isEqualTo(original);
+        assertThat(criar.executar(null, chave, new BigDecimal("75.0"), Currency.getInstance("BRL"))).isEqualTo(original);
     }
 
     @ParameterizedTest
@@ -228,7 +228,7 @@ class RespostaEncerramentoIntegrationTest {
     }
 
     private RespostaEncerramentoRecebida prepararResposta(RespostaEncerramentoRecebida.Resultado resultado) {
-        var transacao = criar.executar(UUID.randomUUID(), new BigDecimal("75.00"), Currency.getInstance("BRL"));
+        var transacao = criar.executar(null, UUID.randomUUID(), new BigDecimal("75.00"), Currency.getInstance("BRL"));
         var pedido = solicitar.executar(UUID.randomUUID(), transacao.id(), UUID.randomUUID());
         return new RespostaEncerramentoRecebida(UUID.randomUUID(), transacao.id(), pedido.creationEventId(),
                 Instant.parse("2026-10-14T18:00:00.123456789Z"), transacao.id(), pedido.eventId(), resultado,

@@ -83,7 +83,7 @@ class CriarTransacaoAtomicidadeIntegrationTest {
                 .when(outboxRepository).adicionar(any(EventoOutbox.class));
 
         assertThatThrownBy(() -> criarTransacao.executar(
-                UUID.randomUUID(),
+                null, UUID.randomUUID(),
                 new BigDecimal("10.00"),
                 Currency.getInstance("BRL")))
                 .isInstanceOf(IllegalStateException.class)

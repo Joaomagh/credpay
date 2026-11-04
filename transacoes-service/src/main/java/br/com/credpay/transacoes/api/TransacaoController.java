@@ -32,10 +32,11 @@ public class TransacaoController {
     @PostMapping
     ResponseEntity<TransacaoResponse> criar(
             @RequestHeader(name = "Idempotency-Key", required = false) String chaveIdempotencia,
-            @RequestBody TransacaoRequest request) {
+            @RequestBody TransacaoRequest request,
+            Principal principal) {
         var chave = converterChaveIdempotencia(chaveIdempotencia);
         var moeda = converterMoeda(request.moeda());
-        var resultado = criarTransacao.executar(chave, request.valor(), moeda);
+        var resultado = criarTransacao.executar(ContaDemoPrincipal.idDaConta(principal), chave, request.valor(), moeda);
         var location = URI.create("/transacoes/" + resultado.id());
         var response = new TransacaoResponse(
                 resultado.id(),

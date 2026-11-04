@@ -142,7 +142,7 @@ class TransacaoProcessadaListenerIntegrationTest {
     @ParameterizedTest
     @EnumSource(value = StatusTransacao.class, names = {"APROVADA", "REJEITADA"})
     void receber_deveConfirmarSomenteDepoisDoCommitDoEstadoEHistorico(StatusTransacao status) throws Exception {
-        var original = criar.executar(UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"));
+        var original = criar.executar(null, UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"));
         var causa = jdbc.queryForObject("SELECT event_id FROM outbox_eventos WHERE aggregate_id = ?", UUID.class, original.id());
         var evento = UUID.randomUUID();
         clock.resetar();
@@ -176,7 +176,7 @@ class TransacaoProcessadaListenerIntegrationTest {
 
     @Test
     void receber_deveConfirmarReplaySemNovaTransicaoOuConsultaAoRelogio() throws Exception {
-        var original = criar.executar(UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"));
+        var original = criar.executar(null, UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"));
         var causa = jdbc.queryForObject("SELECT event_id FROM outbox_eventos WHERE aggregate_id = ?", UUID.class, original.id());
         var evento = UUID.randomUUID();
         var message = mensagem(evento, original.id(), causa, StatusTransacao.REJEITADA);
@@ -225,7 +225,7 @@ class TransacaoProcessadaListenerIntegrationTest {
 
     @Test
     void receber_deveEnviarConflitoParaDlqPreservandoResultadoOriginal() throws Exception {
-        var original = criar.executar(UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"));
+        var original = criar.executar(null, UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"));
         var causa = jdbc.queryForObject("SELECT event_id FROM outbox_eventos WHERE aggregate_id = ?", UUID.class, original.id());
         var evento = UUID.randomUUID();
         clock.resetar();
@@ -251,7 +251,7 @@ class TransacaoProcessadaListenerIntegrationTest {
     @ValueSource(booleans = {true, false})
     void receber_deveEnviarRecusaParaDlqSemCriarTransicao(boolean transacaoExiste) throws Exception {
         var id = transacaoExiste
-                ? criar.executar(UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL")).id()
+                ? criar.executar(null, UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL")).id()
                 : UUID.randomUUID();
         var antes = banco();
         clock.resetar();
@@ -271,7 +271,7 @@ class TransacaoProcessadaListenerIntegrationTest {
 
     @Test
     void receber_deveReverterDuasTentativasEConfirmarSomenteTerceiroCommit() throws Exception {
-        var original = criar.executar(UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"));
+        var original = criar.executar(null, UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"));
         var causa = jdbc.queryForObject("SELECT event_id FROM outbox_eventos WHERE aggregate_id = ?", UUID.class, original.id());
         var evento = UUID.randomUUID();
         var antes = banco();
@@ -305,7 +305,7 @@ class TransacaoProcessadaListenerIntegrationTest {
 
     @Test
     void receber_deveEnviarParaDlqAposTresRollbacksSemAlterarBanco() throws Exception {
-        var original = criar.executar(UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"));
+        var original = criar.executar(null, UUID.randomUUID(), new BigDecimal("123.450"), Currency.getInstance("BRL"));
         var causa = jdbc.queryForObject("SELECT event_id FROM outbox_eventos WHERE aggregate_id = ?", UUID.class, original.id());
         var evento = UUID.randomUUID();
         var antes = banco();
