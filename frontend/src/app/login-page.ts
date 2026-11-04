@@ -7,6 +7,7 @@ import { finalize } from 'rxjs';
 import { Icon } from './icon';
 import { SessionApi } from './session-api';
 import { SessionContext } from './session-context';
+import { retryMessage } from './retry-message';
 
 @Component({
   selector: 'cp-login', imports: [FormsModule, Icon, RouterLink], templateUrl: './login-page.html',
@@ -47,8 +48,9 @@ export class LoginPage {
         this.context.confirm(session);
         this.note.set('Sessão confirmada.');
       },
-      error: error => this.error.set(error instanceof HttpErrorResponse && error.status === 401
-        ? 'Usuário ou senha inválidos.' : 'Não foi possível confirmar a sessão. Tente novamente.')
+      error: error => this.error.set(retryMessage(error, 'tentar entrar')
+        ?? (error instanceof HttpErrorResponse && error.status === 401
+          ? 'Usuário ou senha inválidos.' : 'Não foi possível confirmar a sessão. Tente novamente.'))
     });
   }
 

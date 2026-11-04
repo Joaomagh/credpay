@@ -7,6 +7,7 @@ import { Transaction, UUID } from './transaction';
 import { Icon } from './icon';
 import { TransactionCard } from './transaction-card';
 import { SessionContext } from './session-context';
+import { retryMessage } from './retry-message';
 
 @Component({ selector: 'cp-query', imports: [FormsModule, Icon, TransactionCard], templateUrl: './query-page.html' })
 export class QueryPage implements OnDestroy {
@@ -46,8 +47,9 @@ export class QueryPage implements OnDestroy {
       next: t => { this.result.set(t); this.loading.set(false); },
       error: e => {
         this.loading.set(false); this.tracking.set(false);
-        this.error.set(e.status === 404 ? 'Transação não encontrada. Confira o identificador e tente novamente.'
-          : 'A consulta foi interrompida. O último estado recebido foi preservado, quando disponível; tente consultar novamente.');
+        this.error.set(retryMessage(e, 'consultar novamente')
+          ?? (e.status === 404 ? 'Transação não encontrada. Confira o identificador e tente novamente.'
+            : 'A consulta foi interrompida. O último estado recebido foi preservado, quando disponível; tente consultar novamente.'));
       },
       complete: () => {
         this.loading.set(false); this.tracking.set(false);

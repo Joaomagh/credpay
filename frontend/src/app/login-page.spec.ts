@@ -66,4 +66,18 @@ describe('Entrada no console', () => {
     expect(harness.routeNativeElement?.querySelector('[role="alert"]')?.textContent).toContain('expirou');
     expect(harness.routeNativeElement?.textContent).not.toContain(conta.usuario);
   });
+
+  it('informa a espera do servidor quando a entrada atinge o limite', async () => {
+    const http = TestBed.inject(HttpTestingController);
+    const harness = await RouterTestingHarness.create();
+    const page = await harness.navigateByUrl('/entrar', LoginPage);
+    http.expectOne('/auth/sessao').flush(null, {status: 401, statusText: 'Unauthorized'});
+    page.usuario = conta.usuario;
+    page.senha = 'ficticia +';
+    page.entrar();
+    http.expectOne('/auth/csrf').flush(null, {status: 429, statusText: 'Too Many Requests', headers: {'Retry-After': '17'}});
+    harness.detectChanges();
+    expect(harness.routeNativeElement?.querySelector('[role="alert"]')?.textContent).toContain('Aguarde 17 s');
+    http.expectNone('/auth/login');
+  });
 });

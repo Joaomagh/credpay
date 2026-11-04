@@ -9,11 +9,12 @@
 - Login, rotas e recibos por conta nas PRs #211 e #212. Contratos em spec§9.145–9.146.
 - Oito jornadas reais de navegador, incluindo duas com contas, na PR #213. Evidência em spec§9.147 e no Compose CI.
 - Limite de expansão decimal na criação na PR #214. Contrato e red em spec§9.148.
+- Orçamentos de frequência e orientação de espera no console na PR #215. Contrato em spec§9.149.
 
 ## Agora
 
 - [ ] Aceite pessoal da v1 permanece adiado. O roteiro está em docs/DEMO.md e as evidências assistidas em docs/V1_VALIDATION.md.
-- [ ] Definir limites de tentativas e de frequência para a demo com contas.
+- [ ] Preparar o recorte de publicação com HTTPS, retenção e limites validados no destino autorizado.
 
 ## Próximo
 

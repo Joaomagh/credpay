@@ -10,14 +10,23 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import tools.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.annotation.DirtiesContext;
@@ -58,6 +67,66 @@ class SessaoDemoHttpTest {
 
     @Autowired
     private ObjectMapper json;
+
+    @Autowired
+    private RelogioFixture relogio;
+
+    @BeforeEach
+    void iniciarJanelaIsolada() {
+        relogio.avancarMinuto();
+    }
+
+    @Test
+    void deveLimitarTokenELoginAntesDaAutenticacao() throws Exception {
+        try (var cliente = HttpClient.newBuilder().cookieHandler(new CookieManager()).build()) {
+            for (int tentativa = 0; tentativa < 30; tentativa++) {
+                assertThat(get(cliente, "/auth/csrf").statusCode()).isEqualTo(200);
+            }
+            conferirLimite(get(cliente, "/auth/csrf"));
+            for (int tentativa = 0; tentativa < 20; tentativa++) {
+                assertThat(post(cliente, "/auth/login", "", null)).isEqualTo(403);
+            }
+            var excesso = cliente.send(requisicao("/auth/login").POST(HttpRequest.BodyPublishers.noBody()).build(),
+                    HttpResponse.BodyHandlers.discarding());
+            conferirLimite(excesso);
+            relogio.avancarMinuto();
+            assertThat(get(cliente, "/auth/csrf").statusCode()).isEqualTo(200);
+            assertThat(post(cliente, "/auth/login", "", null)).isEqualTo(403);
+        }
+    }
+
+    @Test
+    void deveLimitarCriacaoEConsultaSeparadamentePorConta() throws Exception {
+        var senhaA = registrarConta("limite-a");
+        var senhaB = registrarConta("limite-b");
+        var chave = UUID.randomUUID();
+        var consulta = "/transacoes/" + UUID.randomUUID();
+        try (var a = HttpClient.newBuilder().cookieHandler(new CookieManager()).build();
+             var b = HttpClient.newBuilder().cookieHandler(new CookieManager()).build()) {
+            assertThat(post(a, "/auth/login", formulario("limite-a", senhaA), csrf(a))).isEqualTo(204);
+            assertThat(post(b, "/auth/login", formulario("limite-b", senhaB), csrf(b))).isEqualTo(204);
+            var csrfA = csrf(a);
+            for (int tentativa = 0; tentativa < 45; tentativa++) {
+                assertThat(get(a, consulta).statusCode()).isEqualTo(404);
+            }
+            conferirLimite(get(a, consulta));
+            assertThat(get(b, consulta).statusCode()).isEqualTo(404);
+
+            for (int tentativa = 0; tentativa < 12; tentativa++) {
+                assertThat(criar(a, chave, "10.00", csrfA).statusCode()).isEqualTo(201);
+            }
+            conferirLimite(criar(a, chave, "10.00", csrfA));
+            assertThat(criar(b, chave, "10.00", csrf(b)).statusCode()).isEqualTo(201);
+            relogio.avancarMinuto();
+            assertThat(get(a, consulta).statusCode()).isEqualTo(404);
+            assertThat(criar(a, chave, "10.00", csrfA).statusCode()).isEqualTo(201);
+        }
+    }
+
+    private void conferirLimite(HttpResponse<?> resposta) {
+        assertThat(resposta.statusCode()).isEqualTo(429);
+        assertThat(resposta.headers().firstValue("Retry-After")).contains("60");
+    }
 
     @Test
     void consultaDeSessaoDeveExigirAutenticacaoNoPerfilDeContas() throws Exception {
@@ -248,5 +317,30 @@ class SessaoDemoHttpTest {
     private HttpRequest.Builder requisicao(String caminho) {
         return HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + porta + caminho))
                 .timeout(Duration.ofSeconds(10));
+    }
+
+    @TestConfiguration(proxyBeanMethods = false)
+    static class TempoDeTeste {
+        @Bean
+        @Primary
+        RelogioFixture relogioFixture() {
+            return new RelogioFixture();
+        }
+    }
+
+    private static final class RelogioFixture extends Clock {
+        private final AtomicReference<Instant> agora =
+                new AtomicReference<>(Instant.parse("2026-11-04T12:00:00Z"));
+
+        void avancarMinuto() { agora.updateAndGet(instante -> instante.plusSeconds(60)); }
+
+        @Override
+        public Instant instant() { return agora.get(); }
+
+        @Override
+        public ZoneId getZone() { return ZoneOffset.UTC; }
+
+        @Override
+        public Clock withZone(ZoneId zone) { return Clock.fixed(instant(), zone); }
     }
 }

@@ -3281,6 +3281,14 @@ O corpo do POST já tem limite de 8 KiB. O serviço de criação também limita 
 
 No [red](https://github.com/Joaomagh/credpay/actions/runs/41904144197), `1e8192` e `1e-8191` foram aceitos com 201. Foram as duas falhas em 537 testes. A [PR #214](https://github.com/Joaomagh/credpay/pull/214) verifica a fronteira de 8192, ausência de recibo e evento em rejeição e escalas `Integer.MIN_VALUE` e `Integer.MAX_VALUE` sem chamar repositório. [OWASP API4](https://api-security.owasp.org/editions/2023/en/0xa4-unrestricted-resource-consumption/)
 
+### 9.149 Frequência de requisições no perfil de contas
+
+O perfil `sessao-demo` aplica uma janela de 60 segundos por instância e por operação. A emissão de CSRF permite 30 pedidos por origem e 120 no total. Login permite 20 pedidos por origem e 60 no total. Essas duas rotas usam o endereço da conexão e aplicam a cota antes de CSRF e autenticação. A criação permite 12 pedidos por conta e 120 no total. A consulta permite 45 pedidos por conta e 300 no total, com margem para o acompanhamento de até 30 respostas do console.
+
+Ao atingir uma cota, a API devolve 429 e o número de segundos restantes em `Retry-After`. O Angular apresenta a espera, conserva a intenção de criação e interrompe o acompanhamento. O contador mantém apenas as origens aceitas na janela corrente. Os totais reiniciam junto da instância. Uma publicação precisa conferir endereços no proxy, cotas no destino e expiração dos dados. [OWASP API4](https://api-security.owasp.org/editions/2023/en/0xa4-unrestricted-resource-consumption/)
+
+O [red HTTP](https://github.com/Joaomagh/credpay/actions/runs/41906746375) encontrou 200 e 404 após os limites esperados, duas falhas em 541 testes. Os três casos red Angular exibiram as mensagens genéricas em vez da espera informada. A [PR #215](https://github.com/Joaomagh/credpay/pull/215) inclui 429, nova janela, independência por conta e teto global com relógio controlado.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

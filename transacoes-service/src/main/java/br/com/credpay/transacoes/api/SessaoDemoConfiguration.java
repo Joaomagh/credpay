@@ -1,5 +1,6 @@
 package br.com.credpay.transacoes.api;
 
+import java.time.Clock;
 import java.util.UUID;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,7 +21,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.password.Pbkdf2PasswordEncoder;
 import org.springframework.security.crypto.password.Pbkdf2PasswordEncoder.SecretKeyFactoryAlgorithm;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 @Configuration(proxyBeanMethods = false)
@@ -43,7 +46,7 @@ class SessaoDemoConfiguration {
     }
 
     @Bean
-    SecurityFilterChain filtrosDaSessao(HttpSecurity http, JdbcTemplate jdbc, PasswordEncoder encoder) {
+    SecurityFilterChain filtrosDaSessao(HttpSecurity http, JdbcTemplate jdbc, PasswordEncoder encoder, Clock relogio) {
         var autenticador = new DaoAuthenticationProvider(usuario -> jdbc.query("""
                 SELECT id, usuario, senha_hash FROM contas WHERE usuario = ?
                 """, (rs, linha) -> new ContaDemoPrincipal(rs.getObject("id", UUID.class),
@@ -52,6 +55,7 @@ class SessaoDemoConfiguration {
         autenticador.setPasswordEncoder(encoder);
 
         var login = PathPatternRequestMatcher.pathPattern(HttpMethod.POST, LOGIN);
+        var limites = new LimitesDemo(relogio);
         http.authenticationManager(new ProviderManager(autenticador))
                 .requestCache(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(acesso -> acesso
@@ -67,6 +71,8 @@ class SessaoDemoConfiguration {
                         .failureHandler((req, resp, erro) -> resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED)))
                 .logout(saida -> saida.logoutUrl("/auth/logout").deleteCookies("JSESSIONID")
                         .logoutSuccessHandler((req, resp, conta) -> resp.setStatus(HttpServletResponse.SC_NO_CONTENT)))
+                .addFilterBefore(limites::antesDeCsrf, CsrfFilter.class)
+                .addFilterAfter(limites::depoisDaAutorizacao, AuthorizationFilter.class)
                 .addFilterBefore((req, resp, chain) -> {
                     var requisicao = (HttpServletRequest) req;
                     if (login.matches(requisicao) && requisicao.getQueryString() != null) {

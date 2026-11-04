@@ -5,6 +5,7 @@ import { Intent, Transaction, amount } from './transaction';
 import { TransactionsApi } from './transactions-api';
 import { CreationJournal, InvalidCreationRecord } from './creation-journal';
 import { SessionContext } from './session-context';
+import { retryMessage } from './retry-message';
 
 @Injectable()
 export class Creation {
@@ -66,11 +67,11 @@ export class Creation {
         try { this.journal.save(intent!, t, this.account?.id); }
         catch { this.error.set('Pedido recebido, mas não conseguimos guardar o recibo nesta aba. Copie o identificador e consulte o estado atual; a intenção anterior continua preservada quando disponível.'); }
       },
-      error: e => this.error.set(e.status === 409
+      error: e => this.error.set(retryMessage(e, 'tentar com a mesma intenção') ?? (e.status === 409
         ? 'A API informou conflito para esta chave. Não alteramos a intenção nem reenviamos automaticamente.'
         : e.status === 400 || e.status === 422
           ? 'A API recusou os dados. Confira o valor; para alterá-lo, inicie uma nova intenção.'
-          : 'Não foi possível confirmar o resultado. Tente novamente com a mesma intenção: chave e valor serão preservados.')
+          : 'Não foi possível confirmar o resultado. Tente novamente com a mesma intenção: chave e valor serão preservados.'))
     });
   }
   reset(): void {

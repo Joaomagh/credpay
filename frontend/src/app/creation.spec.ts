@@ -70,4 +70,13 @@ describe('Intenção de criação e formulário', () => {
     expect(creation.error()).toContain('A API recusou os dados');
     expect(creation.intent()).not.toBeNull();
   });
+
+  it('preserva a mesma intenção quando a criação atinge o limite', () => {
+    creation.submit();
+    const request = http.expectOne('/transacoes');
+    request.flush(null, {status: 429, statusText: 'Too Many Requests', headers: {'Retry-After': '17'}});
+    expect(creation.error()).toContain('Aguarde 17 s');
+    expect(creation.intent()?.key).toBe(request.request.headers.get('Idempotency-Key'));
+    http.expectNone('/transacoes');
+  });
 });
