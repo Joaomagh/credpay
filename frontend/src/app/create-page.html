@@ -1,3 +1,4 @@
+@if (creation.permitted()) {
 <div class="page-heading"><div><p class="eyebrow">Console de transações</p><h1>Nova transação<span>.</span></h1></div><span class="heading-meta">BRL / ASYNC</span></div>
 <div class="intro-line"><span class="tag"><cp-icon name="bolt" /> Processamento assíncrono</span><span class="tag subtle">Demonstração</span></div>
 <p class="page-description">Um pedido agora. Um resultado logo depois. Crie uma transação e acompanhe cada etapa do processamento.</p>
@@ -29,3 +30,6 @@
     <div class="small-note"><cp-icon name="shield" /><p><strong>Dados fictícios, fluxo real.</strong><br>Este ambiente simula transações. Não há movimentação financeira.</p></div>
   </div>
 </div>
+} @else {
+  <p role="status">Confirme a sessão para continuar.</p>
+}

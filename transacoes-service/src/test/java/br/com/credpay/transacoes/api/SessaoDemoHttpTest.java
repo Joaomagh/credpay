@@ -90,6 +90,11 @@ class SessaoDemoHttpTest {
             assertThat(json.readTree(propria.body()).path("id").asText()).isEqualTo(transacao.toString());
             assertThat(propria.headers().firstValue("Cache-Control")).hasValueSatisfying(
                     valor -> assertThat(valor).contains("no-store"));
+            var idOutra = jdbc.queryForObject("SELECT id FROM contas WHERE usuario = 'outra-consulta'", UUID.class);
+            var requisicaoDeAbaAntiga = requisicao("/transacoes/" + transacao)
+                    .header("X-CredPay-Conta", idOutra.toString()).build();
+            assertThat(dona.send(requisicaoDeAbaAntiga, HttpResponse.BodyHandlers.discarding()).statusCode())
+                    .isEqualTo(401);
 
             var alheia = get(outra, "/transacoes/" + transacao);
             var inexistente = get(outra, "/transacoes/" + ausente);
@@ -113,6 +118,13 @@ class SessaoDemoHttpTest {
             var csrfA = csrf(clienteA);
             var csrfB = csrf(clienteB);
             assertThat(criar(clienteB, chave, "11.00", csrfA).statusCode()).isEqualTo(403);
+            var idContaB = jdbc.queryForObject("SELECT id FROM contas WHERE usuario = 'outra-criacao'", UUID.class);
+            var escritaDeAbaAntiga = requisicao("/transacoes").header("Content-Type", "application/json")
+                    .header("Idempotency-Key", chave.toString()).header("X-CSRF-TOKEN", csrfA)
+                    .header("X-CredPay-Conta", idContaB.toString())
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"valor\":12.00,\"moeda\":\"BRL\"}")).build();
+            assertThat(clienteA.send(escritaDeAbaAntiga, HttpResponse.BodyHandlers.discarding()).statusCode())
+                    .isEqualTo(401);
             var envio1 = clienteA.sendAsync(pedido(chave, "10.00", csrfA), HttpResponse.BodyHandlers.ofString());
             var envio2 = clienteA.sendAsync(pedido(chave, "10.00", csrfA), HttpResponse.BodyHandlers.ofString());
             var primeira = envio1.join();

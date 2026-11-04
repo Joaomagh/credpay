@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/transacoes")
 public class TransacaoController {
 
+    private static final String CONTA_ESPERADA = "X-CredPay-Conta";
+
     private final CriarTransacao criarTransacao;
     private final BuscarTransacao buscarTransacao;
 
@@ -32,11 +34,16 @@ public class TransacaoController {
     @PostMapping
     ResponseEntity<TransacaoResponse> criar(
             @RequestHeader(name = "Idempotency-Key", required = false) String chaveIdempotencia,
+            @RequestHeader(name = CONTA_ESPERADA, required = false) UUID contaEsperada,
             @RequestBody TransacaoRequest request,
             Principal principal) {
+        var conta = ContaDemoPrincipal.idDaConta(principal);
+        if (contaEsperada != null && !contaEsperada.equals(conta)) {
+            return ResponseEntity.status(401).build();
+        }
         var chave = converterChaveIdempotencia(chaveIdempotencia);
         var moeda = converterMoeda(request.moeda());
-        var resultado = criarTransacao.executar(ContaDemoPrincipal.idDaConta(principal), chave, request.valor(), moeda);
+        var resultado = criarTransacao.executar(conta, chave, request.valor(), moeda);
         var location = URI.create("/transacoes/" + resultado.id());
         var response = new TransacaoResponse(
                 resultado.id(),
@@ -64,8 +71,13 @@ public class TransacaoController {
     }
 
     @GetMapping("/{id}")
-    ResponseEntity<TransacaoResponse> buscar(@PathVariable String id, Principal principal) {
-        var resultado = buscarTransacao.executar(converterId(id), ContaDemoPrincipal.idDaConta(principal));
+    ResponseEntity<TransacaoResponse> buscar(@PathVariable String id,
+            @RequestHeader(name = CONTA_ESPERADA, required = false) UUID contaEsperada, Principal principal) {
+        var conta = ContaDemoPrincipal.idDaConta(principal);
+        if (contaEsperada != null && !contaEsperada.equals(conta)) {
+            return ResponseEntity.status(401).build();
+        }
+        var resultado = buscarTransacao.executar(converterId(id), conta);
         var response = new TransacaoResponse(
                 resultado.id(),
                 resultado.valor(),

@@ -1,3 +1,4 @@
+@if (permitted()) {
 <div class="page-heading"><div><p class="eyebrow">Console de transações</p><h1>Consultar<span>.</span></h1></div><span class="heading-meta">BRL / ASYNC</span></div>
 <div class="intro-line"><span class="tag"><cp-icon name="search" /> Consulta por identificador</span><span class="tag subtle">Demonstração</span></div>
 <p class="page-description">Acompanhe o que acontece depois do pedido. Consulte o estado atual usando o identificador da transação.</p>
@@ -23,3 +24,6 @@
     }
   </div>
 </div>
+} @else {
+  <p role="status">Confirme a sessão para continuar.</p>
+}

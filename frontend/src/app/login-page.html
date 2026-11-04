@@ -10,6 +10,9 @@
     <h1 id="auth-heading">{{ sessao() ? 'Sessão ativa' : 'Entre na sua conta' }}</h1>
     @if (sessao(); as conta) {
       <p>Você entrou como <strong>{{ conta.usuario }}</strong>.</p>
+      @if (context.required) {
+        <a class="button secondary" routerLink="/nova">Abrir console</a>
+      }
       <button class="button primary" type="button" [disabled]="busy()" (click)="sair()">
         {{ busy() ? 'Encerrando sessão…' : 'Sair da conta' }}
       </button>

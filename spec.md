@@ -3263,6 +3263,12 @@ O console oferece `/entrar` com formulário rotulado e feedback de autenticaçã
 
 O teste red do Angular reproduziu o redirecionamento de `/entrar` para Nova transação. O [red do backend](https://github.com/Joaomagh/credpay/actions/runs/41897134429) encontrou a resposta sem UUID, única falha entre 533 testes. A [PR #211](https://github.com/Joaomagh/credpay/pull/211) inclui a prova HTTP de que o token obtido com a conta A não encerra a conta B. A revisão manual em navegador local conferiu desktop, viewport de 390 px, foco por teclado, envio vazio e indisponibilidade do perfil de sessão. A prova completa das transações autenticadas no navegador depende do vínculo das rotas e do armazenamento com a conta.
 
+### 9.146 Console vinculado à sessão
+
+O Angular tem um modo explícito `contas` que exige confirmação de sessão antes de abrir criação e consulta. A intenção, chave e recibo ficam no `sessionStorage` da aba sob o UUID da conta. Uma troca de conta bloqueia a visualização e descarta respostas de operações que iniciaram com outro contexto. A identidade é revalidada ao receber foco. Login e logout notificam outras abas da mesma origem via `BroadcastChannel` quando disponível. O token CSRF fica em memória.
+
+O frontend informa `X-CredPay-Conta` na criação e na consulta autenticadas. Quando o cabeçalho vem de uma tela com contexto antigo, a API devolve 401 antes de criar ou consultar. A autorização continua baseada na conta autenticada e na propriedade persistida. O red Angular abriu Nova transação em vez de redirecionar ao login. O [red HTTP](https://github.com/Joaomagh/credpay/actions/runs/41899509961) retornou 200 em vez de 401 com um identificador de conta divergente. A [PR #212](https://github.com/Joaomagh/credpay/pull/212) acrescenta cenários Angular de troca e expiração, e prova HTTP separada com sessões reais. O ensaio integrado de duas contas no navegador fica registrado como pendência.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

@@ -18,7 +18,13 @@ Para criar e consultar dados no modo padrão, prepare e ative o backend conforme
 
 ## Entrada no perfil de contas
 
-Abra `/entrar` com o serviço de transações em `sessao-demo` e uma conta fictícia já provisionada. A tela solicita o token CSRF, envia as credenciais em formulário e confirma a sessão no servidor. Recarregar consulta a sessão atual. Sair usa o token da sessão confirmada. A integração da sessão com as telas de criação, consulta e recuperação de recibos está no [backlog](../docs/BACKLOG.md#contas-individuais-e-segurança-da-demo-pública).
+Com o serviço de transações no perfil `sessao-demo` e uma conta fictícia provisionada, inicie o Angular a partir da pasta `frontend`:
+
+```powershell
+npm.cmd start -- --configuration contas
+```
+
+Abra `/entrar`. A tela confirma a sessão no servidor e libera o console para a conta verificada. Criação e consulta carregam o identificador da conta esperada e retornam à entrada quando a sessão deixa de ser válida. O recibo salvo na aba reaparece somente quando a mesma conta entra novamente. O console revalida a identidade ao receber foco e reage a login e logout em outras abas da mesma origem quando `BroadcastChannel` está disponível. A prova com duas contas e API real no mesmo ensaio de navegador está no [backlog](../docs/BACKLOG.md#contas-individuais-e-segurança-da-demo-pública).
 
 ## Teste manual no navegador
 

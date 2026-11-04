@@ -10,7 +10,7 @@ describe('Intenção de criação e formulário', () => {
   let creation: Creation;
   beforeEach(() => {
     sessionStorage.removeItem('credpay.creation.v1');
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] });
+    TestBed.configureTestingModule({ providers: [Creation, provideHttpClient(), provideHttpClientTesting(), provideRouter([])] });
     http = TestBed.inject(HttpTestingController);
     creation = TestBed.inject(Creation);
   });

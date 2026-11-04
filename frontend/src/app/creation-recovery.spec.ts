@@ -11,7 +11,7 @@ const id = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
 describe('Retomada da intenção na sessão da aba', () => {
   let http: HttpTestingController;
   function boot(): Creation {
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] });
+    TestBed.configureTestingModule({ providers: [Creation, provideHttpClient(), provideHttpClientTesting(), provideRouter([])] });
     http = TestBed.inject(HttpTestingController);
     return TestBed.inject(Creation);
   }

@@ -22,6 +22,11 @@
             "outputPath": "dist/console"
           },
           "configurations": {
+            "contas": {
+              "fileReplacements": [
+                {"replace": "src/console-profile.ts", "with": "src/console-profile.contas.ts"}
+              ]
+            },
             "development": {
               "optimization": false,
               "sourceMap": true
@@ -43,6 +48,9 @@
           "options": {
             "buildTarget": "console:build:development",
             "proxyConfig": "proxy.conf.json"
+          },
+          "configurations": {
+            "contas": {"buildTarget": "console:build:development,contas"}
           }
         },
         "test": {

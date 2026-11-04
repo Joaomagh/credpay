@@ -1,4 +1,4 @@
-import { Component, OnDestroy, inject, signal } from '@angular/core';
+import { Component, OnDestroy, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -6,11 +6,15 @@ import { TransactionsApi } from './transactions-api';
 import { Transaction, UUID } from './transaction';
 import { Icon } from './icon';
 import { TransactionCard } from './transaction-card';
+import { SessionContext } from './session-context';
 
 @Component({ selector: 'cp-query', imports: [FormsModule, Icon, TransactionCard], templateUrl: './query-page.html' })
 export class QueryPage implements OnDestroy {
   private readonly api = inject(TransactionsApi);
   private readonly route = inject(ActivatedRoute);
+  private readonly context = inject(SessionContext);
+  private readonly account = this.context.required ? this.context.session() : null;
+  readonly permitted = computed(() => this.context.matches(this.account));
   private subscription?: Subscription;
   private readonly routeSubscription: Subscription;
   private activeId = '';
@@ -28,6 +32,7 @@ export class QueryPage implements OnDestroy {
     });
   }
   search(): void {
+    if (!this.permitted()) return;
     this.subscription?.unsubscribe();
     this.loading.set(false);
     this.tracking.set(false);
@@ -37,7 +42,7 @@ export class QueryPage implements OnDestroy {
     if (id !== this.activeId) this.result.set(null);
     this.activeId = id;
     this.loading.set(true); this.tracking.set(true);
-    this.subscription = this.api.watch(id).subscribe({
+    this.subscription = this.api.watch(id, this.account).subscribe({
       next: t => { this.result.set(t); this.loading.set(false); },
       error: e => {
         this.loading.set(false); this.tracking.set(false);
