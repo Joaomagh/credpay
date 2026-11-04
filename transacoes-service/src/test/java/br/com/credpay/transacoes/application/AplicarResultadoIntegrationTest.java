@@ -160,7 +160,7 @@ class AplicarResultadoIntegrationTest {
     }
 
     private void assertEstadoEDados(UUID id, StatusTransacao estado) {
-        var transacao = buscar.executar(id);
+        var transacao = buscar.executar(id, null);
         assertThat(transacao.id()).isEqualTo(id);
         assertThat(transacao.status()).isEqualTo(estado);
         assertThat(transacao.valor()).isEqualTo(new BigDecimal("123.450"));

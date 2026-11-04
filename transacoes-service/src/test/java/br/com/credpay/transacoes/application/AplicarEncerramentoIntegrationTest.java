@@ -140,7 +140,7 @@ class AplicarEncerramentoIntegrationTest {
 
         var aplicada = aplicar.executar(resposta);
 
-        assertThat(buscar.executar(transactionId).status()).isEqualTo(StatusTransacao.FALHOU);
+        assertThat(buscar.executar(transactionId, null).status()).isEqualTo(StatusTransacao.FALHOU);
         assertThat(respostas.buscarPorEvento(resposta.eventId())).contains(resposta);
         var transicao = historico.buscarPorEvento(resposta.eventId()).orElseThrow();
         assertThat(aplicada.resposta()).isEqualTo(resposta);
@@ -182,7 +182,7 @@ class AplicarEncerramentoIntegrationTest {
 
         var aplicada = aplicar.executar(resposta);
 
-        assertThat(buscar.executar(resposta.transactionId()).status()).isEqualTo(StatusTransacao.FALHOU);
+        assertThat(buscar.executar(resposta.transactionId(), null).status()).isEqualTo(StatusTransacao.FALHOU);
         assertThat(aplicada.resposta()).isEqualTo(resposta);
         assertThat(aplicada.historico()).isPresent();
         if (etapa.equals("aplicada")) {
@@ -211,7 +211,7 @@ class AplicarEncerramentoIntegrationTest {
         assertThat(jdbc.queryForMap("SELECT * FROM transacoes")).isEqualTo(transacao);
         assertThat(jdbc.queryForList("SELECT * FROM historico_transacoes")).isEqualTo(historicoAntes);
         if (cenario.startsWith("antes")) { financeiro.executar(processada); }
-        assertThat(buscar.executar(resposta.transactionId()).status()).isEqualTo(estado);
+        assertThat(buscar.executar(resposta.transactionId(), null).status()).isEqualTo(estado);
         var registro = historico.buscarPorEvento(processada.eventId());
         var chamadas = clock.chamadas.get();
         clock.instante = clock.instante.plusSeconds(100);
@@ -341,7 +341,7 @@ class AplicarEncerramentoIntegrationTest {
 
         assertThatThrownBy(() -> financeiro.executar(entrada)).isInstanceOf(ConflitoResultadoException.class);
 
-        assertThat(buscar.executar(resposta.transactionId()).status()).isEqualTo(StatusTransacao.PENDENTE);
+        assertThat(buscar.executar(resposta.transactionId(), null).status()).isEqualTo(StatusTransacao.PENDENTE);
         assertThat(jdbc.queryForList("SELECT * FROM historico_transacoes")).isEmpty();
         assertThat(respostas.buscarPorEvento(resposta.eventId())).contains(resposta);
     }
@@ -354,10 +354,10 @@ class AplicarEncerramentoIntegrationTest {
 
         assertThatThrownBy(() -> financeiro.executar(entrada)).isInstanceOf(ConflitoResultadoException.class);
 
-        assertThat(buscar.executar(resposta.transactionId()).status()).isEqualTo(StatusTransacao.PENDENTE);
+        assertThat(buscar.executar(resposta.transactionId(), null).status()).isEqualTo(StatusTransacao.PENDENTE);
         assertThat(jdbc.queryForList("SELECT * FROM historico_transacoes")).isEmpty();
         aplicar.executar(resposta);
-        assertThat(buscar.executar(resposta.transactionId()).status()).isEqualTo(StatusTransacao.FALHOU);
+        assertThat(buscar.executar(resposta.transactionId(), null).status()).isEqualTo(StatusTransacao.FALHOU);
     }
 
     private RespostaEncerramentoRecebida entrada(RespostaEncerramentoRecebida.Resultado resultado) {
@@ -398,7 +398,7 @@ class AplicarEncerramentoIntegrationTest {
         assertThat(((PSQLException) causa).getServerErrorMessage().getConstraint())
                 .isEqualTo("fk_historico_resposta_confirmada");
         assertThat(jdbc.queryForList("SELECT * FROM historico_transacoes")).isEmpty();
-        assertThat(buscar.executar(resposta.transactionId()).status()).isEqualTo(StatusTransacao.PENDENTE);
+        assertThat(buscar.executar(resposta.transactionId(), null).status()).isEqualTo(StatusTransacao.PENDENTE);
     }
 
     @Test
@@ -413,7 +413,7 @@ class AplicarEncerramentoIntegrationTest {
                 .hasMessage("resposta de encerramento divergente");
 
         assertThat(respostas.buscarPorEvento(resposta.eventId())).contains(resposta);
-        assertThat(buscar.executar(resposta.transactionId()).status()).isEqualTo(StatusTransacao.PENDENTE);
+        assertThat(buscar.executar(resposta.transactionId(), null).status()).isEqualTo(StatusTransacao.PENDENTE);
         assertThat(jdbc.queryForList("SELECT * FROM historico_transacoes")).isEmpty();
     }
 
@@ -435,7 +435,7 @@ class AplicarEncerramentoIntegrationTest {
         controle.falhar.set(null);
         aplicar.executar(resposta);
         assertThat(respostas.buscarPorEvento(resposta.eventId())).contains(resposta);
-        assertThat(buscar.executar(resposta.transactionId()).status())
+        assertThat(buscar.executar(resposta.transactionId(), null).status())
                 .isEqualTo(negativa ? StatusTransacao.PENDENTE : StatusTransacao.FALHOU);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM historico_transacoes", Integer.class)).isEqualTo(negativa ? 0 : 1);
     }
@@ -463,7 +463,7 @@ class AplicarEncerramentoIntegrationTest {
                     ? ConfirmacaoEncerramentoRecusadaException.class : ConflitoResultadoException.class);
         }
         boolean falhou = financeiroPrimeiro == reverter;
-        assertThat(buscar.executar(resposta.transactionId()).status())
+        assertThat(buscar.executar(resposta.transactionId(), null).status())
                 .isEqualTo(falhou ? StatusTransacao.FALHOU : StatusTransacao.APROVADA);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM historico_transacoes", Integer.class)).isEqualTo(1);
         assertThat(respostas.buscarPorEvento(resposta.eventId()).isPresent()).isEqualTo(falhou);
@@ -508,7 +508,7 @@ class AplicarEncerramentoIntegrationTest {
         assertThat(disputa.primeira().erro()).isNull();
         if (financeiroPrimeiro) { assertThat(disputa.segunda().erro()).isNull(); }
         else { assertThat(disputa.segunda().erro()).isInstanceOf(ConflitoResultadoException.class); }
-        assertThat(buscar.executar(resposta.transactionId()).status())
+        assertThat(buscar.executar(resposta.transactionId(), null).status())
                 .isEqualTo(financeiroPrimeiro ? StatusTransacao.APROVADA : StatusTransacao.PENDENTE);
         assertThat(respostas.buscarPorEvento(resposta.eventId())).contains(resposta);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM historico_transacoes", Integer.class))

@@ -99,7 +99,7 @@ class AplicarResultadoConcorrenciaIntegrationTest {
         assertThat(disputa.segunda().valor()).isNull();
         assertRegistroUnico(disputa.primeira().valor());
         assertThat(clock.chamadas.get()).isEqualTo(1);
-        assertThat(buscar.executar(outra.transactionId()).status()).isEqualTo(StatusTransacao.PENDENTE);
+        assertThat(buscar.executar(outra.transactionId(), null).status()).isEqualTo(StatusTransacao.PENDENTE);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM historico_transacoes WHERE transaction_id = ?",
                 Integer.class, outra.transactionId())).isZero();
         if (campo.equals("evento")) {
@@ -190,7 +190,7 @@ class AplicarResultadoConcorrenciaIntegrationTest {
         assertThat(historico.buscarPorEvento(esperada.eventId())).contains(esperada);
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM historico_transacoes WHERE transaction_id = ?",
                 Integer.class, esperada.transactionId())).isEqualTo(1);
-        var transacao = buscar.executar(esperada.transactionId());
+        var transacao = buscar.executar(esperada.transactionId(), null);
         assertThat(transacao.status()).isEqualTo(esperada.estadoFinal());
         assertThat(transacao.valor()).isEqualTo(new BigDecimal("123.450"));
         assertThat(transacao.moeda()).isEqualTo(Currency.getInstance("BRL"));
