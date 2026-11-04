@@ -63,6 +63,39 @@ class SessaoDemoHttpTest {
     void consultaDeSessaoDeveExigirAutenticacaoNoPerfilDeContas() throws Exception {
         try (var cliente = HttpClient.newHttpClient()) {
             assertThat(get(cliente, "/auth/sessao").statusCode()).isEqualTo(401);
+            assertThat(get(cliente, "/transacoes/" + UUID.randomUUID()).statusCode()).isEqualTo(401);
+        }
+    }
+
+    @Test
+    void consultaDeTransacaoDeveDistinguirApenasODono() throws Exception {
+        var senhaDona = registrarConta("dona-consulta");
+        var senhaOutra = registrarConta("outra-consulta");
+        var transacao = UUID.randomUUID();
+        var ausente = UUID.randomUUID();
+        jdbc.update("""
+                INSERT INTO transacoes (id, valor, moeda, status, conta_id)
+                SELECT ?, 10.00, 'BRL', 'PENDENTE', id FROM contas WHERE usuario = 'dona-consulta'
+                """, transacao);
+
+        try (var dona = HttpClient.newBuilder().cookieHandler(new CookieManager()).build();
+             var outra = HttpClient.newBuilder().cookieHandler(new CookieManager()).build()) {
+            assertThat(post(dona, "/auth/login", formulario("dona-consulta", senhaDona), csrf(dona)))
+                    .isEqualTo(204);
+            assertThat(post(outra, "/auth/login", formulario("outra-consulta", senhaOutra), csrf(outra)))
+                    .isEqualTo(204);
+
+            var propria = get(dona, "/transacoes/" + transacao);
+            assertThat(propria.statusCode()).isEqualTo(200);
+            assertThat(json.readTree(propria.body()).path("id").asText()).isEqualTo(transacao.toString());
+            assertThat(propria.headers().firstValue("Cache-Control")).hasValueSatisfying(
+                    valor -> assertThat(valor).contains("no-store"));
+
+            var alheia = get(outra, "/transacoes/" + transacao);
+            var inexistente = get(outra, "/transacoes/" + ausente);
+            assertThat(alheia.statusCode()).isEqualTo(404);
+            assertThat(inexistente.statusCode()).isEqualTo(404);
+            assertThat(alheia.body()).isEqualTo(inexistente.body().replace(ausente.toString(), transacao.toString()));
         }
     }
 
@@ -89,7 +122,10 @@ class SessaoDemoHttpTest {
 
             assertThat(post(clienteB, "/auth/login", formulario("conta-b", senhaB), csrf(clienteB))).isEqualTo(204);
             conferirConta(clienteB, "conta-b");
-            assertThat(get(clienteA, "/transacoes/" + UUID.randomUUID()).statusCode()).isEqualTo(403);
+            var transacaoLegada = UUID.randomUUID();
+            jdbc.update("INSERT INTO transacoes (id, valor, moeda, status) VALUES (?, 10.00, 'BRL', 'PENDENTE')",
+                    transacaoLegada);
+            assertThat(get(clienteA, "/transacoes/" + transacaoLegada).statusCode()).isEqualTo(404);
             assertThat(post(clienteA, "/auth/logout", "", csrfAntes)).isEqualTo(403);
             var csrfDepois = csrf(clienteA);
             assertThat(post(clienteA, "/transacoes", "", csrfDepois)).isEqualTo(403);

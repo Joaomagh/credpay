@@ -3241,6 +3241,14 @@ No [red](https://github.com/Joaomagh/credpay/actions/runs/41851950146), head `16
 
 O [primeiro green HTTP](https://github.com/Joaomagh/credpay/actions/runs/41852986977), head `47593e8`, passou os dois casos de sessão. A suíte completa encontrou uma expectativa antiga no teste de upgrade, que tratava V8 como última versão. A regressão agora verifica V9 e tabela de contas vazia, mantendo os dados financeiros, outbox e histórico anteriores nas mesmas asserções. O [inventário desse head](https://github.com/Joaomagh/credpay/actions/runs/41852987017) identificou os quatro módulos Spring Security 7.0.8 apenas em Transações, com HIGH, CRITICAL e UNKNOWN zerados nos quatro alvos.
 
+### 9.143 Consulta de transações por conta
+
+O `GET /transacoes/{id}` no perfil `sessao-demo` exige uma sessão válida. O UUID da conta vem do usuário autenticado e a consulta SQL filtra pelo par transação e conta. Um UUID alheio ou inexistente retorna o mesmo 404. O caminho informado é refletido no campo `instance` do Problem Details. A consulta legada filtra por ausência de dono. A migração V10 adiciona a chave estrangeira opcional `transacoes.conta_id` e mantém os registros anteriores sem conta.
+
+A autorização de leitura está na fronteira HTTP. O consumidor de resultados e o encerramento técnico continuam consultando pelo UUID global do evento. O `POST` autenticado aguarda o recorte de criação e idempotência por conta. A consulta autenticada usa `Cache-Control: no-store`. [OWASP API1](https://api-security.owasp.org/editions/2023/en/0xa1-broken-object-level-authorization/)
+
+O [red](https://github.com/Joaomagh/credpay/actions/runs/41891681386), head `769b0cc`, encontrou 403 no lugar de 404 para uma sessão que consultou uma transação legada. Foi a única falha em 530 testes. A [PR #209](https://github.com/Joaomagh/credpay/pull/209) acrescenta casos de consulta por duas sessões independentes, perfil legado e migração com dados preservados.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

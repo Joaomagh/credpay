@@ -43,6 +43,17 @@ class TransacaoJpaRepository implements TransacaoRepository {
     }
 
     @Override
+    public Optional<Transacao> buscarPorIdNaConta(UUID id, UUID contaId) {
+        return Optional.ofNullable(entityManager.createQuery("""
+                        SELECT t FROM TransacaoEntity t
+                        WHERE t.id = :id AND t.contaId IS NOT DISTINCT FROM :contaId
+                        """, TransacaoEntity.class)
+                .setParameter("id", id)
+                .setParameter("contaId", contaId)
+                .getSingleResultOrNull()).map(TransacaoEntity::paraDominio);
+    }
+
+    @Override
     public Optional<Transacao> buscarPorChaveIdempotencia(UUID chaveIdempotencia) {
         return Optional.ofNullable(entityManager.find(
                         IdempotenciaTransacaoEntity.class, chaveIdempotencia))
