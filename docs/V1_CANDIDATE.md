@@ -1,10 +1,15 @@
 # Candidato ao fechamento da v1
 
-Registro inicial de24/10/2026, revisto em25/10 após os aceites técnicos locais. **Candidato operacional condicionado; ainda não promovido a release final.** Nenhuma tag ou publicação foi criada por este registro.
+Registro inicial de 24/10/2026, revisto em 04/11 após a manutenção das imagens. **Candidato técnico condicionado à revisão final e ao aceite pessoal.**
 
-## Identidade congelada
+## Corte técnico vigente — 04/11/2026
 
-- Candidato operacional do repositório: `e07f0aa9f3ee48543d0b254e23e5d3007b7c78ab`, merge da PR201.
+- O corte é `51f8476b0dee25db1b51e02a129e502008474929`, merge da [PR #205](https://github.com/Joaomagh/credpay/pull/205). A árvore Git é idêntica à do head testado `b5f91acba26d71b356466533508ff00ec4134fc9`. O [registro da validação](V1_VALIDATION.md#manutenção-das-imagens--0411) identifica os oito checks e o inventário.
+- O runtime Java foi atualizado nos dois aplicativos. Os ensaios locais abaixo usaram as imagens anteriores. O próximo ensaio autônomo deve usar a configuração e as imagens construídas para o corte que será avaliado.
+
+## Identidade congelada dos cortes anteriores
+
+- Corte operacional anterior: `e07f0aa9f3ee48543d0b254e23e5d3007b7c78ab`, merge da PR201.
 - Referência documental anterior: `463f9bc94fea86e1f1e09d87e23e69e47aecff2e`; seus checks permanecem vinculados àquele corte.
 - Código validado na PR187: `3406d2d315901634d8484f4990d2509a80e1ec9a`, integrado em `6f77f8e16c46c6bd31ab13ec7a38ae1e6da690aa`.
 - Código operacional validado na PR201: `5bbdf19ebc33c61ac85f11e25fbbe64a7295b552`, com a mesma árvore Git do candidato e07f0aa. O delta desde463f9bc inclui os launchers/controles operacionais; fontes, dependências, Dockerfiles e configurações versionadas dos três módulos permanecem iguais.
@@ -42,4 +47,4 @@ A sonda inicial sem resposta não identificava a causa. Depois de João abrir Do
 4. Validate local passou em25/10 após correções do perfil autorizado: startup, PVCs, fluxo/replay e parada/recuperação. Remove também passou e encerrou somente o cluster próprio, preservando Compose e volumes. A exceção local não concede acesso Docker ao agente nem permite executar os scripts CI por mera troca de nome.
 5. Quando João retomar a prática, demonstrar entendimento/autonomia. Só então conferir todos os critérios e registrar a decisão final. Este documento não reduz o critério de aprendizado.
 
-Grafana/Prometheus e pesquisa de sandbox continuam adiados. Achados de GnuTLS e correções disponíveis de curl/zlib permanecem na [triagem](../infra/security/TRIAGE.md), sem supressão, promoção automática de runtime ou autorização de implantação externa.
+Grafana/Prometheus e pesquisa de sandbox continuam adiados. A manutenção de curl e zlib foi concluída no CI do corte técnico vigente. Os achados GnuTLS permanecem na [triagem](../infra/security/TRIAGE.md). A demo pública segue como etapa separada.
