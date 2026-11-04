@@ -441,4 +441,4 @@ SonarQube pode entrar em um incremento de análise estática e cobertura com bas
 
 O incremento de sessão local está na [PR #208](https://github.com/Joaomagh/credpay/pull/208). A consulta com autorização por dono está na [PR #209](https://github.com/Joaomagh/credpay/pull/209). A criação autenticada e a idempotência por conta estão na [PR #210](https://github.com/Joaomagh/credpay/pull/210).
 
-A rota de entrada, a confirmação de identidade e o logout estão na [PR #211](https://github.com/Joaomagh/credpay/pull/211). O modo de contas protege as rotas e vincula os recibos ao UUID da conta na [PR #212](https://github.com/Joaomagh/credpay/pull/212). A etapa 3 depende ainda da prova integrada com duas contas no navegador e API real.
+A rota de entrada, a confirmação de identidade e o logout estão na [PR #211](https://github.com/Joaomagh/credpay/pull/211). O modo de contas protege as rotas e vincula os recibos ao UUID da conta na [PR #212](https://github.com/Joaomagh/credpay/pull/212). O Compose CI tem uma jornada específica para conferir a etapa 3 com duas contas no navegador e API real.

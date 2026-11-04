@@ -6,6 +6,7 @@ export default class SafeReporter implements Reporter {
   private failed = 0;
   private skipped = 0;
   private errors = 0;
+  constructor(private readonly options: {expected: number}) {}
   onTestEnd(test: TestCase, result: TestResult): void {
     if (result.status === 'passed') this.passed++;
     else if (result.status === 'skipped') this.skipped++;
@@ -18,7 +19,7 @@ export default class SafeReporter implements Reporter {
   onError(): void { this.errors++; console.log('Browser: runner error; no request data published.'); }
   async onEnd(result: FullResult): Promise<{status: 'passed' | 'failed'}> {
     console.log(`Browser: passed=${this.passed}, failed=${this.failed}, skipped=${this.skipped}, errors=${this.errors}`);
-    return {status: result.status === 'passed' && this.passed === 6 && this.failed === 0
+    return {status: result.status === 'passed' && this.passed === this.options.expected && this.failed === 0
       && this.skipped === 0 && this.errors === 0 ? 'passed' : 'failed'};
   }
 }

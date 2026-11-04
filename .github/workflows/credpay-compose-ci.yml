@@ -158,6 +158,9 @@ jobs:
       - name: Exercise desktop and mobile against real applications
         working-directory: frontend
         run: npm run e2e:ci
+      - name: Exercise two accounts in the owned project
+        working-directory: frontend
+        run: node e2e/run-contas.mjs
       - name: Remove only this disposable CI project
         if: always()
         shell: pwsh

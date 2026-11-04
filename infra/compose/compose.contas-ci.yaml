@@ -1,0 +1,5 @@
+services:
+  transacoes:
+    environment:
+      SPRING_PROFILES_ACTIVE: sessao-demo
+      SERVER_ADDRESS: 0.0.0.0
