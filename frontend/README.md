@@ -16,6 +16,10 @@ Abra http://127.0.0.1:4200. Para parar o servidor frontend, use Ctrl+C. Nenhuma 
 
 Para criar/consultar dados, o backend precisa estar preparado e ativado conforme [roteiro Compose](../infra/compose/README.md). O frontend usa proxy de desenvolvimento somente para `/transacoes`, direcionado a `http://127.0.0.1:8080`; sem abrir CORS ou expor a aplicação na rede. Se a porta da API foi alterada, ajuste explicitamente `proxy.conf.json`. A página abre sem backend, mas os pedidos retornarão erro de comunicação. O proxy é configuração de desenvolvimento; hospedar o bundle de produção exige configuração própria de origem e fallback das rotas, fora desta entrega.
 
+## Teste manual no navegador
+
+Use a skill [credpay-frontend](../plugins/credpay-frontend-qa/skills/credpay-frontend/SKILL.md) para repetir a revisão de criação, consulta, teclado, responsividade e recuperação de intenção. No desktop, o plugin **credpay-frontend-qa** está no [catálogo do projeto](../.agents/plugins/marketplace.json). Reabra o aplicativo para carregar o catálogo CredPay, escolha o plugin no diretório e use a skill em uma nova sessão com o navegador integrado. O pacote fornece o roteiro e usa o controle de navegador disponível na sessão. [Documentação de plugins locais](https://developers.openai.com/plugins/build/plugins#install-a-local-plugin-manually)
+
 ## Jornada
 
 1. Em **Nova transação**, informe um valor positivo em BRL, com vírgula ou ponto decimal e sem separador de milhar. Não limitamos a duas casas: a API trabalha com decimal exato.
@@ -42,6 +46,10 @@ npm.cmd audit --audit-level=low
 Testes Angular/Vitest usam a fronteira HTTP controlada, sem RabbitMQ/PostgreSQL e sem substituir o aceite da jornada com backend real. O CI repete instalação pelo lockfile, tipos, comportamento, build e auditoria no Linux. A revisão visual usa navegador desktop/mobile, validação inválida e navegação; sucesso financeiro no navegador com backend é um aceite separado.
 
 Framework standalone, Router, Forms e HttpClient; estado assíncrono com signals/RxJS. `lossless-json` preserva o token decimal recebido/enviado sem converter dinheiro para `Number`; a formatação só desloca caracteres. CSS e ícones SVG são locais, sem fonte/CDN ou framework visual adicional. Baseline, justificativas e override de segurança do Vite estão em [docs/frontend/BASELINE.md](../docs/frontend/BASELINE.md).
+
+## Teste manual no navegador
+
+Use a skill [credpay-frontend](../plugins/credpay-frontend-qa/skills/credpay-frontend/SKILL.md) para repetir a revisão de criação, consulta, teclado, responsividade e recuperação de intenção. No desktop, o plugin **credpay-frontend-qa** está no [catálogo do projeto](../.agents/plugins/marketplace.json). Reabra o aplicativo para carregar o catálogo CredPay, escolha o plugin no diretório e use a skill em uma nova sessão com o navegador integrado. O pacote fornece o roteiro e usa o controle de navegador disponível na sessão. [Documentação de plugins locais](https://developers.openai.com/plugins/build/plugins#install-a-local-plugin-manually)
 
 ## Jornada automatizada no CI
 

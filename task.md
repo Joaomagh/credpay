@@ -7,9 +7,12 @@
 - João concluiu o diagnóstico causal local com as imagens f412652. Os dois publicadores recuperaram o evento original após retorno sem rota, sem duplicação. O ensaio confirmou persistência após down/up e remoção exclusiva dos recursos de teste.
 - A apresentação do projeto e o relatório do backlog foram atualizados em README.md e docs/ENTENDA_O_CREDPAY.md.
 
+- Roteiro de QA Angular empacotado e exercitado no navegador integrado com a API indisponível.
+
 ## Agora
 
-- [ ] Aguardar João retomar o aceite pessoal da v1 com o roteiro em docs/DEMO.md. A execução assistida de Compose, Kubernetes e diagnóstico local está registrada em docs/V1_VALIDATION.md.
+- [ ] QA manual integrado do frontend quando a API local estiver ativa. Verificar aprovação, rejeição, UUID ausente e restauração do recibo seguindo o roteiro em frontend/README.md.
+- [ ] Aceite pessoal da v1 permanece adiado. O roteiro está em docs/DEMO.md e as evidências assistidas em docs/V1_VALIDATION.md.
 
 ## Próximo
 

@@ -414,3 +414,8 @@ Atualização local24/10: desktop-linux respondeu linux; João construiu imagens
 F01–F04 e M01 estão integrados. Não há correção funcional aberta identificada nesta revisão. Kubernetes e diagnóstico causal por métricas locais assistidos passaram em25/10, com cleanup próprio. Permanecem entendimento/autonomia pessoais e registro final da v1. A prática foi adiada por João; não substituí-la por funcionalidades adicionais nem contar CI como aprendizado pessoal.
 
 Inventário da PR187: quatro alvos com HIGH0/CRITICAL0,3MEDIUM por JAR e33MEDIUM/22LOW por imagem. Novo CVE-2026-88648 em GnuTLS sem correção e disponibilidade de correções oficiais zlib/curl ficam explicitamente na manutenção de runtime, com triagem/limites em infra/security/TRIAGE.md e docs/V1_VALIDATION.md. Não é aceite de vulnerabilidades, implantação externa ou requisito artificial de inventário vazio. Imagens locais f412652 passaram no ensaio assistido acima, sem novo inventário dos bytes das imagens locais.
+
+
+### QA manual do frontend — 04/11/2026
+
+Skill e catálogo local adicionados para repetir a verificação de Nova transação e Consultar. O teste no navegador confirmou erros de valor zero e UUID inválido, recuperação de intenção após falha de comunicação, navegação, foco e ausência de rolagem horizontal nos dois tamanhos exercitados. A API local estava indisponível. A próxima rodada de QA com backend ativo cobre aprovação, rejeição, consulta de UUID ausente e reload do recibo. As evidências integradas anteriores permanecem registradas. O ensaio pessoal e a decisão final da v1 continuam pendentes. [Roteiro de QA](../plugins/credpay-frontend-qa/skills/credpay-frontend/SKILL.md) · [Evidência](../spec.md#9139-roteiro-e-qa-manual-do-console-angular)

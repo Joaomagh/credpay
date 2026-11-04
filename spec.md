@@ -3203,6 +3203,12 @@ Observado: apps UID10001/mounts0/privilegedfalse/healthUP, métricasHTTP200 e pr
 
 João executou Remove em seguida: somente projeto/volumes/rede próprios removidos e Compose credpay-demo preservado, com retorno ao prompt. Percurso local assistido de diagnóstico concluído; não prova nack/error, crash abrupto, segurança universal, aprendizado autônomo, inventário novo ou implantação externa. Prática continua adiada; candidato operacional e decisão final da v1 conservam suas condições. Nenhuma tag/release criada por este registro.
 
+### 9.139 Roteiro e QA manual do console Angular
+
+Em 04/11/2026, sobre a main `6dc51f5`, a API local na porta 8080 não respondeu. O Angular foi iniciado em loopback com as dependências já presentes. No navegador integrado, valor zero e UUID inválido geraram mensagens de validação. Um envio fictício com valor positivo mostrou a opção de repetir a mesma intenção, e o reload restaurou o valor decimal e a opção de retry. A ausência de POST no reload não foi aferida por inspeção de rede nesta rodada. O Tab a partir do campo de valor focou o botão de retry. As rotas de criação e consulta apresentaram largura de conteúdo igual à largura visível nos viewports configurados em 390 e 1280 px. A rodada cobre comportamento do cliente e falha de comunicação. Aprovação, rejeição, consulta com API ativa e reload do recibo ficaram bloqueados neste ensaio.
+
+O plugin local empacota a [skill do frontend](plugins/credpay-frontend-qa/skills/credpay-frontend/SKILL.md) no [catálogo do projeto](.agents/plugins/marketplace.json). A skill foi exercitada via controle de navegador integrado. A instalação pelo diretório do aplicativo é uma verificação separada.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
