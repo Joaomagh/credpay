@@ -3239,6 +3239,8 @@ O cliente obtém o token CSRF em `GET /auth/csrf`, envia formulário `usuario` e
 
 No [red](https://github.com/Joaomagh/credpay/actions/runs/41851950146), head `16765f4`, o endpoint de sessão retornou 404 em vez de 401 e foi a única falha entre 529 testes. A [PR #208](https://github.com/Joaomagh/credpay/pull/208) reúne a prova HTTP com duas sessões independentes, os checks do perfil anterior e o inventário da dependência. A autorização por dono e a interface Angular têm aceites separados no backlog.
 
+O [primeiro green HTTP](https://github.com/Joaomagh/credpay/actions/runs/41852986977), head `47593e8`, passou os dois casos de sessão. A suíte completa encontrou uma expectativa antiga no teste de upgrade, que tratava V8 como última versão. A regressão agora verifica V9 e tabela de contas vazia, mantendo os dados financeiros, outbox e histórico anteriores nas mesmas asserções. O [inventário desse head](https://github.com/Joaomagh/credpay/actions/runs/41852987017) identificou os quatro módulos Spring Security 7.0.8 apenas em Transações, com HIGH, CRITICAL e UNKNOWN zerados nos quatro alvos.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
