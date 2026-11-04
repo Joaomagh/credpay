@@ -7,11 +7,10 @@
 - João concluiu o diagnóstico causal local com as imagens f412652. Os dois publicadores recuperaram o evento original após retorno sem rota, sem duplicação. O ensaio confirmou persistência após down/up e remoção exclusiva dos recursos de teste.
 - A apresentação do projeto e o relatório do backlog foram atualizados em README.md e docs/ENTENDA_O_CREDPAY.md.
 
-- Roteiro de QA Angular empacotado e exercitado no navegador integrado com a API indisponível.
+- QA manual integrado concluído com o backend local ativo: aprovação, rejeição, UUID ausente e retomada do recibo. Evidência em spec§9.139.1.
 
 ## Agora
 
-- [ ] QA manual integrado do frontend quando a API local estiver ativa. Verificar aprovação, rejeição, UUID ausente e restauração do recibo seguindo o roteiro em frontend/README.md.
 - [ ] Aceite pessoal da v1 permanece adiado. O roteiro está em docs/DEMO.md e as evidências assistidas em docs/V1_VALIDATION.md.
 
 ## Próximo
