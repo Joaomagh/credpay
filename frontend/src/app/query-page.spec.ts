@@ -22,6 +22,16 @@ describe('Consulta pela interface', () => {
     expect(harness.routeNativeElement?.textContent).toContain('Informe um UUID válido');
     http.expectNone(() => true);
   });
+  it('interrompe o acompanhamento e informa a espera quando recebe 429', async () => {
+    const harness = await RouterTestingHarness.create();
+    const page = await harness.navigateByUrl('/consultar?id=' + id, QueryPage);
+    http.expectOne('/transacoes/' + id).flush(null, {
+      status: 429, statusText: 'Too Many Requests', headers: {'Retry-After': '17'}
+    });
+    expect(page.error()).toContain('Aguarde 17 s');
+    expect(page.tracking()).toBe(false);
+    http.expectNone('/transacoes/' + id);
+  });
   it('carrega o ID recebido na navegação e cancela GET em voo ao sair', async () => {
     const harness = await RouterTestingHarness.create();
     await harness.navigateByUrl('/consultar?id=' + id, QueryPage);
