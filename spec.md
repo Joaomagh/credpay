@@ -3289,6 +3289,12 @@ Ao atingir uma cota, a API devolve 429 e o número de segundos restantes em `Ret
 
 O [red HTTP](https://github.com/Joaomagh/credpay/actions/runs/41906746375) encontrou 200 e 404 após os limites esperados, duas falhas em 541 testes. Os três casos red Angular exibiram as mensagens genéricas em vez da espera informada. A [PR #215](https://github.com/Joaomagh/credpay/pull/215) inclui 429, nova janela, independência por conta e teto global com relógio controlado.
 
+### 9.150 Baseline de cobertura no GitHub Actions
+
+JaCoCo 0.8.16 (EPL-2.0, compatível com Java 21) mede as suítes Maven existentes no perfil `coverage`. O agente usa uma propriedade JVM própria para coexistir com Mockito e `-XX:-EnableDynamicAgentLoading`. O frontend usa `@vitest/coverage-v8` 5.0.5 (MIT), alinhado à versão de Vitest e com integridade registrada na baseline do frontend. Ambos são ferramentas de teste. O CI publica XML JaCoCo e LCOV por módulo com retenção de 14 dias. A baseline inicial mede cobertura para orientar a revisão, com as verificações de comportamento existentes. [JaCoCo](https://www.jacoco.org/jacoco/trunk/doc/maven.html) · [Angular](https://angular.dev/guide/testing/code-coverage)
+
+Em cada módulo Java, rodar `./mvnw --batch-mode --no-transfer-progress -Pcoverage -DargLine=-XX:-EnableDynamicAgentLoading verify` e importar `target/site/jacoco/jacoco.xml` com `sonar.coverage.jacoco.xmlReportPaths`. No Angular, `npm run test:coverage` gera `coverage/console/lcov.info`, importado com `sonar.javascript.lcov.reportPaths`. A configuração do scanner deve usar os caminhos do checkout analisado e as classes compiladas dos dois serviços. A primeira análise no SonarQube depende de escolher e autorizar o destino. [Importação Java](https://docs.sonarsource.com/sonarqube-cloud/analyzing-source-code/test-coverage/java-test-coverage) · [Importação TypeScript](https://docs.sonarsource.com/sonarqube-cloud/analyzing-source-code/test-coverage/javascript-typescript-test-coverage)
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

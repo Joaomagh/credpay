@@ -4,7 +4,7 @@ Pesquisa em 24/10/2026, a pedido de João. **Planejamento para depois do aceite 
 
 ## Recomendação
 
-Começar pelo Angular estático no **Netlify Free**, com URL do provedor e integração de build restrita ao frontend. Vercel Hobby e Cloudflare Pages também são candidatos. Para o backend real, avaliar uma VM com containers continuamente ativos; com orçamento zero, Oracle Always Free é uma candidata de prova de conceito, sem garantia de capacidade/disponibilidade. A escolha final depende de um teste da pilha completa e das condições da conta de João.
+Em 04/11/2026, a primeira candidata para o Angular com contas passou a ser **Cloudflare Workers Free com Static Assets**. O mesmo endereço público pode servir o Angular e encaminhar apenas as rotas da API ao backend. Para o backend, testar **uma VM Oracle Always Free A1** com os dois serviços Java, PostgreSQL e RabbitMQ em Compose. A documentação informa até 2 OCPUs e 12 GB de RAM no plano Always Free. A prova depende de capacidade regional, compatibilidade ARM64 e validação do HTTPS também entre o proxy e a origem. A Oracle pode recolher VMs ociosas. [Cloudflare SPA](https://developers.cloudflare.com/workers/static-assets/routing/single-page-application/) · [Oracle Always Free](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm)
 
 Uma demonstração acessível pode facilitar a apresentação do trabalho. Isso é julgamento de produto, não promessa de contratação. Acompanhar o link com roteiro curto, vídeo de contingência e README/testes/limites verificáveis; resultado simulado, se houver modo ilustrativo futuro, precisa ser rotulado e não substituir o backend real.
 
@@ -12,11 +12,12 @@ Uma demonstração acessível pode facilitar a apresentação do trabalho. Isso 
 
 | Opção | Adequação à demo | Limite relevante conferido |
 |---|---|---|
-| Netlify Free — primeira candidata | Angular estático, redirects e domínio do provedor | 300 créditos/mês, limite rígido sem recarga automática; pode pausar até renovar a franquia |
+| Cloudflare Workers Free com Static Assets — primeira candidata | Angular com fallback de SPA e proxy da API na mesma origem pública | Arquivos estáticos têm requisições gratuitas. As chamadas que invocam o Worker têm limite de 100 mil por dia e 10 ms de CPU por chamada |
+| Netlify Free | Angular estático, redirects e domínio do provedor | 300 créditos/mês, limite rígido sem recarga automática; pode pausar até renovar a franquia |
 | Vercel Hobby | Alternativa para projeto pessoal não comercial | Uso pessoal/não comercial e cotas próprias; excedê-las pode suspender a funcionalidade |
 | Cloudflare Pages Free | Alternativa para conteúdo estático | 500 builds/mês e20 min por build; funções têm cotas separadas |
 
-Fontes: [Angular no Netlify](https://docs.netlify.com/build/frameworks/framework-setup-guides/angular/), [Netlify Free](https://docs.netlify.com/manage/accounts-and-billing/billing/billing-for-credit-based-plans/credit-based-pricing-plans/), [Vercel Hobby](https://vercel.com/docs/plans/hobby), [Cloudflare Pages](https://developers.cloudflare.com/pages/platform/limits/).
+Fontes: [Cloudflare Workers](https://developers.cloudflare.com/workers/platform/pricing/), [Angular no Netlify](https://docs.netlify.com/build/frameworks/framework-setup-guides/angular/), [Netlify Free](https://docs.netlify.com/manage/accounts-and-billing/billing/billing-for-credit-based-plans/credit-based-pricing-plans/), [Vercel Hobby](https://vercel.com/docs/plans/hobby), [Cloudflare Pages](https://developers.cloudflare.com/pages/platform/limits/).
 
 Para a demo com contas, o ponto de entrada público precisa servir o Angular e encaminhar `/auth/**` e `/transacoes/**` na mesma origem HTTPS. A configuração deve dar fallback ao Angular em `/entrar`, `/nova` e `/consultar`, e preservar os cabeçalhos de sessão e contexto de conta nas rotas da API. O proxy de desenvolvimento atende ao ensaio local. Banco, broker e segredos ficam na infraestrutura do backend.
 

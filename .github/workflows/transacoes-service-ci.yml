@@ -78,4 +78,12 @@ jobs:
         run: ../config/checkstyle/check-controls.ps1 -Module transacoes-service
 
       - name: Verify transaction service
-        run: ./mvnw --batch-mode --no-transfer-progress -DargLine=-XX:-EnableDynamicAgentLoading verify
+        run: ./mvnw --batch-mode --no-transfer-progress -Pcoverage -DargLine=-XX:-EnableDynamicAgentLoading verify
+
+      - name: Store transaction coverage
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-transacoes-service
+          path: transacoes-service/target/site/jacoco/jacoco.xml
+          if-no-files-found: error
+          retention-days: 14

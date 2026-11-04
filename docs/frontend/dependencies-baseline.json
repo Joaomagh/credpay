@@ -2,6 +2,16 @@
   "consulted": "2026-10-22",
   "source": "https://registry.npmjs.org/",
   "packages": {
+    "@vitest/coverage-v8": {
+      "version": "5.0.5",
+      "license": "MIT",
+      "peers": {
+        "vitest": "5.0.5",
+        "@vitest/browser": "5.0.5 (opcional)"
+      },
+      "integrity": "sha512-4KpkGdIrSqBihx/JyP/e+S+IKB98etg1XDQiLAxksLfcShnwi1VReGeOT9NI43hLHbknosKp/1CCLn9Zgcs8mg==",
+      "url": "https://registry.npmjs.org/@vitest/coverage-v8/-/coverage-v8-5.0.5.tgz"
+    },
     "@angular/core": {
       "version": "22.2.3",
       "license": "MIT",
