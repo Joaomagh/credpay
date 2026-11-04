@@ -3231,6 +3231,14 @@ No [ensaio Kubernetes em Ubuntu 26.04](https://github.com/Joaomagh/credpay/actio
 
 No [red do CI](https://github.com/Joaomagh/credpay/actions/runs/41849088060), head `d5106d2`, o corpo válido de 8.193 bytes recebeu HTTP 201. Foi a única falha entre 526 testes. O teste local offline compilou, mas o executor JUnit Platform Launcher 6.0.3 estava ausente do cache. A [PR #207](https://github.com/Joaomagh/credpay/pull/207) inclui regressões para comprimento ausente e para o limite exato. O candidato anterior `51f8476` conserva o seu recorte de validação.
 
+### 9.142 Sessão local para contas de demonstração
+
+O perfil `sessao-demo` liga Spring Security no serviço de transações e usa loopback por padrão. A migração V9 guarda identificadores, nomes de conta e hashes PBKDF2-HMAC-SHA256 de 600.000 iterações. Cada senha usa salt independente. Contas são preparadas nos testes com dados fictícios. A sessão é mantida no servidor com cookie HttpOnly, SameSite=Lax, somente por cookie e 15 minutos de inatividade. O perfil valida HTTP local. A publicação exige HTTPS, cookie Secure e controles de abuso próprios.
+
+O cliente obtém o token CSRF em `GET /auth/csrf`, envia formulário `usuario` e `senha` no `POST /auth/login` e consulta a conta com `GET /auth/sessao`. O login rejeita parâmetros de query. Login e logout válidos retornam 204. Credenciais incorretas e sessão ausente retornam 401, e POSTs sem CSRF válido retornam 403. Obter um novo token depois de autenticar ou sair. O perfil nega operações de transações até a autorização por dono. [Spring Security e CSRF](https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html)
+
+No [red](https://github.com/Joaomagh/credpay/actions/runs/41851950146), head `16765f4`, o endpoint de sessão retornou 404 em vez de 401 e foi a única falha entre 529 testes. A [PR #208](https://github.com/Joaomagh/credpay/pull/208) reúne a prova HTTP com duas sessões independentes, os checks do perfil anterior e o inventário da dependência. A autorização por dono e a interface Angular têm aceites separados no backlog.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
