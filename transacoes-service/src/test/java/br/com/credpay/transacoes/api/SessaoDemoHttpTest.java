@@ -90,6 +90,11 @@ class SessaoDemoHttpTest {
             assertThat(json.readTree(propria.body()).path("id").asText()).isEqualTo(transacao.toString());
             assertThat(propria.headers().firstValue("Cache-Control")).hasValueSatisfying(
                     valor -> assertThat(valor).contains("no-store"));
+            var idOutra = jdbc.queryForObject("SELECT id FROM contas WHERE usuario = 'outra-consulta'", UUID.class);
+            var requisicaoDeAbaAntiga = requisicao("/transacoes/" + transacao)
+                    .header("X-CredPay-Conta", idOutra.toString()).build();
+            assertThat(dona.send(requisicaoDeAbaAntiga, HttpResponse.BodyHandlers.discarding()).statusCode())
+                    .isEqualTo(401);
 
             var alheia = get(outra, "/transacoes/" + transacao);
             var inexistente = get(outra, "/transacoes/" + ausente);
