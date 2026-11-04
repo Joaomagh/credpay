@@ -30,9 +30,10 @@ Os serviços têm responsabilidade e bancos separados. Isso permite exercitar fr
 ## Entregas verificadas
 
 - **Backend.** Criação, aprovação/rejeição, consulta por UUID, replay, concorrência, rollback, reentrega e recuperação nos cenários registrados. O esgotamento de tentativas pode manter o pedido pendente para recuperação. A aplicação de `FALHOU` tem prova em teste controlado. O início operacional geral está fora da API. [Confirmação de falha](CONFIRMACAO_FALHA.md)
-- **Frontend.** Criação e consulta responsivas com a API real. O console recupera o recibo após recarregar a aba e acompanha a evolução da mesma transação. O CI cobre seis cenários no Chromium em desktop e celular. [Console Angular](../frontend/README.md)
+- **Frontend.** Criação e consulta responsivas, login, logout e recuperação do recibo por conta. O CI cobre seis casos no modo padrão e dois no modo com contas no Chromium em desktop e celular. O teste com duas contas prova aprovação real, saída em outra aba, 404 para consulta alheia e retomada do recibo sem outro POST. [Console Angular](../frontend/README.md) · [Compose CI](https://github.com/Joaomagh/credpay/actions/runs/41907646479)
+- **Segurança da demo.** Sessão no servidor, CSRF, autorização pelo dono e idempotência por conta. A criação limita corpo e expansão decimal. O perfil local limita autenticação por origem e operações financeiras por conta, com 429 e `Retry-After`. A revisão passou em 542 testes de Transações e 45 de Angular. [Transações](https://github.com/Joaomagh/credpay/actions/runs/41907645754) · [Angular](https://github.com/Joaomagh/credpay/actions/runs/41907645015)
 - **Infraestrutura local.** Compose, Kubernetes com kind e diagnóstico causal por métricas passaram nos ensaios assistidos. Os testes confirmaram persistência, recuperação e remoção dos recursos descartáveis próprios. [Validação da v1](V1_VALIDATION.md) · [Kubernetes local](../infra/k8s/LOCAL.md)
-- **Candidato.** O corte operacional `e07f0aa` está identificado e condicionado aos aceites finais. As provas locais e os inventários mantêm a identidade de cada corte. [Candidato da v1](V1_CANDIDATE.md)
+- **Candidato.** O corte `51f8476` está identificado e condicionado ao aceite pessoal e à decisão de release. Os resultados da demo com contas pertencem às revisões posteriores registradas nas suas PRs. [Candidato da v1](V1_CANDIDATE.md)
 
 ## O que falta
 
@@ -40,10 +41,11 @@ Os serviços têm responsabilidade e bancos separados. Isso permite exercitar fr
 | --- | --- | --- |
 | 1 | **B08.5b · Aceite pessoal, adiado a pedido de João** | João executa o roteiro com autonomia e explica, em suas palavras, por que o POST volta pendente, onde entra a fila e como a transação se recupera com o mesmo UUID. [Roteiro](DEMO.md) |
 | 2 | **B08 · Fechamento da v1, condicionado ao aceite pessoal** | Conferir o SHA, os checks aplicáveis, a triagem e as evidências. Registrar a decisão de fechamento após os aceites. Se o código ou a baseline mudar, revalidar os cenários afetados. [Candidato da v1](V1_CANDIDATE.md) |
-| Em paralelo | **Manutenção de segurança** | Avaliar uma imagem oficial com as correções de curl e zlib registradas na triagem. Confirmar os pacotes instalados e repetir os testes e o inventário de cada alvo afetado antes de promover a imagem. Acompanhar o achado de GnuTLS registrado sem correção naquele corte. [Triagem](../infra/security/TRIAGE.md) |
-| Etapa de portfólio | **Link público gratuito para recrutadores** | Definir e autorizar o destino. Provar que o Angular e a pilha Java/PostgreSQL/RabbitMQ funcionam dentro do orçamento zero, inclusive no primeiro acesso após ociosidade. Validar HTTPS e jornada em desktop e celular, com dados fictícios e recursos administrativos internos. [Plano da demo pública](PUBLIC_DEMO_PLAN.md) |
+| Em paralelo | **Manutenção de segurança** | A imagem oficial com correções de curl e zlib passou no CI do candidato. Acompanhar os achados GnuTLS e repetir inventário e testes quando a baseline mudar. [Triagem](../infra/security/TRIAGE.md) |
+| Etapa de portfólio | **Link público gratuito para recrutadores** | Definir e autorizar o destino. Validar orçamento zero, HTTPS e cookie Secure, provisionamento e expiração de contas fictícias, proxy, cotas e jornada em desktop e celular. [Plano da demo pública](PUBLIC_DEMO_PLAN.md) |
+| Evolução de qualidade | **SonarQube e Jenkins** | SonarQube está em avaliação para análise estática e cobertura, com baseline própria. Jenkins permanece como opção de laboratório para operação de CI. O GitHub Actions é o pipeline vigente. [Backlog](BACKLOG.md) |
 | Depois da v1 | **Painel e pesquisa de isolamento** | Prometheus/Grafana e a pesquisa de sandbox seguem adiados. Retomadas exigem seus próprios testes e análise de segurança. [Backlog](BACKLOG.md) |
 
 A revisão histórica foi aceita no recorte acessível. Um log e cinco artefatos continuam marcados como **não verificados** e voltam à análise se forem recuperados. [Limites da validação](V1_VALIDATION.md)
 
-Na revisão documental, a fila vigente não apresenta correção funcional aberta no fluxo principal ou no console. O estado da v1 é **candidato operacional com aceites técnicos locais assistidos concluídos**. A prática autônoma e a decisão final seguem pendentes. O link público é uma etapa separada de apresentação. [Backlog detalhado](BACKLOG.md)
+A v1 tem um candidato identificado e evidências técnicas assistidas. A decisão de release aguarda o ensaio autônomo no corte escolhido. A demo pública tem critérios de segurança e operação próprios. [Backlog detalhado](BACKLOG.md)

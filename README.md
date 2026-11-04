@@ -20,6 +20,7 @@ Responsável pela direção do projeto, pelas decisões de arquitetura e escopo 
 - **Nova transação** — enviar um valor pelo console Angular, receber o estado `PENDENTE` e acompanhar o pedido pelo mesmo UUID.
 - **Consulta** — ver o estado atualizado, inclusive `APROVADA` ou `REJEITADA`, e retomar a consulta com o identificador.
 - **Reenvio seguro** — repetir o mesmo pedido com a mesma `Idempotency-Key` preserva a resposta original. Reutilizar a chave para outro pedido retorna conflito.
+- **Contas de demonstração** — entrar e sair do console, criar e consultar somente as próprias transações e recuperar o recibo da própria conta. O perfil local inclui CSRF e limites por operação. [Guia do console](frontend/README.md#entrada-no-perfil-de-contas)
 - **Recuperação** — com o processador indisponível, o pedido permanece pendente. Quando ele volta, o processamento pode concluir a transação original. O roteiro de diagnóstico também reproduz eventos sem rota e confirma a recuperação sem duplicar registros.
 
 ## Como funciona
@@ -40,6 +41,7 @@ O `POST /transacoes` responde `201 Created` depois de registrar a transação co
 | Camada | Implementação |
 | --- | --- |
 | Backend | Dois serviços com Java 21, Spring Boot 4 e Maven Wrapper |
+| Autenticação da demo | Spring Security, sessão no servidor, CSRF e autorização por conta |
 | Dados | PostgreSQL por serviço, migrations Flyway e valores monetários com `BigDecimal` |
 | Mensageria | RabbitMQ, filas quorum, confirmações de publicação, retry limitado e DLQ |
 | Frontend | Angular 22 com interface responsiva e criação/consulta pela API real |
@@ -55,9 +57,9 @@ Para verificar os módulos Java, execute `./mvnw.cmd --batch-mode --no-transfer-
 
 ## Qualidade e estado da v1
 
-- **Testes.** Os cenários registrados incluem concorrência, rollback, duplicatas, reentrega, contrato HTTP e fluxo completo com PostgreSQL e RabbitMQ reais. O CI também exercita a interface em desktop e celular com o backend real. [Evidências de validação](docs/V1_VALIDATION.md)
+- **Testes.** Os cenários incluem concorrência, rollback, duplicatas, reentrega e fluxo com PostgreSQL e RabbitMQ reais. O CI de navegador executa seis casos no modo padrão e dois no modo de contas, em desktop e celular. [Validação da v1](docs/V1_VALIDATION.md) · [Jornadas com contas](https://github.com/Joaomagh/credpay/actions/runs/41907646479)
 - **Operação local.** A execução assistida validou Compose, persistência e recuperação em Kubernetes, além do diagnóstico por métricas dos dois publicadores. Os aplicativos rodaram sem privilégios no recorte testado. [Kubernetes local](infra/k8s/LOCAL.md) · [Diagnóstico por métricas](infra/observability/README.md)
-- **Segurança.** O inventário registrado em 24/10/2026 encontrou zero achados HIGH ou CRITICAL nos dois JARs e nas duas imagens examinadas. Os achados MEDIUM e LOW seguem em triagem. [Inventário e triagem](infra/security/TRIAGE.md)
+- **Segurança.** O inventário de 04/11 do candidato `51f8476` encontrou zero achados HIGH ou CRITICAL nos dois JARs e nas duas imagens. Achados MEDIUM e LOW seguem em triagem. [Validação do corte](docs/V1_VALIDATION.md#manutenção-das-imagens--0411) · [Triagem](infra/security/TRIAGE.md)
 - **Fechamento.** O candidato operacional da v1 está registrado. A promoção aguarda o ensaio autônomo e a revisão final do corte. A demo pública está em planejamento. [Candidato da v1](docs/V1_CANDIDATE.md) · [Plano da demo pública](docs/PUBLIC_DEMO_PLAN.md)
 
 ## Documentação
