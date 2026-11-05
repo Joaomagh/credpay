@@ -3395,6 +3395,8 @@ Q03: moeda fixa usava label sem controle; o card também usava label/for apontan
 
 Green local: tipos,2 controles Node,50 testes Angular e build350,35kB. QA real no navegador: apenas label de valor associado a INPUT na criação, moeda/UUID como P, nome de Copiar preservado. Em viewport mobile390x844, largura efetiva375/conteúdo375, botão com altura aproximada44px e foco solid visível por teclado. Recibo decimal/estado recuperados na mesma aba; nenhum novoPOST. Captura mobile válida desta revisão preservada em arquivo ignorado e viewport restaurada. CI/reanálise ainda pendentes.
 
+A revisão adicional por Tab encontrou Copiar focado sob a sidebar fixa: controle y800,43–844,42 e navegação y758,75–832,56. Escrito teste de geometria na jornada existente (foco por Tab, viewport e ausência de interseção com navegação); mesmo predicado executado no navegador local retornoufalse e gerou red explícito antes do CSS. Esse é red manual pela integração de navegador, não execução local do runner Playwright protegido para CI. Acrescentado scroll-padding-bottom112px somente no breakpoint mobile, preservando espaço de rolagem para foco. Mesmo teste manual passou: controle y430,43–474,42, acima da navegação. Viewport restaurada e nenhuma cópia para clipboard ou transação adicional. Após ajuste, tipos/e2e,2 controlesNode,50 Angular e build350,38kB verdes. A regressão Playwright da jornada real ainda precisa passar no CI; não desativar seu guard para executar localmente.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

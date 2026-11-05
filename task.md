@@ -13,7 +13,7 @@
 
 ## Agora
 
-- [ ] Validar e integrar rótulos estáticos da moeda/UUID com2 reds/green50 Angular, tipos/build e QA mobile comprovados; spec§9.158.
+- [ ] Validar e integrar acessibilidade da PR225: moeda/UUID estáticos e Copiar focado sem cobertura pela navegação mobile.2 reds de rótulos e red/green manual de foco;50 Angular e QA comprovados; regressão de teclado no CI. spec§9.158.
 
 ## Próximo
 

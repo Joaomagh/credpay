@@ -822,7 +822,8 @@ footer>cp-icon {
 }
 @media(max-width:680px) {
   :root {
-    font-size:15px
+    font-size:15px;
+    scroll-padding-bottom:112px
   }
   .app-header {
     height:67px;
