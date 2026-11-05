@@ -10,7 +10,7 @@ import re
 import shutil
 import subprocess
 import sys
-from urllib.request import urlopen
+from urllib.request import HTTPRedirectHandler, build_opener
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from acl_analysis import analyze_acl
@@ -80,12 +80,17 @@ def package_baseline(noble_candidate=False):
     return packages, "https://archive.ubuntu.com/ubuntu/" if noble_candidate else "https://deb.debian.org/debian/"
 
 
+class RefusePackageRedirects(HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        raise ValueError('Redirecionamento de pacote recusado; revisar a baseline antes de alterar a origem.')
+
+
 def download_packages(folder, noble_candidate=False):
     packages, origin = package_baseline(noble_candidate)
     for entry in packages:
         path = entry["path"]
         target = folder / Path(path).name
-        with urlopen(origin + path, timeout=60) as response:
+        with build_opener(RefusePackageRedirects()).open(origin + path, timeout=60) as response:
             content = response.read(entry["size"] + 1)
         if len(content) != entry["size"] or hashlib.sha256(content).hexdigest() != entry["sha256"]:
             raise ValueError(f"Tamanho/hash de pacote divergente: {entry['name']}")

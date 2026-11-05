@@ -2,6 +2,8 @@
 
 Contrato aprovado: spec.md §4.3. Debian slim, UID/GID10001, ferramentas diagnósticas limitadas, sem Java/Git/Maven ou cliente do agente. B08.7 ainda não tem aceite de contenção.
 
+Aquisição dos pacotes fixados: origem HTTPS e caminhos validados, limite de tamanho/hash antes de gravar e recusa explícita de redirects. As URLs oficiais exatas atuais não exigem redirecionamento; uma mudança interrompe o controlador e exige revisão da baseline. `python -I -B -m unittest discover -s infra/agent-sandbox -p 'test_package_download.py'` exercita os dois planos, hash/tamanho,24 caminhos inválidos e cinco redirects para alvo HTTP real somente loopback. O transporte HTTPS inicial é fixture explícita, sem conexão externa ou TLS desabilitado; CI comprova aquisição oficial separadamente. Isso não libera a sandbox nem prova allowlist do runner. Evidências em spec§9.161.
+
 ## B08.7a: inventário da origem
 
 `baseline.env` fixa índice e digest linux/amd64 do Debian13/trixie-slim, consultados em17/10/2026 na [metadata oficial](https://hub.docker.com/v2/repositories/library/debian/tags/trixie-slim). Alterar a tag não atualiza o digest automaticamente.
