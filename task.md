@@ -10,6 +10,7 @@
 - Oito jornadas reais de navegador, incluindo duas com contas, na PR #213. Evidência em spec§9.147 e no Compose CI.
 - Limite de expansão decimal na criação na PR #214. Contrato e red em spec§9.148.
 - Orçamentos de frequência e orientação de espera no console na PR #215. Contrato em spec§9.149.
+- Relatórios de cobertura dos dois serviços Java e do Angular. Baseline e comandos em spec§9.150.
 
 ## Agora
 
@@ -21,6 +22,7 @@
 - Depois dos aceites pessoais, conferir a aplicabilidade das evidências e registrar a decisão final sobre o candidato técnico 51f8476.
 - Acompanhar os achados GnuTLS registrados no inventário e na triagem.
 - Critérios de publicação da demo com contas.
+- Conectar o SonarQube após autorização do destino e conferir a importação dos três relatórios.
 
 ## Depois
 

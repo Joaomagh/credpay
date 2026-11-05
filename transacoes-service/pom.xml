@@ -25,6 +25,7 @@
         <rabbit-amqp-client.version>5.34.0</rabbit-amqp-client.version>
         <spring-security.version>7.0.8</spring-security.version>
         <argLine/>
+        <jacocoArgLine/>
     </properties>
 
     <dependencies>
@@ -144,7 +145,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <argLine>@{argLine} -javaagent:"${org.mockito:mockito-core:jar}"</argLine>
+                    <argLine>@{argLine} @{jacocoArgLine} -javaagent:"${org.mockito:mockito-core:jar}"</argLine>
                 </configuration>
             </plugin>
             <plugin>
@@ -153,4 +154,37 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>coverage</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>0.8.16</version>
+                        <executions>
+                            <execution>
+                                <id>coverage-agent</id>
+                                <goals><goal>prepare-agent</goal></goals>
+                                <configuration>
+                                    <propertyName>jacocoArgLine</propertyName>
+                                    <sessionId>transacoes-service</sessionId>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>coverage-report</id>
+                                <phase>verify</phase>
+                                <goals><goal>report</goal></goals>
+                                <configuration>
+                                    <formats><format>XML</format></formats>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
