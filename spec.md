@@ -3387,6 +3387,14 @@ Q04/S2699: teste HTTP de saída já verificava expectNone no adapter Angular; ag
 
 QA com o mesmo pedido fictício no backend local: confirmaçãoAPROVADA, envio de UUID inválido, erro visível e0 cards de resultado no DOM. Sem novoPOST, sem operação Docker. Green local: tipos,2 controles Node,48 Angular e build350,28kB passaram, incluindo preservação de PENDENTE em falha do mesmoUUID. CI/reanálise pendentes antes da integração. Rótulos estáticos da moeda/UUID continuam próximos, sem mudança visual antecipada nesta correção.
 
+PR224 integrada em a94abde após7 checks verdes, gate OK/new_coverage100%,544/340 testes Java e48 Angular. Árvore de merge igual ao headfbfb5ba, sem revisões/threads pendentes. Q01/Q02 já CLOSED/FIXED em main383d8f6; Q04 aguarda análise de main atualizada. Sem redução do gate ou supressão de regra.
+
+### 9.158 Rótulos de informação e controles do formulário
+
+Q03: moeda fixa usava label sem controle; o card também usava label/for apontando para code, elemento não labelável. Dois testes novos falharam porque cada tela tinha um label sem controle. Substituídos esses dois rótulos estáticos por parágrafos com a mesma classe visual; field-caption preserva margens. O campo de valor mantém label/for=amount; UUID continua texto selecionável e Copiar conserva nome acessível. Sem criar controle fictício ou mudar POST/GET.
+
+Green local: tipos,2 controles Node,50 testes Angular e build350,35kB. QA real no navegador: apenas label de valor associado a INPUT na criação, moeda/UUID como P, nome de Copiar preservado. Em viewport mobile390x844, largura efetiva375/conteúdo375, botão com altura aproximada44px e foco solid visível por teclado. Recibo decimal/estado recuperados na mesma aba; nenhum novoPOST. Captura mobile válida desta revisão preservada em arquivo ignorado e viewport restaurada. CI/reanálise ainda pendentes.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

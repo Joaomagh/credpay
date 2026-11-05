@@ -296,7 +296,10 @@ main {
   border-radius:7px;
   color:#5f7280
 }
-.transaction-form>label,.query-form>label {
+.field-caption {
+  margin:0
+}
+.transaction-form>label,.transaction-form>.field-caption,.query-form>label {
   margin-bottom:10px
 }
 .currency-field {

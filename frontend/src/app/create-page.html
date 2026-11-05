@@ -6,7 +6,7 @@
 <div class="workspace-grid">
   <form class="card transaction-form" (ngSubmit)="creation.submit()" novalidate>
     <div class="section-line"><h2>Dados da transação</h2><span class="step-number">01</span></div>
-    <label class="eyebrow">Moeda da transação</label>
+    <p class="eyebrow field-caption">Moeda da transação</p>
     <div class="currency-field"><span class="currency-badge">BRL</span><span>Real brasileiro</span><span class="muted">Moeda fixa</span></div>
     <label class="eyebrow amount-label" for="amount">Valor da transação <span aria-hidden="true">*</span></label>
     <div class="amount-field"><span aria-hidden="true">R$</span><input id="amount" name="amount" type="text" inputmode="decimal" autocomplete="off" required placeholder="0,00" [(ngModel)]="creation.value" [readOnly]="!!creation.intent()" [attr.aria-invalid]="creation.error() ? 'true' : null" aria-describedby="amount-help creation-error" /></div>
