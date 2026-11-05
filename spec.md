@@ -3343,6 +3343,26 @@ Gatilho contínuo proposto para mudanças analisáveis em PR e pushmain, além d
 
 Avisos preservados da primeira análise: imports/tipos Java não resolvidos e preview features exigem investigação específica, apesar de classes/bibliotecas fornecidas e compilação real; Data Dictionary PLSQL ausente não transforma migrations PostgreSQL em código Oracle nem autoriza enviar banco/credenciais; duplicação em testes PowerShell é ignorada pelo analisador de produção; assinatura GPG válida com aviso de ownertrust da chave importada. Não ocultar warnings ou afirmar que esses recortes comprovam análise sem limitações.
 
+Validação da PR221: run42062572836/job127367994893 passou com81 controles Python,542 testes transações,340 processamento e45 Angular; compilação/tipos/build/audit e relatórios válidos. Sensor Python leu o XML, JaCoCo importou2 relatórios e SonarJS leu a projeção LCOV. Gate remoto da PR OK, new_coverage100%, duplicação0 e ratingsA; não representa cobertura integral do projeto. Três checks verdes, sem revisão/thread pendente; merge de teste0595f3e com árvore idêntica aed38e6b. Integraçãoe4a4e7c. A primeira falha de medição permanece documentada; limites do gate não mudaram. Novo aviso observado: PNG/ZIP históricos lidos como UTF-8 pelo sensor de texto, sem alterar os binários ou excluir referências para reduzir achados.
+
+### 9.155 Revisão autorizada por ID e defesa de identidade ausente
+
+João autorizou explicitamente somente cinco classificações False positive, com justificativas individuais. Aplicadas e conferidas pela API em05/11/2026, todas RESOLVED/FALSE-POSITIVE:
+
+| ID | Operação revisada | Fundamentação |
+| --- | --- | --- |
+| AaGsF8vpDE2kr22yY43g | containment.py:138, conjunto de destinos | Compara configuração; não cria/abre temporário. |
+| AaGsF8vpDE2kr22yY43h | containment.py:138, consulta de opções | Compara allowlist rw/noexec/nosuid/nodev/size; não cria arquivo. |
+| AaGsF8vpDE2kr22yY43i | containment.py:142, identificação de mount | Compara tipo/destino após validar opções; sem IO de temporário. |
+| AaGsF8vnDE2kr22yY43f | source_ci.py:32, mount inspecionado | Comparação de inventário de container próprio não iniciado. |
+| AaGsY1nOrRCp-Yb3n_bx | SessaoDemoConfiguration:49 | Clock e processamentoClock pertencem a aplicativos Maven/component scans distintos, sem dependência cruzada. |
+
+Contexto dos guards:2 fixtures válidas aceitas e8 divergências recusadas, sem Docker; suíte de pesquisa70pass/1skip Windows. Contextos Java comprovados pelas suítes542/340; fixture de sessão usa relógio @Primary intencional. Imposição de qualifier mudaria a seleção válida dessa fixture. Cada comentário tem condição de reabertura caso operação/mount/contexto mude; compartilhamento opcional dos comentários com o fornecedor foi desmarcado. Nenhuma regra, arquivo, severidade ou gate desativado. Pesquisa segue incompleta/não liberada e demais achados continuam em triagem.
+
+Publicar o literal Linux `/tmp` não publica seu conteúdo. Acrescentado `/tmp/` na raiz ao .gitignore; `.local/` já era ignorado. `git check-ignore` confirmou ambos e `git ls-files tmp .local` retornou0 caminhos. Git ignore não controla HTTP: publicação futura deve servir somente bundle e rotas explicitamente permitidas, nunca a raiz do checkout.
+
+S2259/AaGsY1oprRCp-Yb3n_by: teste parametrizado reproduziu NullPointerException para POST/transacoes e GET/transacoes/{id} sem principal. Proteção retorna401 antes de consumir cota ou invocar próximo filtro. Green local:3 testes LimitesDemoTest e Checkstyle0 via Maven verify, sem infraestrutura; logs próprios ignorados. A cadeia real já exige autenticação antes deste ponto; não foi demonstrado bypass remoto. Suíte real/CI e reanálise ainda precisam confirmar o incremento. `.gitignore` entra nos gatilhos Sonar por poder alterar o escopo de fontes.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

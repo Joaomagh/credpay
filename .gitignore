@@ -19,6 +19,8 @@ application-local.yaml
 application-local.properties
 settings.local.xml
 .local/
+# Temporários gerados na raiz do workspace.
+/tmp/
 # Cache de descoberta legado no workspace; o kubeconfig padrão fica fora desta regra.
 /.kube/cache/
 secrets/
