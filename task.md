@@ -16,7 +16,7 @@
 
 ## Agora
 
-- [ ] Validar recusa de redirects de pacotes no CI/reanálise:5 reds/4 métodos verdes, dois planos e24 caminhos inválidos; spec§9.161.
+- [ ] PR228: validar download/redirect no CI;77 controles Linux passaram, origem recusou IDs divergentes em runner26. Repetir em host24.04 fixado sem afrouxar guards; spec§9.161.
 
 ## Próximo
 

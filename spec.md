@@ -3433,6 +3433,10 @@ Refactor inicial de urlopen para build_opener().open preservou a política padr�
 
 Green4 métodos: cinco redirects recusados/zero hits/nenhum arquivo inválido; downloads diretos dos dois planos e manifesto; divergências de tamanho/hash sem gravação;24 caminhos de lockfile inválidos antes de HTTP. Suíte da pesquisa75 testes verdes no Windows com1skip POSIX esperado; exige LinuxCI real. Controle focado mede37% do core_ci inteiro, pois operações Docker/scan/contenção restantes não são executadas localmente; não extrapolar cobertura do download para esse código. CI dos dois perfis e gate/reanálise ainda pendentes. Nenhuma classificação adicional False positive, exclusão de fonte ou liberação da sandbox.
 
+Primeiros perfis42127137922/42127137870:75 controles Linux passaram sem skips, mas inventário bloqueou antes da aquisição de pacotes. `ubuntu-latest` já seleciona Ubuntu26.04/runner20261101.186.1; recusa genérica não isolava a condição. Guard extraído sem mudar critérios; teste red exigiu diagnóstico booleano, green preservou aceitação válida e recusa dos4 casos divergentes, sem Config/env/IDs brutos na mensagem. Repetições42127744842/42127744529 confirmaram77 testes verdes e sameId=False/linux=True/amd64=True/noVolumes=True em ambos os perfis. Consulta somente metadata dos índices OCI oficiais confirmou os mesmos manifests AMD64 fixados nas duas baselines; nenhum corpo/imagem baixado localmente.
+
+Experimento seguinte, baseline registrada antes de executar: fixar os dois runners da pesquisa em ubuntu-24.04, como as provas atuais Compose/Kubernetes, em vez do alias móvel. Mantém imagem/index/manifest de origem e comparação exata de IDs; nenhum guard afrouxado. O diagnóstico sugere semântica de identidade diferente do backend Docker no runner26, mas não foi feita inspeção integral do daemon nem há prova de suporte26. Repetir inventário/construção/scan/controles nos dois perfis; não atribuir êxito do download a testes que pararam antes dele.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
