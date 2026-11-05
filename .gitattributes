@@ -5,3 +5,6 @@ docs/frontend/references/** -text
 # Fontes web mantêm finais de linha estáveis entre Windows e Linux.
 frontend/** text eol=lf
 .github/workflows/frontend-ci.yml text eol=lf
+
+# Relatórios PDF preservam bytes e offsets internos também com autocrlf no Windows.
+output/pdf/*.pdf binary
