@@ -3,9 +3,25 @@ name: SonarQube analysis
 on:
   pull_request:
     paths:
-      - 'infra/quality/**'
+      - 'transacoes-service/**'
+      - 'processamento-service/**'
+      - 'frontend/**'
+      - 'infra/**'
+      - 'config/**'
+      - 'docs/frontend/references/**'
       - 'sonar-project.properties'
-      - '.github/workflows/sonarqube.yml'
+      - '.github/workflows/**'
+  push:
+    branches: [main]
+    paths:
+      - 'transacoes-service/**'
+      - 'processamento-service/**'
+      - 'frontend/**'
+      - 'infra/**'
+      - 'config/**'
+      - 'docs/frontend/references/**'
+      - 'sonar-project.properties'
+      - '.github/workflows/**'
   workflow_dispatch:
     inputs:
       analyze:
@@ -30,11 +46,13 @@ jobs:
       NG_CLI_ANALYTICS: 'false'
     steps:
       - name: Check analysis authorization and token availability
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.analyze }}
+        if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.analyze) || (github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository) }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          test "$GITHUB_REF" = refs/heads/main || { echo 'Remote analysis is limited to main.'; exit 1; }
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            test "$GITHUB_REF" = refs/heads/main || { echo 'Manual analysis is limited to main.'; exit 1; }
+          fi
           test -n "$SONAR_TOKEN" || { echo 'Configure the repository secret SONAR_TOKEN without sharing it in logs.'; exit 1; }
 
       - name: Check out the complete history without persisted credentials
@@ -43,9 +61,20 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Verify coverage mapping controls
+      - name: Verify Python controls and measure their real coverage
         run: |
-          python3 -I -B -m unittest discover -s infra/quality -p 'test_*.py'
+          python3 -I -B -m venv "$RUNNER_TEMP/credpay-sonar-python"
+          coverage_python="$RUNNER_TEMP/credpay-sonar-python/bin/python"
+          "$coverage_python" -I -B -m pip --isolated install --require-hashes --no-deps --only-binary=:all: \
+            --disable-pip-version-check --no-cache-dir -r infra/quality/coverage-requirements.txt
+          mkdir -p .local/sonar-python
+          "$coverage_python" -I -B -m coverage erase --rcfile=infra/quality/coverage.ini
+          for folder in infra/quality infra/agent-sandbox infra/security; do
+            "$coverage_python" -I -B -m coverage run --append --rcfile=infra/quality/coverage.ini \
+              -m unittest discover -s "$folder" -p 'test_*.py'
+          done
+          "$coverage_python" -I -B -m coverage xml --rcfile=infra/quality/coverage.ini
+          "$coverage_python" -I -B -m coverage report --rcfile=infra/quality/coverage.ini
           echo "SONAR_PYTHON_VERSION=$(python3 -c 'import sys; print(str(sys.version_info.major) + "." + str(sys.version_info.minor))')" >> "$GITHUB_ENV"
 
       - name: Set up Java 21
@@ -114,7 +143,7 @@ jobs:
       - name: Refuse incomplete reports and normalize LCOV sources
         run: python3 -I -B infra/quality/prepare_sonar.py
 
-      - name: Store the three verified coverage reports
+      - name: Store the verified coverage reports
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: sonar-coverage-${{ github.sha }}
@@ -123,11 +152,13 @@ jobs:
             processamento-service/target/site/jacoco/jacoco.xml
             frontend/coverage/console/lcov.info
             frontend/coverage/console/lcov-sonar.info
+            .local/sonar-python/coverage.xml
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 14
 
       - name: Analyze and wait for the configured quality gate
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.analyze }}
+        if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.analyze) || (github.event_name == 'pull_request' && github.actor != 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository) }}
         uses: SonarSource/sonarqube-scan-action@e805d875275f728fac1885b413934be6d7c63f65 # v8.4.1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

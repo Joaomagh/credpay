@@ -3329,6 +3329,20 @@ TDD com transporte real: `test_https_downloads.py` lê as opções dos sete down
 
 Verificações locais verdes e diff-check. Downloads oficiais/checksums e suites dos workflows afetados ainda precisam passar no CI e os seis IDs precisam de nova análise antes do encerramento. Não altera severidades, exceções ou política do inventário; teste de protocolo não é prova completa de TLS/egress do runner.
 
+S05-S10 integrados na [PR #220](https://github.com/Joaomagh/credpay/pull/220), merge3f32235. Nove checks verdes no headda0e707, revisão/threads/revisores pendentes ausentes; árvore do merge de testedc172805 igual ao head. Inventory42056994771 falhou antes de gerar relatórios por504 no download Trivy nas quatro tentativas; repetido apenas o job falho, attempt2 passou. Não foi falha de checksum/protocolo ou waiver. Confirmação remota dos seis IDs fica para a análise do código atualizado.
+
+### 9.154 Cobertura Python e análise contínua
+
+Primeira análise CI completa, `86750e1c-988d-447f-a207-33cc807fe525`, revisãoa6211ea em05/11/2026: sensorJaCoCo importou2 relatórios, LCOV sem fontes irresolvidas,3142 linhas Java. Total30 apontamentos, com dois novos de confiabilidade: javabugs:S2259 em LimitesDemo:65 (`AaGsY1oprRCp-Yb3n_by`, Blocker) e java:S9352 em SessaoDemoConfiguration:49 (`AaGsY1nOrRCp-Yb3n_bx`, High, beans Clock de serviços diferentes). Não apareceu novo impacto Security nos Java dessa consulta; isso não prova ausência de vulnerabilidades. GateERROR exclusivamente por `new_coverage=0<80`; testes Python executados sem relatório geravam medição ausente. Rating/duplicação/hotspots de código novo passaram. Os limites do gate permanecem intactos.
+
+Baseline registrada antes do download: coverage.py7.17.2/Apache-2.0/Python>=3.11, wheel universal puro com SHA256e674027ceb6bfd959f1bb035000fd20fa8b717dc6765adaaf8bca347822c8c7d, PyPI e docs oficiais conferidos. Instalação binária com hash, sem transitivas/build/global, em venv próprio. Configuração explícita `core=pytrace` resolveu o aviso inicial de C tracer ausente, sem suprimir warnings. `unittest` de quality/pesquisa/security continua real; XML Cobertura com fontes relativas importado por `sonar.python.coverage.reportPaths`, artefato limitado ao XML nomeado. Arquivos de teste são omitidos da métrica e classificados como testes, fontes de produção não são excluídas.
+
+Teste de preparação completa primeiro falhou porque a função ignorava a raiz da fixture e lia a raiz real; após permitir raiz explícita na chamada interna, verifica saída normalizada e original intacto. CLI continua usando a raiz do script, sem argumento novo externo. Fixtures do preparador limitadas a `.local/quality-tests`. Medição local:7 controles quality,71 pesquisa (70pass/1skip Windows) e3 security; preparador66/70linhas e29/30branches,95% combinado. Nenhuma contagem é injetada no relatório; precisa da ingestão remota para encerrar o gate.
+
+Gatilho contínuo proposto para mudanças analisáveis em PR e pushmain, além do manual já existente. Envio remoto somente em PR do mesmo repositório que não seja Dependabot, pushmain e manualanalyze=true emmain; forks/Dependabot preparam/testam sem token. Token só no preflight e scanner; sem alteração de branch protection, permissões de conta ou condições do gate. A própria PR deverá provar o envio e a medição antes da integração.
+
+Avisos preservados da primeira análise: imports/tipos Java não resolvidos e preview features exigem investigação específica, apesar de classes/bibliotecas fornecidas e compilação real; Data Dictionary PLSQL ausente não transforma migrations PostgreSQL em código Oracle nem autoriza enviar banco/credenciais; duplicação em testes PowerShell é ignorada pelo analisador de produção; assinatura GPG válida com aviso de ownertrust da chave importada. Não ocultar warnings ou afirmar que esses recortes comprovam análise sem limitações.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
