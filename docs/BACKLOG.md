@@ -451,7 +451,7 @@ João criou a conexão e iniciou a primeira análise de `Joaomagh_credpay`, revi
 
 | Prioridade proposta | Resultado | Aceite | Estado |
 | --- | --- | --- | --- |
-| P1 | Completar análise CI | Classes e fontes Java dos dois serviços analisadas; dois JaCoCo e LCOV importados no mesmo SHA; avisos e quality gate revisados | Próxima frente; configuração e conexão CI pendentes |
+| P1 | Completar análise CI | Classes e fontes Java dos dois serviços analisadas; dois JaCoCo e LCOV importados no mesmo SHA; avisos e quality gate revisados | Preparação em validação: workflow, bytecode/classpath explícitos e controles TDD de mapeamento; conexão autenticada depende do secret criado por João e troca coordenada de método. Roteiro SONARQUBE_CI.md |
 | P1 | Reforçar downloads CI S05-S10 | HTTPS exigido em requisição/redirects, downgrade recusado, hashes/TLS preservados, workflows e nova análise verdes | Proposto; nenhuma correção feita nesta revisão |
 | P1 | Tornar linear a manipulação decimal Q01-Q02 | Teste red/green com entradas adversariais, sem arredondamento ou quebra de recibo/idempotência; suíte/build/nova análise | Custo superlinear observado isoladamente; implementação pendente |
 | P1 antes de publicação | Recusar segredos de exemplo S12-S14 | Credenciais exclusivas por destino fora do Git e portas de infraestrutura internas; manifesto de ensaio não reutilizado | Bloqueio da publicação externa; exemplos locais são públicos/fictícios, sem vazamento real identificado |
