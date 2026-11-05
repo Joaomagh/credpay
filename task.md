@@ -6,17 +6,18 @@
 
 - Candidato técnico da v1 e ensaios assistidos em docs/V1_VALIDATION.md e docs/V1_CANDIDATE.md; aceite pessoal adiado.
 - Contas, autorização, frontend e limites de recursos em spec§9.142-9.149; cobertura Java/Angular em§9.150.
-- PR219: preparação Sonar validada com542 testes transações,340 processamento e45 Angular. Primeiro envio CI importou Java/cobertura e revelou dois achados Java; gate reprovou a medição Python ausente.
-- PR220: seis downloads restringidos a HTTPS. Nove checks verdes após repetir somente o inventário que falhou por HTTP504; aguardam reanálise para encerrar S05-S10.
+- PR219/221: ingestão Java/Angular/Python e análise contínua com gate OK, sem reduzir condições. Avisos preservados em SONARQUBE_CI.md.
+- PR220/222: seis downloads e NPE CLOSED/FIXED em main; cinco falsos positivos autorizados com justificativas individuais.
+- PR223: decimais lineares,2 workers/46 Angular e8 jornadas reais verdes; confirmação dos IDs em main pendente.
 
 ## Agora
 
-- [ ] Validar CI/reanálise e revisão manual da manipulação decimal linear do frontend.2 reds/greens em worker real,46 Angular/tipos/builds verdes locais; spec§9.156.
+- [ ] Validar e integrar a limpeza do resultado anterior após UUID inválido, com2 reds e QA DOM comprovados; reforçar a asserção de cancelamento HTTP Q04. spec§9.157.
 
 ## Próximo
 
-- Confirmar fechamento do NPE em main apósPR222/13 checks verdes e544 testes; gate main já OK após cobertura Python.
-- Conferir semântica da moeda e prova de cancelamento HTTP com a skill de QA.
+- Corrigir rótulos estáticos da moeda/UUID e nome da variável PowerShell Q07; manter semântica e diagnóstico causal.
+- Substituir credenciais conhecidas do ensaio por geração própria/reutilização segura, sem usar exemplos no destino público.
 - Revisar ocorrências contextuais por ID, mantendo achados da pesquisa e referências históricas preservados.
 - Preparar publicação gratuita com HTTPS, retenção e limites validados. Contas Cloudflare/Oracle ainda dependem de João; nenhum deploy.
 

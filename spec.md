@@ -3377,6 +3377,16 @@ Local: tipos Angular/e2e e listagem Playwright passaram;2 controles Node e46 tes
 
 QA pela skill credpay-frontend/Computer Use, em aba própria, frontend deste checkout e API local existente/health200:250,001 preservado no recibo PENDENTE, reload recuperou recibo com mesmoUUID e consulta mostrouREJEITADA; nova intenção explícita10,001 retornou reciboPENDENTE e consultaAPROVADA com decimal exato. A revisão visual não inspecionou a rede e não prova ausência de POST adicional por captura de tráfego; essa asserção permanece nos testes automatizados. Não substitui teste manual do perfil de contas. Nenhuma operação Docker executada para esse QA; backend local não foi reconstruído. CI/reanálise ainda em acompanhamento.
 
+PR223 integrada em383d8f6 após7 checks verdes, sem revisão/thread pendente e árvore de merge igual ao head94be7a1. Sonar42108819585: gate OK/new_coverage100% no delta;544/340 testes Java, XML Python/JaCoCo/LCOV importados. Workers reais passaram em89/113ms no Linux. Compose42108819530 comprovou diagnóstico causal/persistência e8 jornadas de navegador (6 padrão+2 contas, desktop/mobile), sem falhas/skips. Angular CI incluiu auditoria/build. Encerramento dos dois IDs em main depende da próxima análise. NPE da PR222 já confirmado CLOSED/FIXED na análise main93b36141, revisão1941e4a. QA mobile adicional: erro de UUID associado, largura de conteúdo375 igual à viewport efetiva e foco solid no botão após Tab; captura mobile falhou e viewport foi restaurada. Não atribuir imagem ao caso sem captura válida.
+
+### 9.157 Resultado da consulta vinculado ao identificador enviado
+
+Revisão manual descobriu cenário fora dos alertas iniciais: após resultado válido, enviar UUID inválido preservava a aprovação/pendência antiga ao lado do erro. Dois testes parametrizados (PENDENTE/APROVADA anteriores) falharam porque o resultado não era nulo. Movida a limpeza do resultado, quando o identificador muda, para antes da validaçãoUUID. Cancela o acompanhamento já existente e não faz HTTP para o identificador inválido. Erro ao repetir consulta do mesmoUUID continua preservando último estado recebido, com cenário de regressão existente.
+
+Q04/S2699: teste HTTP de saída já verificava expectNone no adapter Angular; agora também observa a sequência entregue ao consumidor, somentePENDENTE após unsubscribe e avanço60s. É reforço observável de teste existente, sem alegação de bug de cancelamento novo ou red artificial. A mudança de comportamento da tela possui os dois reds acima.
+
+QA com o mesmo pedido fictício no backend local: confirmaçãoAPROVADA, envio de UUID inválido, erro visível e0 cards de resultado no DOM. Sem novoPOST, sem operação Docker. Green local: tipos,2 controles Node,48 Angular e build350,28kB passaram, incluindo preservação de PENDENTE em falha do mesmoUUID. CI/reanálise pendentes antes da integração. Rótulos estáticos da moeda/UUID continuam próximos, sem mudança visual antecipada nesta correção.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

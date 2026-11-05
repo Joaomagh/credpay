@@ -22,6 +22,23 @@ describe('Consulta pela interface', () => {
     expect(harness.routeNativeElement?.textContent).toContain('Informe um UUID válido');
     http.expectNone(() => true);
   });
+  it.each(['PENDENTE', 'APROVADA'])('remove o resultado %s de outro identificador quando a nova consulta é inválida', async status => {
+    vi.useFakeTimers();
+    const harness = await RouterTestingHarness.create();
+    const page = await harness.navigateByUrl('/consultar?id=' + id, QueryPage);
+    http.expectOne('/transacoes/' + id).flush(data.replace('PENDENTE', status));
+    expect(page.result()?.id).toBe(id);
+
+    page.id = 'uuid-invalido'; page.search(); harness.detectChanges();
+
+    expect(page.result()).toBeNull();
+    expect(harness.routeNativeElement?.querySelector('cp-transaction-card')).toBeNull();
+    expect(page.error()).toContain('Informe um UUID válido');
+    expect(page.tracking()).toBe(false);
+    expect(page.loading()).toBe(false);
+    await vi.advanceTimersByTimeAsync(60000);
+    http.expectNone(() => true);
+  });
   it('interrompe o acompanhamento e informa a espera quando recebe 429', async () => {
     const harness = await RouterTestingHarness.create();
     const page = await harness.navigateByUrl('/consultar?id=' + id, QueryPage);
