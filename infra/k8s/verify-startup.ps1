@@ -11,6 +11,8 @@ $execution = Get-CredPayKubernetesExecution $root $Cluster $ExecutionProfile
 $kubeconfig = $execution.Kubeconfig
 $kubectl = $execution.Kubectl
 . (Join-Path $root 'infra/compose/json.ps1')
+. (Join-Path $PSScriptRoot 'disposable-secret.ps1')
+. (Join-Path $PSScriptRoot 'kubectl.ps1')
 
 function Require([bool]$Condition, [string]$Message) { if (-not $Condition) { throw $Message } }
 function WriteStateDiagnostics {
@@ -35,20 +37,6 @@ function WriteStateDiagnostics {
             }
         } catch { Write-Host "Kubernetes diagnóstico: $resource ilegível; conteúdo omitido." }
     }
-}
-function Kube {
-    $requestTimeout = switch ($args[0]) { 'rollout' { '190s' } 'delete' { '70s' } default { '30s' } }
-    $output = & $kubectl --kubeconfig $kubeconfig --context "kind-$Cluster" --namespace credpay "--request-timeout=$requestTimeout" @args 2>&1 | Out-String
-    if ($LASTEXITCODE -ne 0) {
-        $exitCode = $LASTEXITCODE
-        # Somente tokens de comandos fixos; nunca argumentos, mensagens, env ou saída do processo.
-        $operation = if ($args[0] -ceq 'exec' -and $args.Count -ge 4) {
-            @($args | Where-Object { $_ -cin @('id', 'curl', 'rabbitmqctl', 'list_consumers', 'list_queues', 'list_exchanges', 'psql') }) -join '/'
-        } else { [string]$args[0] }
-        WriteStateDiagnostics
-        throw "kubectl falhou em '$operation', exit=$exitCode; saída omitida, sem exportar configuração/logs."
-    }
-    return $output.Trim()
 }
 function WaitPod([string]$Name, [string]$OldUid = '') {
     $deadline = [DateTime]::UtcNow.AddSeconds(180)
@@ -90,7 +78,8 @@ $context = & $kubectl --kubeconfig $kubeconfig config current-context
 Require ($LASTEXITCODE -eq 0 -and $context -ceq "kind-$Cluster") 'Contexto não corresponde ao cluster descartável.'
 
 $null = Kube apply -f (Join-Path $PSScriptRoot 'namespace.yaml')
-foreach ($file in @('config.yaml', 'secret.example.yaml', 'databases.yaml', 'rabbit.yaml')) {
+$secretUid = Ensure-CredPayKubernetesSecret $Cluster
+foreach ($file in @('config.yaml', 'databases.yaml', 'rabbit.yaml')) {
     $null = Kube apply -f (Join-Path $PSScriptRoot $file)
 }
 foreach ($name in @('db-transacoes-0', 'db-processamento-0', 'rabbit-0')) { $null = WaitPod $name }
@@ -158,4 +147,7 @@ foreach ($claim in $pvcBefore.items) {
     Require ($matching.Count -eq 1) 'Identidade do PVC/PV mudou após recriação do Pod.'
 }
 CheckBroker
+$reusedSecretUid = Ensure-CredPayKubernetesSecret $Cluster
+Require ($reusedSecretUid -ceq $secretUid) 'Secret mudou durante recriação dos Pods.'
+Write-Host 'Kubernetes: Secret aleatório imutável reutilizado, mesma UID após recriação, sem valores exportados.'
 Write-Host 'Kubernetes: três Pods da infraestrutura recriados; PVCs/PVs, migrations e exchanges produtoras preservados.'

@@ -52,3 +52,11 @@ python -I -B -m unittest discover -s infra/quality -p 'test_*.py'
 ```
 
 `prepare_sonar.py` completo só passa quando os relatórios, fontes, bytecode e bibliotecas dos dois serviços existem no mesmo checkout. O LCOV normalizado é escrito em `frontend/coverage/console/lcov-sonar.info`, mantendo o original. Nunca enviar `.local`, `.env`, banco, cookies, credenciais ou logs extensos como evidência de cobertura.
+
+## Cobertura dos helpers PowerShell do Kubernetes
+
+A PR227 expôs uma lacuna real: controles executados sem relatório não contribuíam para o gate. O fluxo usa Pester6.2.0 somente como ferramenta de teste/medição, pacote oficial Gallery, Apache2.0 e sem dependências. Versão e SHA512 da metadata oficial foram fixados em `infra/quality/pester-baseline.json` antes do download. O workflow exige HTTPS também em redirects; `check-powershell-coverage.ps1` verifica o hash antes de extrair/importar numa pasta exclusiva de `.local/sonar-powershell`. Não há instalação global, segredo ou ferramenta nova nos aplicativos. [Pacote oficial](https://www.powershellgallery.com/packages/Pester/6.2.0) · [Medição Pester](https://pester.dev/docs/usage/code-coverage).
+
+O teste Pester executa os50 controles reais de `check-disposable-secret.ps1`, sem Docker/rede, medindo `disposable-secret.ps1` e `kubectl.ps1`. O adapter foi extraído sem mudar sua política para manter fonte física e instrumentável, em vez de recriar sua AST sem localização. Local:90,78% dos141 comandos e71/72linhas. Percentuais de comandos e linhas são diferentes; esta medição não cobre todos os scripts PowerShell do repositório ou comprova caminhos nativos do kubectl. O ensaio Kubernetes CI permanece obrigatório para integração.
+
+O Cobertura original é preservado; `prepare_sonar.py` transforma somente hits medidos em XML genérico para `sonar.coverageReportPaths`. Recusa relatório ausente/inválido, arquivo desconhecido/ausente/duplicado, linha fora da fonte/duplicada e hits inválidos. Mantém linhas não executadas como `covered=false`; não inventa branches ou execuções. Os dois XML nomeados são publicados com os demais relatórios; pacote/módulo não entram nos artefatos. [Formato genérico](https://docs.sonarsource.com/sonarqube-server/analyzing-source-code/test-coverage/generic-test-data).

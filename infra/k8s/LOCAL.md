@@ -6,6 +6,8 @@ O launcher `local.ps1` oferece Create/Validate/Remove, retomada explícita Resum
 
 ## Antes de executar
 
+O startup atual gera um Secret aleatório imutável e o reutiliza após conferir identidade e formato. Uma sessão antiga com as senhas públicas do antigo template é recusada sem rotação ou exclusão automática. Não altere o Secret para tentar destravar PVCs; preserve a sessão para diagnóstico. Credenciais não são exportadas pelo roteiro.
+
 - Aguardar integração/revisão e checks aplicáveis do código que será executado; controles offline não comprovam Docker Desktop/kind reais.
 - JARs preparados e imagens dos aplicativos construídos com a mesma tag completa. Para o ensaio atual, o manifesto ignorado `.local/evidence/local-acceptance-prepared.json` identifica f412652 e os hashes dos dois JARs; não retaggear imagens antigas.
 - Preflight observado por João: kind0.33.0/windows-amd64, kubectl1.36.4/Kustomize5.8.1, endpoint `npipe:////./pipe/dockerDesktopLinuxEngine`, overlayfs,12CPUs e12431081472bytes. O launcher reconfere Linux/amd64, driver overlayfs/overlay2, ausência de rootless/userns e identidade do daemon. O piso2CPU/4GiB só recusa capacidade evidentemente insuficiente; não é dimensionamento ou garantia de que4GiB comportem o ensaio.

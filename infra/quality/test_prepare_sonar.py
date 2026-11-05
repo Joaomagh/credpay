@@ -1,8 +1,9 @@
 import tempfile
 import unittest
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from prepare_sonar import main, normalize_lcov, validate_java_report
+from prepare_sonar import convert_powershell_coverage, main, normalize_lcov, validate_java_report
 
 
 class CoveragePreparationTest(unittest.TestCase):
@@ -10,6 +11,58 @@ class CoveragePreparationTest(unittest.TestCase):
         folder = Path(__file__).resolve().parents[2] / '.local/quality-tests'
         folder.mkdir(parents=True, exist_ok=True)
         return tempfile.TemporaryDirectory(dir=folder)
+
+    def powershell_fixture(self, root):
+        folder = root / '.local/sonar-powershell'
+        folder.mkdir(parents=True)
+        report = ET.Element('coverage')
+        classes = ET.SubElement(ET.SubElement(ET.SubElement(report, 'packages'), 'package'), 'classes')
+        for name in ('infra/k8s/disposable-secret.ps1', 'infra/k8s/kubectl.ps1'):
+            target = root / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text('$fixture=1\n$null=$fixture\n', encoding='utf-8')
+            lines = ET.SubElement(ET.SubElement(classes, 'class', filename=name), 'lines')
+            ET.SubElement(lines, 'line', number='1', hits='3')
+            ET.SubElement(lines, 'line', number='2', hits='0')
+        return report, folder / 'coverage.xml'
+
+    def test_powershell_mapping_preserves_measured_hits_on_windows_paths(self):
+        with self.temporary_directory() as directory:
+            root = Path(directory)
+            report, path = self.powershell_fixture(root)
+            for source in report.findall('.//class'):
+                source.set('filename', source.get('filename').replace('/', '\\'))
+            ET.ElementTree(report).write(path)
+            self.assertEqual(4, convert_powershell_coverage(root))
+            generic = ET.parse(path.with_name('sonar-coverage.xml')).getroot()
+            self.assertEqual(['true', 'false', 'true', 'false'],
+                             [line.get('covered') for line in generic.findall('.//lineToCover')])
+
+    def test_powershell_mapping_refuses_missing_malformed_or_inconsistent_reports(self):
+        for case in ('missing', 'xml', 'root', 'source', 'duplicate-source', 'missing-source', 'missing-file',
+                     'empty', 'zero', 'outside-line', 'negative-hits', 'nonnumeric-hits', 'unicode-number', 'duplicate-line'):
+            with self.subTest(case=case), self.temporary_directory() as directory:
+                root = Path(directory)
+                report, path = self.powershell_fixture(root)
+                classes = report.find('packages/package/classes')
+                source = classes[0]
+                line = source.find('lines/line')
+                if case == 'root': report.tag = 'unrelated'
+                elif case == 'source': source.set('filename', '../../external.ps1')
+                elif case == 'duplicate-source': classes.append(ET.fromstring(ET.tostring(source)))
+                elif case == 'missing-source': classes.remove(source)
+                elif case == 'missing-file': (root / source.get('filename')).unlink()
+                elif case == 'empty': source.find('lines').clear()
+                elif case == 'zero': line.set('number', '0')
+                elif case == 'outside-line': line.set('number', '3')
+                elif case == 'negative-hits': line.set('hits', '-1')
+                elif case == 'nonnumeric-hits': line.set('hits', 'unknown')
+                elif case == 'unicode-number': line.set('number', '²')
+                elif case == 'duplicate-line': source.find('lines').append(ET.fromstring(ET.tostring(line)))
+                if case != 'missing': ET.ElementTree(report).write(path)
+                if case == 'xml': path.write_text('<broken', encoding='utf-8')
+                with self.assertRaises(ValueError):
+                    convert_powershell_coverage(root)
 
     def test_maps_windows_and_linux_sources_to_the_repository_root(self):
         with self.temporary_directory() as directory:
@@ -105,7 +158,25 @@ class CoveragePreparationTest(unittest.TestCase):
             report.parent.mkdir(parents=True)
             original = 'SF:src/app/view.html\nDA:1,4\nend_of_record\nSF:src/app/view.ts\nDA:1,2\nend_of_record\n'
             report.write_text(original, encoding='utf-8')
+            powershell = root / '.local/sonar-powershell'
+            powershell.mkdir(parents=True)
+            files = ('infra/k8s/disposable-secret.ps1', 'infra/k8s/kubectl.ps1')
+            for source in files:
+                target = root / source
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text('$fixture = 1\n$null = $fixture\n', encoding='utf-8')
+            powershell.joinpath('coverage.xml').write_text(
+                '<coverage><packages><package><classes>' + ''.join(
+                    f'<class filename="{source}"><lines><line number="1" hits="3"/>'
+                    '<line number="2" hits="0"/></lines></class>' for source in files
+                ) + '</classes></package></packages></coverage>', encoding='utf-8')
             main(root)
             self.assertEqual(original, report.read_text(encoding='utf-8'))
             self.assertEqual('SF:frontend/src/app/view.ts\nDA:1,2\nend_of_record\n',
                              report.with_name('lcov-sonar.info').read_text(encoding='utf-8'))
+            generic = ET.parse(powershell / 'sonar-coverage.xml').getroot()
+            self.assertEqual({'version': '1'}, generic.attrib)
+            self.assertEqual(list(files), [file.get('path') for file in generic.findall('file')])
+            for file in generic.findall('file'):
+                self.assertEqual([{'lineNumber': '1', 'covered': 'true'}, {'lineNumber': '2', 'covered': 'false'}],
+                                 [line.attrib for line in file.findall('lineToCover')])

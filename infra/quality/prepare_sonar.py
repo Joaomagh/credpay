@@ -64,6 +64,41 @@ def validate_java_report(module):
     return len(sources)
 
 
+def convert_powershell_coverage(root):
+    folder = root / '.local/sonar-powershell'
+    try:
+        report = ET.parse(folder / 'coverage.xml').getroot()
+    except (ET.ParseError, OSError) as error:
+        raise ValueError('PowerShell coverage is missing or invalid.') from error
+    expected = {'infra/k8s/disposable-secret.ps1', 'infra/k8s/kubectl.ps1'}
+    generic = ET.Element('coverage', version='1')
+    seen = set()
+    for source in report.findall('packages/package/classes/class'):
+        name = source.get('filename', '').replace('\\', '/')
+        path = PurePosixPath(name)
+        target = (root / path).resolve()
+        if (name not in expected or name in seen or not target.is_relative_to(root.resolve())
+                or not target.is_file()):
+            raise ValueError('PowerShell coverage source does not match the checkout.')
+        seen.add(name)
+        line_count = len(target.read_text(encoding='utf-8-sig').splitlines())
+        file = ET.SubElement(generic, 'file', path=name)
+        lines = set()
+        for line in source.findall('lines/line'):
+            number, hits = line.get('number', ''), line.get('hits', '')
+            if (not number.isascii() or not number.isdigit() or not hits.isascii() or not hits.isdigit()
+                    or not 1 <= int(number) <= line_count or int(number) in lines):
+                raise ValueError('PowerShell coverage line or hits are invalid.')
+            lines.add(int(number))
+            ET.SubElement(file, 'lineToCover', lineNumber=number, covered='true' if int(hits) > 0 else 'false')
+        if not lines:
+            raise ValueError('PowerShell coverage file has no lines.')
+    if report.tag != 'coverage' or seen != expected:
+        raise ValueError('PowerShell coverage is incomplete.')
+    ET.ElementTree(generic).write(folder / 'sonar-coverage.xml', encoding='utf-8', xml_declaration=True)
+    return sum(len(file) for file in generic)
+
+
 def main(root=None):
     root = Path(root) if root is not None else Path(__file__).resolve().parents[2]
     for module in ('transacoes-service', 'processamento-service'):
@@ -73,10 +108,12 @@ def main(root=None):
     original = report.read_text(encoding='utf-8')
     normalized = normalize_lcov(original, frontend, typescript_only=True)
     report.with_name('lcov-sonar.info').write_text(normalized, encoding='utf-8', newline='\n')
+    powershell_lines = convert_powershell_coverage(root)
     print('Sonar inputs: two JaCoCo reports, bytecode and libraries verified; LCOV sources mapped to checkout.')
     total = sum(line.startswith('SF:') for line in original.splitlines())
     imported = sum(line.startswith('SF:') for line in normalized.splitlines())
     print(f'Sonar LCOV: TypeScript records={imported}; template records retained in original report={total - imported}.')
+    print(f'Sonar PowerShell: {powershell_lines} measured lines mapped to the checkout; no synthesized hits.')
 
 
 if __name__ == '__main__':

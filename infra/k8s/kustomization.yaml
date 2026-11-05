@@ -4,7 +4,6 @@ namespace: credpay
 resources:
   - namespace.yaml
   - config.yaml
-  - secret.example.yaml
   - databases.yaml
   - rabbit.yaml
   - apps.yaml

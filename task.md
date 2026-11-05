@@ -11,15 +11,16 @@
 - PR223: decimais lineares,2 workers/46 Angular e8 jornadas reais verdes; ambos IDs CLOSED/FIXED em main.
 - PR224: resultado antigo removido em consulta inválida,48 Angular/gate OK e Q04 CLOSED/FIXED.
 - PR225: moeda/UUID com semântica correta e foco visível no mobile;50 Angular,8 jornadas reais e gate OK.
+- PR226: variável automática preservada;6 checks, gate OK e recuperação causal/navegador aprovados, mergec0a3760.
 
 ## Agora
 
-- [ ] Validar CI/reanálise de Q07: variável do diagnóstico renomeada, contratos preservados, controles offline e parser verdes; spec§9.159.
+- [ ] PR227: Kubernetes real aprovado; concluir importação da cobertura PowerShell e repetir CI/gate no head final.50 controles, medição Pester e conversão real verdes; spec§9.160.
 
 ## Próximo
 
 - Conferir encerramento Q03/Q07 em main e preservar prova de recuperação causal.
-- Substituir credenciais conhecidas do ensaio por geração própria/reutilização segura, sem usar exemplos no destino público.
+- Endurecer redirects do download da pesquisa sem liberar o core; preservar validação de tamanho/hash/origem.
 - Revisar ocorrências contextuais por ID, mantendo achados da pesquisa e referências históricas preservados.
 - Preparar publicação gratuita com HTTPS, retenção e limites validados. Contas Cloudflare/Oracle ainda dependem de João; nenhum deploy.
 
