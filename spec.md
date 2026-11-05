@@ -3397,6 +3397,14 @@ Green local: tipos,2 controles Node,50 testes Angular e build350,35kB. QA real n
 
 A revisão adicional por Tab encontrou Copiar focado sob a sidebar fixa: controle y800,43–844,42 e navegação y758,75–832,56. Escrito teste de geometria na jornada existente (foco por Tab, viewport e ausência de interseção com navegação); mesmo predicado executado no navegador local retornoufalse e gerou red explícito antes do CSS. Esse é red manual pela integração de navegador, não execução local do runner Playwright protegido para CI. Acrescentado scroll-padding-bottom112px somente no breakpoint mobile, preservando espaço de rolagem para foco. Mesmo teste manual passou: controle y430,43–474,42, acima da navegação. Viewport restaurada e nenhuma cópia para clipboard ou transação adicional. Após ajuste, tipos/e2e,2 controlesNode,50 Angular e build350,38kB verdes. A regressão Playwright da jornada real ainda precisa passar no CI; não desativar seu guard para executar localmente.
 
+PR225 integrada em61ccafc após7 checks verdes no head38f4933. Sonar42115333403 gate OK/new_coverage100%,544/340 Java e50 Angular; relatórios Python/JaCoCo/LCOV importados. Compose42115333192 comprovou8 jornadas sem falhas/skips, incluindo novo passo de foco/visibilidade em desktop/mobile, além da recuperação causal/persistência. Merge de teste com árvore igual ao head e sem revisão/thread pendente. Q04 já CLOSED/FIXED em maina94abde; Q03 aguarda análise do merge. Não inferir equivalência a WCAG completo, mobile nativo ou Safari a partir desses recortes.
+
+### 9.159 Nome de variável do diagnóstico causal
+
+Q07/AaGsF8vXDE2kr22yY43a: renomeados os quatro usos da variável local $event para $creationEventId em ReadFaultPending. Evita colisão com a variável automática PowerShell; mantém consultas, validação GUID e propriedade Event entregue a ConfirmFaultRecovery. Refactor operacional sem mudança de contrato: não recebe red artificial de negócio.
+
+PowerShell7 executou controles de falha (16), propriedade (33), HTTP (9), recusa de Smoke, processo e ciclo de vida (11), além do parser da fonte sem erros. São fixtures offline: os resumos Compose causal/Run/Remove produzidos por esses controles são fictícios, sem Docker/HTTP real, e não substituem diagnóstico causal do CI. Exceções esperadas nos cenários negativos foram conferidas pelos controles; não escondidas. CI e reanálise pendentes antes de integrar.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

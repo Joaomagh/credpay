@@ -9,15 +9,16 @@
 - PR219/221: ingestão Java/Angular/Python e análise contínua com gate OK, sem reduzir condições. Avisos preservados em SONARQUBE_CI.md.
 - PR220/222: seis downloads e NPE CLOSED/FIXED em main; cinco falsos positivos autorizados com justificativas individuais.
 - PR223: decimais lineares,2 workers/46 Angular e8 jornadas reais verdes; ambos IDs CLOSED/FIXED em main.
-- PR224: resultado antigo removido em consulta inválida,48 Angular e gate OK; reforço observável de cancelamento Q04 integrado.
+- PR224: resultado antigo removido em consulta inválida,48 Angular/gate OK e Q04 CLOSED/FIXED.
+- PR225: moeda/UUID com semântica correta e foco visível no mobile;50 Angular,8 jornadas reais e gate OK.
 
 ## Agora
 
-- [ ] Validar e integrar acessibilidade da PR225: moeda/UUID estáticos e Copiar focado sem cobertura pela navegação mobile.2 reds de rótulos e red/green manual de foco;50 Angular e QA comprovados; regressão de teclado no CI. spec§9.158.
+- [ ] Validar CI/reanálise de Q07: variável do diagnóstico renomeada, contratos preservados, controles offline e parser verdes; spec§9.159.
 
 ## Próximo
 
-- Renomear variável PowerShell Q07; manter diagnóstico causal e verificar encerramento Q03/Q04 em main.
+- Conferir encerramento Q03/Q07 em main e preservar prova de recuperação causal.
 - Substituir credenciais conhecidas do ensaio por geração própria/reutilização segura, sem usar exemplos no destino público.
 - Revisar ocorrências contextuais por ID, mantendo achados da pesquisa e referências históricas preservados.
 - Preparar publicação gratuita com HTTPS, retenção e limites validados. Contas Cloudflare/Oracle ainda dependem de João; nenhum deploy.
