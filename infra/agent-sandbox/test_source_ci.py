@@ -5,6 +5,23 @@ import source_ci
 
 
 class SourceCiTest(unittest.TestCase):
+    def test_source_identity_refusal_reports_only_boolean_checks(self):
+        image = {'Id': 'sha256:' + 'a' * 64, 'Os': 'linux', 'Architecture': 'amd64', 'Config': {}}
+        selected = {**image, 'Id': 'sha256:' + 'b' * 64}
+        with self.assertRaisesRegex(ValueError, r'sameId=False; linux=True; amd64=True; noVolumes=True'):
+            source_ci.validate_source_images(image, selected)
+
+    def test_source_identity_still_refuses_every_divergent_guard(self):
+        image = {'Id': 'sha256:' + 'a' * 64, 'Os': 'linux', 'Architecture': 'amd64', 'Config': {}}
+        source_ci.validate_source_images(image, copy.deepcopy(image))
+        for field, value in (('Id', 'sha256:' + 'b' * 64), ('Os', 'other'), ('Architecture', 'arm64'),
+                             ('Config', {'Volumes': {'/extra': {}}, 'Env': ['PRIVATE_FIXTURE=must-not-appear']})):
+            changed = {**image, field: value}
+            with self.subTest(field=field), self.assertRaises(ValueError) as caught:
+                source_ci.validate_source_images(changed, image)
+            self.assertNotIn('PRIVATE_FIXTURE', str(caught.exception))
+            self.assertNotIn('sha256:', str(caught.exception))
+
     def data(self):
         return {"Id": "a" * 64, "Image": "sha256:" + "b" * 64,
                 "Name": "/credpay-source-1-1", "Config": {"Labels": {source_ci.LABEL: "credpay-source-1-1"}},

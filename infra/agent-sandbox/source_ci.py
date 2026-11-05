@@ -45,6 +45,14 @@ def assert_never_started(data):
         raise ValueError("Container de origem foi iniciado; inventário recusado.")
 
 
+def validate_source_images(image, selected):
+    checks = (image['Id'] == selected['Id'], image['Os'] == 'linux', image['Architecture'] == 'amd64', not image['Config'].get('Volumes'))
+    if not all(checks):
+        # Diagnose the failing guard without printing Config, env or raw inspect output.
+        raise ValueError('Identidade/plataforma/volumes da origem divergem; '
+                         f'sameId={checks[0]}; linux={checks[1]}; amd64={checks[2]}; noVolumes={checks[3]}.')
+
+
 def main(noble_candidate=False):
     if os.environ.get("GITHUB_ACTIONS") != "true" or os.environ.get("RUNNER_ENVIRONMENT") != "github-hosted" or os.environ.get("RUNNER_OS") != "Linux":
         raise ValueError("Execução somente no runner Linux hospedado e descartável do GitHub.")
@@ -64,8 +72,7 @@ def main(noble_candidate=False):
     image = json.loads(docker("image", "inspect", source))[0]
     docker("pull", "--platform=linux/amd64", f"{repository}@{platform}")
     selected = json.loads(docker("image", "inspect", f"{repository}@{platform}"))[0]
-    if image["Id"] != selected["Id"] or image["Os"] != "linux" or image["Architecture"] != "amd64" or image["Config"].get("Volumes"):
-        raise ValueError("Identidade/plataforma/volumes da origem divergem.")
+    validate_source_images(image, selected)
     identity = None
     try:
         identity = docker("create", "--name", marker, "--label", f"{LABEL}={marker}",
