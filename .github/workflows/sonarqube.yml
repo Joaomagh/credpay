@@ -121,6 +121,7 @@ jobs:
           path: |
             transacoes-service/target/site/jacoco/jacoco.xml
             processamento-service/target/site/jacoco/jacoco.xml
+            frontend/coverage/console/lcov.info
             frontend/coverage/console/lcov-sonar.info
           if-no-files-found: error
           retention-days: 14

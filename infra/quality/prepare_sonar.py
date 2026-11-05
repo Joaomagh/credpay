@@ -4,11 +4,13 @@ from pathlib import Path, PurePosixPath
 import xml.etree.ElementTree as ET
 
 
-def normalize_lcov(content, frontend):
+def normalize_lcov(content, frontend, typescript_only=False):
     output = []
+    record_lines = []
     source = None
     covered_lines = 0
     records = 0
+    included = 0
     for line in content.splitlines():
         if line.startswith('SF:'):
             path = PurePosixPath(line[3:].replace('\\', '/'))
@@ -25,13 +27,17 @@ def normalize_lcov(content, frontend):
             if source is None or len(fields) < 2 or not fields[0].isdigit() or not fields[1].isdigit() or int(fields[0]) < 1:
                 raise ValueError('LCOV line data is invalid.')
             covered_lines += 1
-        elif line == 'end_of_record':
+        record_lines.append(line)
+        if line == 'end_of_record':
             if source is None or covered_lines == 0:
                 raise ValueError('LCOV record is empty or incomplete.')
             records += 1
+            if not typescript_only or source.suffix == '.ts':
+                output.extend(record_lines)
+                included += 1
+            record_lines = []
             source = None
-        output.append(line)
-    if records == 0 or source is not None:
+    if records == 0 or source is not None or included == 0:
         raise ValueError('LCOV report is empty or incomplete.')
     return '\n'.join(output) + '\n'
 
@@ -64,9 +70,13 @@ def main():
         validate_java_report(root / module)
     frontend = root / 'frontend'
     report = frontend / 'coverage/console/lcov.info'
-    normalized = normalize_lcov(report.read_text(encoding='utf-8'), frontend)
+    original = report.read_text(encoding='utf-8')
+    normalized = normalize_lcov(original, frontend, typescript_only=True)
     report.with_name('lcov-sonar.info').write_text(normalized, encoding='utf-8', newline='\n')
     print('Sonar inputs: two JaCoCo reports, bytecode and libraries verified; LCOV sources mapped to checkout.')
+    total = sum(line.startswith('SF:') for line in original.splitlines())
+    imported = sum(line.startswith('SF:') for line in normalized.splitlines())
+    print(f'Sonar LCOV: TypeScript records={imported}; template records retained in original report={total - imported}.')
 
 
 if __name__ == '__main__':

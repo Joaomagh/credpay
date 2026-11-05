@@ -24,6 +24,17 @@ class CoveragePreparationTest(unittest.TestCase):
             normalized = normalize_lcov('SF:src/app/view.html\nDA:1,2\nend_of_record\n', frontend)
             self.assertEqual('SF:frontend/src/app/view.html\nDA:1,2\nend_of_record\n', normalized)
 
+    def test_projects_typescript_for_the_scanner_without_losing_the_original_template_report(self):
+        with tempfile.TemporaryDirectory() as directory:
+            frontend = Path(directory) / 'frontend'
+            (frontend / 'src/app').mkdir(parents=True)
+            for name in ('view.ts', 'view.html'):
+                (frontend / 'src/app' / name).write_text('fixture\n', encoding='utf-8')
+            original = 'SF:src/app/view.html\nDA:1,4\nend_of_record\nSF:src/app/view.ts\nDA:1,2\nend_of_record\n'
+            self.assertEqual('SF:frontend/src/app/view.ts\nDA:1,2\nend_of_record\n',
+                             normalize_lcov(original, frontend, typescript_only=True))
+            self.assertIn('DA:1,4', normalize_lcov(original, frontend))
+
     def test_refuses_missing_external_test_or_incomplete_coverage(self):
         with tempfile.TemporaryDirectory() as directory:
             frontend = Path(directory) / 'frontend'
