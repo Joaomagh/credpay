@@ -9,6 +9,19 @@ export function amount(input: string): string | null {
   return value.replace(/^0+(?=\d)/, '');
 }
 
+// Identity of a positive decimal: coefficient and power of ten, without rounding.
+export function decimalIdentity(value: string): string | null {
+  const parts = /^(0|[1-9]\d*)(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/.exec(value);
+  if (!parts) return null;
+  const digits = (parts[1] + (parts[2] ?? '')).replace(/^0+/, '');
+  if (!digits) return null;
+  let end = digits.length;
+  while (end > 0 && digits[end - 1] === '0') end--;
+  const coefficient = digits.slice(0, end);
+  const exponent = BigInt(parts[3] ?? '0') - BigInt((parts[2] ?? '').length) + BigInt(digits.length - coefficient.length);
+  return `${coefficient}:${exponent}`;
+}
+
 export function displayAmount(value: string): string {
   const match = /^(\d+)(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/.exec(value);
   if (!match) return value;
@@ -21,6 +34,10 @@ export function displayAmount(value: string): string {
   const point = integer.length + shift;
   const whole = point <= 0 ? '0' : digits.slice(0, point).padEnd(point, '0');
   const decimals = point <= 0 ? '0'.repeat(-point) + digits : digits.slice(point);
-  return whole.replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-    + ',' + decimals.padEnd(2, '0');
+  const canonicalWhole = whole.replace(/^0+(?=\d)/, '');
+  const groups: string[] = [];
+  for (let end = canonicalWhole.length; end > 0; end -= 3) {
+    groups.push(canonicalWhole.slice(Math.max(0, end - 3), end));
+  }
+  return groups.reverse().join('.') + ',' + decimals.padEnd(2, '0');
 }

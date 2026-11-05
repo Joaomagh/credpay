@@ -55,6 +55,8 @@ npm.cmd audit --audit-level=low
 
 Testes Angular/Vitest usam a fronteira HTTP controlada, sem RabbitMQ/PostgreSQL e sem substituir o aceite da jornada com backend real. O CI repete instalação pelo lockfile, tipos, comportamento, build e auditoria no Linux. A revisão visual usa navegador desktop/mobile, validação inválida e navegação; sucesso financeiro no navegador com backend é um aceite separado.
 
+`npm test` e `npm run test:coverage` também executam dois controles Node sobre o módulo decimal real. Cada caso usa worker próprio com orçamento amplo de3segundos: formatação de100.000dígitos e comparação repetida de valores com16.384dígitos. O worker pode ser terminado sem travar o runner. O teste confere todos os dígitos e a identidade, sem converter dinheiro para Number; o orçamento detecta regressão grosseira de custo, não é um SLA ou benchmark do navegador. A leitura nativa TypeScript usa Node24 já fixado; o pacote declara seu formato ES module. Não há dependência nova. Os testes Node ficam fora do bundle e classificados como testes no Sonar.
+
 Framework standalone, Router, Forms e HttpClient; estado assíncrono com signals/RxJS. `lossless-json` preserva o token decimal recebido/enviado sem converter dinheiro para `Number`; a formatação só desloca caracteres. CSS e ícones SVG são locais, sem fonte/CDN ou framework visual adicional. Baseline, justificativas e override de segurança do Vite estão em [docs/frontend/BASELINE.md](../docs/frontend/BASELINE.md).
 
 ## Teste manual no navegador

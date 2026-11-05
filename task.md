@@ -11,12 +11,12 @@
 
 ## Agora
 
-- [ ] Validar no CI e na reanálise a proteção401/sem cota para identidade ausente em LimitesDemo. Red real em2 casos,3 testes locais e Checkstyle verdes. Cinco falsos positivos autorizados registrados em spec§9.155.
+- [ ] Validar CI/reanálise e revisão manual da manipulação decimal linear do frontend.2 reds/greens em worker real,46 Angular/tipos/builds verdes locais; spec§9.156.
 
 ## Próximo
 
-- Conferir o primeiro push main com XML Python após PR221/gate OK; manter visíveis os avisos do analisador.
-- Remover custo superlinear das duas regex do frontend; conferir semântica da moeda e prova de cancelamento HTTP com a skill de QA.
+- Confirmar fechamento do NPE em main apósPR222/13 checks verdes e544 testes; gate main já OK após cobertura Python.
+- Conferir semântica da moeda e prova de cancelamento HTTP com a skill de QA.
 - Revisar ocorrências contextuais por ID, mantendo achados da pesquisa e referências históricas preservados.
 - Preparar publicação gratuita com HTTPS, retenção e limites validados. Contas Cloudflare/Oracle ainda dependem de João; nenhum deploy.
 
