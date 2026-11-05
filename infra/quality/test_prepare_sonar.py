@@ -16,6 +16,14 @@ class CoveragePreparationTest(unittest.TestCase):
                 normalized = normalize_lcov(report, frontend)
                 self.assertEqual('TN:\nSF:frontend/src/app/view.ts\nDA:1,2\nLF:1\nLH:1\nend_of_record\n', normalized)
 
+    def test_preserves_angular_template_records_instead_of_dropping_coverage(self):
+        with tempfile.TemporaryDirectory() as directory:
+            frontend = Path(directory) / 'frontend'
+            (frontend / 'src/app').mkdir(parents=True)
+            (frontend / 'src/app/view.html').write_text('<p>Example</p>\n', encoding='utf-8')
+            normalized = normalize_lcov('SF:src/app/view.html\nDA:1,2\nend_of_record\n', frontend)
+            self.assertEqual('SF:frontend/src/app/view.html\nDA:1,2\nend_of_record\n', normalized)
+
     def test_refuses_missing_external_test_or_incomplete_coverage(self):
         with tempfile.TemporaryDirectory() as directory:
             frontend = Path(directory) / 'frontend'

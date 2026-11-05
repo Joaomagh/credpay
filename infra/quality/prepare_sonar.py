@@ -14,7 +14,7 @@ def normalize_lcov(content, frontend):
             path = PurePosixPath(line[3:].replace('\\', '/'))
             target = (frontend / path).resolve()
             if (source is not None or not path.parts or path.parts[0] != 'src'
-                    or '..' in path.parts or path.suffix != '.ts' or path.name.endswith('.spec.ts')
+                    or '..' in path.parts or path.suffix not in ('.ts', '.html') or path.name.endswith('.spec.ts')
                     or not target.is_relative_to(frontend.resolve()) or not target.is_file()):
                 raise ValueError('LCOV source does not match this checkout.')
             source = path
