@@ -12,11 +12,13 @@
 - Orçamentos de frequência e orientação de espera no console na PR #215. Contrato em spec§9.149.
 - Relatórios de cobertura dos dois serviços Java e do Angular. Baseline e comandos em spec§9.150.
 - Primeira análise SonarQube revisada em 05/11: 28 itens catalogados, incluindo 4 Security High e 10 Medium; relatório e prioridades propostas em docs/SONARQUBE_REVIEW.md e spec§9.151. Nenhum achado encerrado.
+- Preparação CI integrada na PR #219: fontes/classes/bibliotecas e relatórios reais conferidos; 542 testes transações, 340 processamento e 45 Angular verdes. João salvou SONAR_TOKEN e autorizou a troca coordenada; primeira análise completa em execução.
 
 ## Agora
 
 - [ ] Aceite pessoal da v1 permanece adiado. O roteiro está em docs/DEMO.md e as evidências assistidas em docs/V1_VALIDATION.md.
-- [ ] Validar a preparação SonarQube pelo CI e depois executar a análise autenticada em main: dois módulos Java, dois JaCoCo e LCOV. Roteiro em docs/SONARQUBE_CI.md; João cria SONAR_TOKEN diretamente no GitHub, sem envio pelo chat. Preservar Automatic Analysis até a troca coordenada.
+- [ ] Conferir a primeira análise CI no main (run42055912806), seus achados Java/cobertura/gate, e ativar análise contínua após comprovar a substituição. Restabelecer o método anterior se a substituição falhar.
+- [ ] Validar no CI as restrições HTTPS dos seis downloads S05-S10, com red/green de HTTP inicial e redirects em loopback.
 
 ## Próximo
 

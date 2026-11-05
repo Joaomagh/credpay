@@ -4,6 +4,14 @@ B08.6a gera quatro relatórios: dependências de cada JAR e pacotes de cada imag
 
 ## Baseline e execução
 
+### Transporte das ferramentas de CI
+
+Os downloads curl externos declarados nos workflows exigem `--proto '=https' --proto-redir '=https'`. O checksum continua obrigatório antes de extrair/executar o binário. `test_https_downloads.py` lê as opções dessas chamadas e prova, com curl real e servidor HTTP somente em127.0.0.1, recusa do HTTP inicial antes da conexão e do redirect HTTP antes de chegar ao destino. Um controle positivo sem restrição comprova que cliente e fixture funcionam. Para isolar o redirect, somente a primeira requisição da fixture é explicitamente HTTP; downloads reais permanecem HTTPS e TLS não é desabilitado.
+
+Executar da raiz: `python -I -B -m unittest discover -s infra/security -p 'test_https_downloads.py'`. Usa Python stdlib e curl já instalado, sem instalação automática, Docker, certificado/chave fictícia ou acesso a `.curlrc`: o teste passa `--disable` e desliga proxies para suas conexões loopback. O Secret Scan executa esse controle antes de baixar Gitleaks. A prova de negociação HTTPS com os servidores oficiais fica nos workflows reais; esta fixture não é um teste TLS completo nem uma allowlist de egress do runner.
+
+### Scanner de vulnerabilidades
+
 O workflow `Vulnerability Inventory` empacota os dois módulos Java 21 e constrói as imagens existentes. Resolve [Trivy 0.75.0](https://github.com/aquasecurity/trivy/releases/tag/v0.75.0) Linux amd64 dentro de `.local/security`, com SHA256 `c6e65abddb348e25f10549df887045629cf28cc72453cd1c63acb717316b3f3f`. Não instala ferramentas globalmente nem adiciona dependências aos apps. Actions estão fixadas por commit; upload-artifact v7.0.2 usa `cf430e030ddbb5b0abf93d22962f4752f3646cd9`.
 
 As bases de vulnerabilidades e Java requerem downloads; versões e datas são preservadas no inventário. O binário fixado não congela a base consultada. A rede do runner não é uma allowlist de egress nem comprova sandbox.

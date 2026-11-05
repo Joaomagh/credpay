@@ -94,9 +94,9 @@ jobs:
       - name: Prepare pinned tools in workspace
         run: |
           mkdir -p .local/bin .local/k8s
-          curl --fail --location --silent --show-error --retry 3 https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64 --output .local/bin/kind
+          curl --fail --location --proto '=https' --proto-redir '=https' --silent --show-error --retry 3 https://github.com/kubernetes-sigs/kind/releases/download/v0.33.0/kind-linux-amd64 --output .local/bin/kind
           echo 'aee6151561422756b764a4ae28e7f44cda5af5a9eead3cc9985112b1de8d8e0d  .local/bin/kind' | sha256sum --check
-          curl --fail --location --silent --show-error --retry 3 https://dl.k8s.io/release/v1.36.4/bin/linux/amd64/kubectl --output .local/bin/kubectl
+          curl --fail --location --proto '=https' --proto-redir '=https' --silent --show-error --retry 3 https://dl.k8s.io/release/v1.36.4/bin/linux/amd64/kubectl --output .local/bin/kubectl
           echo '8b8f088da2dab964f853b38464033b1be15ede2839eca751482357c45abdd05a  .local/bin/kubectl' | sha256sum --check
           chmod +x .local/bin/kind .local/bin/kubectl transacoes-service/mvnw processamento-service/mvnw
           .local/bin/kind version
