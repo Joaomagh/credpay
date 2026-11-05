@@ -1,34 +1,26 @@
-# CredPay — Tarefas
+# CredPay - Tarefas
 
-> Um incremento = um resultado verificável. Prioridades em docs/BACKLOG.md e evidências em spec.md.
+> Um incremento = um resultado verificável. Prioridades em docs/BACKLOG.md; evidências em spec.md.
 
-## Último incremento
+## Últimos incrementos
 
-- Corte técnico da v1 e ensaios locais assistidos em docs/V1_VALIDATION.md e docs/V1_CANDIDATE.md.
-- Sessão, autorização e idempotência por conta nas PRs #208 a #210. Contratos em spec§9.142–9.144.
-- Login, rotas e recibos por conta nas PRs #211 e #212. Contratos em spec§9.145–9.146.
-- Oito jornadas reais de navegador, incluindo duas com contas, na PR #213. Evidência em spec§9.147 e no Compose CI.
-- Limite de expansão decimal na criação na PR #214. Contrato e red em spec§9.148.
-- Orçamentos de frequência e orientação de espera no console na PR #215. Contrato em spec§9.149.
-- Relatórios de cobertura dos dois serviços Java e do Angular. Baseline e comandos em spec§9.150.
-- Primeira análise SonarQube revisada em 05/11: 28 itens catalogados, incluindo 4 Security High e 10 Medium; relatório e prioridades propostas em docs/SONARQUBE_REVIEW.md e spec§9.151. Nenhum achado encerrado.
-- Preparação CI integrada na PR #219: fontes/classes/bibliotecas e relatórios reais conferidos; 542 testes transações, 340 processamento e 45 Angular verdes. João salvou SONAR_TOKEN e autorizou a troca coordenada; primeira análise completa em execução.
+- Candidato técnico da v1 e ensaios assistidos em docs/V1_VALIDATION.md e docs/V1_CANDIDATE.md; aceite pessoal adiado.
+- Contas, autorização, frontend e limites de recursos em spec§9.142-9.149; cobertura Java/Angular em§9.150.
+- PR219: preparação Sonar validada com542 testes transações,340 processamento e45 Angular. Primeiro envio CI importou Java/cobertura e revelou dois achados Java; gate reprovou a medição Python ausente.
+- PR220: seis downloads restringidos a HTTPS. Nove checks verdes após repetir somente o inventário que falhou por HTTP504; aguardam reanálise para encerrar S05-S10.
 
 ## Agora
 
-- [ ] Aceite pessoal da v1 permanece adiado. O roteiro está em docs/DEMO.md e as evidências assistidas em docs/V1_VALIDATION.md.
-- [ ] Conferir a primeira análise CI no main (run42055912806), seus achados Java/cobertura/gate, e ativar análise contínua após comprovar a substituição. Restabelecer o método anterior se a substituição falhar.
-- [ ] Validar no CI as restrições HTTPS dos seis downloads S05-S10, com red/green de HTTP inicial e redirects em loopback.
+- [ ] Validar a cobertura Python e o gatilho contínuo Sonar em PR/main, preservando as condições do gate. Roteiro e limites em docs/SONARQUBE_CI.md.
 
 ## Próximo
 
-- Depois dos aceites pessoais, conferir a aplicabilidade das evidências e registrar a decisão final sobre o candidato técnico 51f8476.
-- Acompanhar os achados GnuTLS registrados no inventário e na triagem.
-- Critérios de publicação da demo com contas.
-- Aplicar em incrementos separados as prioridades propostas de transporte do CI, custo das regex e revisão contextual por ocorrência; preservar testes e reanalisar cada mudança.
-- Preparar o recorte de publicação com HTTPS, retenção e limites validados. Cloudflare e Oracle ainda dependem das contas de João; nenhum recurso externo criado.
+- Corrigir o acesso nullable em LimitesDemo e revisar a ambiguidade Clock apontada entre serviços distintos.
+- Remover custo superlinear das duas regex do frontend; conferir semântica da moeda e prova de cancelamento HTTP com a skill de QA.
+- Revisar ocorrências contextuais por ID, mantendo achados da pesquisa e referências históricas preservados.
+- Preparar publicação gratuita com HTTPS, retenção e limites validados. Contas Cloudflare/Oracle ainda dependem de João; nenhum deploy.
 
 ## Depois
 
-- Demo pública gratuita após escolher e autorizar o destino. Critérios de publicação em docs/PUBLIC_DEMO_PLAN.md.
-- Painel e pesquisa de sandbox seguem adiados.
+- Ensaio pessoal e decisão final da v1 permanecem adiados; não declarar entendimento ou aceite por João a partir do CI.
+- Acompanhar GnuTLS/inventário. Painel e pesquisa de sandbox continuam adiados.

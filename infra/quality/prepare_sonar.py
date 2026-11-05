@@ -64,8 +64,8 @@ def validate_java_report(module):
     return len(sources)
 
 
-def main():
-    root = Path(__file__).resolve().parents[2]
+def main(root=None):
+    root = Path(root) if root is not None else Path(__file__).resolve().parents[2]
     for module in ('transacoes-service', 'processamento-service'):
         validate_java_report(root / module)
     frontend = root / 'frontend'
