@@ -3319,6 +3319,16 @@ O código público SonarJS no SHA367f981 filtra o importador LCOV para JavaScrip
 
 Análise remota inicialmente manual e somente main, `analyze=true`; PRs executam preparação sem SONAR_TOKEN. Checagem prévia recusa secret ausente; envio espera o quality gate configurado, sem reduzir condições. A execução autenticada depende de João criar token com expiração e salvá-lo diretamente como repository secret. Automatic Analysis permanece ativa até a preparação verde e troca coordenada. Nenhuma mudança remota de método, permissões ou gate feita nesta etapa. A ativação contínua e critérios bloqueantes dependem da primeira análise CI efetivamente conferida.
 
+Preparação integrada na [PR #219](https://github.com/Joaomagh/credpay/pull/219), mergea6211ea. O [run42052151820](https://github.com/Joaomagh/credpay/actions/runs/42052151820) passou em14m7s:542 testes transações e340 processamento sem falhas/erros/skips,45 Angular, tipos/build de contas/audit0 e normalização das14 fontes TypeScript. Artefato13427584854/25133bytes preserva os dois XML, LCOV completo e projeção; digest02793045f571095b8f7ecb3794a737d322248bd3d9823d52141fb64860769fb3. Árvore do merge de teste34dfd01 comparada e igual ao headbd2b33c. Três checks verdes, revisão/threads/revisores pendentes ausentes antes do merge. João confirmou secret salvo e autorizou explicitamente a troca coordenada; Automatic Analysis desligada, run42055912806 iniciado emmain/a6211ea com analyze=true. Análise completa em acompanhamento, com restauração do método anterior se a substituição falhar. Nenhuma conclusão remota ou gate contínuo antecipado.
+
+### 9.153 HTTPS obrigatório nos downloads do CI
+
+S05-S10: seis chamadas curl de cinco workflows (Node no Compose/Angular, kind, kubectl, Gitleaks e Trivy) passam a exigir `--proto '=https' --proto-redir '=https'`, preservando versões, URLs oficiais, hashes, TLS e verificação antes de extração. A chamada Node do Sonar já tinha essas restrições. Sem dependência de aplicação ou ferramenta global nova. Curl existente Windows8.21.0 e Python stdlib usados no experimento; CI usa o cliente já instalado no runner.
+
+TDD com transporte real: `test_https_downloads.py` lê as opções dos sete downloads e chama curl somente contra fixture HTTP em127.0.0.1. Red apresentou12 falhas, com seis chamadas aceitando HTTP inicial e seis seguindo redirect HTTP. Green passou3 métodos: recusa inicial antes de qualquer requisição, recusa do destino de redirect e controle positivo de comunicação. No controle de redirect, permite-se explicitamente HTTP apenas na primeira requisição da fixture para isolar `--proto-redir`; isso não muda a política dos downloads reais. Curl usa `--disable` para não ler curlrc, `--noproxy '*'`, timeout e descarte do corpo; sem segredos, arquivos privados, chaves/certificados, Docker ou chamadas externas no teste. Secret Scan executa o controle antes de baixar seu scanner.
+
+Verificações locais verdes e diff-check. Downloads oficiais/checksums e suites dos workflows afetados ainda precisam passar no CI e os seis IDs precisam de nova análise antes do encerramento. Não altera severidades, exceções ou política do inventário; teste de protocolo não é prova completa de TLS/egress do runner.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
