@@ -10,6 +10,7 @@ on:
       - 'config/**'
       - 'docs/frontend/references/**'
       - 'sonar-project.properties'
+      - '.gitignore'
       - '.github/workflows/**'
   push:
     branches: [main]
@@ -21,6 +22,7 @@ on:
       - 'config/**'
       - 'docs/frontend/references/**'
       - 'sonar-project.properties'
+      - '.gitignore'
       - '.github/workflows/**'
   workflow_dispatch:
     inputs:

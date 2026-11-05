@@ -62,6 +62,10 @@ final class LimitesDemo {
             return;
         }
         var conta = ContaDemoPrincipal.idDaConta(http.getUserPrincipal());
+        if (conta == null) {
+            ((HttpServletResponse) resposta).setStatus(HttpStatus.UNAUTHORIZED.value());
+            return;
+        }
         aplicar(operacao, conta.toString(), http, (HttpServletResponse) resposta, proximo);
     }
 

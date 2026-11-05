@@ -11,11 +11,11 @@
 
 ## Agora
 
-- [ ] Validar a cobertura Python e o gatilho contínuo Sonar em PR/main, preservando as condições do gate. Roteiro e limites em docs/SONARQUBE_CI.md.
+- [ ] Validar no CI e na reanálise a proteção401/sem cota para identidade ausente em LimitesDemo. Red real em2 casos,3 testes locais e Checkstyle verdes. Cinco falsos positivos autorizados registrados em spec§9.155.
 
 ## Próximo
 
-- Corrigir o acesso nullable em LimitesDemo e revisar a ambiguidade Clock apontada entre serviços distintos.
+- Conferir o primeiro push main com XML Python após PR221/gate OK; manter visíveis os avisos do analisador.
 - Remover custo superlinear das duas regex do frontend; conferir semântica da moeda e prova de cancelamento HTTP com a skill de QA.
 - Revisar ocorrências contextuais por ID, mantendo achados da pesquisa e referências históricas preservados.
 - Preparar publicação gratuita com HTTPS, retenção e limites validados. Contas Cloudflare/Oracle ainda dependem de João; nenhum deploy.
