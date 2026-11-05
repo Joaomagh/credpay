@@ -3405,6 +3405,16 @@ Q07/AaGsF8vXDE2kr22yY43a: renomeados os quatro usos da variável local $event pa
 
 PowerShell7 executou controles de falha (16), propriedade (33), HTTP (9), recusa de Smoke, processo e ciclo de vida (11), além do parser da fonte sem erros. São fixtures offline: os resumos Compose causal/Run/Remove produzidos por esses controles são fictícios, sem Docker/HTTP real, e não substituem diagnóstico causal do CI. Exceções esperadas nos cenários negativos foram conferidas pelos controles; não escondidas. CI e reanálise pendentes antes de integrar.
 
+PR226 integrada emc0a3760 após6 checks verdes no head6ec58ce, sem revisões/threads pendentes e árvore do merge de teste idêntica. Sonar42117988865/job127562590530:544/340 Java e50 Angular, gate OK. A condição de cobertura retornou new_coverage0 e ignoredConditions:true neste delta pequeno; não atribuir100% de cobertura a essa PR. Compose42117988880/job127562816330 comprovou recuperação dos dois publicadores após retorno sem rota, outboxes originais, persistência após down/up e8 jornadas de navegador. Encerramento automático do ID Q07 ainda depende de análise main.
+
+### 9.160 Credenciais próprias no ensaio Kubernetes
+
+S12-S14 apontavam três valores públicos/fictícios de secret.example.yaml realmente aplicados pelo ensaio, sem vazamento de credencial privada identificado. Substituído esse uso por geração .NET CSPRNG de32bytes/64hex distintos por senha, em memória, e criação única de Secret Opaque/imutável com namespace/nome/labels do cluster próprio. JSON segue por stdin de kubectl create; não aparece em argumentos, env do workflow, arquivo renderizado ou diagnóstico. Sem dependência nova. Template retirado do apply/Kustomize e do checkout atual; histórico e relatório inicial preservados, sem exclusão Sonar.
+
+Secret existente válido é consultado e reutilizado com a mesma UID; valores conhecidos/fracos, chaves/usuários/identidade/imutabilidade divergentes são recusados sem sobrescrever/rotacionar PVCs. Conflito de criação interrompe sem adoção por nome. O roteiro confere novamente a UID após recriar os Pods. Base64 não cifra o Secret; runner, daemon/node e administrador do cluster seguem na confiança. Não configura segurança de implantação externa nem muda a exceção de kind.
+
+TDD: extração operacional inicial conservou o apply legado; dois reds reais mostraram perda de stdin e sobrescrita do Secret existente. Terceiro red recusou criação stdin sem payload antes de invocar CLI. Green49 controles offline: gerador real, criação/reuso,17 mutações tanto na entrada como no objeto existente, conflito sem retry/adoção, comandos/JSON/entrada múltipla e nomes externos recusados. Só a fronteira kubectl é fictícia, sem Docker/rede. Guards locais78, ciclo de vida31 e arquivos16 passaram. CI Kubernetes real e reanálise pendentes antes de integrar; não declarar achados corrigidos a partir da retirada do template.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

@@ -11,6 +11,7 @@ $execution = Get-CredPayKubernetesExecution $root $Cluster $ExecutionProfile
 $kubeconfig = $execution.Kubeconfig
 $kubectl = $execution.Kubectl
 . (Join-Path $root 'infra/compose/json.ps1')
+. (Join-Path $PSScriptRoot 'disposable-secret.ps1')
 
 function Require([bool]$Condition, [string]$Message) { if (-not $Condition) { throw $Message } }
 function WriteStateDiagnostics {
@@ -37,8 +38,21 @@ function WriteStateDiagnostics {
     }
 }
 function Kube {
+    $stdin = @($input)
+    $secretCreate = ($args.Count -in @(3,5) -and $args[0] -ceq 'create' -and $args[1] -ceq '-f' -and
+        $args[2] -ceq '-' -and ($args.Count -eq 3 -or ($args[3] -ceq '-o' -and $args[4] -ceq 'json')))
+    Require (-not $secretCreate -or $stdin.Count -eq 1) 'Criação de Secret exige uma entrada própria.'
+    if ($stdin.Count -gt 0) {
+        Require ($stdin.Count -eq 1 -and $stdin[0] -is [string] -and $secretCreate) 'Entrada kubectl recusada; somente Secret próprio por create.'
+        $secret = Read-CredPaySecretJson $stdin[0]
+        Assert-CredPayKubernetesSecret $secret $Cluster
+    }
     $requestTimeout = switch ($args[0]) { 'rollout' { '190s' } 'delete' { '70s' } default { '30s' } }
-    $output = & $kubectl --kubeconfig $kubeconfig --context "kind-$Cluster" --namespace credpay "--request-timeout=$requestTimeout" @args 2>&1 | Out-String
+    $output = if ($stdin.Count -eq 1) {
+        $stdin[0] | & $kubectl --kubeconfig $kubeconfig --context "kind-$Cluster" --namespace credpay "--request-timeout=$requestTimeout" @args 2>&1 | Out-String
+    } else {
+        & $kubectl --kubeconfig $kubeconfig --context "kind-$Cluster" --namespace credpay "--request-timeout=$requestTimeout" @args 2>&1 | Out-String
+    }
     if ($LASTEXITCODE -ne 0) {
         $exitCode = $LASTEXITCODE
         # Somente tokens de comandos fixos; nunca argumentos, mensagens, env ou saída do processo.
@@ -90,7 +104,8 @@ $context = & $kubectl --kubeconfig $kubeconfig config current-context
 Require ($LASTEXITCODE -eq 0 -and $context -ceq "kind-$Cluster") 'Contexto não corresponde ao cluster descartável.'
 
 $null = Kube apply -f (Join-Path $PSScriptRoot 'namespace.yaml')
-foreach ($file in @('config.yaml', 'secret.example.yaml', 'databases.yaml', 'rabbit.yaml')) {
+$secretUid = Ensure-CredPayKubernetesSecret $Cluster
+foreach ($file in @('config.yaml', 'databases.yaml', 'rabbit.yaml')) {
     $null = Kube apply -f (Join-Path $PSScriptRoot $file)
 }
 foreach ($name in @('db-transacoes-0', 'db-processamento-0', 'rabbit-0')) { $null = WaitPod $name }
@@ -158,4 +173,7 @@ foreach ($claim in $pvcBefore.items) {
     Require ($matching.Count -eq 1) 'Identidade do PVC/PV mudou após recriação do Pod.'
 }
 CheckBroker
+$reusedSecretUid = Ensure-CredPayKubernetesSecret $Cluster
+Require ($reusedSecretUid -ceq $secretUid) 'Secret mudou durante recriação dos Pods.'
+Write-Host 'Kubernetes: Secret aleatório imutável reutilizado, mesma UID após recriação, sem valores exportados.'
 Write-Host 'Kubernetes: três Pods da infraestrutura recriados; PVCs/PVs, migrations e exchanges produtoras preservados.'
