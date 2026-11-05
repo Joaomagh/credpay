@@ -37,12 +37,8 @@ function Invoke-FixtureKubectl {
     }
     return ''
 }
-# Extract only Kube: never execute startup, Docker, kubectl or a cluster.
-$tokens = $null; $errors = $null
-$ast = [Management.Automation.Language.Parser]::ParseFile((Join-Path $PSScriptRoot 'verify-startup.ps1'), [ref]$tokens, [ref]$errors)
-Require ($errors.Count -eq 0) 'Startup parser failed.'
-$definition = $ast.Find({ param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -ceq 'Kube' }, $true)
-. ([scriptblock]::Create($definition.Extent.Text))
+# Load the actual adapter without executing startup or a cluster.
+. (Join-Path $PSScriptRoot 'kubectl.ps1')
 $fixture = [pscustomobject]@{
     apiVersion='v1'; kind='Secret'; type='Opaque'; immutable=$true
     metadata=@{name='credpay-demo';namespace='credpay';labels=@{'app.kubernetes.io/managed-by'='credpay-disposable';'credpay.test/cluster'=$Cluster}}
