@@ -16,7 +16,7 @@
 ## Agora
 
 - [ ] Aceite pessoal da v1 permanece adiado. O roteiro está em docs/DEMO.md e as evidências assistidas em docs/V1_VALIDATION.md.
-- [ ] Completar a análise SonarQube pelo CI: confirmar os dois módulos Java e importar dois JaCoCo + LCOV. A análise automática atual não contabiliza Java nem cobertura; prioridades propostas em docs/SONARQUBE_REVIEW.md.
+- [ ] Validar a preparação SonarQube pelo CI e depois executar a análise autenticada em main: dois módulos Java, dois JaCoCo e LCOV. Roteiro em docs/SONARQUBE_CI.md; João cria SONAR_TOKEN diretamente no GitHub, sem envio pelo chat. Preservar Automatic Analysis até a troca coordenada.
 
 ## Próximo
 
