@@ -3363,6 +3363,20 @@ Publicar o literal Linux `/tmp` não publica seu conteúdo. Acrescentado `/tmp/`
 
 S2259/AaGsY1oprRCp-Yb3n_by: teste parametrizado reproduziu NullPointerException para POST/transacoes e GET/transacoes/{id} sem principal. Proteção retorna401 antes de consumir cota ou invocar próximo filtro. Green local:3 testes LimitesDemoTest e Checkstyle0 via Maven verify, sem infraestrutura; logs próprios ignorados. A cadeia real já exige autenticação antes deste ponto; não foi demonstrado bypass remoto. Suíte real/CI e reanálise ainda precisam confirmar o incremento. `.gitignore` entra nos gatilhos Sonar por poder alterar o escopo de fontes.
 
+Fechamento da proteção: PR222 integrada em1941e4a após13 checks verdes, incluindo544 testes transações/0 falhas/erros/skips, Checkstyle0, fluxo real, Compose/navegador, Kubernetes, imagens, inventário e Sonar. Merge de teste com árvore igual ao head65760c4, sem revisões/threads pendentes. Sonar main apósPR221 confirmou gate OK com new_coverage95%; seis IDs S05-S10 passaram CLOSED/FIXED automaticamente. Não confundir esse gate com ausência de todos os achados históricos.
+
+### 9.156 Custo linear dos decimais no console
+
+Q01/Q02: sondagem inicial em Node24.22.1/Windows mostrou crescimento superlinear:16.384dígitos consumiram164,62ms na remoção de zeros e260,29ms no agrupamento. Extraída a função pura decimalIdentity de creation-journal para transaction, mantendo a lógica antes da correção;45 testes existentes passaram. Não mudou formato salvo, chave, limite65536 ou contrato monetário.
+
+Dois controles Node executam o módulo real em workers encerráveis: formatar100.000dígitos e comparar50 pares com16.384dígitos/zeros internos ou finais. Red dos dois excedeu orçamento3segundos. O harness foi ajustado para distinguir a terminação esperada por timeout do exit1 do worker; red repetido confirmou explicitamente o excesso de orçamento antes de alterar os algoritmos. Green: cerca de66ms por caso, saída exata. Orçamento amplo de regressão, não benchmark/SLA ou prova de DoS remoto.
+
+Implementação: varrer o sufixo de zeros uma vez por índice e agrupar a parte inteira em fatias de3, com reverse/join. Sem regex de busca repetida, arredondamento ou Number para dinheiro; expoentes continuam BigInt na identidade e posição limitada na exibição. Novos exemplos unitários cobrem zeros, exponentes, precisão e inválidos. npm test/test:coverage executam os controles antes do Angular. Frontend declara ESM, coerente com seus imports/configs, resolvendo o aviso Node MODULE_TYPELESS_PACKAGE_JSON observado na primeira execução sem suprimir warnings. Nenhuma dependência adicionada.
+
+Local: tipos Angular/e2e e listagem Playwright passaram;2 controles Node e46 testes Angular verdes; cobertura Angular361/384linhas=94,01%, branches320/365=87,67%. Builds production e production,contas passaram, ambos350,28kB. Não equivale a cobertura integral Sonar nem prova execução das jornadas e2e listadas. Testes Node classificados em frontend/tests, sem excluir fontes do produto.
+
+QA pela skill credpay-frontend/Computer Use, em aba própria, frontend deste checkout e API local existente/health200:250,001 preservado no recibo PENDENTE, reload recuperou recibo com mesmoUUID e consulta mostrouREJEITADA; nova intenção explícita10,001 retornou reciboPENDENTE e consultaAPROVADA com decimal exato. A revisão visual não inspecionou a rede e não prova ausência de POST adicional por captura de tráfego; essa asserção permanece nos testes automatizados. Não substitui teste manual do perfil de contas. Nenhuma operação Docker executada para esse QA; backend local não foi reconstruído. CI/reanálise ainda em acompanhamento.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

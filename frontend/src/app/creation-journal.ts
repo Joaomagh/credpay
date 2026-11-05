@@ -1,5 +1,5 @@
 import { DOCUMENT, Injectable, inject } from '@angular/core';
-import { Intent, Transaction, UUID, amount } from './transaction';
+import { Intent, Transaction, UUID, amount, decimalIdentity } from './transaction';
 
 const JOURNAL_ENTRY = 'credpay.creation.v1';
 function entry(accountId?: string): string {
@@ -10,17 +10,6 @@ export class InvalidCreationRecord extends Error {}
 
 function record(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
-}
-
-// Identity of a positive decimal: coefficient and power of ten, without rounding.
-function decimalIdentity(value: string): string | null {
-  const parts = /^(0|[1-9]\d*)(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/.exec(value);
-  if (!parts) return null;
-  const digits = (parts[1] + (parts[2] ?? '')).replace(/^0+/, '');
-  if (!digits) return null;
-  const coefficient = digits.replace(/0+$/, '');
-  const exponent = BigInt(parts[3] ?? '0') - BigInt((parts[2] ?? '').length) + BigInt(digits.length - coefficient.length);
-  return `${coefficient}:${exponent}`;
 }
 
 function validate(value: unknown): SavedCreation {
