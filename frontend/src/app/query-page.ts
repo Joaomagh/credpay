@@ -39,8 +39,8 @@ export class QueryPage implements OnDestroy {
     this.tracking.set(false);
     this.error.set(''); this.note.set('');
     const id = this.id.trim().toLowerCase();
-    if (!UUID.test(id)) { this.error.set('Informe um UUID válido para consultar a transação.'); return; }
     if (id !== this.activeId) this.result.set(null);
+    if (!UUID.test(id)) { this.error.set('Informe um UUID válido para consultar a transação.'); return; }
     this.activeId = id;
     this.loading.set(true); this.tracking.set(true);
     this.subscription = this.api.watch(id, this.account).subscribe({

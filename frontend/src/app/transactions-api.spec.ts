@@ -42,11 +42,13 @@ describe('HTTP real e acompanhamento limitado', () => {
   });
   it('não continua consultando após sair da tela', async () => {
     vi.useFakeTimers();
-    const sub = api.watch(id).subscribe();
+    const states: string[] = [];
+    const sub = api.watch(id).subscribe(t => states.push(t.status));
     http.expectOne('/transacoes/' + id).flush(raw('PENDENTE'));
     sub.unsubscribe();
     await vi.advanceTimersByTimeAsync(60000);
     http.expectNone('/transacoes/' + id);
+    expect(states).toEqual(['PENDENTE']);
   });
   it('encerra acompanhamento após 30 respostas pendentes', async () => {
     vi.useFakeTimers();
