@@ -91,19 +91,19 @@ function ReadFaultPending($Record,[string]$Publisher) {
     Require ((FaultText (WaitFinal $Record.Location 'PENDENTE')) -ceq $Record.Original) 'GET pendente alterou pedido original.'
     Require ((FaultSql $Publisher "SELECT count(*) FROM outbox_eventos WHERE aggregate_id='$id'::uuid AND published_at IS NULL;") -ceq '1') 'Outbox bloqueada não conserva intenção pendente única.'
     Require ((FaultSql transacoes "SELECT count(*) FROM historico_transacoes WHERE transaction_id='$id'::uuid;") -ceq '0') 'Retorno criou histórico final.'
-    $event=FaultSql transacoes "SELECT event_id FROM outbox_eventos WHERE aggregate_id='$id'::uuid;"
+    $creationEventId=FaultSql transacoes "SELECT event_id FROM outbox_eventos WHERE aggregate_id='$id'::uuid;"
     $parsed=[Guid]::Empty
-    Require ([Guid]::TryParseExact($event,'D',[ref]$parsed)) 'Evento de criação ausente/duplicado.'
+    Require ([Guid]::TryParseExact($creationEventId,'D',[ref]$parsed)) 'Evento de criação ausente/duplicado.'
     $decision=''
     if($Publisher -ceq 'transacoes') {
         Require ((FaultSql processamento "SELECT (SELECT count(*) FROM processamentos WHERE transaction_id='$id'::uuid)+(SELECT count(*) FROM outbox_eventos WHERE aggregate_id='$id'::uuid);") -ceq '0') 'Entrada sem rota criou decisão/saída.'
     } else {
-        Require ((FaultSql processamento "SELECT count(*) FROM processamentos WHERE transaction_id='$id'::uuid AND event_id='$event'::uuid AND resultado='APROVADA';") -ceq '1') 'Decisão original divergente.'
+        Require ((FaultSql processamento "SELECT count(*) FROM processamentos WHERE transaction_id='$id'::uuid AND event_id='$creationEventId'::uuid AND resultado='APROVADA';") -ceq '1') 'Decisão original divergente.'
         $decision=FaultSql processamento "SELECT md5(to_jsonb(p)::text) FROM processamentos p WHERE transaction_id='$id'::uuid;"
     }
     $hash=FaultOutboxHash $Record $Publisher; $tx=FaultTransactionHash $Record
     Require ($hash -cmatch '^[0-9a-f]{32}$' -and $tx -cmatch '^[0-9a-f]{32}$') 'Snapshot original ausente/duplicado.'
-    return @{Hash=$hash;Tx=$tx;Event=$event;Decision=$decision}
+    return @{Hash=$hash;Tx=$tx;Event=$creationEventId;Decision=$decision}
 }
 function ConfirmFaultRecovery($Record,[string]$Publisher,$Snapshot) {
     $final=Json (WaitFinal $Record.Location 'APROVADA'); $id=$Record.Id
