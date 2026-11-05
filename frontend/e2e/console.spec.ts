@@ -22,6 +22,19 @@ test('aprovação com decimal exato e recibo retomado após reload', async ({pag
     await expect(page.getByText('PENDENTE', {exact: true})).toBeVisible();
     await expect(page.getByRole('region', {name: 'Resultado da transação'})).toContainText('50,001');
   });
+  await test.step('manter copiar visível ao navegar por teclado', async () => {
+    await page.getByRole('button', {name: 'Iniciar nova intenção', exact: true}).focus();
+    await page.keyboard.press('Tab');
+    const copy = page.getByRole('button', {name: 'Copiar identificador da transação', exact: true});
+    await expect(copy).toBeFocused();
+    await expect.poll(() => copy.evaluate(button => {
+      const target = button.getBoundingClientRect();
+      const navigation = document.querySelector('.sidebar')?.getBoundingClientRect();
+      return !!navigation && target.top >= 0 && target.bottom <= innerHeight
+        && (target.right <= navigation.left || target.left >= navigation.right
+          || target.bottom <= navigation.top || target.top >= navigation.bottom);
+    })).toBe(true);
+  });
   await test.step('retomar recibo sem repetir criação', async () => {
     await page.reload();
     await expect(page.getByText('Intenção recuperada desta aba', {exact: true})).toBeVisible();

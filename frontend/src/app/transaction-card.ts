@@ -14,7 +14,7 @@ import { Icon } from './icon';
         <div class="data-tile"><div class="tile-label">Moeda <cp-icon name="bank" /></div><strong class="currency">{{transaction().moeda}}</strong><span class="muted">{{transaction().moeda === 'BRL' ? 'Real brasileiro' : 'Código ISO 4217'}}</span></div>
       </div>
       <div class="state-note" [attr.data-status]="transaction().status"><cp-icon [name]="statusIcon()" /><div><strong>{{messages[transaction().status]}}</strong><p>O estado exibido foi recebido da API CredPay.</p></div></div>
-      <label class="eyebrow" for="transaction-id">Identificador da transação · UUID</label>
+      <p class="eyebrow field-caption">Identificador da transação · UUID</p>
       <div class="uuid-row"><code id="transaction-id">{{transaction().id}}</code><button class="copy-button" type="button" (click)="copy()" aria-label="Copiar identificador da transação"><cp-icon name="copy" /><span>Copiar</span></button></div>
       <p class="helper" role="status">{{copyMessage()}}</p>
     </section>

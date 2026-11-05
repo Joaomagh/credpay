@@ -15,6 +15,17 @@ describe('Intenção de criação e formulário', () => {
     creation = TestBed.inject(Creation);
   });
   afterEach(() => { try { http.verify(); } finally { sessionStorage.removeItem('credpay.creation.v1'); } });
+  it('associa os rótulos a controles e apresenta a moeda fixa como informação', async () => {
+    const fixture = TestBed.createComponent(CreatePage);
+    fixture.detectChanges(); await fixture.whenStable();
+    const root = fixture.nativeElement as HTMLElement;
+    const labels = Array.from(root.querySelectorAll('label'));
+    expect(labels.filter(label => !label.control)).toHaveLength(0);
+    expect(root.querySelector<HTMLInputElement>('#amount')?.labels?.[0]?.textContent).toContain('Valor da transação');
+    expect(root.querySelector('.currency-field')?.textContent).toContain('Real brasileiro');
+    expect(root.querySelector('.currency-field')?.textContent).toContain('Moeda fixa');
+    http.expectNone('/transacoes');
+  });
   it('explica valor inválido no formulário sem enviar POST', async () => {
     const fixture = TestBed.createComponent(CreatePage);
     fixture.detectChanges();
