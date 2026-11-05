@@ -11,18 +11,20 @@
 - Limite de expansão decimal na criação na PR #214. Contrato e red em spec§9.148.
 - Orçamentos de frequência e orientação de espera no console na PR #215. Contrato em spec§9.149.
 - Relatórios de cobertura dos dois serviços Java e do Angular. Baseline e comandos em spec§9.150.
+- Primeira análise SonarQube revisada em 05/11: 28 itens catalogados, incluindo 4 Security High e 10 Medium; relatório e prioridades propostas em docs/SONARQUBE_REVIEW.md e spec§9.151. Nenhum achado encerrado.
 
 ## Agora
 
 - [ ] Aceite pessoal da v1 permanece adiado. O roteiro está em docs/DEMO.md e as evidências assistidas em docs/V1_VALIDATION.md.
-- [ ] Preparar o recorte de publicação com HTTPS, retenção e limites validados no destino autorizado.
+- [ ] Completar a análise SonarQube pelo CI: confirmar os dois módulos Java e importar dois JaCoCo + LCOV. A análise automática atual não contabiliza Java nem cobertura; prioridades propostas em docs/SONARQUBE_REVIEW.md.
 
 ## Próximo
 
 - Depois dos aceites pessoais, conferir a aplicabilidade das evidências e registrar a decisão final sobre o candidato técnico 51f8476.
 - Acompanhar os achados GnuTLS registrados no inventário e na triagem.
 - Critérios de publicação da demo com contas.
-- Conectar o SonarQube após autorização do destino e conferir a importação dos três relatórios.
+- Aplicar em incrementos separados as prioridades propostas de transporte do CI, custo das regex e revisão contextual por ocorrência; preservar testes e reanalisar cada mudança.
+- Preparar o recorte de publicação com HTTPS, retenção e limites validados. Cloudflare e Oracle ainda dependem das contas de João; nenhum recurso externo criado.
 
 ## Depois
 

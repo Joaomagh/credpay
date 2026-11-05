@@ -444,3 +444,19 @@ O GitHub Actions gera a baseline de cobertura em XML JaCoCo e LCOV. A integraç�
 O incremento de sessão local está na [PR #208](https://github.com/Joaomagh/credpay/pull/208). A consulta com autorização por dono está na [PR #209](https://github.com/Joaomagh/credpay/pull/209). A criação autenticada e a idempotência por conta estão na [PR #210](https://github.com/Joaomagh/credpay/pull/210).
 
 A rota de entrada, a confirmação de identidade e o logout estão na [PR #211](https://github.com/Joaomagh/credpay/pull/211). O modo de contas protege as rotas e vincula os recibos ao UUID da conta na [PR #212](https://github.com/Joaomagh/credpay/pull/212). O Compose CI tem uma jornada específica para conferir a etapa 3 com duas contas no navegador e API real.
+
+### Triagem SonarQube - 05/11/2026
+
+João criou a conexão e iniciou a primeira análise de `Joaomagh_credpay`, revisão `ccdd3e6`. O recorte contém 28 apontamentos: 14 Security (4 High e 10 Medium), todos OPEN. A análise atual não contabiliza Java e não importa cobertura; não serve como avaliação completa do backend. [Relatório por ocorrência e critérios](SONARQUBE_REVIEW.md) · [PDF](../output/pdf/credpay-sonarqube-2026-11-05.pdf) · spec§9.151.
+
+| Prioridade proposta | Resultado | Aceite | Estado |
+| --- | --- | --- | --- |
+| P1 | Completar análise CI | Classes e fontes Java dos dois serviços analisadas; dois JaCoCo e LCOV importados no mesmo SHA; avisos e quality gate revisados | Próxima frente; configuração e conexão CI pendentes |
+| P1 | Reforçar downloads CI S05-S10 | HTTPS exigido em requisição/redirects, downgrade recusado, hashes/TLS preservados, workflows e nova análise verdes | Proposto; nenhuma correção feita nesta revisão |
+| P1 | Tornar linear a manipulação decimal Q01-Q02 | Teste red/green com entradas adversariais, sem arredondamento ou quebra de recibo/idempotência; suíte/build/nova análise | Custo superlinear observado isoladamente; implementação pendente |
+| P1 antes de publicação | Recusar segredos de exemplo S12-S14 | Credenciais exclusivas por destino fora do Git e portas de infraestrutura internas; manifesto de ensaio não reutilizado | Bloqueio da publicação externa; exemplos locais são públicos/fictícios, sem vazamento real identificado |
+| P2 | Revisão contextual S01-S04/S11 | Validar guards/URL e testes negativos; decisão por ID. Nenhuma liberação do core experimental | Prováveis falsos positivos nos quatro guards; traversal com validações existentes, sem conclusão automática |
+| P2 | Confiabilidade/acessibilidade Q03/Q04/Q07 | Semântica correta da moeda, prova observável de cancelamento HTTP e variável PowerShell sem conflito; verificações afetadas | Proposto |
+| P3 | Fixtures/pesquisa/referências Q05/Q06/Q08-Q14 | Isolamento dos stubs, parsing caracterizado e originais Stitch preservados; não ocultar findings | Proposto; fora do bundle Angular atual |
+
+Severidade do fornecedor e prioridade de execução são distintas. Nenhum item foi encerrado, marcado falso positivo ou aceito nesta etapa. A baseline Trivy/GnuTLS permanece separada. Contas Cloudflare/Oracle, validação no destino e teste manual externo continuam pendentes; não houve implantação.
