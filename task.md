@@ -15,7 +15,7 @@
 
 ## Agora
 
-- [ ] Validar Secret Kubernetes próprio no CI/reanálise: criação única/reuso sem rotação,49 controles offline e guards verdes; spec§9.160.
+- [ ] Validar Secret Kubernetes próprio no CI/reanálise: criação única/reuso sem rotação,50 controles offline e guards verdes; spec§9.160.
 
 ## Próximo
 

@@ -1,6 +1,7 @@
 #requires -Version 7.3
 # Offline: exercise actual functions; replace only the kubectl boundary.
 $ErrorActionPreference = 'Stop'
+$callerNativeExit = $global:LASTEXITCODE
 . (Join-Path $PSScriptRoot 'disposable-secret.ps1')
 $script:failures = @()
 $script:checks = 0
@@ -23,11 +24,12 @@ function Invoke-FixtureKubectl {
     $script:cliCalls++
     $script:cliArgs = @($args)
     $script:cliInput = @($input)
-    $global:LASTEXITCODE = $script:cliExit
+    # Native status belongs to this fixture script, never to the workflow caller.
+    $script:LASTEXITCODE = $script:cliExit
     if ($script:cliExit -ne 0) { return 'fixture output must never escape' }
     if ($args -ccontains 'get') { return $script:stored }
     if ($args -ccontains 'create') {
-        if ($script:createConflict) { $global:LASTEXITCODE=1; return 'fixture conflict output must never escape' }
+        if ($script:createConflict) { $script:LASTEXITCODE=1; return 'fixture conflict output must never escape' }
         $created = $script:cliInput[0] | ConvertFrom-Json -Depth 20
         $created.metadata | Add-Member NoteProperty uid '5f955e8e-9e0b-4f28-a2b9-87617a750423'
         $script:stored = $created | ConvertTo-Json -Depth 20 -Compress
@@ -156,6 +158,9 @@ foreach ($badCluster in @('production','credpay-ci-../../host','credpay-local-20
         ResetFixture; Reject { Ensure-CredPayKubernetesSecret $badCluster }
         Require ($script:cliCalls -eq 0) 'Other cluster reached CLI.'
     }
+}
+Check 'fixture preserves native exit status of its caller' {
+    Require ($global:LASTEXITCODE -ceq $callerNativeExit) 'Fixture changed caller exit status.'
 }
 if ($script:failures.Count -gt 0) { throw "Secret controls failed ($($script:failures.Count)): $($script:failures -join '; ')" }
 Write-Host "Kubernetes Secret: $script:checks offline controls passed; no secret values emitted."
