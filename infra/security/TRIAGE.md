@@ -1,5 +1,11 @@
 # Triagem de dependências e imagens
 
+## Broker RabbitMQ — candidata de correção em06/11/2026
+
+Revisão das [fontes oficiais](https://www.rabbitmq.com/security) encontrou avisos que abrangem o pin4.3.5 atual. [GHSA-9h6g-46wc-m2f5/HIGH](https://github.com/rabbitmq/rabbitmq-server/security/advisories/GHSA-9h6g-46wc-m2f5) descreve consumo de memória por mensagem AMQP incompleta enviada por usuário autenticado; o limite de mensagem só era conferido ao completar o corpo. [GHSA-3wxh-g236-vm46/HIGH](https://github.com/rabbitmq/rabbitmq-server/security/advisories/GHSA-3wxh-g236-vm46) envolve amplificação de logs em falhas LDAP. Management/OAuth, STOMP/OAuth, conversão AMQP e redaction de credenciais têm avisos próprios na mesma lista. Não houve PoC ou ataque ao ambiente; plugins/condições não devem ser presumidos ativos, e rede interna não equivale a correção.
+
+Candidata: patch oficial4.3.7-management-alpine na mesma linha4.3. Metadata consultada antes de qualquer pull: índice `sha256:eb338b3fc8f5c251028c0022ac0de3fe1db2d599d1c6a08b45898f756f248881`, atualizado06/11/14:53UTC; filhoamd64 `sha256:de0d0aadd78c3cb9cf94a6acf5651e170dc35d2130a66b3594504fb9e7be3373` e arm64 `sha256:728e54184d22a4116a9aa4a8ef2061544d96e5f443a02bd7847e95d2e247d712`. [Imagem oficial](https://hub.docker.com/_/rabbitmq). Vendor indica4.3.7 como correção dos avisos citados; comprovar versão executada, arquitetura, quorum, persistência e recuperação antes da integração. Não ampliar privilégios, alterar dados locais, suprimir achados ou tratar inventário dos aplicativos como scan do broker. Os quatro alvos do inventário atual não incluem essa imagem; cobertura de OS/Erlang/broker ainda precisa de recorte próprio. Publicação continua bloqueada por APT e aceites externos.
+
 ## Bloqueio atual de publicação — 06/11/2026
 
 Inventory42279661421 da PR232 passou identidade/completude em AMD64 e ARM64 e detectou **CVE-2026-109518/HIGH** em `apt` e `libapt-pkg6.0t64`2.8.3 nas duas imagens. São duas ocorrências por imagem de um único CVE, repetidas entre serviços/arquiteturas. Cada JAR conserva HIGH0/CRITICAL0/MEDIUM3; imagens têm HIGH2/CRITICAL0/MEDIUM30/LOW4. Artefatos selecionados, hashes e limites em spec§9.163. Job verde não aceita esses achados nem libera deploy.

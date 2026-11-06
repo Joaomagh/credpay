@@ -29,7 +29,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: rabbit
-          image: credpay-rabbit:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1
+          image: credpay-rabbit:eb338b3fc8f5c251028c0022ac0de3fe1db2d599d1c6a08b45898f756f248881
           imagePullPolicy: Never
           securityContext:
             privileged: false

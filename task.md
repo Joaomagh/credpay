@@ -17,10 +17,11 @@
 - PR230: imagens/fluxo nativos em ARM64 e AMD64,5 checks verdes, merge2078d39; spec§9.162.
 - PR232: inventários nativos e controlador medido,5 checks/gate100% do delta, mergee668a8b. HIGHAPT bloqueia publicação; spec§9.163.
 - PR233:6 testes HTTP de sessão e fluxo em imagens verdes em ARM64/AMD64,5 checks/gate OK, mergec29af39; spec§9.164.
+- PR234: proxy preparado,65testes/8jornadas reais,7checks/gate99,6% do delta, merge02cbeea; sem deploy, spec§9.165.
 
 ## Agora
 
-- [ ] Preparar proxy da demo com rotas explícitas, limites e testes reais do módulo; conferir cobertura no Sonar. Sem deploy; spec§9.165.
+- [ ] Atualizar broker4.3.5→4.3.7 por pin oficial e conferir ensaios/versão nas duas arquiteturas; spec§9.166.
 
 ## Próximo
 
@@ -28,6 +29,7 @@
 - Revisar ocorrências contextuais por ID, mantendo achados da pesquisa e referências históricas preservados.
 - Preparar publicação gratuita com HTTPS, retenção e limites validados. Contas Cloudflare/Oracle ainda dependem de João; nenhum deploy.
 - Buscar/revalidar imagem oficial com APT corrigido antes de publicar; não aceitar HIGH implicitamente.
+- Avaliar cliente RabbitMQ5.37.0 frente aos3MEDIUM e diferenças da metadata; ampliar inventário para infraestrutura antes do aceite externo.
 
 ## Depois
 

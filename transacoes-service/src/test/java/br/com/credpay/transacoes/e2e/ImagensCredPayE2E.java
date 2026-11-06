@@ -34,7 +34,7 @@ import org.testcontainers.utility.MountableFile;
 class ImagensCredPayE2E {
 
     private static final String POSTGRES_IMAGE = "postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0";
-    private static final String RABBIT_IMAGE = "rabbitmq:4.3.5-management-alpine@sha256:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1";
+    private static final String RABBIT_IMAGE = "rabbitmq:4.3.7-management-alpine@sha256:eb338b3fc8f5c251028c0022ac0de3fe1db2d599d1c6a08b45898f756f248881";
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
     private static final Path RAIZ = Path.of("..").toAbsolutePath().normalize();
@@ -61,6 +61,10 @@ class ImagensCredPayE2E {
             bancoTransacoes.start();
             bancoProcessamento.start();
             broker.start();
+            var versaoBroker = broker.execInContainer("rabbitmqctl", "version");
+            assertThat(versaoBroker.getExitCode()).as("consulta da versão do broker pinado").isZero();
+            assertThat(versaoBroker.getStdout().trim()).as("patch de segurança do broker").isEqualTo("4.3.7");
+            System.out.println("ImagensCredPayE2E: broker=4.3.7 conferido no runtime");
 
             try (var transacoes = aplicativo("transacoes", tag, rede, "db-transacoes", bancoTransacoes, broker, false, false);
                  var processamento = aplicativo("processamento", tag, rede, "db-processamento", bancoProcessamento, broker, false, false)) {
