@@ -47,6 +47,8 @@ Inventário ARM64 concluído na PR232/e668a8b: os dois perfis passaram identidad
 
 Contas Cloudflare/Oracle, capacidade regional, HTTPS da origem, configuração privada/expiração dos dados e smoke externo continuam pendentes; nenhuma URL pública foi criada. As correções Sonar não substituem esses testes ou a autorização específica do destino.
 
+Contrato HTTP de sessão nativo concluído na PR233/c29af39:6cenários em cada arquitetura, com5checks/gate OK, sem provar expiração temporal. O [proxy candidato](../frontend/edge/README.md) está em preparação verificável, com origem HTTPS e rotas explícitas, limites e cobertura. Ainda não foi executado no Workers. O modelo faz cada asset/chamada invocar o Worker; a franquia precisa incluir toda essa navegação. Não há origem real, certificado, conta ou URL criada por esse preparo.
+
 1. Escolher conta/região/plano e um orçamento máximo explícito com João; preservar teto zero quando essa for a opção, sem ativar upgrade/recarga/serviço pago automaticamente. Confirmar disponibilidade antes de adaptar arquitetura.
 2. Provar os dois serviços, bancos e broker no destino escolhido: primeiro acesso após ociosidade, POST/PENDENTE→GET final, replay e recuperação. Se houver suspensão, a interface precisa explicá-la antes de enviar o pedido; não declarar disponibilidade contínua.
 3. Definir HTTPS e cookie `Secure`, provisionamento das contas, expiração de sessões e ciclo dos dados fictícios. Os limites do perfil local valem por instância. Conferir a identidade de origem no proxy e as cotas no destino. Bancos, AMQP, management, diagnósticos e métricas administrativas ficam internos. Revalidar dependências, imagens e achados no ambiente real.

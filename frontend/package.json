@@ -17,6 +17,8 @@
     "test": "npm run test:decimals && ng test --watch=false",
     "test:coverage": "npm run test:decimals && ng test --watch=false --coverage",
     "check": "tsc --noEmit -p tsconfig.spec.json",
+    "check:edge": "tsc --noEmit -p tsconfig.edge.json",
+    "test:edge": "vitest run --config vitest.edge.config.ts --coverage",
     "check:e2e": "tsc --noEmit -p tsconfig.e2e.json",
     "e2e:list": "playwright test --list",
     "e2e:ci": "playwright test"
