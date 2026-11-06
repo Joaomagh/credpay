@@ -3449,6 +3449,14 @@ Baseline conferida antes do CI: runners padrão ARM são gratuitos no repositór
 
 PR230 integrada em2078d39 após5 checks verdes no head147df58, árvore de merge idêntica e sem revisões/threads pendentes. Images42270482446: ARM64/job128073431537 executou1 teste/67,07s, AMD64/job128073432037 executou1/71,53s, sem falhas/erros/skips. Guard de uname e arquitetura das quatro imagens passou; os logs confirmam apps UID10001/mounts0/privilegedfalse/healthUP, quorum4, ACK/prefetch10/1, bancos próprios, APROVADA/REJEITADA, duas outboxes/histórico único e replay estável. Versões de curl/libcurl/OpenSSL/libssl/zlib esperadas passaram nas duas arquiteturas. Não é benchmark entre máquinas ou scan de vulnerabilidades. Sonar42270482293/job128073431616 passou o gate; resposta da PR não contém condição new_coverage, sem percentual atribuído. S11 original confirmado CLOSED/FIXED em main. Próximo aceite é inventário ARM64 explícito, seguido de sessão/contas e configuração externa revisável.
 
+### 9.163 Inventário nativo ARM64 com perfil explícito
+
+Necessidade: fluxo ARM64 provado em9.162 ainda não demonstra o inventário dos JARs/imagens dessa arquitetura. Matriz de runners nativos padrão ubuntu-24.04 e ubuntu-24.04-arm, mesmas quatro varreduras e versões. Perfil ExpectedArchitecture em scan/report, defaultamd64 e enumamd64/arm64; identidades dos manifestos e metadata do scanner devem corresponder ao perfil escolhido. Não aceitar automaticamente a arquitetura recebida no relatório. Artefato AMD64 conserva nome anterior; ARM64 recebe sufixo próprio; campos selecionados/achados preservados. Nenhuma implantação ou aceite de vulnerabilidade.
+
+Baseline antes de baixar/executar variante: Trivy0.75.0 Linux-ARM64.tar.gz, SHA256 a1ee9f6ffb7d112b64ff726a2a0717c21175c1114361391f4a132956751a13b3, obtido do campo digest do asset oficial em https://api.github.com/repos/aquasecurity/trivy/releases/tags/v0.75.0 . AMD64 mantém c6e65abddb348e25f10549df887045629cf28cc72453cd1c63acb717316b3f3f. Mesma ferramenta já aprovada, sem instalação global; HTTPS inicial/redirects e checksum antes da extração. Runner, publicador e bases continuam confiáveis; bases não congeladas pelo pin do binário.
+
+TDD: parâmetro introduzido sem mudar guard; fixture ARM64 válida falhou na identidade antes de publicar. Green13 controles preservam9cenários anteriores, aceitam ARM64 explícito e recusam manifesto cruzado nos dois perfis e scan AMD64 com manifesto ARM64. Findings sintéticos HIGH e exclusão de ambiente verificados nos dois perfis. Preparador XML teve2reds por nova fonte ainda não autorizada;9 métodos verdes depois de mapear report.ps1. Pester real:2 testes executam50+13 controles,305comandos analisados/95,74% cobertos; XML genérico mapeia as3fontes, sem hits inventados. São fixtures locais, sem Docker/scanner/rede. CI real e triagem ainda pendentes.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

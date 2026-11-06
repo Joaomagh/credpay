@@ -18,7 +18,7 @@
 
 ## Agora
 
-- [ ] Preparar inventário ARM64 explícito, preservando o perfil AMD64; depois validar sessão/contas e configuração da demo pública.
+- [ ] Validar inventário nativo ARM64/AMD64 no CI:13 controles report e medição Pester verdes; revisar achados reais, spec§9.163.
 
 ## Próximo
 

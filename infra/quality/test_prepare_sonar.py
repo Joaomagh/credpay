@@ -17,7 +17,7 @@ class CoveragePreparationTest(unittest.TestCase):
         folder.mkdir(parents=True)
         report = ET.Element('coverage')
         classes = ET.SubElement(ET.SubElement(ET.SubElement(report, 'packages'), 'package'), 'classes')
-        for name in ('infra/k8s/disposable-secret.ps1', 'infra/k8s/kubectl.ps1'):
+        for name in ('infra/k8s/disposable-secret.ps1', 'infra/k8s/kubectl.ps1', 'infra/security/report.ps1'):
             target = root / name
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text('$fixture=1\n$null=$fixture\n', encoding='utf-8')
@@ -33,9 +33,9 @@ class CoveragePreparationTest(unittest.TestCase):
             for source in report.findall('.//class'):
                 source.set('filename', source.get('filename').replace('/', '\\'))
             ET.ElementTree(report).write(path)
-            self.assertEqual(4, convert_powershell_coverage(root))
+            self.assertEqual(6, convert_powershell_coverage(root))
             generic = ET.parse(path.with_name('sonar-coverage.xml')).getroot()
-            self.assertEqual(['true', 'false', 'true', 'false'],
+            self.assertEqual(['true', 'false', 'true', 'false', 'true', 'false'],
                              [line.get('covered') for line in generic.findall('.//lineToCover')])
 
     def test_powershell_mapping_refuses_missing_malformed_or_inconsistent_reports(self):
@@ -160,7 +160,7 @@ class CoveragePreparationTest(unittest.TestCase):
             report.write_text(original, encoding='utf-8')
             powershell = root / '.local/sonar-powershell'
             powershell.mkdir(parents=True)
-            files = ('infra/k8s/disposable-secret.ps1', 'infra/k8s/kubectl.ps1')
+            files = ('infra/k8s/disposable-secret.ps1', 'infra/k8s/kubectl.ps1', 'infra/security/report.ps1')
             for source in files:
                 target = root / source
                 target.parent.mkdir(parents=True, exist_ok=True)

@@ -1,4 +1,5 @@
 #requires -Version 7.3
+param([ValidateSet('amd64','arm64')][string]$ExpectedArchitecture='amd64')
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $false
 $root = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
@@ -25,7 +26,7 @@ try {
     $version = & $binary --cache-dir $cache version --format json | Out-String
     if ($LASTEXITCODE -ne 0) { throw 'Metadados do scanner indisponíveis.' }
     [IO.File]::WriteAllText((Join-Path $raw 'scanner.json'), $version)
-    & "$PSScriptRoot/report.ps1" -Directory $raw -OutputDirectory '.local/security/reports'
+    & "$PSScriptRoot/report.ps1" -Directory $raw -OutputDirectory '.local/security/reports' -ExpectedArchitecture $ExpectedArchitecture
     if ($env:GITHUB_STEP_SUMMARY) {
         Get-Content '.local/security/reports/summary.md' | Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY
     }
