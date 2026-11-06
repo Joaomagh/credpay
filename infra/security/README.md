@@ -26,7 +26,7 @@ Controle local, sem Docker, scanner ou rede:
 ./infra/security/check-reports.ps1
 ```
 
-São nove controles sintéticos: quatro alvos válidos com contagens e exclusão de ambiente; rejeição de relatório vazio, biblioteca ausente, OS ausente, base ausente, SHA inválido, imagem inválida, relatório de imagem trocado e severidade desconhecida. Configuração operacional não recebe red artificial de negócio. O scan real acontece no CI; Docker local indisponível não é contornado.
+São13 controles sintéticos: os9 cenários AMD64 originais, ARM64 válido com contagens e ambiente excluído, recusa de manifestos cruzados nos dois perfis e metadata AMD64 sob perfil ARM64. A extensão de comportamento foi dirigida por red/green; o scan real acontece no CI, sem contornar Docker local.
 
 ## Publicação e triagem
 
