@@ -70,7 +70,7 @@ def convert_powershell_coverage(root):
         report = ET.parse(folder / 'coverage.xml').getroot()
     except (ET.ParseError, OSError) as error:
         raise ValueError('PowerShell coverage is missing or invalid.') from error
-    expected = {'infra/k8s/disposable-secret.ps1', 'infra/k8s/kubectl.ps1', 'infra/security/report.ps1'}
+    expected = {'infra/k8s/disposable-secret.ps1', 'infra/k8s/kubectl.ps1', 'infra/security/report.ps1', 'infra/security/scan.ps1'}
     generic = ET.Element('coverage', version='1')
     seen = set()
     for source in report.findall('packages/package/classes/class'):

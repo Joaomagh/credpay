@@ -18,7 +18,7 @@
 
 ## Agora
 
-- [ ] Validar inventário nativo ARM64/AMD64 no CI:13 controles report e medição Pester verdes; revisar achados reais, spec§9.163.
+- [ ] PR232: inventários nativos passaram e revelaram HIGH/APT109518 nas duas arquiteturas; publicação bloqueada. Concluir cobertura do controlador e repetir CI/gate, spec§9.163.
 
 ## Próximo
 

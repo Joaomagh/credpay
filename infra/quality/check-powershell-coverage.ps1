@@ -16,11 +16,11 @@ $module=Join-Path $folder ('module-' + [Guid]::NewGuid().ToString('N'))
 Import-Module (Join-Path $module 'Pester.psd1') -ErrorAction Stop
 if ((Get-Module Pester).Version.ToString() -cne $baseline.version) { throw 'Unexpected Pester version.' }
 $config=New-PesterConfiguration
-$config.Run.Path=Join-Path $PSScriptRoot 'check-kubernetes-secret.Tests.ps1'
+$config.Run.Path=@((Join-Path $PSScriptRoot 'check-kubernetes-secret.Tests.ps1'),(Join-Path $PSScriptRoot 'check-scanner-runtime.Tests.ps1'))
 $config.Run.RepoRoot=$root
 $config.Run.PassThru=$true
 $config.CodeCoverage.Enabled=$true
-$config.CodeCoverage.Path=@((Join-Path $root 'infra/k8s/disposable-secret.ps1'),(Join-Path $root 'infra/k8s/kubectl.ps1'),(Join-Path $root 'infra/security/report.ps1'))
+$config.CodeCoverage.Path=@((Join-Path $root 'infra/k8s/disposable-secret.ps1'),(Join-Path $root 'infra/k8s/kubectl.ps1'),(Join-Path $root 'infra/security/report.ps1'),(Join-Path $root 'infra/security/scan.ps1'))
 $config.CodeCoverage.OutputFormat='Cobertura'
 $config.CodeCoverage.OutputPath=Join-Path $folder 'coverage.xml'
 $config.CodeCoverage.CoveragePercentTarget=80
