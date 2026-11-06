@@ -1,5 +1,6 @@
 #requires -Version 7.3
-param([Parameter(Mandatory)][string]$Directory, [Parameter(Mandatory)][string]$OutputDirectory)
+param([Parameter(Mandatory)][string]$Directory, [Parameter(Mandatory)][string]$OutputDirectory,
+    [ValidateSet('amd64','arm64')][string]$ExpectedArchitecture = 'amd64')
 $ErrorActionPreference = 'Stop'
 $utf8 = [Text.UTF8Encoding]::new($false)
 function Require($condition, [string]$message) { if (-not $condition) { throw $message } }
@@ -20,12 +21,12 @@ $images = @{}
 foreach ($module in @('transacoes', 'processamento')) {
     Require (@($hashes | Where-Object { $_ -cmatch "^[a-f0-9]{64}  \.local/security/inputs/$module/app\.jar$" }).Count -eq 1) "Hash do JAR inválido: $module"
     $image = ([IO.File]::ReadAllText((Join-Path $Directory "$module-image.txt"))).Trim()
-    Require ($image -cmatch '^sha256:[a-f0-9]{64} linux amd64$') "Identidade/arquitetura da imagem inválida: $module"
+    Require ($image -cmatch "^sha256:[a-f0-9]{64} linux $ExpectedArchitecture`$") "Identidade/arquitetura da imagem inválida: $module"
     $images[$module] = ($image -split ' ')[0]
 }
 $reports = @()
 $summary = @('# Inventário de vulnerabilidades — triagem pendente', '',
-    "Checkout: $checkout. Scanner: 0.75.0. Este resultado não aprova segurança.", '',
+    "Checkout: $checkout. Plataforma: linux/$ExpectedArchitecture. Scanner: 0.75.0. Este resultado não aprova segurança.", '',
     '| Alvo | Pacotes | UNKNOWN | LOW | MEDIUM | HIGH | CRITICAL |', '|---|---:|---:|---:|---:|---:|---:|')
 foreach ($module in @('transacoes', 'processamento')) {
     foreach ($kind in @('jar', 'image')) {
@@ -40,7 +41,7 @@ foreach ($module in @('transacoes', 'processamento')) {
         if ($kind -ceq 'image') {
             Require ($report.Metadata.ImageID -ceq $images[$module] -and
                 $report.Metadata.ImageConfig.os -ceq 'linux' -and
-                $report.Metadata.ImageConfig.architecture -ceq 'amd64') "Relatório de outra imagem/arquitetura: $name"
+                $report.Metadata.ImageConfig.architecture -ceq $ExpectedArchitecture) "Relatório de outra imagem/arquitetura: $name"
             Require ($report.Metadata.OS.Family -ceq 'ubuntu' -and
                 @($report.Results | Where-Object { $_.Class -ceq 'os-pkgs' -and $_.Packages.Count -gt 0 }).Count -gt 0) "Cobertura OS ausente: $name"
         }
@@ -75,7 +76,7 @@ $summary += @('', 'Não somar JAR e imagem como achados únicos: bibliotecas se 
     'Escopo: dependências empacotadas e imagens dos apps; não inclui PostgreSQL, RabbitMQ, build ou Kubernetes.')
 $null = New-Item -ItemType Directory -Path $OutputDirectory -Force
 [IO.File]::WriteAllText((Join-Path $OutputDirectory 'inventory.json'),
-    (@{Checkout=$checkout; Scanner=@{Version=$scanner.Version; VulnerabilityDB=$scanner.VulnerabilityDB; JavaDB=$scanner.JavaDB}; Reports=$reports} | ConvertTo-Json -Depth 15), $utf8)
+    (@{Checkout=$checkout; Architecture=$ExpectedArchitecture; Scanner=@{Version=$scanner.Version; VulnerabilityDB=$scanner.VulnerabilityDB; JavaDB=$scanner.JavaDB}; Reports=$reports} | ConvertTo-Json -Depth 15), $utf8)
 [IO.File]::WriteAllLines((Join-Path $OutputDirectory 'summary.md'), $summary, $utf8)
 foreach ($file in @('checkout.txt','jars.sha256','transacoes-image.txt','processamento-image.txt')) {
     Copy-Item -LiteralPath (Join-Path $Directory $file) -Destination (Join-Path $OutputDirectory $file)

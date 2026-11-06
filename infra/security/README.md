@@ -4,6 +4,8 @@ B08.6a gera quatro relatórios: dependências de cada JAR e pacotes de cada imag
 
 ## Baseline e execução
 
+O inventário declara a arquitetura esperada: AMD64 por padrão, ARM64 somente por `-ExpectedArchitecture arm64` em scan/report. As identidades dos dois manifestos e a metadata dos dois scans de imagem devem coincidir com o perfil; conteúdo recebido nunca seleciona automaticamente a arquitetura aceita. JSON/summary registram a arquitetura, sem remover achados. Matriz nativa de runners24.04/24.04-arm preserva o artefato AMD64 e publica ARM64 em nome distinto. Baseline da variante Trivy0.75.0 Linux-ARM64 SHA256a1ee9f6ffb7d112b64ff726a2a0717c21175c1114361391f4a132956751a13b3 em spec§9.163; hash oficial conferido antes da extração. Resultados reais ainda precisam de triagem, mesmo com job verde.
+
 ### Transporte das ferramentas de CI
 
 Os downloads curl externos declarados nos workflows exigem `--proto '=https' --proto-redir '=https'`. O checksum continua obrigatório antes de extrair/executar o binário. `test_https_downloads.py` lê as opções dessas chamadas e prova, com curl real e servidor HTTP somente em127.0.0.1, recusa do HTTP inicial antes da conexão e do redirect HTTP antes de chegar ao destino. Um controle positivo sem restrição comprova que cliente e fixture funcionam. Para isolar o redirect, somente a primeira requisição da fixture é explicitamente HTTP; downloads reais permanecem HTTPS e TLS não é desabilitado.
@@ -24,7 +26,7 @@ Controle local, sem Docker, scanner ou rede:
 ./infra/security/check-reports.ps1
 ```
 
-São nove controles sintéticos: quatro alvos válidos com contagens e exclusão de ambiente; rejeição de relatório vazio, biblioteca ausente, OS ausente, base ausente, SHA inválido, imagem inválida, relatório de imagem trocado e severidade desconhecida. Configuração operacional não recebe red artificial de negócio. O scan real acontece no CI; Docker local indisponível não é contornado.
+São13 controles sintéticos: os9 cenários AMD64 originais, ARM64 válido com contagens e ambiente excluído, recusa de manifestos cruzados nos dois perfis e metadata AMD64 sob perfil ARM64. A extensão de comportamento foi dirigida por red/green; o scan real acontece no CI, sem contornar Docker local.
 
 ## Publicação e triagem
 

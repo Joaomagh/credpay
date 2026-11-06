@@ -18,7 +18,7 @@
 
 ## Agora
 
-- [ ] Preparar inventário ARM64 explícito, preservando o perfil AMD64; depois validar sessão/contas e configuração da demo pública.
+- [ ] PR232: inventários nativos passaram e revelaram HIGH/APT109518 nas duas arquiteturas; publicação bloqueada. Concluir cobertura do controlador e repetir CI/gate, spec§9.163.
 
 ## Próximo
 

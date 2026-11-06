@@ -1,5 +1,13 @@
 # Triagem de dependências e imagens
 
+## Bloqueio atual de publicação — 06/11/2026
+
+Inventory42279661421 da PR232 passou identidade/completude em AMD64 e ARM64 e detectou **CVE-2026-109518/HIGH** em `apt` e `libapt-pkg6.0t64`2.8.3 nas duas imagens. São duas ocorrências por imagem de um único CVE, repetidas entre serviços/arquiteturas. Cada JAR conserva HIGH0/CRITICAL0/MEDIUM3; imagens têm HIGH2/CRITICAL0/MEDIUM30/LOW4. Artefatos selecionados, hashes e limites em spec§9.163. Job verde não aceita esses achados nem libera deploy.
+
+[Ubuntu](https://ubuntu.com/security/CVE-2026-109518), aviso de04/11 consultado06/11, informa correção Noble em2.8.4ubuntu0.1. A condição envolve um atacante no caminho HTTP de aquisição de pacotes APT, redirects e retries, podendo instalar pacote não verificado com privilégios de root. Não foi demonstrada exploração pelas rotas Java do CredPay; os aplicativos rodam UID10001. Isso não dispensa remediação ou disposição explícita, e nenhuma foi aceita.
+
+Consulta à metadata oficial de `21.0.13_9-jre-noble` e `21-jre-noble` em06/11 ainda retornou o índice0eda5830, atualizado01/11, cuja execução contém2.8.3. Correção do pacote publicada não equivale a correção instalada. Próxima ação: localizar/revalidar imagem oficial corrigida, registrar baseline antes da adoção, executar smoke e os inventários das duas arquiteturas. Preservar os guards e o relatório bruto; não modificar pacotes manualmente, suprimir o ID ou declarar a v1 publicada enquanto o bloqueio permanecer. Outros achados seguem visíveis.
+
 **Estado técnico de18/10, revalidado em22/10/2026:** PR178/ea175e1 integrou oito checks verdes no head7e4233d. Inventory122 conserva quatro alvos completos selecionados107pacotes/JAR243/imagem, HIGH0/CRITICAL0, MEDIUM3/JAR e MEDIUM32/LOW22/imagem; achados iguais ao Inventory111, sem supressão. Detalhes, identidade, DBs e limites em [V1_VALIDATION.md](../../docs/V1_VALIDATION.md). Este corte não substitui um inventário atualizado após a retomada22/10, não cobre infraestrutura externa e não fecha ensaio ou revisão histórica. A migração B08.6c e seus aceites posteriores substituem os estados preparatórios abaixo.
 
 ## Atualização de24/10 — inventário da PR187

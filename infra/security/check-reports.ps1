@@ -7,7 +7,7 @@ $utf8 = [Text.UTF8Encoding]::new($false)
 function Save-Json($name, $value) {
     [IO.File]::WriteAllText((Join-Path $directory $name), ($value | ConvertTo-Json -Depth 20), $utf8)
 }
-function Reset-Fixture {
+function Reset-Fixture([string]$Architecture = 'amd64') {
     $db = @{Version=2; UpdatedAt='2026-10-08T00:00:00Z'; DownloadedAt='2026-10-08T01:00:00Z'}
     Save-Json 'scanner.json' @{Version='0.75.0'; VulnerabilityDB=$db; JavaDB=$db}
     [IO.File]::WriteAllText((Join-Path $directory 'checkout.txt'), ('a' * 40), $utf8)
@@ -15,7 +15,7 @@ function Reset-Fixture {
     foreach ($module in @('transacoes', 'processamento')) {
         $hashes += ('b' * 64) + "  .local/security/inputs/$module/app.jar"
         $imageId = 'sha256:' + ($(if ($module -eq 'transacoes') { 'c' } else { 'd' }) * 64)
-        [IO.File]::WriteAllText((Join-Path $directory "$module-image.txt"), ($imageId + ' linux amd64'), $utf8)
+        [IO.File]::WriteAllText((Join-Path $directory "$module-image.txt"), ($imageId + " linux $Architecture"), $utf8)
         foreach ($kind in @('jar', 'image')) {
             $java = @{Class='lang-pkgs'; Type='jar'; Packages=@(
                 @{Name='org.springframework.boot:spring-boot'; Version='3.5.16'},
@@ -25,16 +25,16 @@ function Reset-Fixture {
                 InstalledVersion='1.0'; FixedVersion='1.1'; Severity='HIGH'})}
             $results = @($java)
             if ($kind -eq 'image') { $results += @{Class='os-pkgs'; Type='ubuntu'; Packages=@(@{Name='synthetic-os'; Version='1.0'})} }
-            Save-Json "$module-$kind.json" @{SchemaVersion=2; Metadata=@{ImageID=$imageId; OS=@{Family='ubuntu'}; ImageConfig=@{os='linux'; architecture='amd64'; Env=@('SYNTHETIC_ENV_MUST_NOT_BE_PUBLISHED')}}; Results=$results}
+            Save-Json "$module-$kind.json" @{SchemaVersion=2; Metadata=@{ImageID=$imageId; OS=@{Family='ubuntu'}; ImageConfig=@{os='linux'; architecture=$Architecture; Env=@('SYNTHETIC_ENV_MUST_NOT_BE_PUBLISHED')}}; Results=$results}
         }
     }
     [IO.File]::WriteAllLines((Join-Path $directory 'jars.sha256'), $hashes, $utf8)
 }
-function Reject([string]$name, [scriptblock]$mutate, [string]$expected) {
-    Reset-Fixture
+function Reject([string]$name, [scriptblock]$mutate, [string]$expected, [string]$FixtureArchitecture='amd64', [string]$ExpectedArchitecture='amd64') {
+    Reset-Fixture $FixtureArchitecture
     & $mutate
     $caught = $null
-    try { & "$PSScriptRoot/report.ps1" -Directory $directory -OutputDirectory (Join-Path $directory $name) }
+    try { & "$PSScriptRoot/report.ps1" -Directory $directory -OutputDirectory (Join-Path $directory $name) -ExpectedArchitecture $ExpectedArchitecture }
     catch { $caught = $_.Exception.Message }
     if (-not $caught -or $caught -notlike "*$expected*") { throw "Controle ${name}: esperado '$expected'; observado '$caught'." }
     if (Test-Path (Join-Path $directory "$name/inventory.json")) { throw "Controle $name publicou relatório inválido." }
@@ -72,5 +72,19 @@ Reject 'bad-severity' {
     $report.Results[0].Vulnerabilities[0].Severity = 'UNRECOGNIZED'
     Save-Json 'transacoes-jar.json' $report
 } 'Achado sem identidade/severidade'
-Write-Host '9 controles passaram; fixtures sintéticas não são resultado de scan real.'
-exit 0
+Reset-Fixture 'arm64'
+$armOutput=Join-Path $directory 'valid-arm64'
+& "$PSScriptRoot/report.ps1" -Directory $directory -OutputDirectory $armOutput -ExpectedArchitecture arm64
+$armPublished=Get-Content (Join-Path $armOutput 'inventory.json') -Raw
+$armInventory=$armPublished | ConvertFrom-Json -AsHashtable
+if ($armInventory.Architecture -cne 'arm64' -or @($armInventory.Reports | Where-Object { $_.Name.EndsWith('-image') -and $_.Image.Architecture -cne 'arm64' }).Count -ne 0 -or
+    $armPublished.Contains('SYNTHETIC_ENV_MUST_NOT_BE_PUBLISHED') -or
+    @($armInventory.Reports | Where-Object { $_.Counts.HIGH -ne 1 }).Count -ne 0) { throw 'ARM64 lost identity/findings or exposed environment.' }
+Reject 'arm-manifest-in-amd-profile' {} 'Identidade/arquitetura' 'arm64' 'amd64'
+Reject 'amd-manifest-in-arm-profile' {} 'Identidade/arquitetura' 'amd64' 'arm64'
+Reject 'arm-scan-with-amd-metadata' {
+    $report=Get-Content (Join-Path $directory 'transacoes-image.json') -Raw | ConvertFrom-Json -AsHashtable
+    $report.Metadata.ImageConfig.architecture='amd64'
+    Save-Json 'transacoes-image.json' $report
+} 'Relatório de outra imagem/arquitetura' 'arm64' 'arm64'
+Write-Host '13 controles passaram; fixtures sintéticas não são resultado de scan real.'
