@@ -58,6 +58,7 @@ Para verificar os módulos Java, execute `./mvnw.cmd --batch-mode --no-transfer-
 
 ## Qualidade e estado da v1
 
+- **Bloqueio de publicação.** O inventário de06/11, em AMD64 e ARM64, encontrou CVE-2026-109518/HIGH em APT nas imagens dos aplicativos. Os JARs ficaram sem HIGH/CRITICAL nesse recorte. A publicação aguarda remediação comprovada e os demais aceites do destino. [Triagem atual](infra/security/TRIAGE.md) · [Inventário nativo](https://github.com/Joaomagh/credpay/actions/runs/42282534051)
 - **Análise contínua.** SonarQube importa cobertura Java, Angular, Python e dos helpers PowerShell medidos. As PRs227/228 passaram com93,5%/96,3% de cobertura no código novo, sem reduzir o gate. Esses valores não representam cobertura global nem ausência de todos os achados. [Pipeline e limites](docs/SONARQUBE_CI.md) · [Triagem por ocorrência](docs/BACKLOG.md#triagem-sonarqube---05112026)
 - **Testes.** Os cenários incluem concorrência, rollback, duplicatas, reentrega e fluxo com PostgreSQL e RabbitMQ reais. O CI de navegador executa seis casos no modo padrão e dois no modo de contas, em desktop e celular. [Validação da v1](docs/V1_VALIDATION.md) · [Jornadas com contas](https://github.com/Joaomagh/credpay/actions/runs/41907646479)
 - **Operação local.** A execução assistida validou Compose, persistência e recuperação em Kubernetes, além do diagnóstico por métricas dos dois publicadores. Os aplicativos rodaram sem privilégios no recorte testado. [Kubernetes local](infra/k8s/LOCAL.md) · [Diagnóstico por métricas](infra/observability/README.md)

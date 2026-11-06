@@ -15,16 +15,18 @@
 - PR227: credenciais Kubernetes próprias/reuso comprovados;6 checks e gate93,5% com cobertura PowerShell real, mergeac94cb7.
 - PR228: URLs literais e redirects recusados; Core/Noble reais,5 checks e gate96,3% no delta, merge648e785.
 - PR230: imagens/fluxo nativos em ARM64 e AMD64,5 checks verdes, merge2078d39; spec§9.162.
+- PR232: inventários nativos e controlador medido,5 checks/gate100% do delta, mergee668a8b. HIGHAPT bloqueia publicação; spec§9.163.
 
 ## Agora
 
-- [ ] PR232: inventários nativos passaram e revelaram HIGH/APT109518 nas duas arquiteturas; publicação bloqueada. Concluir cobertura do controlador e repetir CI/gate, spec§9.163.
+- [ ] Validar6 testes HTTP existentes de sessão em Java/PostgreSQL nativos ARM64/AMD64, preservando o fluxo em imagens; spec§9.164.
 
 ## Próximo
 
 - S11 e S12-S14 confirmados CLOSED/FIXED em main. Preservar recuperação causal e achados contextuais.
 - Revisar ocorrências contextuais por ID, mantendo achados da pesquisa e referências históricas preservados.
 - Preparar publicação gratuita com HTTPS, retenção e limites validados. Contas Cloudflare/Oracle ainda dependem de João; nenhum deploy.
+- Buscar/revalidar imagem oficial com APT corrigido antes de publicar; não aceitar HIGH implicitamente.
 
 ## Depois
 

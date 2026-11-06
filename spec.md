@@ -3461,6 +3461,14 @@ Primeiro Inventory42279661421: jobs128105016996/ARM64 e128105017422/AMD64 passar
 
 Sonar42279661407/job128105016946 aprovou544/340 Java e Angular, mas bloqueou new_coverage75%<80, sem novos issues: controlador scan.ps1 não era medido. Acrescentados três testes que executam o controlador real e substituem somente resolução da raiz e CLI do scanner, via processo offline próprio. Primeiro teste falhou por saída relativa resolvida contra o diretório do processo, divergente do Push-Location PowerShell; correção usa saída/summary absolutos derivados da raiz. Green5 testes Pester/350comandos/94,57% cobertos, incluindo50+13 controles e três jornadas do controlador (ARM64, perfil incorreto, exit7). Fixture e sumário limitados a pastas próprias em .local; PSNoProfile, sem Docker/rede. Conversor importa4fontes medidas;9 métodos Python verdes. Novo CI/gate exigidos; não diminuir meta ou excluir scan.ps1.
 
+Fechamento9.163: PR232 integrada eme668a8b após5 checks verdes no head1e1078f, árvore de merge idêntica e sem revisão/thread pendente. Inventory42282534051 passou nas duas arquiteturas, mantendo pacotes/contagens/CVEAPT. Artefatos finais AMD6413536026697/10687bytes/SHA46b7936743233b0e49ac90996c897e7ba9e64adced18e368a404aae45bcb5077 e ARM6413536216236/10762bytes/SHA1c2ed4059940d0f63efd1bf0681063ba5bd1d4f0bb45ecf5eff0c6aced277ee5 revisados com os mesmos controles e Gitleaks0; checkout2c196d108a6dbf5c4aa9c77734ee9a4a7b1bcb95. VulnerabilityDB06/11/18:59:52UTC e JavaDB06/11/01:10:43UTC. Sonar42282533959/job128114925327 aprovou544/340 Java, frontend e5 testes Pester, importou160linhas/4fontes e passou new_coverage100% somente do delta, ignoredConditions:false. CVEAPT segue bloqueador externo; merge não aceita o runtime para publicação.
+
+### 9.164 Contrato de sessão em Java/PostgreSQL nativos
+
+Slice operacional: acrescentar SessaoDemoHttpTest existente às duas pernas da matriz de imagens, depois do fluxo nas imagens. Seis cenários HTTP reais, aplicação Spring Boot em porta aleatória/127.0.0.1 e PostgreSQL Testcontainers pinado: limites de token/login/criação/consulta, autenticação, autorização por conta, idempotência, renovação de sessão/CSRF e logout isolado. Sem alteração de comportamento ou dependência nova; executar cenários existentes nas duas arquiteturas não recebe red artificial. Mantém digests, guard de arquitetura e timeout.
+
+Aceite pendente: seis testes sem skips nas duas arquiteturas, com fluxo anterior verde. O teste executa a aplicação pelo classpath Maven, não pelo JAR no container. Não comprova HTTPS/cookieSecure, expiração temporal, navegador ARM64 ou configuração do destino; expiração não foi acrescentada implicitamente ao recorte. Publicação continua bloqueada pelo APT e demais aceites externos.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

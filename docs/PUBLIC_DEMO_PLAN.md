@@ -43,7 +43,9 @@ Preparação técnica em05/11, sem deploy: os índices exatos já fixados de Tem
 
 Prova executada em06/11: PR230/2078d39 passou build e fluxo real em ARM64 e AMD64 no [Images CI42270482446](https://github.com/Joaomagh/credpay/actions/runs/42270482446), com quatro imagens conferidas, apps sem privilégios, filas quorum, aprovação/rejeição e replay estável; detalhes em spec§9.162. Próximos aceites: inventário ARM64 e sessão/contas, preservando o perfil AMD64 e os guards locais de kind. Isso não comprova dimensionamento ou operação na Oracle.
 
-Contas Cloudflare/Oracle, capacidade regional, HTTPS da origem, configuração privada/expiração dos dados e smoke externo continuam pendentes; nenhuma URL pública foi criada. As correções Sonar integradas nas PRs227/228 não substituem esses testes ou a autorização específica do destino.
+Inventário ARM64 concluído na PR232/e668a8b: os dois perfis passaram identidade/completude, com JARs HIGH0/CRITICAL0 e cada imagem HIGH2/CRITICAL0. O HIGH é um único CVEAPT em dois pacotes; a publicação está bloqueada até remediação comprovada ou direção explícita aplicável, sem aceite atual. [Triagem](../infra/security/TRIAGE.md). Contrato HTTP de sessão em Java/PostgreSQL nativos é o próximo slice de CI; não comprova ainda HTTPS ou navegador no destino.
+
+Contas Cloudflare/Oracle, capacidade regional, HTTPS da origem, configuração privada/expiração dos dados e smoke externo continuam pendentes; nenhuma URL pública foi criada. As correções Sonar não substituem esses testes ou a autorização específica do destino.
 
 1. Escolher conta/região/plano e um orçamento máximo explícito com João; preservar teto zero quando essa for a opção, sem ativar upgrade/recarga/serviço pago automaticamente. Confirmar disponibilidade antes de adaptar arquitetura.
 2. Provar os dois serviços, bancos e broker no destino escolhido: primeiro acesso após ociosidade, POST/PENDENTE→GET final, replay e recuperação. Se houver suspensão, a interface precisa explicá-la antes de enviar o pedido; não declarar disponibilidade contínua.
