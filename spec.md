@@ -3437,6 +3437,8 @@ Primeiros perfis42127137922/42127137870:75 controles Linux passaram sem skips, m
 
 Experimento seguinte, baseline registrada antes de executar: fixar os dois runners da pesquisa em ubuntu-24.04, como as provas atuais Compose/Kubernetes, em vez do alias móvel. Mantém imagem/index/manifest de origem e comparação exata de IDs; nenhum guard afrouxado. O diagnóstico sugere semântica de identidade diferente do backend Docker no runner26, mas não foi feita inspeção integral do daemon nem há prova de suporte26. Repetir inventário/construção/scan/controles nos dois perfis; não atribuir êxito do download a testes que pararam antes dele.
 
+Comparação concluída: Core42127950959 e Noble42127950647 passaram no host24.04, incluindo aquisição oficial, construção, scan e controles; guards de identidade preservados. Sonar42127950821 bloqueou Security/new_rating3 apesar de cobertura91,7% e testes verdes: novo ID AaGuChsxsRViZ_IuBkne mantém S7044 sobre URL proveniente do lockfile. Não encerrar manualmente nem reduzir gate. Incremento adicional elimina essa entrada da URL de rede:10 URLs literais revisadas por perfil, todas conferidas contra o lockfile antes de qualquer HTTP. Alteração legítima de pacote exige revisar os dois registros; hashes/tamanho continuam no lockfile. TDD: dois reds observaram acesso HTTP para caminho sintaticamente válido mas não aprovado; green78 testes Windows/1skip POSIX, incluindo recusa antes de HTTP nos dois planos. Nova execução completa/reanálise pendentes.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

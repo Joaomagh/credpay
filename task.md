@@ -16,7 +16,7 @@
 
 ## Agora
 
-- [ ] PR228: validar download/redirect no CI;77 controles Linux passaram, origem recusou IDs divergentes em runner26. Repetir em host24.04 fixado sem afrouxar guards; spec§9.161.
+- [ ] PR228: Core/Noble passaram em host24.04; Sonar manteve S7044. Lista de10 URLs literais implementada após2 reds,78 testes/1skipWindows; repetir CI/gate, spec§9.161.
 
 ## Próximo
 

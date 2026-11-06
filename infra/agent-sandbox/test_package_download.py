@@ -119,3 +119,17 @@ class PackageDownloadTest(unittest.TestCase):
                         self.assertEqual([], urls)
                         self.assertEqual([], hits)
                         self.assertEqual([], list(folder.iterdir()))
+
+    def test_grammatically_valid_but_unapproved_package_url_is_refused_before_http(self):
+        for noble in (False, True):
+            with self.subTest(noble=noble), self.transport(noble=noble) as (folder, packages, hits, urls):
+                packages[0]['path'] = 'pool/main/unapproved/other_amd64.deb'
+                rejected = False
+                try:
+                    core_ci.download_packages(folder, noble)
+                except ValueError:
+                    rejected = True
+                self.assertEqual([], urls, 'Unapproved lockfile path reached HTTP.')
+                self.assertEqual([], hits)
+                self.assertTrue(rejected)
+                self.assertEqual([], list(folder.iterdir()))
