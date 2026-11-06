@@ -3447,6 +3447,8 @@ Necessidade concreta: preparar compatibilidade para a VM Oracle A1 candidata, se
 
 Baseline conferida antes do CI: runners padrão ARM são gratuitos no repositório público, conforme https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/choose-the-runner-for-a-job . Metadados dos três índices aprovados já contêm ARM64; execução real ainda pendente. Configuração operacional não recebe red artificial: build/smoke CI é obrigatório. Aceite deste slice: startup, UID/mounts/health, filas quorum/consumidores, dois resultados e replay reais em ARM64 e AMD64. Não prova ainda sessão/contas, recuperação Compose/Kubernetes, inventário ARM64 ou destino Oracle. Sem implantação, conta ou gasto externo.
 
+PR230 integrada em2078d39 após5 checks verdes no head147df58, árvore de merge idêntica e sem revisões/threads pendentes. Images42270482446: ARM64/job128073431537 executou1 teste/67,07s, AMD64/job128073432037 executou1/71,53s, sem falhas/erros/skips. Guard de uname e arquitetura das quatro imagens passou; os logs confirmam apps UID10001/mounts0/privilegedfalse/healthUP, quorum4, ACK/prefetch10/1, bancos próprios, APROVADA/REJEITADA, duas outboxes/histórico único e replay estável. Versões de curl/libcurl/OpenSSL/libssl/zlib esperadas passaram nas duas arquiteturas. Não é benchmark entre máquinas ou scan de vulnerabilidades. Sonar42270482293/job128073431616 passou o gate; resposta da PR não contém condição new_coverage, sem percentual atribuído. S11 original confirmado CLOSED/FIXED em main. Próximo aceite é inventário ARM64 explícito, seguido de sessão/contas e configuração externa revisável.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

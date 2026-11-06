@@ -51,3 +51,7 @@ Em `transacoes-service`:
 ```
 
 Linux usa `./mvnw` e `export CREDPAY_IMAGE_TAG=$(git rev-parse HEAD)`. Portas HTTP mapeadas são dinâmicas; configuração interna dos apps usa portas PostgreSQL5432/Rabbit5672 e aliases, sem localhost do host. Credenciais do smoke não servem como configuração operacional. Compilação local sem Docker não substitui o smoke real.
+
+## Prova nativa ARM64 — 06/11/2026
+
+A PR230/2078d39 ampliou o Images CI para runners nativos AMD64 e ARM64, sem emulação. Host e arquitetura dos dois apps/PostgreSQL/RabbitMQ são conferidos antes do mesmo teste de fluxo. O run42270482446 passou nas duas arquiteturas: startup, UID10001/mounts0/privilegedfalse, quatro filas quorum, ACK/prefetch, aprovação/rejeição e replay estável. O Sonar também passou. São provas de execução; não incluem inventário ARM64, perfil de contas ou implantação Oracle. Detalhes em spec§9.162.

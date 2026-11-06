@@ -462,3 +462,7 @@ João criou a conexão e iniciou a primeira análise de `Joaomagh_credpay`, revi
 | P3 | Fixtures/pesquisa/referências Q05/Q06/Q08-Q14 | Isolamento dos stubs, parsing caracterizado e originais Stitch preservados; não ocultar findings | Proposto; fora do bundle Angular atual |
 
 Severidade do fornecedor e prioridade de execução são distintas. A fotografia inicial de28 itens e o PDF permanecem históricos; a análise Java posterior encontrou mais2. Somente os cinco IDs autorizados em spec§9.155 foram classificados False positive; nenhum aceite automático de vulnerabilidade. A baseline Trivy/GnuTLS permanece separada. Contas Cloudflare/Oracle, validação no destino e teste manual externo continuam pendentes; não houve implantação.
+
+### Preparação ARM64 da demonstração pública — 06/11/2026
+
+Build e fluxo das imagens concluídos na PR230/2078d39,5 checks verdes. Images42270482446 passou o mesmo teste real em ARM64 e AMD64, sem skips: arquitetura das quatro imagens, UID/mounts/health, quorum/consumidores, dois resultados e replay. O próximo slice é inventário ARM64 sem relaxar o perfil AMD64; sessão/contas, configuração privada, HTTPS, retenção e smoke externo permanecem pendentes. Não há URL pública ou conta criada por esta entrega; spec§9.162.
