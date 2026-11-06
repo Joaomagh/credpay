@@ -82,6 +82,16 @@ class CoveragePreparationTest(unittest.TestCase):
             normalized = normalize_lcov('SF:src/app/view.html\nDA:1,2\nend_of_record\n', frontend)
             self.assertEqual('SF:frontend/src/app/view.html\nDA:1,2\nend_of_record\n', normalized)
 
+    def test_maps_edge_worker_coverage_without_synthesizing_hits(self):
+        with self.temporary_directory() as directory:
+            frontend = Path(directory) / 'frontend'
+            (frontend / 'edge').mkdir(parents=True)
+            (frontend / 'edge/worker.ts').write_text('export const fixture = 1;\nfixture;\n', encoding='utf-8')
+            for source in ('edge/worker.ts', r'edge\worker.ts'):
+                original = f'SF:{source}\nDA:1,3\nDA:2,0\nend_of_record\n'
+                self.assertEqual('SF:frontend/edge/worker.ts\nDA:1,3\nDA:2,0\nend_of_record\n',
+                                 normalize_lcov(original, frontend, typescript_only=True))
+
     def test_projects_typescript_for_the_scanner_without_losing_the_original_template_report(self):
         with self.temporary_directory() as directory:
             frontend = Path(directory) / 'frontend'
@@ -158,6 +168,11 @@ class CoveragePreparationTest(unittest.TestCase):
             report.parent.mkdir(parents=True)
             original = 'SF:src/app/view.html\nDA:1,4\nend_of_record\nSF:src/app/view.ts\nDA:1,2\nend_of_record\n'
             report.write_text(original, encoding='utf-8')
+            (frontend / 'edge').mkdir()
+            (frontend / 'edge/worker.ts').write_text('export const fixture = 1;\n', encoding='utf-8')
+            edge = frontend / 'coverage/edge/lcov.info'
+            edge.parent.mkdir(parents=True)
+            edge.write_text('SF:edge/worker.ts\nDA:1,4\nend_of_record\n', encoding='utf-8')
             powershell = root / '.local/sonar-powershell'
             powershell.mkdir(parents=True)
             files = ('infra/k8s/disposable-secret.ps1', 'infra/k8s/kubectl.ps1', 'infra/security/report.ps1', 'infra/security/scan.ps1')
@@ -171,6 +186,8 @@ class CoveragePreparationTest(unittest.TestCase):
                     '<line number="2" hits="0"/></lines></class>' for source in files
                 ) + '</classes></package></packages></coverage>', encoding='utf-8')
             main(root)
+            self.assertEqual('SF:frontend/edge/worker.ts\nDA:1,4\nend_of_record\n',
+                             edge.with_name('lcov-sonar.info').read_text(encoding='utf-8'))
             self.assertEqual(original, report.read_text(encoding='utf-8'))
             self.assertEqual('SF:frontend/src/app/view.ts\nDA:1,2\nend_of_record\n',
                              report.with_name('lcov-sonar.info').read_text(encoding='utf-8'))
@@ -180,3 +197,10 @@ class CoveragePreparationTest(unittest.TestCase):
             for file in generic.findall('file'):
                 self.assertEqual([{'lineNumber': '1', 'covered': 'true'}, {'lineNumber': '2', 'covered': 'false'}],
                                  [line.attrib for line in file.findall('lineToCover')])
+            for invalid in ('', original, 'SF:edge/worker.ts\nDA:1,4\nend_of_record\n' * 2):
+                edge.write_text(invalid, encoding='utf-8')
+                with self.subTest(edge=invalid), self.assertRaises(ValueError):
+                    main(root)
+            edge.unlink()
+            with self.assertRaises(OSError):
+                main(root)

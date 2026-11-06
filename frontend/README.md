@@ -46,6 +46,8 @@ Se o registro estiver inválido ou o armazenamento indisponível/sem espaço, a 
 
 ## Verificar
 
+Preparação da origem pública, sem deploy: [contrato do proxy e seus limites](edge/README.md). `npm.cmd run check:edge` e `npm.cmd run test:edge` verificam esse módulo separado, reutilizando TypeScript/Vitest/V8 já fixados; ele não entra no bundle do navegador.
+
 ```powershell
 npm.cmd run check
 npm.cmd test

@@ -16,10 +16,11 @@
 - PR228: URLs literais e redirects recusados; Core/Noble reais,5 checks e gate96,3% no delta, merge648e785.
 - PR230: imagens/fluxo nativos em ARM64 e AMD64,5 checks verdes, merge2078d39; spec§9.162.
 - PR232: inventários nativos e controlador medido,5 checks/gate100% do delta, mergee668a8b. HIGHAPT bloqueia publicação; spec§9.163.
+- PR233:6 testes HTTP de sessão e fluxo em imagens verdes em ARM64/AMD64,5 checks/gate OK, mergec29af39; spec§9.164.
 
 ## Agora
 
-- [ ] Validar6 testes HTTP existentes de sessão em Java/PostgreSQL nativos ARM64/AMD64, preservando o fluxo em imagens; spec§9.164.
+- [ ] Preparar proxy da demo com rotas explícitas, limites e testes reais do módulo; conferir cobertura no Sonar. Sem deploy; spec§9.165.
 
 ## Próximo
 

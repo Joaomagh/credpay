@@ -15,7 +15,8 @@ def normalize_lcov(content, frontend, typescript_only=False):
         if line.startswith('SF:'):
             path = PurePosixPath(line[3:].replace('\\', '/'))
             target = (frontend / path).resolve()
-            if (source is not None or not path.parts or path.parts[0] != 'src'
+            if (source is not None or not path.parts or path.parts[0] not in ('src', 'edge')
+                    or (path.parts[0] == 'edge' and path != PurePosixPath('edge/worker.ts'))
                     or '..' in path.parts or path.suffix not in ('.ts', '.html') or path.name.endswith('.spec.ts')
                     or not target.is_relative_to(frontend.resolve()) or not target.is_file()):
                 raise ValueError('LCOV source does not match this checkout.')
@@ -108,12 +109,18 @@ def main(root=None):
     original = report.read_text(encoding='utf-8')
     normalized = normalize_lcov(original, frontend, typescript_only=True)
     report.with_name('lcov-sonar.info').write_text(normalized, encoding='utf-8', newline='\n')
+    edge = frontend / 'coverage/edge/lcov.info'
+    normalized_edge = normalize_lcov(edge.read_text(encoding='utf-8'), frontend, typescript_only=True)
+    if [line for line in normalized_edge.splitlines() if line.startswith('SF:')] != ['SF:frontend/edge/worker.ts']:
+        raise ValueError('Edge coverage must identify the single worker source from this checkout.')
+    edge.with_name('lcov-sonar.info').write_text(normalized_edge, encoding='utf-8', newline='\n')
     powershell_lines = convert_powershell_coverage(root)
     print('Sonar inputs: two JaCoCo reports, bytecode and libraries verified; LCOV sources mapped to checkout.')
     total = sum(line.startswith('SF:') for line in original.splitlines())
     imported = sum(line.startswith('SF:') for line in normalized.splitlines())
     print(f'Sonar LCOV: TypeScript records={imported}; template records retained in original report={total - imported}.')
     print(f'Sonar PowerShell: {powershell_lines} measured lines mapped to the checkout; no synthesized hits.')
+    print('Sonar edge: real worker LCOV mapped to this checkout; no synthesized hits.')
 
 
 if __name__ == '__main__':

@@ -150,6 +150,8 @@ jobs:
           npm ci --ignore-scripts --no-fund
           npm run check
           npm run test:coverage
+          npm run check:edge
+          npm run test:edge
           npm run build -- --configuration production,contas
           npm audit --audit-level=low
 
@@ -165,6 +167,8 @@ jobs:
             processamento-service/target/site/jacoco/jacoco.xml
             frontend/coverage/console/lcov.info
             frontend/coverage/console/lcov-sonar.info
+            frontend/coverage/edge/lcov.info
+            frontend/coverage/edge/lcov-sonar.info
             .local/sonar-python/coverage.xml
             .local/sonar-powershell/coverage.xml
             .local/sonar-powershell/sonar-coverage.xml
