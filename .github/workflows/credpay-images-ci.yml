@@ -28,14 +28,32 @@ concurrency:
 
 jobs:
   images:
-    name: Build and smoke both images
-    runs-on: ubuntu-latest
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            name: Build and smoke both images
+            arch: amd64
+            machine: x86_64
+          - runner: ubuntu-24.04-arm
+            name: Build and smoke both images (arm64)
+            arch: arm64
+            machine: aarch64
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
     env:
       CREDPAY_IMAGE_TAG: ${{ github.sha }}
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Require the native runner architecture
+        env:
+          EXPECTED_MACHINE: ${{ matrix.machine }}
+        run: test "$(uname -m)" = "$EXPECTED_MACHINE"
       # Trusted repository code can access this credential during the job.
       - name: Check public pull authentication availability
         id: dockerhub_auth
@@ -79,6 +97,17 @@ jobs:
         run: docker build --tag "credpay-transacoes:$CREDPAY_IMAGE_TAG" transacoes-service
       - name: Build processing image locally
         run: docker build --tag "credpay-processamento:$CREDPAY_IMAGE_TAG" processamento-service
+      - name: Require the native architecture in both application images
+        env:
+          EXPECTED_ARCH: ${{ matrix.arch }}
+        run: |
+          for service in transacoes processamento; do
+            test "$(docker image inspect --format '{{.Os}}/{{.Architecture}}' "credpay-$service:$CREDPAY_IMAGE_TAG")" = "linux/$EXPECTED_ARCH"
+          done
+          for image in postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0 rabbitmq:4.3.5-management-alpine@sha256:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1; do
+            docker pull --platform="linux/$EXPECTED_ARCH" "$image"
+            test "$(docker image inspect --format '{{.Os}}/{{.Architecture}}' "$image")" = "linux/$EXPECTED_ARCH"
+          done
       - name: Verify both application images
         working-directory: transacoes-service
         run: ./mvnw --batch-mode --no-transfer-progress -DargLine=-XX:-EnableDynamicAgentLoading -Dtest=ImagensCredPayE2E test

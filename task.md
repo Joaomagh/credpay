@@ -17,7 +17,7 @@
 
 ## Agora
 
-- [ ] Preparar prova ARM64 nativa e configuração revisável da demo pública; metadados dos três pins compatíveis, execução/inventário ainda não comprovados.
+- [ ] Validar matriz nativa ARM64/AMD64 do Images CI: quatro imagens na arquitetura esperada e fluxo real existente, spec§9.162. CI pendente.
 
 ## Próximo
 

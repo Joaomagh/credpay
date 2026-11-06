@@ -3441,6 +3441,12 @@ Comparação concluída: Core42127950959 e Noble42127950647 passaram no host24.0
 
 PR228 integrada em648e785 após5 checks verdes no headdb1de7e, sem revisões/threads pendentes e árvore de merge idêntica. Core42249148537 e Noble42249148550 passaram; Sonar42249148425/job127999230910 passou544/340 Java e50 Angular, importou72linhas PowerShell e aprovou gate/new_coverage96,3%, ignoredConditions:false. ID S7044 AaGuChsxsRViZ_IuBkne CLOSED/FIXED na PR, sem resolução manual; confirmar no próximo main. S12-S14 já CLOSED/FIXED em mainac94cb7. Preservar avisos, demais achados, relatório histórico e pesquisa não liberada.
 
+### 9.162 Prova nativa ARM64 das imagens
+
+Necessidade concreta: preparar compatibilidade para a VM Oracle A1 candidata, sem afirmar implantação. O workflow de imagens passa a usar matriz de runners padrão ubuntu-24.04/amd64 e ubuntu-24.04-arm/arm64, com fail-fast:false e mesmo teste ImagensCredPayE2E nas duas. Mantém nome do check AMD64, imagens/digests, versões, flags e critérios. Antes do smoke, exige uname nativo correto e linux/arquitetura nas imagens dos dois apps, PostgreSQL e RabbitMQ. Infra é puxada explicitamente para a arquitetura esperada; nenhum setup QEMU, Buildx privilegiado, instalação global ou dependência nova. Runtime, daemon e runner seguem confiáveis; não é AI-Jail/allowlist de egress.
+
+Baseline conferida antes do CI: runners padrão ARM são gratuitos no repositório público, conforme https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/choose-the-runner-for-a-job . Metadados dos três índices aprovados já contêm ARM64; execução real ainda pendente. Configuração operacional não recebe red artificial: build/smoke CI é obrigatório. Aceite deste slice: startup, UID/mounts/health, filas quorum/consumidores, dois resultados e replay reais em ARM64 e AMD64. Não prova ainda sessão/contas, recuperação Compose/Kubernetes, inventário ARM64 ou destino Oracle. Sem implantação, conta ou gasto externo.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
