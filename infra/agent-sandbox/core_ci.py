@@ -10,7 +10,7 @@ import re
 import shutil
 import subprocess
 import sys
-from urllib.request import urlopen
+from urllib.request import HTTPRedirectHandler, build_opener
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from acl_analysis import analyze_acl
@@ -80,12 +80,41 @@ def package_baseline(noble_candidate=False):
     return packages, "https://archive.ubuntu.com/ubuntu/" if noble_candidate else "https://deb.debian.org/debian/"
 
 
+PACKAGE_URLS = {
+    False: (
+        ('gawk', 'https://deb.debian.org/debian/pool/main/g/gawk/gawk_5.2.1-2+b1_amd64.deb'),
+        ('libsigsegv2', 'https://deb.debian.org/debian/pool/main/libs/libsigsegv/libsigsegv2_2.14-1+b2_amd64.deb'),
+        ('libmpfr6', 'https://deb.debian.org/debian/pool/main/m/mpfr4/libmpfr6_4.2.2-1_amd64.deb'),
+        ('libproc2-0', 'https://deb.debian.org/debian/pool/main/p/procps/libproc2-0_4.0.4-9_amd64.deb'),
+        ('procps', 'https://deb.debian.org/debian/pool/main/p/procps/procps_4.0.4-9_amd64.deb'),
+        ('libreadline8t64', 'https://deb.debian.org/debian/pool/main/r/readline/libreadline8t64_8.2-6_amd64.deb'),
+    ),
+    True: (
+        ('gawk', 'https://archive.ubuntu.com/ubuntu/pool/main/g/gawk/gawk_5.2.1-2ubuntu0.1_amd64.deb'),
+        ('libmpfr6', 'https://archive.ubuntu.com/ubuntu/pool/main/m/mpfr4/libmpfr6_4.2.1-1build1.1_amd64.deb'),
+        ('libreadline8t64', 'https://archive.ubuntu.com/ubuntu/pool/main/r/readline/libreadline8t64_8.2-4build1_amd64.deb'),
+        ('libsigsegv2', 'https://archive.ubuntu.com/ubuntu/pool/main/libs/libsigsegv/libsigsegv2_2.14-1ubuntu2_amd64.deb'),
+    ),
+}
+
+
+class RefusePackageRedirects(HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        raise ValueError('Redirecionamento de pacote recusado; revisar a baseline antes de alterar a origem.')
+
+
 def download_packages(folder, noble_candidate=False):
     packages, origin = package_baseline(noble_candidate)
-    for entry in packages:
-        path = entry["path"]
-        target = folder / Path(path).name
-        with urlopen(origin + path, timeout=60) as response:
+    by_name = {entry['name']: entry for entry in packages}
+    approved = PACKAGE_URLS[noble_candidate]
+    for name, url in approved:
+        if origin + by_name[name]['path'] != url:
+            raise ValueError('URL do lockfile diverge da lista aprovada; revisar a baseline antes de baixar.')
+    # Network destinations come from literal reviewed URLs, never file content.
+    for name, url in approved:
+        entry = by_name[name]
+        target = folder / url.rsplit('/', 1)[-1]
+        with build_opener(RefusePackageRedirects()).open(url, timeout=60) as response:
             content = response.read(entry["size"] + 1)
         if len(content) != entry["size"] or hashlib.sha256(content).hexdigest() != entry["sha256"]:
             raise ValueError(f"Tamanho/hash de pacote divergente: {entry['name']}")
