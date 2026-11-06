@@ -39,6 +39,10 @@ Vercel também documenta runtime de containers em beta. Portanto, não é corret
 
 ## Incremento público após o fechamento local
 
+Preparação técnica em05/11, sem deploy: os índices exatos já fixados de Temurin, PostgreSQL e RabbitMQ contêm variantes Linux/ARM64. A tag atual PostgreSQL17.11-bookworm mudou, mas o índice fixado051f7b7b continua contendo o manifesto ARM64b260573038b3770e3d1aba5a9a033bdd19c4b16304b104d4b4256c75d8f15123; não substituir o pin por tag móvel. Foram consultados somente metadados oficiais, sem executar imagens ARM. [PostgreSQL oficial](https://hub.docker.com/_/postgres) · [RabbitMQ oficial](https://hub.docker.com/_/rabbitmq).
+
+Próximo aceite: build, fluxo/autenticação e inventário completos em ARM64 nativo, preservando o perfil AMD64 e os guards locais de kind. Metadados multiarch não comprovam esse aceite. Contas Cloudflare/Oracle, capacidade regional, HTTPS da origem, configuração privada/expiração dos dados e smoke externo continuam pendentes; nenhuma URL pública foi criada. As correções Sonar integradas nas PRs227/228 não substituem esses testes ou a autorização específica do destino.
+
 1. Escolher conta/região/plano e um orçamento máximo explícito com João; preservar teto zero quando essa for a opção, sem ativar upgrade/recarga/serviço pago automaticamente. Confirmar disponibilidade antes de adaptar arquitetura.
 2. Provar os dois serviços, bancos e broker no destino escolhido: primeiro acesso após ociosidade, POST/PENDENTE→GET final, replay e recuperação. Se houver suspensão, a interface precisa explicá-la antes de enviar o pedido; não declarar disponibilidade contínua.
 3. Definir HTTPS e cookie `Secure`, provisionamento das contas, expiração de sessões e ciclo dos dados fictícios. Os limites do perfil local valem por instância. Conferir a identidade de origem no proxy e as cotas no destino. Bancos, AMQP, management, diagnósticos e métricas administrativas ficam internos. Revalidar dependências, imagens e achados no ambiente real.

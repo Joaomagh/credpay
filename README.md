@@ -6,6 +6,7 @@
 [![Images CI](https://github.com/Joaomagh/credpay/actions/workflows/credpay-images-ci.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/credpay-images-ci.yml)
 [![Compose CI](https://github.com/Joaomagh/credpay/actions/workflows/credpay-compose-ci.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/credpay-compose-ci.yml)
 [![Secret Scan](https://github.com/Joaomagh/credpay/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/secret-scan.yml)
+[![SonarQube analysis](https://github.com/Joaomagh/credpay/actions/workflows/sonarqube.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/sonarqube.yml)
 
 > Simulador de transações assíncronas com Java, Spring Boot, RabbitMQ e Angular.
 
@@ -57,6 +58,7 @@ Para verificar os módulos Java, execute `./mvnw.cmd --batch-mode --no-transfer-
 
 ## Qualidade e estado da v1
 
+- **Análise contínua.** SonarQube importa cobertura Java, Angular, Python e dos helpers PowerShell medidos. As PRs227/228 passaram com93,5%/96,3% de cobertura no código novo, sem reduzir o gate. Esses valores não representam cobertura global nem ausência de todos os achados. [Pipeline e limites](docs/SONARQUBE_CI.md) · [Triagem por ocorrência](docs/BACKLOG.md#triagem-sonarqube---05112026)
 - **Testes.** Os cenários incluem concorrência, rollback, duplicatas, reentrega e fluxo com PostgreSQL e RabbitMQ reais. O CI de navegador executa seis casos no modo padrão e dois no modo de contas, em desktop e celular. [Validação da v1](docs/V1_VALIDATION.md) · [Jornadas com contas](https://github.com/Joaomagh/credpay/actions/runs/41907646479)
 - **Operação local.** A execução assistida validou Compose, persistência e recuperação em Kubernetes, além do diagnóstico por métricas dos dois publicadores. Os aplicativos rodaram sem privilégios no recorte testado. [Kubernetes local](infra/k8s/LOCAL.md) · [Diagnóstico por métricas](infra/observability/README.md)
 - **Segurança.** O inventário de 04/11 do candidato `51f8476` encontrou zero achados HIGH ou CRITICAL nos dois JARs e nas duas imagens. Achados MEDIUM e LOW seguem em triagem. [Validação do corte](docs/V1_VALIDATION.md#manutenção-das-imagens--0411) · [Triagem](infra/security/TRIAGE.md)

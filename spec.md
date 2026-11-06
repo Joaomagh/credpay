@@ -3439,6 +3439,8 @@ Experimento seguinte, baseline registrada antes de executar: fixar os dois runne
 
 Comparação concluída: Core42127950959 e Noble42127950647 passaram no host24.04, incluindo aquisição oficial, construção, scan e controles; guards de identidade preservados. Sonar42127950821 bloqueou Security/new_rating3 apesar de cobertura91,7% e testes verdes: novo ID AaGuChsxsRViZ_IuBkne mantém S7044 sobre URL proveniente do lockfile. Não encerrar manualmente nem reduzir gate. Incremento adicional elimina essa entrada da URL de rede:10 URLs literais revisadas por perfil, todas conferidas contra o lockfile antes de qualquer HTTP. Alteração legítima de pacote exige revisar os dois registros; hashes/tamanho continuam no lockfile. TDD: dois reds observaram acesso HTTP para caminho sintaticamente válido mas não aprovado; green78 testes Windows/1skip POSIX, incluindo recusa antes de HTTP nos dois planos. Nova execução completa/reanálise pendentes.
 
+PR228 integrada em648e785 após5 checks verdes no headdb1de7e, sem revisões/threads pendentes e árvore de merge idêntica. Core42249148537 e Noble42249148550 passaram; Sonar42249148425/job127999230910 passou544/340 Java e50 Angular, importou72linhas PowerShell e aprovou gate/new_coverage96,3%, ignoredConditions:false. ID S7044 AaGuChsxsRViZ_IuBkne CLOSED/FIXED na PR, sem resolução manual; confirmar no próximo main. S12-S14 já CLOSED/FIXED em mainac94cb7. Preservar avisos, demais achados, relatório histórico e pesquisa não liberada.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
