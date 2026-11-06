@@ -13,14 +13,15 @@
 - PR225: moeda/UUID com semântica correta e foco visível no mobile;50 Angular,8 jornadas reais e gate OK.
 - PR226: variável automática preservada;6 checks, gate OK e recuperação causal/navegador aprovados, mergec0a3760.
 - PR227: credenciais Kubernetes próprias/reuso comprovados;6 checks e gate93,5% com cobertura PowerShell real, mergeac94cb7.
+- PR228: URLs literais e redirects recusados; Core/Noble reais,5 checks e gate96,3% no delta, merge648e785.
 
 ## Agora
 
-- [ ] PR228: Core/Noble passaram em host24.04; Sonar manteve S7044. Lista de10 URLs literais implementada após2 reds,78 testes/1skipWindows; repetir CI/gate, spec§9.161.
+- [ ] Preparar prova ARM64 nativa e configuração revisável da demo pública; metadados dos três pins compatíveis, execução/inventário ainda não comprovados.
 
 ## Próximo
 
-- Conferir encerramento S12-S14 em main e preservar prova de recuperação causal.
+- Conferir S11 em main após reanálise; S12-S14 já CLOSED/FIXED. Preservar recuperação causal e achados contextuais.
 - Revisar ocorrências contextuais por ID, mantendo achados da pesquisa e referências históricas preservados.
 - Preparar publicação gratuita com HTTPS, retenção e limites validados. Contas Cloudflare/Oracle ainda dependem de João; nenhum deploy.
 
