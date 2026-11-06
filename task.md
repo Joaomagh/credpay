@@ -14,14 +14,15 @@
 - PR226: variável automática preservada;6 checks, gate OK e recuperação causal/navegador aprovados, mergec0a3760.
 - PR227: credenciais Kubernetes próprias/reuso comprovados;6 checks e gate93,5% com cobertura PowerShell real, mergeac94cb7.
 - PR228: URLs literais e redirects recusados; Core/Noble reais,5 checks e gate96,3% no delta, merge648e785.
+- PR230: imagens/fluxo nativos em ARM64 e AMD64,5 checks verdes, merge2078d39; spec§9.162.
 
 ## Agora
 
-- [ ] Validar matriz nativa ARM64/AMD64 do Images CI: quatro imagens na arquitetura esperada e fluxo real existente, spec§9.162. CI pendente.
+- [ ] Preparar inventário ARM64 explícito, preservando o perfil AMD64; depois validar sessão/contas e configuração da demo pública.
 
 ## Próximo
 
-- Conferir S11 em main após reanálise; S12-S14 já CLOSED/FIXED. Preservar recuperação causal e achados contextuais.
+- S11 e S12-S14 confirmados CLOSED/FIXED em main. Preservar recuperação causal e achados contextuais.
 - Revisar ocorrências contextuais por ID, mantendo achados da pesquisa e referências históricas preservados.
 - Preparar publicação gratuita com HTTPS, retenção e limites validados. Contas Cloudflare/Oracle ainda dependem de João; nenhum deploy.
 
