@@ -1,5 +1,17 @@
 # Triagem de dependências e imagens
 
+## Inventário ampliado e base alternativa — 07/11/2026
+
+Cliente5.37.0/Netty4.2.18 integrado na PR237/9d2cd92, com16checks e gate93% do delta. Os3MEDIUMJava estão ausentes dos4alvos/2arquiteturas no Inventory42402648097; JARs sem achados nessa varredura. Imagens permanecem HIGH2/MEDIUM27/LOW4 pelo APT e demais pacotes OS. Composição e artefatos em spec§9.167; ausência nesse scan não comprova segurança universal.
+
+Próximo inventário separado cobre PostgreSQL e RabbitMQ pinados e a base candidata Temurin21.0.13_9/UBI9. `infrastructure-baseline.json` registra fontes/OS/versões antes de pull. Coletar versões reais PostgreSQL/RabbitMQ/OTP/JRE sem rede nos containers de consulta, sob usuário não-root/capabilitiesdrop, e conferir imagem/arquitetura e pacotes do scanner. O relatório preserva todos os achados retornados e exclui Env. RabbitMQ, Erlang e JRE exigem também revisão vendor na versão observada; não presumir detecção completa pelo Trivy. A candidataUBI9 tem índicedfbc27ed/AMD82e1c8ac/ARM00e1fda1 e permanece só avaliação, sem trocar os apps ou instalar/remover pacotes. Scans/compatibilidade ainda pendentes; HIGHAPT continua bloqueando a baseline de produção.
+
+Resultado inicial real Inventory42405230267, AMDjob128501375250/ARMjob128501375269: PostgreSQL17.11,148pacotes, CRITICAL16/HIGH99/MEDIUM245/LOW181/UNKNOWN8 em cada arquitetura. São7IDsCRITICAL em16ocorrências: CVE-2026-13221/42496/8376 repetidos nos4pacotesPerl, CVE-2025-7458/sqlite3, CVE-2026-6653/libxml2, CVE-2023-45853/zlib e CVE-2025-68121/stdlibGo. Fixed/status preservados nos artefatos; não presumir que todos sejam exploráveis pela API ou estejam corrigidos. Banco passa a bloqueador prioritário; avaliar primeiro reconstrução oficial na mesma linha17/Bookworm, com novo scan e provas de persistência. Não alterar volumes existentes ou trocar libc/locale silenciosamente.
+
+RabbitMQ4.3.7/OTP27.3.4.19:30pacotes, HIGH0/CRITICAL0/MEDIUM1, CVE-2026-4738/zlib1.3.2-r1→1.4-r0. UBI9/JRE21.0.13:149pacotes, HIGH18/CRITICAL0/MEDIUM209/LOW190, curl presente/APT ausente; candidata recusada para promoção. AusênciaAPT não basta para aprová-la. Outra base oficial pode ser avaliada, preservando resultados e bloqueioNoble. Revisão vendor continua necessária para broker/OTP/JRE e condições dos achados.
+
+Sonar da mesma PR bloqueou4gravações CLI porS8707; correção fixa entrada/saída e recusa escape/symlink/sobrescrita no workspace. Gate mantido; nova análise pendente, sem resolução manual dos IDs ou aceite de vulnerabilidade.
+
 ## Cliente AMQP — candidata de correção em07/11/2026
 
 Proposta5.34.0→5.37.0, com Netty4.2.18.Final explícito para preservar a versão pedida no POM do cliente, acima do4.2.17 gerenciado pelo Boot. Metadata/checksums oficiais dos12JARs registrados antes da resolução em java-runtime-baseline.json. Mesmas linhas de componentes e Java21, sem novo framework. O verificador compara nomes/versões/hashes dentro dos dois JARs e recusa ausência, duplicação, downgrade, bytes divergentes ou membros adicionais dessas famílias. Não substitui o inventário completo.
