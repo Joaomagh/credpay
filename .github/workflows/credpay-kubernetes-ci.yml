@@ -114,9 +114,9 @@ jobs:
           docker build --tag "credpay-processamento:$CREDPAY_IMAGE_TAG" processamento-service
       - name: Pull pinned infrastructure on the authenticated host
         run: |
-          docker pull postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
+          docker pull postgres@sha256:665dc7b37ac52a17e298511414c21d23ffa4e6a6ef6225b3e5d59c7afb35e994
           docker pull rabbitmq:4.3.7-management-alpine@sha256:eb338b3fc8f5c251028c0022ac0de3fe1db2d599d1c6a08b45898f756f248881
-          docker tag postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0 credpay-postgres:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
+          docker tag postgres@sha256:665dc7b37ac52a17e298511414c21d23ffa4e6a6ef6225b3e5d59c7afb35e994 credpay-postgres:665dc7b37ac52a17e298511414c21d23ffa4e6a6ef6225b3e5d59c7afb35e994
           docker tag rabbitmq:4.3.7-management-alpine@sha256:eb338b3fc8f5c251028c0022ac0de3fe1db2d599d1c6a08b45898f756f248881 credpay-rabbit:eb338b3fc8f5c251028c0022ac0de3fe1db2d599d1c6a08b45898f756f248881
       - name: Create only the disposable CI cluster
         run: |
@@ -128,7 +128,7 @@ jobs:
           printf '%s' "$CREDPAY_CLUSTER" > ".local/k8s/$CREDPAY_CLUSTER.created"
           .local/bin/kind create cluster --name "$CREDPAY_CLUSTER" --kubeconfig "$PWD/.local/k8s/$CREDPAY_CLUSTER.yaml" --image kindest/node:v1.36.4@sha256:099e049362a1526b2db71494e1947aae99bd16290d7c895f2b7ea312e3cbfaed --wait 180s
           .local/bin/kind load docker-image "credpay-transacoes:$CREDPAY_IMAGE_TAG" "credpay-processamento:$CREDPAY_IMAGE_TAG" --name "$CREDPAY_CLUSTER"
-          .local/bin/kind load docker-image credpay-postgres:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0 credpay-rabbit:eb338b3fc8f5c251028c0022ac0de3fe1db2d599d1c6a08b45898f756f248881 --name "$CREDPAY_CLUSTER"
+          .local/bin/kind load docker-image credpay-postgres:665dc7b37ac52a17e298511414c21d23ffa4e6a6ef6225b3e5d59c7afb35e994 credpay-rabbit:eb338b3fc8f5c251028c0022ac0de3fe1db2d599d1c6a08b45898f756f248881 --name "$CREDPAY_CLUSTER"
       - name: Verify pinned source, alias and runtime image identities
         shell: pwsh
         run: ./infra/k8s/verify-image-cache.ps1 -Cluster $env:CREDPAY_CLUSTER

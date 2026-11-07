@@ -56,7 +56,7 @@ class InfrastructureReportTest(unittest.TestCase):
                 rabbit = next(r for r in result['Reports'] if r['Name'] == 'rabbitmq')
                 self.assertEqual('27.3.4.9', rabbit['Runtime']['erlang'])
                 self.assertEqual('runtime-version-and-vendor-review', rabbit['Coverage']['RabbitMQ'])
-                candidate = next(r for r in result['Reports'] if r['Name'] == 'temurin-ubi9')
+                candidate = next(r for r in result['Reports'] if r['Name'] == 'temurin-ubi10')
                 self.assertEqual('candidate-base-only', candidate['Role'])
                 self.assertFalse(candidate['Runtime']['aptPresent'])
 
@@ -94,7 +94,7 @@ class InfrastructureReportTest(unittest.TestCase):
         self.fixture()
         (self.folder / 'temurin-probes.txt').write_text('CURL=0\nAPT=1\n')
         result = build_inventory(self.folder, 'amd64', self.baseline)
-        candidate = next(r for r in result['Reports'] if r['Name'] == 'temurin-ubi9')
+        candidate = next(r for r in result['Reports'] if r['Name'] == 'temurin-ubi10')
         self.assertFalse(candidate['Runtime']['curlPresent'])
         self.assertTrue(candidate['Runtime']['aptPresent'])
         self.assertEqual('not-approved-for-deployment', result['Disposition'])

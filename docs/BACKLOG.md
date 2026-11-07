@@ -483,7 +483,7 @@ PR235/17581d5 integrou RabbitMQ4.3.7 após16checks verdes: versão efetiva e flu
 
 Restantes obrigatórios, em ordem de dependência:
 
-1. Remediar o HIGHAPT nas imagens por baseline oficial corrigida e novos testes/scans. Avaliar os3MEDIUM do cliente AMQP e ampliar inventário para PostgreSQL/broker; os4alvos atuais não cobrem toda a infraestrutura. Nenhum aceite automático.
+1. Remediar os achados CRITICAL/HIGH do PostgreSQL e o HIGHAPT por baselines oficiais e novos testes/scans. Cliente AMQP corrigido na PR237; inventário do banco/broker integrado na PR238. Nenhum aceite automático ou promoção da candidataUBI9 recusada.
 2. Validar o proxy no runtime escolhido e o backend HTTPS, incluindo cookieSecure, expiração temporal, provisionamento das contas de visitantes, retenção dos dados e limites compartilhados no destino. Preparar proteção da origem e configuração privada; conferir ignore de estado/segredos locais antes de introduzir Wrangler.
 3. Obter acesso às contas e capacidade no plano gratuito, preparar frontend/backend e configuração revisável, conferir teto zero e autorização específica do destino antes de publicar. Contas/capacidade/certificados ainda não estão comprovados; nenhuma URL criada.
 4. Executar o aceite externo desktop/mobile: login/logout, isolamento, criação/consulta, decimal exato, replay e falha/recuperação; métricas, banco e broker permanecem internos.
@@ -494,5 +494,7 @@ Cliente AMQP em implementação (spec§9.167): baseline5.37.0/Netty4.2.18 e12SHA
 Cliente concluído na PR237/9d2cd92:16checks,545/340Java, gate93% do delta e3MEDIUM ausentes dos4alvos/2arquiteturas. Inventário separado da infraestrutura em implementação, incluindo versões observadas/limites de cobertura e avaliação não promovida de TemurinUBI9 para o APT (spec§9.168). Mantém o inventário de apps e seu bloqueio atual; não comprova ainda HTTPS/Workers/retenção.
 
 Primeiro scan infra42405230267 revelou PostgreSQL CRITICAL16/HIGH99 (7CVEsCRITICAL), RabbitMQ/OTP observados4.3.7/27.3.4.19 com HIGH0/CRITICAL0/MEDIUM1 e UBI9 HIGH18/CRITICAL0 nas2arquiteturas. Banco priorizado; UBI9 recusada para promoção. QuatroS8707 de caminho no writer bloqueiam gate inicial;2reds locais provaram escrita fora da área/sobrescrita e correção será revalidada no CI. Nenhum achado suprimido ou aceite de segurança. Detalhes em spec§9.168 e TRIAGE.md.
+
+PR238/dbf718f integrada:5checks/gate94,1% do delta,17Python sem skips no Linux,4S8707 corrigidos e scans finais repetindo os achados. Em implementação: reconstrução oficial PostgreSQL17.11/Bookworm665dc7b3 e avaliação base-only TemurinUBI10/6be4b394 (spec§9.169). Exigir persistência, recuperação e inventários nas2arquiteturas; aplicativos continuamNoble até uma alternativa passar scans/compatibilidade. Sem mudança de volumes locais, deploy ou aceite residual.
 
 Painel Prometheus/Grafana, Jenkins de laboratório e pesquisa de sandbox permanecem evoluções separadas, conforme o recorte já escolhido. Achados e lacunas históricas continuam preservados.

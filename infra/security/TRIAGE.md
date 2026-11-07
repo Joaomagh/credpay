@@ -1,5 +1,13 @@
 # Triagem de dependências e imagens
 
+## Candidata PostgreSQL/Bookworm e base UBI10 — 07/11/2026
+
+PR238/dbf718f integrou o inventário ampliado após5checks e gate94,1% do delta;17testes Python e cenários de symlink executados sem skips no Linux. Os4S8707 do writer foram corrigidos sem classificação manual. O Inventory42406680634 repetiu CRITICAL16/HIGH99 no banco e HIGH18 na candidataUBI9. Achados completos/IDs/hashes em spec§9.168; a integração do controle não é aceite dessas imagens.
+
+Reconstrução oficial PostgreSQL17.11/Bookworm em avaliação: índice665dc7b37ac52a17e298511414c21d23ffa4e6a6ef6225b3e5d59c7afb35e994, metadata05Nov, AMD73bedc9e/ARM9da3effe. Mantém linha, distribuição e diretório de dados, com pins ativos alinhados em testes/Compose/kind. Ainda exige novos scans, suíte completa, persistência e recuperação. SQLite/libxml podem continuar sem fixBookworm; não declarar correção integral ou aceitar resíduos. Nenhum volume local alterado.
+
+UBI9 recusada; avaliação seguinte usa Temurin21.0.13_9-jre-ubi10-minimal, índice6be4b394b6e718bcebce12a579576ea82f9a5bffed0e7bd7445ea1ba416c260a, metadata06Nov, AMD78f8ad06/ARM365beff2. Somente base candidata; aplicativos continuamNoble, HIGHAPT preservado. Scan, Java/curl/APT e compatibilidade precisam de prova antes de promover; nenhuma instalação/remoção própria de pacotes. Baselines e fontes completas em spec§9.169.
+
 ## Inventário ampliado e base alternativa — 07/11/2026
 
 Cliente5.37.0/Netty4.2.18 integrado na PR237/9d2cd92, com16checks e gate93% do delta. Os3MEDIUMJava estão ausentes dos4alvos/2arquiteturas no Inventory42402648097; JARs sem achados nessa varredura. Imagens permanecem HIGH2/MEDIUM27/LOW4 pelo APT e demais pacotes OS. Composição e artefatos em spec§9.167; ausência nesse scan não comprova segurança universal.

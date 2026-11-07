@@ -39,7 +39,7 @@ def read_json(directory, name):
 
 def subjects_from(baseline):
     expected = {'postgres': ('debian', 'infrastructure'), 'rabbitmq': ('alpine', 'infrastructure'),
-                'temurin-ubi9': ('redhat', 'candidate-base-only')}
+                'temurin-ubi10': ('redhat', 'candidate-base-only')}
     subjects = baseline.get('subjects', [])
     require(isinstance(subjects, list) and len(subjects) == len(expected), 'Runtime subjects are incomplete.')
     seen = set()
@@ -130,7 +130,7 @@ def build_inventory(directory, architecture, baseline):
         coverage = {'OS': 'scanner-packages'}
         if name == 'rabbitmq':
             coverage.update(RabbitMQ='runtime-version-and-vendor-review', Erlang='runtime-version-and-vendor-review')
-        elif name == 'temurin-ubi9':
+        elif name == 'temurin-ubi10':
             coverage['Java'] = 'runtime-version-and-vendor-review'
         else:
             coverage['PostgreSQL'] = 'scanner-package-and-runtime-version'
@@ -152,7 +152,7 @@ def write_inventory(directory, output, architecture, baseline):
         lines.append(f'| {report["Name"]} | {count} | ' + ' | '.join(values) + ' |')
         print(f'Runtime inventory: {report["Name"]}, packages={count}, HIGH={report["Counts"]["HIGH"]}, CRITICAL={report["Counts"]["CRITICAL"]}; triage pending.')
     lines.extend(['', 'OS/detected packages are scanned. RabbitMQ, Erlang and JRE also require vendor review at the observed runtime versions.',
-                  'The UBI9 result covers the candidate base only; application compatibility and deployment are not approved.'])
+                  'The UBI10 result covers the candidate base only; application compatibility and deployment are not approved.'])
     reports = {'inventory.json': json.dumps(inventory, ensure_ascii=False, indent=2),
                'summary.md': '\n'.join(lines) + '\n', 'checkout.txt': inventory['Checkout'] + '\n'}
     for name in reports:
