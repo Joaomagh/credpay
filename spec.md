@@ -3557,6 +3557,8 @@ RedHTTPS9.170 comprovado no Images42411491074: AMDjob128520398771 teste1/falha1/
 
 Configuração9.170 teve2reds/3testes em16,500s por aceitar fonte/flags inseguros. Helper valida TLS1.2/1.3/PKCS12 local, cookieJSESSIONID/Secure/HttpOnly/Lax/Pathraiz/semDomain, cookie-only, Forwardednone e managementloopback/separado. NomeCookie divergente teve red1/erro0 em16,158s antes do guard. Revisão da ordem moveu a validação para BeanFactoryPostProcessor estático sem beans de negócio: teste de contexto real inicialmente iniciou/instanciou consumidor com URIremota (red1/erro0 em20,544s); green aborta antes de qualquer consumidor, com erro só do nome do atributo, sem segredo. A mesma validação é reexecutada pela factory de sessão como defesa de consistência. Unidade/configuração final14/0falhas/erros/skips/20,215s e Checkstyle0, compilando todos os testes; nenhumDockerlocal. Aviso preexistente deAPIdescontinuada emTransacaoExceptionHandler permanece visível noCI; não alterado neste recorte. Git avisou LF→CRLF para novas fontes; conteúdo/verificações mantidos.
 
+Green intermediário9.170 no headc23a099: Images42413516874/AMDjob128526510181 passouHTTPS6/9,111s e perfil local6/10,65s, smoke1/58,03s; ARMjob128526509890 passouHTTPS6/9,164s/local6/11,13s/smoke1/62,25s. Zero falhas/erros/skips. Revisão encontrou comparação case-insensitive de configuração aceitando cookiejsessionid, incompatível com o proxy. Red1/falha1/erro0 em16,966s; igualdade exata dos valores canônicos do perfil e14unitários/configuração verdes em20,121s. A última mudança exige reconferir oCI/gate noSHAfinal. Nenhuma lib/regra/severidade alterada ou teste retirado.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

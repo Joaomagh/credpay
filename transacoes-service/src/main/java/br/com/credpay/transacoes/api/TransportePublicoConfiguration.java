@@ -33,7 +33,7 @@ class TransportePublicoConfiguration {
                 Map.entry("server.forward-headers-strategy", "none"),
                 Map.entry("management.server.address", "127.0.0.1"));
         for (var esperado : obrigatorios.entrySet()) {
-            exigirPublico(esperado.getValue().equalsIgnoreCase(ambiente.getProperty(esperado.getKey())), esperado.getKey());
+            exigirPublico(esperado.getValue().equals(ambiente.getProperty(esperado.getKey())), esperado.getKey());
         }
         exigirPublico(ambiente.getProperty("server.servlet.session.cookie.domain") == null,
                 "server.servlet.session.cookie.domain");

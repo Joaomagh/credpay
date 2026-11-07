@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Clock;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,7 +33,7 @@ class SessaoDemoPublicaConfigTest {
 
     @Test
     void deveRecusarTransporteOuCookieInseguroSemExporCredencial() {
-        var invalidos = Map.ofEntries(
+        var invalidos = List.of(
                 Map.entry("server.ssl.enabled", "false"),
                 Map.entry("server.ssl.key-store-type", "JKS"),
                 Map.entry("server.ssl.enabled-protocols", "TLSv1.1"),
@@ -41,12 +42,13 @@ class SessaoDemoPublicaConfigTest {
                 Map.entry("server.servlet.session.cookie.same-site", "none"),
                 Map.entry("server.servlet.session.cookie.path", "/outra"),
                 Map.entry("server.servlet.session.cookie.name", "OUTRA"),
+                Map.entry("server.servlet.session.cookie.name", "jsessionid"),
                 Map.entry("server.servlet.session.tracking-modes", "url"),
                 Map.entry("server.servlet.session.cookie.domain", "example.invalid"),
                 Map.entry("server.forward-headers-strategy", "framework"),
                 Map.entry("management.server.address", "0.0.0.0"),
                 Map.entry("management.server.port", "8080"));
-        for (var caso : invalidos.entrySet()) {
+        for (var caso : invalidos) {
             var ambiente = ambiente().withProperty(caso.getKey(), caso.getValue());
             assertThatThrownBy(() -> configuracao.sessaoPublica(Clock.systemUTC(), ambiente))
                     .as(caso.getKey()).isInstanceOf(IllegalStateException.class)
