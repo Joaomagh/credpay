@@ -3,12 +3,14 @@ server:
   forward-headers-strategy: none
   ssl:
     enabled: true
+    key-store-type: PKCS12
     enabled-protocols: TLSv1.3,TLSv1.2
   servlet:
     session:
       timeout: 15m
       tracking-modes: cookie
       cookie:
+        name: JSESSIONID
         path: /
         secure: true
         http-only: true

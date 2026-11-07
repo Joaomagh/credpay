@@ -24,11 +24,15 @@ final class SessaoDemoPublica {
     private final byte[] origem;
 
     SessaoDemoPublica(Clock relogio, String token) {
+        validarOrigem(token);
+        this.relogio = relogio;
+        this.origem = token.getBytes(StandardCharsets.UTF_8);
+    }
+
+    static void validarOrigem(String token) {
         if (token == null || token.length() < 43 || token.length() > 128 || !token.matches("[A-Za-z0-9_-]+")) {
             throw new IllegalStateException("Configuração pública de origem inválida.");
         }
-        this.relogio = relogio;
-        this.origem = token.getBytes(StandardCharsets.UTF_8);
     }
 
     boolean permitir(HttpServletRequest requisicao, HttpServletResponse resposta) {

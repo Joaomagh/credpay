@@ -25,7 +25,7 @@
 
 ## Agora
 
-- [ ] Preparar perfil public-demo e provar origem/sessão porHTTPS real noCI (spec§9.170). Política9unitários e71edge verdes; filtro ainda não conectado, redHTTPS esperado antes de integrar. Sem deploy ou aceite dos achados do banco.
+- [ ] Concluir CI do perfil public-demo (spec§9.170). RedHTTPS200versus403 provado nos2perfis; filtro conectado,14unitários/configuração e71edge verdes. Validar6cenáriosHTTPS, perfil local e gate antes de integrar. Sem deploy ou aceite do banco.
 
 ## Próximo
 

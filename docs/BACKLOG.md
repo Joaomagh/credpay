@@ -501,4 +501,6 @@ Resultado intermediário PR239: reconstruçãoBookworm reduziuCRITICAL16/HIGH99 
 
 PR239/bfb7715 integrada:16checks/gate95,2%,4alvos de aplicativos sem achados nos2perfis, ausênciaAPT e12testes HTTP de sessão, fluxo/Compose/kind preservados. BancoBookwormC4/H75 e candidatoAlpineC1/H25 continuam bloqueados, sem promoção/waiver. Preparação atual (spec§9.170): perfil public-demo/HTTPS, origemWorkerAPI, prazo absoluto15min e cookie seguro. Política9unitários e71edge verdes; integraçãoHTTPS ainda em fase red, antes de conectar filtro. Sem runtimeWorkers/retencão/provisão externa ou deploy comprovados.
 
+PR240draft: redHTTPS200versus403 comprovado emAMD64/ARM64 antes do filtro;14unitários/configuração e71edge verdes após conexão/guard antecipado de transporte. Green dos6cenáriosHTTPS, suítes e gate pendente. Retenção/provisão de visitantes/runtimeWorkers/limites no destino continuam próximos; banco bloqueado e nenhuma URL publicada. spec§9.170.
+
 Painel Prometheus/Grafana, Jenkins de laboratório e pesquisa de sandbox permanecem evoluções separadas, conforme o recorte já escolhido. Achados e lacunas históricas continuam preservados.
