@@ -126,7 +126,7 @@ jobs:
         run: |
           docker pull postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          docker pull rabbitmq:4.3.5-management-alpine@sha256:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1
+          docker pull rabbitmq:4.3.7-management-alpine@sha256:eb338b3fc8f5c251028c0022ac0de3fe1db2d599d1c6a08b45898f756f248881
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./infra/compose/diagnose.ps1 -Action Run -ImageTag $env:CREDPAY_IMAGE_TAG
           ./infra/compose/diagnose.ps1 -Action Remove

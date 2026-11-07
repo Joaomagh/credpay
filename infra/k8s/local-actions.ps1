@@ -4,7 +4,7 @@
 function Get-CredPayLocalInfraImages {
     return @(
         @{Source='postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0';Alias='credpay-postgres:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0'},
-        @{Source='rabbitmq:4.3.5-management-alpine@sha256:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1';Alias='credpay-rabbit:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1'})
+        @{Source='rabbitmq:4.3.7-management-alpine@sha256:eb338b3fc8f5c251028c0022ac0de3fe1db2d599d1c6a08b45898f756f248881';Alias='credpay-rabbit:eb338b3fc8f5c251028c0022ac0de3fe1db2d599d1c6a08b45898f756f248881'})
 }
 function Get-CredPayLocalImageSet($Runtime, $Owner) {
     $images=@("credpay-transacoes:$($Runtime.Plan.ImageTag)","credpay-processamento:$($Runtime.Plan.ImageTag)")

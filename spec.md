@@ -3487,6 +3487,16 @@ Revisão de query vazia:3reds para API com`?` e origem com`?`/`#` vazios, anteri
 
 Revisão de assets: `//other/main.js` era aceito200 pelo binding controlado e podia alterar a authority construída por new URL; teste red200≠404, mínimo recusa dupla barra antes de chamar assets. O primeiro candidato com hostname pontuado já era recusado pela expressão de extensão e não contou como red. Não houve fetch externo ou exploração demonstrada no runtime Workers. Teste65 acrescentado. npm audit local reportou0 vulnerabilidades.
 
+Fechamento9.165: PR234/02cbeea integrada após7checks verdes no heada836411, árvore testada idêntica e sem reviews/threads pendentes. Frontend42289023753/job128137267913 confirmou50Angular/65edge, cobertura edge100%linhas/99,2%branches e audit0. Compose42289024381/job128137464624 confirmou recuperação causal dos2publicadores e8jornadas reais (6console/2contas), sem falha/skip/erro; diagnósticos Linux/Windows verdes. Sonar42289023700/job128137268256 importou ambos LCOV e passou gate new_coverage99,6%, ratingsA/duplicação0 e ignoredConditions:false. Percentual é do delta. Avisos conhecidos de UTF-8 em referências binárias, confiançaGPG e dicionárioPLSQL continuam preservados; falhas de concorrência/listener esperadas nos testes não alteraram os544/340 Java verdes. Não comprova Workers/HTTPS público.
+
+### 9.166 Patch de segurança do broker na linha4.3
+
+Objetivo/aceite: substituir o pin oficial RabbitMQ4.3.5 por4.3.7 em Compose, kind, cache/aliases e Testcontainers, conservando todos os guards e comprovando versão/arquitetura nativa, quorum/políticas, ACK, persistência, replay e recuperação nos ensaios existentes. Alteração operacional de dependência na mesma linha, sem red artificial de negócio; cenários reais existentes continuam obrigatórios. Não executar Docker local nem tocar volumes do usuário. Risco: mudança do runtime Erlang/Alpine e comportamento do broker; testes/scan do destino não são dispensados, e os ensaios de baseline nova não comprovam upgrade de um volume antigo4.3.5 ou downgrade seguro.
+
+Baseline registrada antes de pull: `rabbitmq:4.3.7-management-alpine@sha256:eb338b3fc8f5c251028c0022ac0de3fe1db2d599d1c6a08b45898f756f248881`, metadataDockerHub06/11/14:53UTC, AMD64de0d0aadd78c3cb9cf94a6acf5651e170dc35d2130a66b3594504fb9e7be3373 e ARM64728e54184d22a4116a9aa4a8ef2061544d96e5f443a02bd7847e95d2e247d712. Avisos vendor/condições e lacunas em infra/security/TRIAGE.md. Não executar PoC, instalar pacote manual ou afirmar inventário do broker a partir dos4alvos de aplicativo. APT permanece bloqueador; nenhuma vulnerabilidade aceita.
+
+Pins/aliases sincronizados em20fontes ativas; referências históricas Markdown preservadas. ImagesE2E passa a exigir rabbitmqctl version=4.3.7 no broker real, em cada arquitetura. Preflight local sem Docker: safety78/lifecycle31/archive16/diagnosticownership33/diagnosticlifecycle11 controles offline verdes. Maven verify offline dos2módulos passou compilação/Checkstyle,29,382s/26,160s, com testes explicitamente skipped; não contar como execução de suíte. Logs próprios em .local/security/rabbit-*-preflight.log. Diff/consistência do pin passaram. CI, versão efetiva e ensaios reais ainda pendentes.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

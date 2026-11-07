@@ -73,7 +73,7 @@ class FluxoCredPayE2E {
     @Container static final PostgreSQLContainer PROCESSAMENTO = new PostgreSQLContainer(POSTGRES_IMAGE)
             .withDatabaseName("credpay_processamento_e2e").withUsername("test").withPassword("test");
     @Container static final RabbitMQContainer RABBIT = new RabbitMQContainer(DockerImageName.parse(
-            "rabbitmq:4.3.5-management-alpine@sha256:b3b8b7f95f5382a19f9ea33540e604f30aad081d37ad9aba72255135765373a1")
+            "rabbitmq:4.3.7-management-alpine@sha256:eb338b3fc8f5c251028c0022ac0de3fe1db2d599d1c6a08b45898f756f248881")
             .asCompatibleSubstituteFor("rabbitmq"))
             .withCopyFileToContainer(MountableFile.forHostPath(RAIZ.resolve("infra/rabbitmq/processamento-policies.json")),
                     "/tmp/processamento-policies.json")
