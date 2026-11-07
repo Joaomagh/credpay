@@ -489,4 +489,6 @@ Restantes obrigatórios, em ordem de dependência:
 4. Executar o aceite externo desktop/mobile: login/logout, isolamento, criação/consulta, decimal exato, replay e falha/recuperação; métricas, banco e broker permanecem internos.
 5. Registrar o candidato final, atualizar apresentação/documentação e obter o aceite da v1. Ensaio pessoal continua adiado a pedido de João; CI não comprova seu domínio do projeto.
 
+Cliente AMQP em implementação (spec§9.167): baseline5.37.0/Netty4.2.18 e12SHA oficiais registrados antes da resolução. Red/green de não expor credenciais fictícias na falha de configuração; verificação dos JARs recusa drift e duas versões do mesmo componente. CI/scans finais pendentes. Inventário do banco/broker e configuração pública continuam próximos, com APT bloqueado.
+
 Painel Prometheus/Grafana, Jenkins de laboratório e pesquisa de sandbox permanecem evoluções separadas, conforme o recorte já escolhido. Achados e lacunas históricas continuam preservados.

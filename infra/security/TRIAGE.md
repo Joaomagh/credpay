@@ -1,5 +1,11 @@
 # Triagem de dependências e imagens
 
+## Cliente AMQP — candidata de correção em07/11/2026
+
+Proposta5.34.0→5.37.0, com Netty4.2.18.Final explícito para preservar a versão pedida no POM do cliente, acima do4.2.17 gerenciado pelo Boot. Metadata/checksums oficiais dos12JARs registrados antes da resolução em java-runtime-baseline.json. Mesmas linhas de componentes e Java21, sem novo framework. O verificador compara nomes/versões/hashes dentro dos dois JARs e recusa ausência, duplicação, downgrade, bytes divergentes ou membros adicionais dessas famílias. Não substitui o inventário completo.
+
+Fontes vendor: [106121/JSONReader](https://github.com/rabbitmq/rabbitmq-java-client/security/advisories/GHSA-cqgh-8p3p-mx4m) informa5.37.0, enquanto o inventário anterior indicava5.36.1; divergência preservada. [106122/shortstr](https://github.com/rabbitmq/rabbitmq-java-client/security/advisories/GHSA-7822-rcf6-97fx) indica5.36.0 e [106123/URI em exceções](https://github.com/rabbitmq/rabbitmq-java-client/security/advisories/GHSA-h6w7-qmcm-q6xr) indica5.35.0. Teste sem rede com credenciais fictícias comprovou exposição na versão antiga e ausência no stack/causas da candidata. Aceite ainda exige suíte, mensageria/recuperação reais e scans nativos dos4alvos, sem ocultar novos achados. HIGHAPT permanece bloqueador independente.
+
 ## Broker RabbitMQ — candidata de correção em06/11/2026
 
 Revisão das [fontes oficiais](https://www.rabbitmq.com/security) encontrou avisos que abrangem o pin4.3.5 atual. [GHSA-9h6g-46wc-m2f5/HIGH](https://github.com/rabbitmq/rabbitmq-server/security/advisories/GHSA-9h6g-46wc-m2f5) descreve consumo de memória por mensagem AMQP incompleta enviada por usuário autenticado; o limite de mensagem só era conferido ao completar o corpo. [GHSA-3wxh-g236-vm46/HIGH](https://github.com/rabbitmq/rabbitmq-server/security/advisories/GHSA-3wxh-g236-vm46) envolve amplificação de logs em falhas LDAP. Management/OAuth, STOMP/OAuth, conversão AMQP e redaction de credenciais têm avisos próprios na mesma lista. Não houve PoC ou ataque ao ambiente; plugins/condições não devem ser presumidos ativos, e rede interna não equivale a correção.
