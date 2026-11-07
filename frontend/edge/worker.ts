@@ -1,5 +1,6 @@
 export interface PublicDemoEnv {
   API_ORIGIN?: string;
+  API_ORIGIN_TOKEN?: string;
   ASSETS: { fetch(request: Request): Promise<Response> };
 }
 
@@ -114,9 +115,10 @@ function apiResponse(upstream: Response, bytes: Uint8Array<ArrayBuffer>): Respon
   return new Response(bytes.length ? bytes.buffer : null, { status: upstream.status, headers: result });
 }
 
-async function proxy(request: Request, origin: string, path: string): Promise<Response> {
+async function proxy(request: Request, origin: string, path: string, originToken: string): Promise<Response> {
   const headers = forwardedHeaders(request.headers);
   if (!headers) return failure(400);
+  headers.set('X-CredPay-Origin', originToken);
   const invalid = payloadError(request, path);
   if (invalid) return failure(invalid);
   const controller = new AbortController();
@@ -167,7 +169,9 @@ export default {
       if ((origin !== null && origin !== url.origin) || (method === 'POST' && origin === null)
           || request.headers.get('Sec-Fetch-Site') === 'cross-site') return failure(403);
       const backend = apiOrigin(env.API_ORIGIN, url.origin);
-      return backend ? proxy(request, backend, url.pathname) : failure(503);
+      const token = env.API_ORIGIN_TOKEN;
+      return backend && typeof token === 'string' && /^[a-z0-9_-]{43,128}$/i.test(token)
+        ? proxy(request, backend, url.pathname, token) : failure(503);
     }
     return assetResponse(request, env, url);
   }

@@ -5,10 +5,12 @@ import java.util.UUID;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.web.servlet.DelegatingFilterProxyRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.ProviderManager;
@@ -34,6 +36,13 @@ class SessaoDemoConfiguration {
     private static final String LOGIN = "/auth/login";
 
     @Bean
+    @Profile("public-demo")
+    SessaoDemoPublica sessaoPublica(Clock relogio, Environment ambiente) {
+        TransportePublicoConfiguration.validar(ambiente);
+        return new SessaoDemoPublica(relogio, ambiente.getProperty("CREDPAY_ORIGIN_TOKEN"));
+    }
+
+    @Bean
     PasswordEncoder senhaEncoder() {
         return new Pbkdf2PasswordEncoder("", 16, 600_000, SecretKeyFactoryAlgorithm.PBKDF2WithHmacSHA256);
     }
@@ -46,7 +55,8 @@ class SessaoDemoConfiguration {
     }
 
     @Bean
-    SecurityFilterChain filtrosDaSessao(HttpSecurity http, JdbcTemplate jdbc, PasswordEncoder encoder, Clock relogio) {
+    SecurityFilterChain filtrosDaSessao(HttpSecurity http, JdbcTemplate jdbc, PasswordEncoder encoder, Clock relogio,
+            ObjectProvider<SessaoDemoPublica> politicaPublica) {
         var autenticador = new DaoAuthenticationProvider(usuario -> jdbc.query("""
                 SELECT id, usuario, senha_hash FROM contas WHERE usuario = ?
                 """, (rs, linha) -> new ContaDemoPrincipal(rs.getObject("id", UUID.class),
@@ -56,6 +66,7 @@ class SessaoDemoConfiguration {
 
         var login = PathPatternRequestMatcher.pathPattern(HttpMethod.POST, LOGIN);
         var limites = new LimitesDemo(relogio);
+        var publica = politicaPublica.getIfAvailable();
         http.authenticationManager(new ProviderManager(autenticador))
                 .requestCache(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(acesso -> acesso
@@ -67,11 +78,24 @@ class SessaoDemoConfiguration {
                         (req, resp, erro) -> resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED)))
                 .formLogin(form -> form.loginPage(LOGIN).loginProcessingUrl(LOGIN)
                         .usernameParameter("usuario").passwordParameter("senha")
-                        .successHandler((req, resp, conta) -> resp.setStatus(HttpServletResponse.SC_NO_CONTENT))
+                        .successHandler((req, resp, conta) -> {
+                            if (publica != null) { publica.registrarLogin(req); }
+                            resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
+                        })
                         .failureHandler((req, resp, erro) -> resp.setStatus(HttpServletResponse.SC_UNAUTHORIZED)))
-                .logout(saida -> saida.logoutUrl("/auth/logout").deleteCookies("JSESSIONID")
-                        .logoutSuccessHandler((req, resp, conta) -> resp.setStatus(HttpServletResponse.SC_NO_CONTENT)))
-                .addFilterBefore(limites::antesDeCsrf, CsrfFilter.class)
+                .logout(saida -> {
+                    saida.logoutUrl("/auth/logout");
+                    if (publica == null) { saida.deleteCookies("JSESSIONID"); }
+                    saida.logoutSuccessHandler((req, resp, conta) -> {
+                        if (publica != null) { publica.limparCookie(resp); }
+                        resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
+                    });
+                })
+                .addFilterBefore((req, resp, chain) -> {
+                    if (publica == null || publica.permitir((HttpServletRequest) req, (HttpServletResponse) resp)) {
+                        limites.antesDeCsrf(req, resp, chain);
+                    }
+                }, CsrfFilter.class)
                 .addFilterAfter(limites::depoisDaAutorizacao, AuthorizationFilter.class)
                 .addFilterBefore((req, resp, chain) -> {
                     var requisicao = (HttpServletRequest) req;

@@ -21,17 +21,18 @@
 - PR235: RabbitMQ4.3.7 integrado em17581d5 após16checks; versão real/fluxo/sessão em ARM64/AMD64, persistência/recuperação e8jornadas verdes; spec§9.166.
 - PR237: cliente5.37.0/Netty4.2.18,16checks/gate93% do delta;3MEDIUM ausentes dos4alvos, merge9d2cd92; spec§9.167.
 - PR238: inventário banco/broker e guard de caminhos,5checks/gate94,1% do delta; merge dbf718f. Achados preservados; UBI9 recusada, spec§9.168.
+- PR239: APT removido com UBI10,16checks/gate95,2% do delta; merge bfb7715. JARs/imagens sem achados nos2perfis; banco continua bloqueado, spec§9.169.
 
 ## Agora
 
-- [ ] Validar apps emUBI10 para removerAPT, Bookworm reconstruído e scan separado do candidatoPostgreSQLAlpine (spec§9.169). Bookworm aindaCRITICAL4/HIGH75. Exigir scans completos/persistência/recuperação; sem alterar volumes locais ou aceitar resíduos.
+- [ ] Concluir CI do perfil public-demo (spec§9.170). RedHTTPS200versus403 provado nos2perfis; filtro conectado,14unitários/configuração e71edge verdes. Validar6cenáriosHTTPS, perfil local e gate antes de integrar. Sem deploy ou aceite do banco.
 
 ## Próximo
 
 - S11 e S12-S14 confirmados CLOSED/FIXED em main. Preservar recuperação causal e achados contextuais.
 - Revisar ocorrências contextuais por ID, mantendo achados da pesquisa e referências históricas preservados.
 - Preparar publicação gratuita com HTTPS, retenção e limites validados. Contas Cloudflare/Oracle ainda dependem de João; nenhum deploy.
-- Buscar/revalidar imagem oficial com APT corrigido antes de publicar; não aceitar HIGH implicitamente.
+- PostgreSQLBookworm continuaCRITICAL4/HIGH75; candidatoAlpine CRITICAL1/HIGH25. Investigar cobertura/origem dos achados e corrigir antes de publicar, sem supressão ou aceite residual.
 - Após inventário/triagem, validar proxy no runtime Workers e perfil HTTPS/sessões/retenção com dados fictícios, antes do aceite externo.
 
 ## Depois
