@@ -1,0 +1,19 @@
+{
+  "reviewedOn": "2026-11-07",
+  "source": "https://repo.maven.apache.org/maven2/",
+  "rationale": "RabbitMQ client security fixes; Netty aligned with the client published POM, without downgrading to Boot's older managed patch.",
+  "artifacts": [
+    {"group":"com.rabbitmq","artifact":"amqp-client","version":"5.37.0","sha256":"b27134820890c5e56ed57d27cc50b70742fa2c31b36a6e9e28e14a43f34ff96f"},
+    {"group":"io.netty","artifact":"netty-transport","version":"4.2.18.Final","sha256":"eac4f12068db4489e60c6520fad663e5d872f0436a7c641aa9e08db649947863"},
+    {"group":"io.netty","artifact":"netty-common","version":"4.2.18.Final","sha256":"5d97cae5669685872339698efe13f74fe3cdb2dccdb36963b2352bd95acf7070"},
+    {"group":"io.netty","artifact":"netty-buffer","version":"4.2.18.Final","sha256":"fdf236d2b76aa9710684401fdad7dff9dec56e43da5d39172c9a55ba5f14b360"},
+    {"group":"io.netty","artifact":"netty-resolver","version":"4.2.18.Final","sha256":"68373ec544cf769ba17bf2ef455166d98f2c260dff536edf35ef57067a9c155f"},
+    {"group":"io.netty","artifact":"netty-codec","version":"4.2.18.Final","sha256":"439645eb5061f8f50fbf27afacce394e4cecc4d373e1f7a384837e4661d5f430"},
+    {"group":"io.netty","artifact":"netty-codec-base","version":"4.2.18.Final","sha256":"7e4612bead7ba88ac6f7908fa722f90ad6835ea96505c9e40b2f93686c1f61f3"},
+    {"group":"io.netty","artifact":"netty-codec-compression","version":"4.2.18.Final","sha256":"9d8a4b9a6a2a166ec5a4bbe51a78b4f6a726457c51d81495743c7e7ccb9f4765"},
+    {"group":"io.netty","artifact":"netty-codec-protobuf","version":"4.2.18.Final","sha256":"1bcaedd0da94f8579477f0848e910c24aced8b1ed7c3e1bff16d56fd0229b516"},
+    {"group":"io.netty","artifact":"netty-codec-marshalling","version":"4.2.18.Final","sha256":"eccf83cbbd1319db879424c4559d465dc43251fe1a8ff759c4320b5adbcf26b7"},
+    {"group":"io.netty","artifact":"netty-handler","version":"4.2.18.Final","sha256":"6d5a08d9dd6d7d0211202e22dbb1629b23a62550335c7e80892da1d4cb115540"},
+    {"group":"io.netty","artifact":"netty-transport-native-unix-common","version":"4.2.18.Final","sha256":"cada7023d09136af128511ca94421d69dc84d0f1f64c9e1f127a1271bb62932a"}
+  ]
+}

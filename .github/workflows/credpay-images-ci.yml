@@ -8,6 +8,9 @@ on:
       - "processamento-service/**"
       - "infra/images/**"
       - "infra/rabbitmq/**"
+      - "infra/security/java-runtime-baseline.json"
+      - "infra/security/verify_java_runtime.py"
+      - "infra/security/test_java_runtime.py"
       - ".github/workflows/credpay-images-ci.yml"
   push:
     branches:
@@ -17,6 +20,9 @@ on:
       - "processamento-service/**"
       - "infra/images/**"
       - "infra/rabbitmq/**"
+      - "infra/security/java-runtime-baseline.json"
+      - "infra/security/verify_java_runtime.py"
+      - "infra/security/test_java_runtime.py"
       - ".github/workflows/credpay-images-ci.yml"
 
 permissions:
@@ -93,6 +99,8 @@ jobs:
       - name: Package processing application
         working-directory: processamento-service
         run: ./mvnw --batch-mode --no-transfer-progress -DskipTests package
+      - name: Verify reviewed client and transport artifacts
+        run: python3 -I -B infra/security/verify_java_runtime.py
       - name: Build transaction image locally
         run: docker build --tag "credpay-transacoes:$CREDPAY_IMAGE_TAG" transacoes-service
       - name: Build processing image locally

@@ -22,7 +22,7 @@
 
 ## Agora
 
-- [ ] Ampliar inventário para banco/broker e avaliar cliente AMQP5.37.0 frente aos3MEDIUM; preservar bloqueioAPT e baseline antes da resolução.
+- [ ] Corrigir cliente AMQP com baseline5.37.0/Netty4.2.18, teste de credenciais e comparação dos pacotes/scans; spec§9.167. APT segue bloqueado.
 
 ## Próximo
 
