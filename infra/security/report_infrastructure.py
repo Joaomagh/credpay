@@ -39,7 +39,8 @@ def read_json(directory, name):
 
 def subjects_from(baseline):
     expected = {'postgres': ('debian', 'infrastructure'), 'rabbitmq': ('alpine', 'infrastructure'),
-                'temurin-ubi10': ('redhat', 'candidate-base-only')}
+                'temurin-ubi10': ('redhat', 'candidate-base-only'),
+                'postgres-alpine': ('alpine', 'candidate-server-only')}
     subjects = baseline.get('subjects', [])
     require(isinstance(subjects, list) and len(subjects) == len(expected), 'Runtime subjects are incomplete.')
     seen = set()
@@ -56,8 +57,8 @@ def subjects_from(baseline):
 
 def observed_runtime(directory, subject):
     name, version = subject['name'], subject['version']
-    if name == 'postgres':
-        text = read_text(directory, 'postgres-runtime.txt')
+    if name in ('postgres', 'postgres-alpine'):
+        text = read_text(directory, name + '-runtime.txt')
         require(bool(re.match(rf'^postgres \(PostgreSQL\) {re.escape(version)}(?:\s|$)', text)), 'PostgreSQL runtime version differs.')
         return {'postgres': version}
     if name == 'rabbitmq':
@@ -81,7 +82,9 @@ def project_results(results):
         packages = []
         for package in result.get('Packages') or []:
             require(bool(package.get('Name')) and bool(package.get('Version')), 'Package identity or version is missing.')
-            packages.append({'Name': package['Name'], 'Version': package['Version']})
+            identity = {'Name': package['Name'], 'Version': package['Version']}
+            identity.update({field: package[field] for field in ('Release', 'Epoch') if field in package})
+            packages.append(identity)
         findings = []
         for finding in result.get('Vulnerabilities') or []:
             require(all(finding.get(key) for key in ('VulnerabilityID', 'PkgName', 'InstalledVersion'))
@@ -132,6 +135,8 @@ def build_inventory(directory, architecture, baseline):
             coverage.update(RabbitMQ='runtime-version-and-vendor-review', Erlang='runtime-version-and-vendor-review')
         elif name == 'temurin-ubi10':
             coverage['Java'] = 'runtime-version-and-vendor-review'
+        elif name == 'postgres-alpine':
+            coverage['PostgreSQL'] = 'runtime-version-and-vendor-review'
         else:
             coverage['PostgreSQL'] = 'scanner-package-and-runtime-version'
         reports.append(dict(Name=name, Role=subject['role'], Reference=subject['reference'],
@@ -152,7 +157,8 @@ def write_inventory(directory, output, architecture, baseline):
         lines.append(f'| {report["Name"]} | {count} | ' + ' | '.join(values) + ' |')
         print(f'Runtime inventory: {report["Name"]}, packages={count}, HIGH={report["Counts"]["HIGH"]}, CRITICAL={report["Counts"]["CRITICAL"]}; triage pending.')
     lines.extend(['', 'OS/detected packages are scanned. RabbitMQ, Erlang and JRE also require vendor review at the observed runtime versions.',
-                  'The UBI10 result covers the candidate base only; application compatibility and deployment are not approved.'])
+                  'The UBI10 result covers the candidate base only; application compatibility and deployment are not approved.',
+                  'The Alpine PostgreSQL is a compiled-server candidate, not an OS PostgreSQL package scan; data portability and deployment are not approved.'])
     reports = {'inventory.json': json.dumps(inventory, ensure_ascii=False, indent=2),
                'summary.md': '\n'.join(lines) + '\n', 'checkout.txt': inventory['Checkout'] + '\n'}
     for name in reports:

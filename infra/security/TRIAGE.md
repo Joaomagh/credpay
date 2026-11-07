@@ -2,6 +2,8 @@
 
 ## Candidata PostgreSQL/Bookworm e base UBI10 — 07/11/2026
 
+Resultado intermediário Inventory42408022831: Bookworm reconstruídoCRITICAL4/HIGH75 (antes16/99), UBI10base HIGH0/CRITICAL0/154pacotes, Java21.0.13/curl presente/APT ausente nas2arquiteturas. Os4críticos restantes: CVE-2025-7458/sqlite, CVE-2026-6653/libxml, CVE-2023-45853/zlib e CVE-2025-68121/Go1.24.6. Redução não é correção integral nem aceite. Apps passam à candidataUBI10 e exigem novos scans/fluxo/sessões/persistência antes de integrar. O inventário inclui agora uma candidata PostgreSQL17.11Alpine separada (digest3540c036), sem trocar banco ativo ou reutilizar volumesglibc no musl; portabilidade/restauração devem ser demonstradas antes de adoção. Baseline completa, hashes e TDD em spec§9.169. Os resultados anteriores abaixo são cortes históricos dessa avaliação.
+
 PR238/dbf718f integrou o inventário ampliado após5checks e gate94,1% do delta;17testes Python e cenários de symlink executados sem skips no Linux. Os4S8707 do writer foram corrigidos sem classificação manual. O Inventory42406680634 repetiu CRITICAL16/HIGH99 no banco e HIGH18 na candidataUBI9. Achados completos/IDs/hashes em spec§9.168; a integração do controle não é aceite dessas imagens.
 
 Reconstrução oficial PostgreSQL17.11/Bookworm em avaliação: índice665dc7b37ac52a17e298511414c21d23ffa4e6a6ef6225b3e5d59c7afb35e994, metadata05Nov, AMD73bedc9e/ARM9da3effe. Mantém linha, distribuição e diretório de dados, com pins ativos alinhados em testes/Compose/kind. Ainda exige novos scans, suíte completa, persistência e recuperação. SQLite/libxml podem continuar sem fixBookworm; não declarar correção integral ou aceitar resíduos. Nenhum volume local alterado.

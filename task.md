@@ -24,7 +24,7 @@
 
 ## Agora
 
-- [ ] Validar reconstrução oficial PostgreSQL17.11/Bookworm e base candidataUBI10 (spec§9.169), com novos scans/persistência/recuperação. Nenhuma alteração de volumes locais ou aceite de resíduos.
+- [ ] Validar apps emUBI10 para removerAPT, Bookworm reconstruído e scan separado do candidatoPostgreSQLAlpine (spec§9.169). Bookworm aindaCRITICAL4/HIGH75. Exigir scans completos/persistência/recuperação; sem alterar volumes locais ou aceitar resíduos.
 
 ## Próximo
 

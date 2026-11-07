@@ -497,4 +497,6 @@ Primeiro scan infra42405230267 revelou PostgreSQL CRITICAL16/HIGH99 (7CVEsCRITIC
 
 PR238/dbf718f integrada:5checks/gate94,1% do delta,17Python sem skips no Linux,4S8707 corrigidos e scans finais repetindo os achados. Em implementação: reconstrução oficial PostgreSQL17.11/Bookworm665dc7b3 e avaliação base-only TemurinUBI10/6be4b394 (spec§9.169). Exigir persistência, recuperação e inventários nas2arquiteturas; aplicativos continuamNoble até uma alternativa passar scans/compatibilidade. Sem mudança de volumes locais, deploy ou aceite residual.
 
+Resultado intermediário PR239: reconstruçãoBookworm reduziuCRITICAL16/HIGH99 para4/75; UBI10base teve0/0, curl disponível/APT ausente nos2perfis. Incremento agora prova os aplicativos completos emUBI10 e avalia PostgreSQLAlpine separadamente, sem trocar seus volumes. Guard OS e preservação de releaseRPM reforçados por red/green. CI final/scans/portabilidade ainda pendentes; não liberar publicação ou apagar os4críticos do banco do inventário. spec§9.169.
+
 Painel Prometheus/Grafana, Jenkins de laboratório e pesquisa de sandbox permanecem evoluções separadas, conforme o recorte já escolhido. Achados e lacunas históricas continuam preservados.
