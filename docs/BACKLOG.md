@@ -476,3 +476,17 @@ Fechamento: PR232/e668a8b integrada após5 checks e gate100% do delta. Inventár
 Contrato de sessão concluído na PR233/c29af39:6testes por arquitetura, fluxo em imagens preservado e5checks/gate OK. Preparação atual: proxy da origem pública com testes de rota/origem/cabeçalhos/bytes/limites, sem publicação; CI e revisão pendentes, spec§9.165. Runtime Workers, HTTPS real, expiração temporal, retenção e orçamento compartilhado seguem como aceites do destino. HIGHAPT permanece bloqueador.
 
 Proxy preparado/integrado na PR234/02cbeea:65testes,8jornadas reais,7checks/gate99,6% do delta; não executa Workers ou publica URL. Próximo incremento: patch oficial do broker4.3.5→4.3.7, com baseline/avisos em [TRIAGE](../infra/security/TRIAGE.md) e spec§9.166. HIGHs do broker exigem correção/revisão própria; inventário dos4alvos de app não os cobre. APT e os aceites externos permanecem abertos.
+
+### Estado consolidado para concluir a entrega — 07/11/2026
+
+PR235/17581d5 integrou RabbitMQ4.3.7 após16checks verdes: versão efetiva e fluxo/sessão em ARM64/AMD64, persistência/recuperação em Kubernetes/Compose e8jornadas reais. Núcleo de transações, contas/login, autorização por dono e console possuem evidência de funcionamento. O proxy está preparado/testado em Node, sem execução no Workers ou URL pública.
+
+Restantes obrigatórios, em ordem de dependência:
+
+1. Remediar o HIGHAPT nas imagens por baseline oficial corrigida e novos testes/scans. Avaliar os3MEDIUM do cliente AMQP e ampliar inventário para PostgreSQL/broker; os4alvos atuais não cobrem toda a infraestrutura. Nenhum aceite automático.
+2. Validar o proxy no runtime escolhido e o backend HTTPS, incluindo cookieSecure, expiração temporal, provisionamento das contas de visitantes, retenção dos dados e limites compartilhados no destino. Preparar proteção da origem e configuração privada; conferir ignore de estado/segredos locais antes de introduzir Wrangler.
+3. Obter acesso às contas e capacidade no plano gratuito, preparar frontend/backend e configuração revisável, conferir teto zero e autorização específica do destino antes de publicar. Contas/capacidade/certificados ainda não estão comprovados; nenhuma URL criada.
+4. Executar o aceite externo desktop/mobile: login/logout, isolamento, criação/consulta, decimal exato, replay e falha/recuperação; métricas, banco e broker permanecem internos.
+5. Registrar o candidato final, atualizar apresentação/documentação e obter o aceite da v1. Ensaio pessoal continua adiado a pedido de João; CI não comprova seu domínio do projeto.
+
+Painel Prometheus/Grafana, Jenkins de laboratório e pesquisa de sandbox permanecem evoluções separadas, conforme o recorte já escolhido. Achados e lacunas históricas continuam preservados.

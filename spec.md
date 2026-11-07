@@ -3497,6 +3497,8 @@ Baseline registrada antes de pull: `rabbitmq:4.3.7-management-alpine@sha256:eb33
 
 Pins/aliases sincronizados em20fontes ativas; referências históricas Markdown preservadas. ImagesE2E passa a exigir rabbitmqctl version=4.3.7 no broker real, em cada arquitetura. Preflight local sem Docker: safety78/lifecycle31/archive16/diagnosticownership33/diagnosticlifecycle11 controles offline verdes. Maven verify offline dos2módulos passou compilação/Checkstyle,29,382s/26,160s, com testes explicitamente skipped; não contar como execução de suíte. Logs próprios em .local/security/rabbit-*-preflight.log. Diff/consistência do pin passaram. CI, versão efetiva e ensaios reais ainda pendentes.
 
+Fechamento9.166: PR235 integrada em17581d5512adb46581f6fd89d84659f281856c76 após16checks verdes no head8d4f3c7, árvore de merge idêntica e sem reviews/threads pendentes. Images42291644843 confirmou broker=4.3.7 em AMDjob128146301935 e ARMjob128146302191; fluxo1/69,88s e1/59,46s, sessão6/13,10s e6/11,12s, sem falha/erro/skip. Kubernetes42291644896/job128146511774 preservou PVCs/PVs/exchanges após recriação e concluiu recuperação causal; Compose42291644892/job128146447244 preservou3volumes e confirmou2publicadores/8jornadas reais. Sonar42291644923/job128146301904 passou544/340Java e gate. Inventory42291644909 manteve HIGHAPT2porimagem e3MEDIUMporJAR nas2arquiteturas; não inclui a imagem do broker. Versão corrigida do broker não declara a pilha sem vulnerabilidades ou autoriza publicação.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

@@ -18,10 +18,11 @@
 - PR232: inventários nativos e controlador medido,5 checks/gate100% do delta, mergee668a8b. HIGHAPT bloqueia publicação; spec§9.163.
 - PR233:6 testes HTTP de sessão e fluxo em imagens verdes em ARM64/AMD64,5 checks/gate OK, mergec29af39; spec§9.164.
 - PR234: proxy preparado,65testes/8jornadas reais,7checks/gate99,6% do delta, merge02cbeea; sem deploy, spec§9.165.
+- PR235: RabbitMQ4.3.7 integrado em17581d5 após16checks; versão real/fluxo/sessão em ARM64/AMD64, persistência/recuperação e8jornadas verdes; spec§9.166.
 
 ## Agora
 
-- [ ] Atualizar broker4.3.5→4.3.7 por pin oficial e conferir ensaios/versão nas duas arquiteturas; spec§9.166.
+- [ ] Ampliar inventário para banco/broker e avaliar cliente AMQP5.37.0 frente aos3MEDIUM; preservar bloqueioAPT e baseline antes da resolução.
 
 ## Próximo
 
