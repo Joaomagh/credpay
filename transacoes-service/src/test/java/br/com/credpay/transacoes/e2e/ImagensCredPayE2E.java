@@ -33,7 +33,7 @@ import org.testcontainers.utility.MountableFile;
 
 class ImagensCredPayE2E {
 
-    private static final String POSTGRES_IMAGE = "postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0";
+    private static final String POSTGRES_IMAGE = "postgres@sha256:665dc7b37ac52a17e298511414c21d23ffa4e6a6ef6225b3e5d59c7afb35e994";
     private static final String RABBIT_IMAGE = "rabbitmq:4.3.7-management-alpine@sha256:eb338b3fc8f5c251028c0022ac0de3fe1db2d599d1c6a08b45898f756f248881";
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
@@ -151,13 +151,15 @@ class ImagensCredPayE2E {
         assertThat(info.getConfig().getUser()).as("usuário configurado: " + servico).isEqualTo("10001:10001");
         assertThat(info.getMounts()).as("nenhum mount no aplicativo: " + servico).isEmpty();
         assertThat(info.getHostConfig().getPrivileged()).as("sem modo privilegiado: " + servico).isFalse();
-        var pacotes = aplicativo.execInContainer("dpkg-query", "-W", "-f=${Package}=${Version}\\n",
-                "libssl3t64", "openssl", "curl", "libcurl4t64", "zlib1g");
+        var pacotes = aplicativo.execInContainer("rpm", "-q", "--qf", "%{NAME}=%{VERSION}\\n",
+                "openssl-libs", "openssl", "curl", "libcurl-minimal", "zlib-ng-compat");
         assertThat(pacotes.getExitCode()).as("consulta de pacotes da imagem: " + servico).isZero();
         var versoes = pacotes.getStdout().lines().toList();
         assertThat(versoes).as("baseline de pacotes corrigidos: " + servico)
-                .containsExactlyInAnyOrder("libssl3t64=3.0.13-0ubuntu3.16", "openssl=3.0.13-0ubuntu3.16",
-                        "curl=8.5.0-2ubuntu10.16", "libcurl4t64=8.5.0-2ubuntu10.16", "zlib1g=1:1.3.dfsg-3.1ubuntu2.3");
+                .containsExactlyInAnyOrder("openssl-libs=3.5.8", "openssl=3.5.8",
+                        "curl=8.12.1", "libcurl-minimal=8.12.1", "zlib-ng-compat=2.2.3");
+        var semApt = aplicativo.execInContainer("sh", "-c", "! command -v apt && ! command -v apt-get");
+        assertThat(semApt.getExitCode()).as("APT ausente na imagem UBI10: " + servico).isZero();
         System.out.println("ImagensCredPayE2E: " + servico + " pacotes=" + String.join(", ", versoes));
         System.out.println("ImagensCredPayE2E: " + servico + " uid=10001, mounts=0, privileged=false, health=UP");
     }

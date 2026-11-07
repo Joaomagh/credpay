@@ -24,8 +24,8 @@ function Reset-Fixture([string]$Architecture = 'amd64') {
             ); Vulnerabilities=@(@{VulnerabilityID='CVE-2099-0001'; PkgName='synthetic-package';
                 InstalledVersion='1.0'; FixedVersion='1.1'; Severity='HIGH'})}
             $results = @($java)
-            if ($kind -eq 'image') { $results += @{Class='os-pkgs'; Type='ubuntu'; Packages=@(@{Name='synthetic-os'; Version='1.0'})} }
-            Save-Json "$module-$kind.json" @{SchemaVersion=2; Metadata=@{ImageID=$imageId; OS=@{Family='ubuntu'}; ImageConfig=@{os='linux'; architecture=$Architecture; Env=@('SYNTHETIC_ENV_MUST_NOT_BE_PUBLISHED')}}; Results=$results}
+            if ($kind -eq 'image') { $results += @{Class='os-pkgs'; Type='redhat'; Packages=@(@{Name='synthetic-os'; Version='1.0'; Release='fixture-security.2'; Epoch=0})} }
+            Save-Json "$module-$kind.json" @{SchemaVersion=2; Metadata=@{ImageID=$imageId; OS=@{Family='redhat'}; ImageConfig=@{os='linux'; architecture=$Architecture; Env=@('SYNTHETIC_ENV_MUST_NOT_BE_PUBLISHED')}}; Results=$results}
         }
     }
     [IO.File]::WriteAllLines((Join-Path $directory 'jars.sha256'), $hashes, $utf8)
@@ -49,6 +49,8 @@ if ($inventory.Reports.Count -ne 4 -or $inventory.Scanner.Version -ne '0.75.0' -
     @($inventory.Reports | Where-Object { $_.Counts.HIGH -ne 1 }).Count -ne 0 -or
     $published.Contains('SYNTHETIC_ENV_MUST_NOT_BE_PUBLISHED')) { throw 'Inventário válido perdeu contagens/metadados ou publicou ambiente.' }
 Write-Host 'PASS: quatro alvos válidos, metadados/contagens preservados e ambiente excluído.'
+$rpm = ($inventory.Reports | Where-Object Name -eq 'transacoes-image').Results.Packages | Where-Object Name -eq 'synthetic-os'
+if ($rpm.Release -cne 'fixture-security.2' -or $rpm.Epoch -cne 0) { throw 'RPM release/epoch were lost from the inventory.' }
 Reject 'empty-java' { Save-Json 'transacoes-jar.json' @{SchemaVersion=2; Results=@()} } 'Relatório vazio/inválido'
 Reject 'missing-library' {
     $report = Get-Content (Join-Path $directory 'processamento-jar.json') -Raw | ConvertFrom-Json -AsHashtable
@@ -58,6 +60,16 @@ Reject 'missing-library' {
 Reject 'missing-os' {
     $report = Get-Content (Join-Path $directory 'transacoes-image.json') -Raw | ConvertFrom-Json -AsHashtable
     $report.Results = @($report.Results | Where-Object { $_.Class -ne 'os-pkgs' })
+    Save-Json 'transacoes-image.json' $report
+} 'Cobertura OS ausente'
+Reject 'mismatched-os-type' {
+    $report = Get-Content (Join-Path $directory 'transacoes-image.json') -Raw | ConvertFrom-Json -AsHashtable
+    ($report.Results | Where-Object { $_.Class -ceq 'os-pkgs' }).Type = 'unreviewed'
+    Save-Json 'transacoes-image.json' $report
+} 'Cobertura OS ausente'
+Reject 'unreviewed-os-family' {
+    $report = Get-Content (Join-Path $directory 'transacoes-image.json') -Raw | ConvertFrom-Json -AsHashtable
+    $report.Metadata.OS.Family = 'ubuntu'
     Save-Json 'transacoes-image.json' $report
 } 'Cobertura OS ausente'
 Reject 'missing-db' { Save-Json 'scanner.json' @{Version='0.75.0'; VulnerabilityDB=@{}} } 'Base/metadados ausentes'
@@ -87,4 +99,4 @@ Reject 'arm-scan-with-amd-metadata' {
     $report.Metadata.ImageConfig.architecture='amd64'
     Save-Json 'transacoes-image.json' $report
 } 'Relatório de outra imagem/arquitetura' 'arm64' 'arm64'
-Write-Host '13 controles passaram; fixtures sintéticas não são resultado de scan real.'
+Write-Host '15 controles passaram; fixtures sintéticas não são resultado de scan real.'

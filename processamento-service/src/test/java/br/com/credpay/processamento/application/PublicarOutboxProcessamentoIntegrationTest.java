@@ -65,7 +65,7 @@ class PublicarOutboxProcessamentoIntegrationTest {
 
     private static final class PostgresDaFixture extends PostgreSQLContainer {
         private PostgresDaFixture() {
-            super("postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0");
+            super("postgres@sha256:665dc7b37ac52a17e298511414c21d23ffa4e6a6ef6225b3e5d59c7afb35e994");
         }
 
         @Override

@@ -1,8 +1,9 @@
 {
   "reviewedOn": "2026-11-07",
   "subjects": [
-    {"name":"postgres","reference":"postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0","osFamily":"debian","version":"17.11","role":"infrastructure"},
+    {"name":"postgres","reference":"postgres@sha256:665dc7b37ac52a17e298511414c21d23ffa4e6a6ef6225b3e5d59c7afb35e994","osFamily":"debian","version":"17.11","role":"infrastructure"},
     {"name":"rabbitmq","reference":"rabbitmq:4.3.7-management-alpine@sha256:eb338b3fc8f5c251028c0022ac0de3fe1db2d599d1c6a08b45898f756f248881","osFamily":"alpine","version":"4.3.7","role":"infrastructure"},
-    {"name":"temurin-ubi9","reference":"eclipse-temurin:21.0.13_9-jre-ubi9-minimal@sha256:dfbc27ed32356db3df8bd34d8f9a9f6b296d2faf9f48f7a817d051f3f1850d5a","osFamily":"redhat","version":"21.0.13","role":"candidate-base-only"}
+    {"name":"temurin-ubi10","reference":"eclipse-temurin:21.0.13_9-jre-ubi10-minimal@sha256:6be4b394b6e718bcebce12a579576ea82f9a5bffed0e7bd7445ea1ba416c260a","osFamily":"redhat","version":"21.0.13","role":"candidate-base-only"},
+    {"name":"postgres-alpine","reference":"postgres:17.11-alpine3.24@sha256:3540c0362c809df084ffac0ae69fe794515f9de92692f02178bcdce0ef0302ac","osFamily":"alpine","version":"17.11","role":"candidate-server-only"}
   ]
 }
