@@ -39,6 +39,7 @@ class InfrastructureReportTest(unittest.TestCase):
                     'Vulnerabilities': [{'VulnerabilityID': 'CVE-2099-9999', 'PkgName': packages[0]['Name'],
                         'InstalledVersion': packages[0]['Version'], 'Severity': 'HIGH', 'FixedVersion': 'synthetic-fixed'}]}]})
         (self.folder / 'postgres-runtime.txt').write_text('postgres (PostgreSQL) 17.11 (Debian fixture)\n')
+        (self.folder / 'postgres-alpine-runtime.txt').write_text('postgres (PostgreSQL) 17.11 (Alpine fixture)\n')
         (self.folder / 'rabbitmq-runtime.txt').write_text('4.3.7\n')
         (self.folder / 'erlang-runtime.txt').write_text('27.3.4.9\n')
         (self.folder / 'temurin-java.txt').write_text('openjdk version "21.0.13" fixture\n')
@@ -50,15 +51,24 @@ class InfrastructureReportTest(unittest.TestCase):
                 self.fixture(architecture)
                 result = build_inventory(self.folder, architecture, self.baseline)
                 self.assertEqual(architecture, result['Architecture'])
-                self.assertEqual(3, len(result['Reports']))
-                self.assertEqual([1, 1, 1], [report['Counts']['HIGH'] for report in result['Reports']])
+                self.assertEqual(4, len(result['Reports']))
+                self.assertEqual([1, 1, 1, 1], [report['Counts']['HIGH'] for report in result['Reports']])
                 self.assertNotIn('DO_NOT_PUBLISH_CONFIGURATION', json.dumps(result))
                 rabbit = next(r for r in result['Reports'] if r['Name'] == 'rabbitmq')
                 self.assertEqual('27.3.4.9', rabbit['Runtime']['erlang'])
                 self.assertEqual('runtime-version-and-vendor-review', rabbit['Coverage']['RabbitMQ'])
-                candidate = next(r for r in result['Reports'] if r['Name'] == 'temurin-ubi9')
+                candidate = next(r for r in result['Reports'] if r['Name'] == 'temurin-ubi10')
                 self.assertEqual('candidate-base-only', candidate['Role'])
                 self.assertFalse(candidate['Runtime']['aptPresent'])
+
+    def test_compiled_postgres_candidate_is_separate_and_does_not_claim_os_package_coverage(self):
+        self.fixture()
+        result = build_inventory(self.folder, 'amd64', self.baseline)
+        candidate = next(r for r in result['Reports'] if r['Name'] == 'postgres-alpine')
+        self.assertEqual('candidate-server-only', candidate['Role'])
+        self.assertEqual('17.11', candidate['Runtime']['postgres'])
+        self.assertEqual('runtime-version-and-vendor-review', candidate['Coverage']['PostgreSQL'])
+        self.assertEqual('not-approved-for-deployment', result['Disposition'])
 
     def test_refuses_incomplete_or_divergent_input_before_publishing(self):
         for case in ('scanner', 'database', 'checkout', 'source', 'image', 'architecture', 'family',
@@ -94,7 +104,7 @@ class InfrastructureReportTest(unittest.TestCase):
         self.fixture()
         (self.folder / 'temurin-probes.txt').write_text('CURL=0\nAPT=1\n')
         result = build_inventory(self.folder, 'amd64', self.baseline)
-        candidate = next(r for r in result['Reports'] if r['Name'] == 'temurin-ubi9')
+        candidate = next(r for r in result['Reports'] if r['Name'] == 'temurin-ubi10')
         self.assertFalse(candidate['Runtime']['curlPresent'])
         self.assertTrue(candidate['Runtime']['aptPresent'])
         self.assertEqual('not-approved-for-deployment', result['Disposition'])
@@ -142,6 +152,17 @@ class InfrastructureReportTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 write_inventory(self.folder, output, 'amd64', self.baseline)
             self.assertFalse(output.exists())
+
+    def test_preserves_rpm_release_and_epoch_for_patch_identification(self):
+        self.fixture()
+        report = json.loads((self.folder / 'temurin-ubi10.json').read_text())
+        report['Results'][0]['Packages'][0].update(Release='fixture-security.2', Epoch=0)
+        self.save('temurin-ubi10.json', report)
+        result = build_inventory(self.folder, 'amd64', self.baseline)
+        candidate = next(r for r in result['Reports'] if r['Name'] == 'temurin-ubi10')
+        package = candidate['Results'][0]['Packages'][0]
+        self.assertEqual('fixture-security.2', package.get('Release'))
+        self.assertEqual(0, package.get('Epoch'))
 
     def test_refuses_existing_report_without_overwriting_it(self):
         self.fixture()

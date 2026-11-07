@@ -1,6 +1,6 @@
 services:
   db-transacoes:
-    image: postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
+    image: postgres@sha256:665dc7b37ac52a17e298511414c21d23ffa4e6a6ef6225b3e5d59c7afb35e994
     environment:
       POSTGRES_DB: credpay_transacoes
       POSTGRES_USER: ${TX_DB_USER:?configure TX_DB_USER}
@@ -14,7 +14,7 @@ services:
       retries: 20
 
   db-processamento:
-    image: postgres@sha256:051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0
+    image: postgres@sha256:665dc7b37ac52a17e298511414c21d23ffa4e6a6ef6225b3e5d59c7afb35e994
     environment:
       POSTGRES_DB: credpay_processamento
       POSTGRES_USER: ${PROC_DB_USER:?configure PROC_DB_USER}

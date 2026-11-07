@@ -20,10 +20,11 @@
 - PR234: proxy preparado,65testes/8jornadas reais,7checks/gate99,6% do delta, merge02cbeea; sem deploy, spec§9.165.
 - PR235: RabbitMQ4.3.7 integrado em17581d5 após16checks; versão real/fluxo/sessão em ARM64/AMD64, persistência/recuperação e8jornadas verdes; spec§9.166.
 - PR237: cliente5.37.0/Netty4.2.18,16checks/gate93% do delta;3MEDIUM ausentes dos4alvos, merge9d2cd92; spec§9.167.
+- PR238: inventário banco/broker e guard de caminhos,5checks/gate94,1% do delta; merge dbf718f. Achados preservados; UBI9 recusada, spec§9.168.
 
 ## Agora
 
-- [ ] Concluir CI do inventário ampliado e guards de caminho (spec§9.168). Scan revelou PostgreSQL CRITICAL16/HIGH99; UBI9 HIGH18 recusada. Próximo: reconstrução oficial17/Bookworm e nova base oficial paraAPT, sem aceitar resíduos.
+- [ ] Validar apps emUBI10 para removerAPT, Bookworm reconstruído e scan separado do candidatoPostgreSQLAlpine (spec§9.169). Bookworm aindaCRITICAL4/HIGH75. Exigir scans completos/persistência/recuperação; sem alterar volumes locais ou aceitar resíduos.
 
 ## Próximo
 

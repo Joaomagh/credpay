@@ -42,8 +42,8 @@ foreach ($module in @('transacoes', 'processamento')) {
             Require ($report.Metadata.ImageID -ceq $images[$module] -and
                 $report.Metadata.ImageConfig.os -ceq 'linux' -and
                 $report.Metadata.ImageConfig.architecture -ceq $ExpectedArchitecture) "Relatório de outra imagem/arquitetura: $name"
-            Require ($report.Metadata.OS.Family -ceq 'ubuntu' -and
-                @($report.Results | Where-Object { $_.Class -ceq 'os-pkgs' -and $_.Packages.Count -gt 0 }).Count -gt 0) "Cobertura OS ausente: $name"
+            Require ($report.Metadata.OS.Family -ceq 'redhat' -and
+                @($report.Results | Where-Object { $_.Class -ceq 'os-pkgs' -and $_.Type -ceq 'redhat' -and $_.Packages.Count -gt 0 }).Count -gt 0) "Cobertura OS ausente: $name"
         }
         $results = @()
         $counts = @{UNKNOWN=0; LOW=0; MEDIUM=0; HIGH=0; CRITICAL=0}
@@ -51,7 +51,11 @@ foreach ($module in @('transacoes', 'processamento')) {
         foreach ($result in $report.Results) {
             $safePackages = @($result.Packages | Where-Object { $null -ne $_ } | ForEach-Object {
                 Require ($_.Name -and $_.Version) "Pacote sem identidade/versão: $name"
-                @{Name=$_.Name; Version=$_.Version}
+                $package = @{Name=$_.Name; Version=$_.Version}
+                foreach ($field in @('Release', 'Epoch')) {
+                    if ($_.ContainsKey($field)) { $package[$field] = $_[$field] }
+                }
+                $package
             })
             $packageCount += $safePackages.Count
             $vulnerabilities = @($result.Vulnerabilities | Where-Object { $null -ne $_ } | ForEach-Object {
