@@ -1,5 +1,9 @@
 # Triagem de dependências e imagens
 
+## Estado integrado — 07/11/2026 após PR239
+
+APT remediado por TemurinUBI10 na PR239/bfb7715 após16checks/gate95,2% do delta: Inventory42408782054 encontrou zero achados nos4alvos de apps emAMD64/ARM64, com versõesRPM/ausênciaAPT, fluxo/sessões e persistência/recuperação comprovados. ClienteAMQP corrigido naPR237. Isso não aprova toda a pilha: PostgreSQLBookwormC4/H75/M204/L171/U1, brokerM1/zlib e candidatoPostgreSQLAlpineC1/H25/M32/L3/U1 permanecem no mesmo inventário. A candidataAlpine não foi promovida; seusHIGH/CRITICAL são do resultadoGo/stdlib1.24.6, mas o caminho do binário ainda não foi atribuído no artefato selecionado. Sem conclusão de alcance ou supressão. Revisar antes da publicação; prepararHTTPS/sessão é independente e não remove esse bloqueio. Evidências/IDs/hashes emspec§9.169.
+
 ## Candidata PostgreSQL/Bookworm e base UBI10 — 07/11/2026
 
 Resultado intermediário Inventory42408022831: Bookworm reconstruídoCRITICAL4/HIGH75 (antes16/99), UBI10base HIGH0/CRITICAL0/154pacotes, Java21.0.13/curl presente/APT ausente nas2arquiteturas. Os4críticos restantes: CVE-2025-7458/sqlite, CVE-2026-6653/libxml, CVE-2023-45853/zlib e CVE-2025-68121/Go1.24.6. Redução não é correção integral nem aceite. Apps passam à candidataUBI10 e exigem novos scans/fluxo/sessões/persistência antes de integrar. O inventário inclui agora uma candidata PostgreSQL17.11Alpine separada (digest3540c036), sem trocar banco ativo ou reutilizar volumesglibc no musl; portabilidade/restauração devem ser demonstradas antes de adoção. Baseline completa, hashes e TDD em spec§9.169. Os resultados anteriores abaixo são cortes históricos dessa avaliação.

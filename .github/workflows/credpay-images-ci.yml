@@ -119,6 +119,9 @@ jobs:
       - name: Verify both application images
         working-directory: transacoes-service
         run: ./mvnw --batch-mode --no-transfer-progress -DargLine=-XX:-EnableDynamicAgentLoading -Dtest=ImagensCredPayE2E test
+      - name: Verify public HTTPS origin boundary on native Java and PostgreSQL
+        working-directory: transacoes-service
+        run: ./mvnw --batch-mode --no-transfer-progress -Dtest=SessaoPublicaHttpsTest -DargLine=-XX:-EnableDynamicAgentLoading verify
       - name: Verify session HTTP contract on native Java and PostgreSQL
         working-directory: transacoes-service
         run: ./mvnw --batch-mode --no-transfer-progress -DargLine=-XX:-EnableDynamicAgentLoading -Dtest=SessaoDemoHttpTest test

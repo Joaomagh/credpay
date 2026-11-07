@@ -1,0 +1,29 @@
+server:
+  address: 127.0.0.1
+  forward-headers-strategy: none
+  ssl:
+    enabled: true
+    enabled-protocols: TLSv1.3,TLSv1.2
+  servlet:
+    session:
+      timeout: 15m
+      tracking-modes: cookie
+      cookie:
+        path: /
+        secure: true
+        http-only: true
+        same-site: lax
+
+management:
+  server:
+    address: 127.0.0.1
+    port: 9000
+    ssl:
+      enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
