@@ -19,10 +19,11 @@
 - PR233:6 testes HTTP de sessão e fluxo em imagens verdes em ARM64/AMD64,5 checks/gate OK, mergec29af39; spec§9.164.
 - PR234: proxy preparado,65testes/8jornadas reais,7checks/gate99,6% do delta, merge02cbeea; sem deploy, spec§9.165.
 - PR235: RabbitMQ4.3.7 integrado em17581d5 após16checks; versão real/fluxo/sessão em ARM64/AMD64, persistência/recuperação e8jornadas verdes; spec§9.166.
+- PR237: cliente5.37.0/Netty4.2.18,16checks/gate93% do delta;3MEDIUM ausentes dos4alvos, merge9d2cd92; spec§9.167.
 
 ## Agora
 
-- [ ] Corrigir cliente AMQP com baseline5.37.0/Netty4.2.18, teste de credenciais e comparação dos pacotes/scans; spec§9.167. APT segue bloqueado.
+- [ ] Ampliar inventário para banco/broker e avaliar base oficialUBI9 em perfil separado; spec§9.168. APT mantém bloqueio da baseline atual.
 
 ## Próximo
 
@@ -30,7 +31,7 @@
 - Revisar ocorrências contextuais por ID, mantendo achados da pesquisa e referências históricas preservados.
 - Preparar publicação gratuita com HTTPS, retenção e limites validados. Contas Cloudflare/Oracle ainda dependem de João; nenhum deploy.
 - Buscar/revalidar imagem oficial com APT corrigido antes de publicar; não aceitar HIGH implicitamente.
-- Avaliar cliente RabbitMQ5.37.0 frente aos3MEDIUM e diferenças da metadata; ampliar inventário para infraestrutura antes do aceite externo.
+- Após inventário/triagem, validar proxy no runtime Workers e perfil HTTPS/sessões/retenção com dados fictícios, antes do aceite externo.
 
 ## Depois
 
