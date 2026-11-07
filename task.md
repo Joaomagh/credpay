@@ -23,7 +23,7 @@
 
 ## Agora
 
-- [ ] Ampliar inventário para banco/broker e avaliar base oficialUBI9 em perfil separado; spec§9.168. APT mantém bloqueio da baseline atual.
+- [ ] Concluir CI do inventário ampliado e guards de caminho (spec§9.168). Scan revelou PostgreSQL CRITICAL16/HIGH99; UBI9 HIGH18 recusada. Próximo: reconstrução oficial17/Bookworm e nova base oficial paraAPT, sem aceitar resíduos.
 
 ## Próximo
 

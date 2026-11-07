@@ -19,8 +19,16 @@ def unique_object(pairs):
     return result
 
 
+def workspace_path(path, area):
+    root = Path(__file__).resolve().parents[2]
+    allowed = root / area
+    resolved = Path(path).resolve()
+    require(resolved.is_relative_to(allowed), 'Evidence path is outside its workspace area.')
+    return resolved
+
+
 def read_text(directory, name):
-    path = Path(directory) / name
+    path = workspace_path(Path(directory) / name, '')
     require(path.stat().st_size <= 32 * 1024 * 1024, 'Scan evidence exceeds the input budget.')
     return path.read_text(encoding='utf-8-sig').strip()
 
@@ -87,6 +95,7 @@ def project_results(results):
 
 
 def build_inventory(directory, architecture, baseline):
+    directory = workspace_path(directory, '.local/security')
     require(architecture in ('amd64', 'arm64'), 'Unsupported native architecture profile.')
     subjects = subjects_from(baseline)
     checkout = read_text(directory, 'checkout.txt')
@@ -133,6 +142,7 @@ def build_inventory(directory, architecture, baseline):
 
 
 def write_inventory(directory, output, architecture, baseline):
+    output = workspace_path(output, '.local/security')
     inventory = build_inventory(directory, architecture, baseline)
     lines = ['# Runtime inventory — triage pending', '', f'Checkout: {inventory["Checkout"]}; linux/{architecture}.', '',
              '| Subject | Packages | UNKNOWN | LOW | MEDIUM | HIGH | CRITICAL |', '|---|---:|---:|---:|---:|---:|---:|']
@@ -143,22 +153,25 @@ def write_inventory(directory, output, architecture, baseline):
         print(f'Runtime inventory: {report["Name"]}, packages={count}, HIGH={report["Counts"]["HIGH"]}, CRITICAL={report["Counts"]["CRITICAL"]}; triage pending.')
     lines.extend(['', 'OS/detected packages are scanned. RabbitMQ, Erlang and JRE also require vendor review at the observed runtime versions.',
                   'The UBI9 result covers the candidate base only; application compatibility and deployment are not approved.'])
-    output = Path(output)
+    reports = {'inventory.json': json.dumps(inventory, ensure_ascii=False, indent=2),
+               'summary.md': '\n'.join(lines) + '\n', 'checkout.txt': inventory['Checkout'] + '\n'}
+    for name in reports:
+        target = workspace_path(output / name, '.local/security')
+        require(not target.exists() and not (output / name).is_symlink(), 'Existing evidence must not be overwritten.')
     output.mkdir(parents=True, exist_ok=True)
-    (output / 'inventory.json').write_text(json.dumps(inventory, ensure_ascii=False, indent=2), encoding='utf-8')
-    (output / 'summary.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
-    (output / 'checkout.txt').write_text(inventory['Checkout'] + '\n', encoding='utf-8')
+    for name, content in reports.items():
+        with (output / name).open('x', encoding='utf-8') as report:
+            report.write(content)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--directory', required=True, type=Path)
-    parser.add_argument('--output', required=True, type=Path)
     parser.add_argument('--architecture', required=True, choices=('amd64', 'arm64'))
     args = parser.parse_args()
     try:
         root = Path(__file__).resolve().parents[2]
         baseline = read_json(root / 'infra/security', 'infrastructure-baseline.json')
-        write_inventory(args.directory, args.output, args.architecture, baseline)
+        write_inventory(root / '.local/security/infrastructure/raw', root / '.local/security/infrastructure/reports',
+                        args.architecture, baseline)
     except (ValueError, OSError, KeyError, TypeError) as error:
         raise SystemExit(f'Runtime inventory refused: {error}') from None

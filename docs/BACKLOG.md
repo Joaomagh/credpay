@@ -493,4 +493,6 @@ Cliente AMQP em implementação (spec§9.167): baseline5.37.0/Netty4.2.18 e12SHA
 
 Cliente concluído na PR237/9d2cd92:16checks,545/340Java, gate93% do delta e3MEDIUM ausentes dos4alvos/2arquiteturas. Inventário separado da infraestrutura em implementação, incluindo versões observadas/limites de cobertura e avaliação não promovida de TemurinUBI9 para o APT (spec§9.168). Mantém o inventário de apps e seu bloqueio atual; não comprova ainda HTTPS/Workers/retenção.
 
+Primeiro scan infra42405230267 revelou PostgreSQL CRITICAL16/HIGH99 (7CVEsCRITICAL), RabbitMQ/OTP observados4.3.7/27.3.4.19 com HIGH0/CRITICAL0/MEDIUM1 e UBI9 HIGH18/CRITICAL0 nas2arquiteturas. Banco priorizado; UBI9 recusada para promoção. QuatroS8707 de caminho no writer bloqueiam gate inicial;2reds locais provaram escrita fora da área/sobrescrita e correção será revalidada no CI. Nenhum achado suprimido ou aceite de segurança. Detalhes em spec§9.168 e TRIAGE.md.
+
 Painel Prometheus/Grafana, Jenkins de laboratório e pesquisa de sandbox permanecem evoluções separadas, conforme o recorte já escolhido. Achados e lacunas históricas continuam preservados.

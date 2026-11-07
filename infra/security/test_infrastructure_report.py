@@ -133,3 +133,35 @@ class InfrastructureReportTest(unittest.TestCase):
         (self.folder / 'postgres.json').unlink()
         with self.assertRaises(OSError):
             build_inventory(self.folder, 'amd64', self.baseline)
+
+    def test_refuses_output_outside_security_workspace_before_writing(self):
+        self.fixture()
+        root = Path(__file__).resolve().parents[2]
+        with tempfile.TemporaryDirectory(dir=root / '.local') as other:
+            output = Path(other) / 'reports'
+            with self.assertRaises(ValueError):
+                write_inventory(self.folder, output, 'amd64', self.baseline)
+            self.assertFalse(output.exists())
+
+    def test_refuses_existing_report_without_overwriting_it(self):
+        self.fixture()
+        output = self.folder / 'existing'
+        output.mkdir()
+        (output / 'summary.md').write_text('owned synthetic sentinel')
+        with self.assertRaises((ValueError, FileExistsError)):
+            write_inventory(self.folder, output, 'amd64', self.baseline)
+        self.assertEqual('owned synthetic sentinel', (output / 'summary.md').read_text())
+        self.assertFalse((output / 'inventory.json').exists())
+
+    def test_refuses_symlink_to_another_workspace_area(self):
+        self.fixture()
+        root = Path(__file__).resolve().parents[2]
+        with tempfile.TemporaryDirectory(dir=root / '.local') as other:
+            link = self.folder / 'linked'
+            try:
+                link.symlink_to(Path(other), target_is_directory=True)
+            except OSError:
+                self.skipTest('Local platform does not permit symlink creation; CI Linux executes this control.')
+            with self.assertRaises(ValueError):
+                write_inventory(self.folder, link / 'reports', 'amd64', self.baseline)
+            self.assertFalse((Path(other) / 'reports').exists())
