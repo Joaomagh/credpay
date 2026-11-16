@@ -93,7 +93,16 @@ def project_results(results):
             findings.append(dict(Id=finding['VulnerabilityID'], Package=finding['PkgName'], Installed=finding['InstalledVersion'],
                                  Fixed=finding.get('FixedVersion'), Severity=finding['Severity'], Status=finding.get('Status'),
                                  Url=finding.get('PrimaryURL')))
-        projected.append({'Class': result.get('Class'), 'Type': result.get('Type'), 'Packages': packages, 'Vulnerabilities': findings})
+        selected = {'Class': result.get('Class'), 'Type': result.get('Type'),
+                    'Packages': packages, 'Vulnerabilities': findings}
+        if result.get('Class') == 'lang-pkgs' and result.get('Type') == 'gobinary':
+            target = result.get('Target')
+            require(isinstance(target, str), 'Go binary target is missing.')
+            target = target.removeprefix('/')
+            require(bool(re.fullmatch(r'(?:usr/local/bin|usr/bin|bin)/[A-Za-z0-9._+-]{1,64}', target))
+                    and target.split('/')[-1] not in ('.', '..'), 'Go binary target is unsafe.')
+            selected['Target'] = target
+        projected.append(selected)
     return projected, counts
 
 
@@ -156,6 +165,11 @@ def write_inventory(directory, output, architecture, baseline):
         values = [str(report['Counts'][key]) for key in ('UNKNOWN', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL')]
         lines.append(f'| {report["Name"]} | {count} | ' + ' | '.join(values) + ' |')
         print(f'Runtime inventory: {report["Name"]}, packages={count}, HIGH={report["Counts"]["HIGH"]}, CRITICAL={report["Counts"]["CRITICAL"]}; triage pending.')
+        for result in report['Results']:
+            if 'Target' in result:
+                identity = f'{report["Name"]} Go binary: {result["Target"]}'
+                lines.append(identity)
+                print(identity)
     lines.extend(['', 'OS/detected packages are scanned. RabbitMQ, Erlang and JRE also require vendor review at the observed runtime versions.',
                   'The UBI10 result covers the candidate base only; application compatibility and deployment are not approved.',
                   'The Alpine PostgreSQL is a compiled-server candidate, not an OS PostgreSQL package scan; data portability and deployment are not approved.'])

@@ -1,6 +1,12 @@
 # Triagem de dependências e imagens
 
+## Inventário nativo da PR241 — 16/11/2026
+
+O [run 43813561379](https://github.com/Joaomagh/credpay/actions/runs/43813561379) passou em AMD64 e ARM64, com Trivy0.75.0 e bases atualizadas. O resultado `lang-pkgs/gobinary` atribuiu o alvo a `usr/local/bin/gosu` **tanto na imagem PostgreSQL ativa quanto na candidata Alpine**. A identidade do binário está comprovada; alcance e exploração de cada CVE ainda exigem triagem por ID e versão. Contagens em cada arquitetura: Bookworm CRITICAL4/HIGH135/MEDIUM229/LOW176/UNKNOWN11; Alpine CRITICAL1/HIGH44/MEDIUM38/LOW3/UNKNOWN2; RabbitMQ CRITICAL0/HIGH0/MEDIUM1; base UBI10 e quatro alvos de aplicativos sem achados neste scan. Os números de 07/11 abaixo são históricos, com outra versão da base de vulnerabilidades. Nenhuma imagem foi promovida, achado suprimido ou risco aceito.
+
 ## Estado integrado — 07/11/2026 após PR239
+
+Em16/11, o perfil público da PR240/f64ebb9 foi integrado após17checks verdes e gate96,3% no delta; não altera o inventário do banco nem autoriza deploy. A investigação seguinte selecionou apenas o caminho lógico `Target` dos resultados `gobinary` sem publicar configuração/segredos da imagem. O run da PR241 acima confirmou `gosu`; ambos os perfis PostgreSQL continuam bloqueados.
 
 APT remediado por TemurinUBI10 na PR239/bfb7715 após16checks/gate95,2% do delta: Inventory42408782054 encontrou zero achados nos4alvos de apps emAMD64/ARM64, com versõesRPM/ausênciaAPT, fluxo/sessões e persistência/recuperação comprovados. ClienteAMQP corrigido naPR237. Isso não aprova toda a pilha: PostgreSQLBookwormC4/H75/M204/L171/U1, brokerM1/zlib e candidatoPostgreSQLAlpineC1/H25/M32/L3/U1 permanecem no mesmo inventário. A candidataAlpine não foi promovida; seusHIGH/CRITICAL são do resultadoGo/stdlib1.24.6, mas o caminho do binário ainda não foi atribuído no artefato selecionado. Sem conclusão de alcance ou supressão. Revisar antes da publicação; prepararHTTPS/sessão é independente e não remove esse bloqueio. Evidências/IDs/hashes emspec§9.169.
 
