@@ -26,14 +26,14 @@
 
 ## Agora
 
-- [ ] Atribuir os achados Go da candidata PostgreSQL Alpine a um binário verificável, preservando o relatório completo e o bloqueio de publicação. PR241: primeiro inventário nativo AMD64/ARM64 e secret scan verdes; o Target sanitizado não aparecia no log. TDD adicional red/green para exibi-lo no resumo e no CI; suíte segurança22 com1skip de symlink no Windows. Revalidar o SHA final, ler o alvo real e não promover a candidata nem alterar volumes.
+- [ ] Concluir PR241: inventário nativo AMD64/ARM64 passou no SHA c3d7f61 e identificou `usr/local/bin/gosu` na imagem PostgreSQL ativa e na candidata Alpine. Scanner atualizado: Bookworm C4/H135; Alpine C1/H44. Secret scan verde; conferir Sonar/gate no SHA documental final, integrar e seguir para correção do binário/base sem promover imagens ou alterar volumes.
 
 ## Próximo
 
 - S11 e S12-S14 confirmados CLOSED/FIXED em main. Preservar recuperação causal e achados contextuais.
 - Revisar ocorrências contextuais por ID, mantendo achados da pesquisa e referências históricas preservados.
 - Preparar publicação gratuita com HTTPS, retenção e limites validados. Contas Cloudflare/Oracle ainda dependem de João; nenhum deploy.
-- PostgreSQLBookworm continuaCRITICAL4/HIGH75; candidatoAlpine CRITICAL1/HIGH25. Investigar cobertura/origem dos achados e corrigir antes de publicar, sem supressão ou aceite residual.
+- PostgreSQL Bookworm C4/H135 e candidato Alpine C1/H44 no scan de 16/11; o alvo Go é `gosu` em ambos. Investigar versões corrigidas e demais achados antes de publicar, sem supressão ou aceite residual.
 - Após inventário/triagem, validar proxy no runtime Workers e perfil HTTPS/sessões/retenção com dados fictícios, antes do aceite externo.
 
 ## Depois

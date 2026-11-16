@@ -15,6 +15,18 @@ Relatório revisado em 16 de novembro de 2026 com base nas evidências registrad
 
 O POST pode responder antes da aprovação porque seu compromisso é registrar o pedido. A decisão acontece em segundo plano. Se o navegador perder a resposta e reenviar o mesmo pedido com a mesma chave, recebe o recibo original. O GET pelo UUID informa o estado mais recente, inclusive depois de o pedido sair de `PENDENTE`.
 
+### Tecnologias e função de cada uma
+
+| Camada | Tecnologias | Papel no projeto |
+| --- | --- | --- |
+| API e processador | Java 21, Spring Boot 4, Spring MVC, Spring Data JPA, Spring AMQP | Receber pedidos, aplicar a regra fictícia, publicar/consumir eventos e expor a consulta |
+| Persistência e fila | PostgreSQL 17, Flyway, RabbitMQ | Bancos separados e versionados; transporte durável dos eventos |
+| Interface | Angular 22, TypeScript 6 | Console responsivo de criação, login e consulta |
+| Verificação | JUnit, AssertJ, Testcontainers, Vitest, Playwright, GitHub Actions, SonarQube e Trivy | Testar domínio, HTTP, integração, navegador, qualidade e vulnerabilidades |
+| Execução local | Docker Compose e Kubernetes kind | Ensaiar inicialização, falha, persistência e recuperação |
+
+O projeto usa Spring Boot nos dois serviços; uma migração para Quarkus não faz parte do escopo da v1.
+
 ## Onde está o trabalho de engenharia
 
 | Problema | Decisão aplicada | Evidência |
@@ -39,7 +51,7 @@ Os serviços têm responsabilidade e bancos separados. Isso permite exercitar fr
 
 O cliente AMQP foi atualizado na [PR #237](https://github.com/Joaomagh/credpay/pull/237); as três ocorrências MEDIUM anteriores desapareceram dos quatro alvos Java analisados. A [PR #238](https://github.com/Joaomagh/credpay/pull/238) passou a inventariar também PostgreSQL e RabbitMQ. A [PR #239](https://github.com/Joaomagh/credpay/pull/239) substituiu a base dos aplicativos por UBI10: o inventário de 07/11 registrou zero achados nos JARs e imagens de ambos os serviços em AMD64 e ARM64, e confirmou a ausência de APT. Isso é um resultado de inventário daquele corte, não uma garantia universal. [Triagem completa](../infra/security/TRIAGE.md)
 
-O banco ainda bloqueia a publicação: a imagem PostgreSQL 17.11/Bookworm registrou **4 ocorrências CRITICAL e 75 HIGH**. A candidata Alpine foi apenas avaliada e também registrou **1 CRITICAL e 25 HIGH**. Não houve aceitação desses achados, troca de imagem ativa ou migração de volumes. O RabbitMQ registrou zero CRITICAL/HIGH e um MEDIUM no mesmo inventário. Evidência e limites: `spec.md` §9.169.
+O banco ainda bloqueia a publicação. No inventário de 07/11, a imagem PostgreSQL 17.11/Bookworm registrou **4 ocorrências CRITICAL e 75 HIGH**; a candidata Alpine, **1 CRITICAL e 25 HIGH**. O [novo inventário de 16/11](https://github.com/Joaomagh/credpay/actions/runs/43813561379), com base de vulnerabilidades atualizada, registrou **4 CRITICAL e 135 HIGH** no Bookworm e **1 CRITICAL e 44 HIGH** na Alpine, em AMD64 e ARM64. O binário Go detectado nas duas é `usr/local/bin/gosu`; isso identifica o alvo, sem resolver os achados. RabbitMQ permaneceu sem CRITICAL/HIGH e com um MEDIUM. Não houve aceitação de risco, troca da imagem ativa ou migração de volumes. [Triagem](../infra/security/TRIAGE.md)
 
 A [PR #240](https://github.com/Joaomagh/credpay/pull/240) integrou o perfil público: HTTPS, cookie seguro, origem identificada entre o proxy e a API e prazo absoluto de sessão. O corte passou 17 checks e o gate Sonar, com 96,3% de cobertura no código novo. Os testes Node do proxy não equivalem a executá-lo no runtime hospedado do Cloudflare Workers. Não existe URL pública neste corte.
 
