@@ -23,10 +23,11 @@
 - PR238: inventário banco/broker e guard de caminhos,5checks/gate94,1% do delta; merge dbf718f. Achados preservados; UBI9 recusada, spec§9.168.
 - PR239: APT removido com UBI10,16checks/gate95,2% do delta; merge bfb7715. JARs/imagens sem achados nos2perfis; banco continua bloqueado, spec§9.169.
 - PR240: perfil public-demo/HTTPS e prazo absoluto de sessão integrados em f64ebb9 após17checks/gate96,3% do delta; fallback de pull público validado em CI, sem deploy. spec§9.170.
+- PR241: `gosu` atribuído nas imagens PostgreSQL ativa/candidata em AMD64/ARM64;5checks verdes no SHA4a9d65e, merge9856ac1. Banco continua bloqueado, spec§9.171.
 
 ## Agora
 
-- [ ] Concluir PR241: inventário nativo AMD64/ARM64 passou no SHA c3d7f61 e identificou `usr/local/bin/gosu` na imagem PostgreSQL ativa e na candidata Alpine. Scanner atualizado: Bookworm C4/H135; Alpine C1/H44. Secret scan verde; conferir Sonar/gate no SHA documental final, integrar e seguir para correção do binário/base sem promover imagens ou alterar volumes.
+- [ ] Corrigir a apresentação da identidade Go no resumo do inventário, mantendo a tabela de quatro imagens contígua. Teste red/green e suíte Python22 passaram localmente (1skip de symlink Windows); revalidar inventários nativos, secret scan e gate no CI. Em paralelo apenas como pesquisa, avaliar baseline PostgreSQL corrigida: `gosu` 1.20 oficial ainda usa Go1.24.6, portanto não declarar correção por versão.
 
 ## Próximo
 
