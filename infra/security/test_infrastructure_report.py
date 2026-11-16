@@ -83,6 +83,20 @@ class InfrastructureReportTest(unittest.TestCase):
         self.assertEqual('usr/local/bin/gosu', candidate['Results'][1]['Target'])
         self.assertNotIn('DO_NOT_PUBLISH_CONFIGURATION', json.dumps(candidate))
 
+    def test_reports_sanitized_go_binary_target_in_ci_summary(self):
+        self.fixture()
+        report = json.loads((self.folder / 'postgres-alpine.json').read_text())
+        report['Results'].append({'Class': 'lang-pkgs', 'Type': 'gobinary',
+            'Target': '/usr/local/bin/gosu', 'Packages': [{'Name': 'stdlib', 'Version': 'go1.24.6'}]})
+        self.save('postgres-alpine.json', report)
+        output = self.folder / 'published'
+        stream = io.StringIO()
+        with contextlib.redirect_stdout(stream):
+            write_inventory(self.folder, output, 'amd64', self.baseline)
+        self.assertIn('postgres-alpine Go binary: usr/local/bin/gosu', stream.getvalue())
+        self.assertIn('postgres-alpine Go binary: usr/local/bin/gosu', (output / 'summary.md').read_text())
+        self.assertNotIn('DO_NOT_PUBLISH_CONFIGURATION', stream.getvalue())
+
     def test_refuses_unsafe_go_binary_target(self):
         for target in ('../secret', '/run/secrets/key', 'https://example.invalid/gosu',
                        'usr\\local\\bin\\gosu', 'usr/local/bin/../gosu'):

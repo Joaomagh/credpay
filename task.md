@@ -26,7 +26,7 @@
 
 ## Agora
 
-- [ ] Atribuir os achados Go da candidata PostgreSQL Alpine a um binário verificável, preservando o relatório completo e o bloqueio de publicação. TDD do campo Target: red2testes/6falhas esperadas; green2, suíte segurança21 com1skip de symlink no Windows, CI Linux/scan nativo pendentes. Não promover a candidata nem alterar volumes.
+- [ ] Atribuir os achados Go da candidata PostgreSQL Alpine a um binário verificável, preservando o relatório completo e o bloqueio de publicação. PR241: primeiro inventário nativo AMD64/ARM64 e secret scan verdes; o Target sanitizado não aparecia no log. TDD adicional red/green para exibi-lo no resumo e no CI; suíte segurança22 com1skip de symlink no Windows. Revalidar o SHA final, ler o alvo real e não promover a candidata nem alterar volumes.
 
 ## Próximo
 

@@ -165,6 +165,11 @@ def write_inventory(directory, output, architecture, baseline):
         values = [str(report['Counts'][key]) for key in ('UNKNOWN', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL')]
         lines.append(f'| {report["Name"]} | {count} | ' + ' | '.join(values) + ' |')
         print(f'Runtime inventory: {report["Name"]}, packages={count}, HIGH={report["Counts"]["HIGH"]}, CRITICAL={report["Counts"]["CRITICAL"]}; triage pending.')
+        for result in report['Results']:
+            if 'Target' in result:
+                identity = f'{report["Name"]} Go binary: {result["Target"]}'
+                lines.append(identity)
+                print(identity)
     lines.extend(['', 'OS/detected packages are scanned. RabbitMQ, Erlang and JRE also require vendor review at the observed runtime versions.',
                   'The UBI10 result covers the candidate base only; application compatibility and deployment are not approved.',
                   'The Alpine PostgreSQL is a compiled-server candidate, not an OS PostgreSQL package scan; data portability and deployment are not approved.'])
