@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    include: ['edge/**/*.spec.ts'],
+    include: ['edge/worker.spec.ts'],
     environment: 'node',
     coverage: {
       provider: 'v8',

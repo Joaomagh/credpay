@@ -71,6 +71,9 @@ jobs:
       - name: Build production bundle
         run: npm run build
 
+      - name: Verify the candidate Worker in the local Workers runtime
+        run: npm run test:worker
+
       - name: Audit all resolved packages
         run: npm audit --audit-level=low
 
