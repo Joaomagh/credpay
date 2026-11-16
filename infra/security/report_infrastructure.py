@@ -160,6 +160,7 @@ def write_inventory(directory, output, architecture, baseline):
     inventory = build_inventory(directory, architecture, baseline)
     lines = ['# Runtime inventory — triage pending', '', f'Checkout: {inventory["Checkout"]}; linux/{architecture}.', '',
              '| Subject | Packages | UNKNOWN | LOW | MEDIUM | HIGH | CRITICAL |', '|---|---:|---:|---:|---:|---:|---:|']
+    go_targets = []
     for report in inventory['Reports']:
         count = sum(len(result['Packages']) for result in report['Results'])
         values = [str(report['Counts'][key]) for key in ('UNKNOWN', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL')]
@@ -168,8 +169,10 @@ def write_inventory(directory, output, architecture, baseline):
         for result in report['Results']:
             if 'Target' in result:
                 identity = f'{report["Name"]} Go binary: {result["Target"]}'
-                lines.append(identity)
+                go_targets.append(identity)
                 print(identity)
+    if go_targets:
+        lines.extend(['', *go_targets])
     lines.extend(['', 'OS/detected packages are scanned. RabbitMQ, Erlang and JRE also require vendor review at the observed runtime versions.',
                   'The UBI10 result covers the candidate base only; application compatibility and deployment are not approved.',
                   'The Alpine PostgreSQL is a compiled-server candidate, not an OS PostgreSQL package scan; data portability and deployment are not approved.'])

@@ -85,6 +85,10 @@ class InfrastructureReportTest(unittest.TestCase):
 
     def test_reports_sanitized_go_binary_target_in_ci_summary(self):
         self.fixture()
+        active = json.loads((self.folder / 'postgres.json').read_text())
+        active['Results'].append({'Class': 'lang-pkgs', 'Type': 'gobinary',
+            'Target': '/usr/local/bin/gosu', 'Packages': [{'Name': 'stdlib', 'Version': 'go1.24.6'}]})
+        self.save('postgres.json', active)
         report = json.loads((self.folder / 'postgres-alpine.json').read_text())
         report['Results'].append({'Class': 'lang-pkgs', 'Type': 'gobinary',
             'Target': '/usr/local/bin/gosu', 'Packages': [{'Name': 'stdlib', 'Version': 'go1.24.6'}]})
@@ -94,7 +98,12 @@ class InfrastructureReportTest(unittest.TestCase):
         with contextlib.redirect_stdout(stream):
             write_inventory(self.folder, output, 'amd64', self.baseline)
         self.assertIn('postgres-alpine Go binary: usr/local/bin/gosu', stream.getvalue())
-        self.assertIn('postgres-alpine Go binary: usr/local/bin/gosu', (output / 'summary.md').read_text())
+        summary = (output / 'summary.md').read_text()
+        self.assertIn('postgres-alpine Go binary: usr/local/bin/gosu', summary)
+        self.assertGreater(summary.index('postgres Go binary: usr/local/bin/gosu'),
+                           summary.index('| postgres-alpine |'))
+        self.assertGreater(summary.index('postgres-alpine Go binary: usr/local/bin/gosu'),
+                           summary.index('| postgres-alpine |'))
         self.assertNotIn('DO_NOT_PUBLISH_CONFIGURATION', stream.getvalue())
 
     def test_refuses_unsafe_go_binary_target(self):
