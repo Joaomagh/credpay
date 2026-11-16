@@ -2,6 +2,8 @@
 
 ## Estado integrado — 07/11/2026 após PR239
 
+Em16/11, o perfil público da PR240/f64ebb9 foi integrado após17checks verdes e gate96,3% no delta; não altera o inventário do banco nem autoriza deploy. A investigação seguinte seleciona apenas o caminho lógico `Target` dos resultados `gobinary` para atribuir os achados Go da candidata Alpine sem publicar configuração/segredos da imagem. Até o CI confirmar o alvo real, `gosu` continua hipótese; ambos os perfis PostgreSQL continuam bloqueados.
+
 APT remediado por TemurinUBI10 na PR239/bfb7715 após16checks/gate95,2% do delta: Inventory42408782054 encontrou zero achados nos4alvos de apps emAMD64/ARM64, com versõesRPM/ausênciaAPT, fluxo/sessões e persistência/recuperação comprovados. ClienteAMQP corrigido naPR237. Isso não aprova toda a pilha: PostgreSQLBookwormC4/H75/M204/L171/U1, brokerM1/zlib e candidatoPostgreSQLAlpineC1/H25/M32/L3/U1 permanecem no mesmo inventário. A candidataAlpine não foi promovida; seusHIGH/CRITICAL são do resultadoGo/stdlib1.24.6, mas o caminho do binário ainda não foi atribuído no artefato selecionado. Sem conclusão de alcance ou supressão. Revisar antes da publicação; prepararHTTPS/sessão é independente e não remove esse bloqueio. Evidências/IDs/hashes emspec§9.169.
 
 ## Candidata PostgreSQL/Bookworm e base UBI10 — 07/11/2026

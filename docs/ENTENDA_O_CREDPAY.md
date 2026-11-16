@@ -41,7 +41,7 @@ O cliente AMQP foi atualizado na [PR #237](https://github.com/Joaomagh/credpay/p
 
 O banco ainda bloqueia a publicação: a imagem PostgreSQL 17.11/Bookworm registrou **4 ocorrências CRITICAL e 75 HIGH**. A candidata Alpine foi apenas avaliada e também registrou **1 CRITICAL e 25 HIGH**. Não houve aceitação desses achados, troca de imagem ativa ou migração de volumes. O RabbitMQ registrou zero CRITICAL/HIGH e um MEDIUM no mesmo inventário. Evidência e limites: `spec.md` §9.169.
 
-A [PR #240](https://github.com/Joaomagh/credpay/pull/240) prepara o perfil público: HTTPS, cookie seguro, origem identificada entre o proxy e a API e prazo absoluto de sessão. Os testes locais de política/configuração passaram (15/15); a integração final e o gate de qualidade ainda precisam ser conferidos no SHA final. Os testes Node do proxy não equivalem a executá-lo no runtime hospedado do Cloudflare Workers. Não existe URL pública neste corte.
+A [PR #240](https://github.com/Joaomagh/credpay/pull/240) integrou o perfil público: HTTPS, cookie seguro, origem identificada entre o proxy e a API e prazo absoluto de sessão. O corte passou 17 checks e o gate Sonar, com 96,3% de cobertura no código novo. Os testes Node do proxy não equivalem a executá-lo no runtime hospedado do Cloudflare Workers. Não existe URL pública neste corte.
 
 ## O que falta
 
@@ -50,7 +50,7 @@ A [PR #240](https://github.com/Joaomagh/credpay/pull/240) prepara o perfil públ
 | 1 | **B08.5b · Aceite pessoal, adiado a pedido de João** | João executa o roteiro com autonomia e explica, em suas palavras, por que o POST volta pendente, onde entra a fila e como a transação se recupera com o mesmo UUID. [Roteiro](DEMO.md) |
 | 2 | **B08 · Fechamento da v1, condicionado ao aceite pessoal** | Conferir o SHA, os checks aplicáveis, a triagem e as evidências. Registrar a decisão de fechamento após os aceites. Se o código ou a baseline mudar, revalidar os cenários afetados. [Candidato da v1](V1_CANDIDATE.md) |
 | Bloqueador público | **Imagem do PostgreSQL** | Encontrar uma baseline corrigida, atribuir com precisão os achados restantes e repetir inventário, persistência e recuperação em AMD64/ARM64 antes de promover a imagem. [Triagem](../infra/security/TRIAGE.md) |
-| Em andamento | **Perfil HTTPS e sessão pública** | Concluir a PR #240 com todos os checks e o gate verdes, confirmar a seleção do relógio e o perfil de autenticação no corte final. [Plano público](PUBLIC_DEMO_PLAN.md) |
+| Em andamento | **Atribuição e correção do banco** | Identificar o binário dos achados Go no inventário; encontrar baseline corrigida e repetir os testes reais antes de trocar o PostgreSQL. [Triagem](../infra/security/TRIAGE.md) |
 | Etapa de portfólio | **Link público gratuito para recrutadores** | Definir e autorizar o destino. Validar orçamento zero, HTTPS e cookie Secure, provisionamento e expiração de contas fictícias, proxy, cotas e jornada em desktop e celular. [Plano da demo pública](PUBLIC_DEMO_PLAN.md) |
 | Evolução de qualidade | **Proxy e runtime Workers** | Reproduzir as regras do proxy no runtime real do Workers em CI e comprovar HTTPS até a origem. SonarQube já integra o pipeline GitHub Actions; Jenkins continua opcional para laboratório. [Backlog](BACKLOG.md) |
 | Depois da v1 | **Painel e pesquisa de isolamento** | Prometheus/Grafana e a pesquisa de sandbox seguem adiados. Retomadas exigem seus próprios testes e análise de segurança. [Backlog](BACKLOG.md) |

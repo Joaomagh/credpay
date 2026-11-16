@@ -93,7 +93,16 @@ def project_results(results):
             findings.append(dict(Id=finding['VulnerabilityID'], Package=finding['PkgName'], Installed=finding['InstalledVersion'],
                                  Fixed=finding.get('FixedVersion'), Severity=finding['Severity'], Status=finding.get('Status'),
                                  Url=finding.get('PrimaryURL')))
-        projected.append({'Class': result.get('Class'), 'Type': result.get('Type'), 'Packages': packages, 'Vulnerabilities': findings})
+        selected = {'Class': result.get('Class'), 'Type': result.get('Type'),
+                    'Packages': packages, 'Vulnerabilities': findings}
+        if result.get('Class') == 'lang-pkgs' and result.get('Type') == 'gobinary':
+            target = result.get('Target')
+            require(isinstance(target, str), 'Go binary target is missing.')
+            target = target.removeprefix('/')
+            require(bool(re.fullmatch(r'(?:usr/local/bin|usr/bin|bin)/[A-Za-z0-9._+-]{1,64}', target))
+                    and target.split('/')[-1] not in ('.', '..'), 'Go binary target is unsafe.')
+            selected['Target'] = target
+        projected.append(selected)
     return projected, counts
 
 

@@ -70,6 +70,31 @@ class InfrastructureReportTest(unittest.TestCase):
         self.assertEqual('runtime-version-and-vendor-review', candidate['Coverage']['PostgreSQL'])
         self.assertEqual('not-approved-for-deployment', result['Disposition'])
 
+    def test_preserves_sanitized_go_binary_identity_without_image_configuration(self):
+        self.fixture()
+        report = json.loads((self.folder / 'postgres-alpine.json').read_text())
+        report['Results'].append({'Class': 'lang-pkgs', 'Type': 'gobinary',
+            'Target': '/usr/local/bin/gosu', 'Packages': [{'Name': 'stdlib', 'Version': 'go1.24.6'}],
+            'Vulnerabilities': [{'VulnerabilityID': 'CVE-2099-1111', 'PkgName': 'stdlib',
+                'InstalledVersion': 'go1.24.6', 'Severity': 'CRITICAL'}]})
+        self.save('postgres-alpine.json', report)
+        candidate = next(r for r in build_inventory(self.folder, 'amd64', self.baseline)['Reports']
+                         if r['Name'] == 'postgres-alpine')
+        self.assertEqual('usr/local/bin/gosu', candidate['Results'][1]['Target'])
+        self.assertNotIn('DO_NOT_PUBLISH_CONFIGURATION', json.dumps(candidate))
+
+    def test_refuses_unsafe_go_binary_target(self):
+        for target in ('../secret', '/run/secrets/key', 'https://example.invalid/gosu',
+                       'usr\\local\\bin\\gosu', 'usr/local/bin/../gosu'):
+            with self.subTest(target=target):
+                self.fixture()
+                report = json.loads((self.folder / 'postgres-alpine.json').read_text())
+                report['Results'].append({'Class': 'lang-pkgs', 'Type': 'gobinary',
+                    'Target': target, 'Packages': [{'Name': 'stdlib', 'Version': 'go1.24.6'}]})
+                self.save('postgres-alpine.json', report)
+                with self.assertRaises(ValueError):
+                    build_inventory(self.folder, 'amd64', self.baseline)
+
     def test_refuses_incomplete_or_divergent_input_before_publishing(self):
         for case in ('scanner', 'database', 'checkout', 'source', 'image', 'architecture', 'family',
                      'no-os', 'no-postgres', 'bad-package', 'severity', 'postgres-version',

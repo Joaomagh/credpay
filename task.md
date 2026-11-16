@@ -22,10 +22,11 @@
 - PR237: cliente5.37.0/Netty4.2.18,16checks/gate93% do delta;3MEDIUM ausentes dos4alvos, merge9d2cd92; spec§9.167.
 - PR238: inventário banco/broker e guard de caminhos,5checks/gate94,1% do delta; merge dbf718f. Achados preservados; UBI9 recusada, spec§9.168.
 - PR239: APT removido com UBI10,16checks/gate95,2% do delta; merge bfb7715. JARs/imagens sem achados nos2perfis; banco continua bloqueado, spec§9.169.
+- PR240: perfil public-demo/HTTPS e prazo absoluto de sessão integrados em f64ebb9 após17checks/gate96,3% do delta; fallback de pull público validado em CI, sem deploy. spec§9.170.
 
 ## Agora
 
-- [ ] Concluir CI do perfil public-demo (spec§9.170). HTTPS6 e perfil local6 passaram nas duas arquiteturas no corte intermediário; perfil sem autenticação agora é recusado, e os dois pontos de injeção do relógio foram qualificados. Verify focado15/15 e Checkstyle0 em16/11. O CI do SHA9c34a9a parou no login Docker Hub com token expirado antes dos testes. Fallback anônimo de pulls públicos preparado; revalidar suíte/infraestrutura/gate no próximo SHA e integrar somente com checks verdes. Sem deploy ou aceite do banco.
+- [ ] Atribuir os achados Go da candidata PostgreSQL Alpine a um binário verificável, preservando o relatório completo e o bloqueio de publicação. TDD do campo Target: red2testes/6falhas esperadas; green2, suíte segurança21 com1skip de symlink no Windows, CI Linux/scan nativo pendentes. Não promover a candidata nem alterar volumes.
 
 ## Próximo
 
