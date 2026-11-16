@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 
 @Configuration(proxyBeanMethods = false)
 @Profile("public-demo")
@@ -21,6 +22,7 @@ class TransportePublicoConfiguration {
     }
 
     static void validar(Environment ambiente) {
+        exigirPublico(ambiente.acceptsProfiles(Profiles.of("sessao-demo")), "spring.profiles.active/sessao-demo");
         var obrigatorios = Map.ofEntries(
                 Map.entry("server.ssl.enabled", "true"),
                 Map.entry("server.ssl.key-store-type", "PKCS12"),

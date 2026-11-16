@@ -25,7 +25,7 @@
 
 ## Agora
 
-- [ ] Concluir CI do perfil public-demo (spec§9.170). RedHTTPS200versus403 provado nos2perfis; filtro conectado,14unitários/configuração e71edge verdes. Validar6cenáriosHTTPS, perfil local e gate antes de integrar. Sem deploy ou aceite do banco.
+- [ ] Concluir CI do perfil public-demo (spec§9.170). HTTPS6 e perfil local6 passaram nas duas arquiteturas no corte intermediário; perfil sem autenticação agora é recusado, e os dois pontos de injeção do relógio foram qualificados. Verify focado15/15 e Checkstyle0 em16/11. Repetir suíte/infraestrutura/gate no SHA final e integrar somente com checks verdes. Sem deploy ou aceite do banco.
 
 ## Próximo
 

@@ -6,6 +6,7 @@ import java.util.UUID;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.web.servlet.DelegatingFilterProxyRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,7 +38,7 @@ class SessaoDemoConfiguration {
 
     @Bean
     @Profile("public-demo")
-    SessaoDemoPublica sessaoPublica(Clock relogio, Environment ambiente) {
+    SessaoDemoPublica sessaoPublica(@Qualifier("clock") Clock relogio, Environment ambiente) {
         TransportePublicoConfiguration.validar(ambiente);
         return new SessaoDemoPublica(relogio, ambiente.getProperty("CREDPAY_ORIGIN_TOKEN"));
     }
@@ -55,7 +56,8 @@ class SessaoDemoConfiguration {
     }
 
     @Bean
-    SecurityFilterChain filtrosDaSessao(HttpSecurity http, JdbcTemplate jdbc, PasswordEncoder encoder, Clock relogio,
+    SecurityFilterChain filtrosDaSessao(HttpSecurity http, JdbcTemplate jdbc, PasswordEncoder encoder,
+            @Qualifier("clock") Clock relogio,
             ObjectProvider<SessaoDemoPublica> politicaPublica) {
         var autenticador = new DaoAuthenticationProvider(usuario -> jdbc.query("""
                 SELECT id, usuario, senha_hash FROM contas WHERE usuario = ?

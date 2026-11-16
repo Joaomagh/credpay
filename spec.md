@@ -3559,6 +3559,8 @@ Configuração9.170 teve2reds/3testes em16,500s por aceitar fonte/flags inseguro
 
 Green intermediário9.170 no headc23a099: Images42413516874/AMDjob128526510181 passouHTTPS6/9,111s e perfil local6/10,65s, smoke1/58,03s; ARMjob128526509890 passouHTTPS6/9,164s/local6/11,13s/smoke1/62,25s. Zero falhas/erros/skips. Revisão encontrou comparação case-insensitive de configuração aceitando cookiejsessionid, incompatível com o proxy. Red1/falha1/erro0 em16,966s; igualdade exata dos valores canônicos do perfil e14unitários/configuração verdes em20,121s. A última mudança exige reconferir oCI/gate noSHAfinal. Nenhuma lib/regra/severidade alterada ou teste retirado.
 
+Revisão de16/11: um teste novo demonstrou que `public-demo` sem `sessao-demo` poderia passar pela validação direta; red1 esperado, seguido de guard fail-closed antes do servidor e15testes focados verdes. O Sonar da PR240/9d8b064 marcou `java:S9352` no relógio da configuração de sessão: a análise mistura beans `clock` e `processamentoClock` de aplicativos Maven separados. A ocorrência anterior equivalente havia sido aceita como falso positivo, mas o gate da ocorrência nova ficou vermelho; sem mudar regra, condição ou classificar outro achado, a injeção passou a exigir explicitamente `@Qualifier("clock")` nos dois pontos de sessão. As fixtures de relógio controlado nos testes receberam o mesmo qualificador e mantiveram `@Primary`. Verify local com15testes/0falhas/0erros/0skips e Checkstyle0 em34,307s; testes reais de sessão/HTTPS e gate final ainda dependem doCI do novoSHA. Avisos preexistentes de API descontinuada permanecem. Relatório separado atualizado em docs/ENTENDA_O_CREDPAY.md; nenhum serviço externo implantado.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

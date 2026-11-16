@@ -24,6 +24,7 @@ import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.web.server.LocalManagementPort;
@@ -236,6 +237,7 @@ class SessaoPublicaHttpsTest {
     static class ConfiguracaoRelogio {
         @Bean
         @Primary
+        @Qualifier("clock")
         Relogio relogioPublicoFixture() { return new Relogio(); }
     }
 

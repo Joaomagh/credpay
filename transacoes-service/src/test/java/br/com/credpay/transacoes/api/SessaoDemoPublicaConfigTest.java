@@ -85,7 +85,7 @@ class SessaoDemoPublicaConfigTest {
     @Test
     void fonteRemotaDeveAbortarContextoAntesDeInstanciarConsumidorTls() {
         var ambiente = ambiente().withProperty("server.ssl.key-store", "https://keys.example.invalid/server.p12");
-        ambiente.setActiveProfiles("public-demo");
+        ambiente.setActiveProfiles("public-demo", "sessao-demo");
         var consumiu = new AtomicBoolean();
         new ApplicationContextRunner().withInitializer(contexto -> contexto.setEnvironment(ambiente))
                 .withUserConfiguration(TransportePublicoConfiguration.class)
@@ -97,8 +97,17 @@ class SessaoDemoPublicaConfigTest {
                 });
     }
 
+    @Test
+    void perfilPublicoSemAutenticacaoDeveSerRecusado() {
+        var ambiente = ambiente();
+        ambiente.setActiveProfiles("public-demo");
+        assertThatThrownBy(() -> configuracao.sessaoPublica(Clock.systemUTC(), ambiente))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("sessao-demo")
+                .hasMessageNotContaining(token);
+    }
+
     private MockEnvironment ambiente() {
-        return new MockEnvironment().withProperty("CREDPAY_ORIGIN_TOKEN", token)
+        var ambiente = new MockEnvironment().withProperty("CREDPAY_ORIGIN_TOKEN", token)
                 .withProperty("server.port", "8080").withProperty("server.ssl.enabled", "true")
                 .withProperty("server.ssl.key-store-type", "PKCS12")
                 .withProperty("server.ssl.key-store", "file:/run/secrets/fixture.p12")
@@ -113,5 +122,7 @@ class SessaoDemoPublicaConfigTest {
                 .withProperty("server.forward-headers-strategy", "none")
                 .withProperty("management.server.address", "127.0.0.1")
                 .withProperty("management.server.port", "9000");
+        ambiente.setActiveProfiles("public-demo", "sessao-demo");
+        return ambiente;
     }
 }
