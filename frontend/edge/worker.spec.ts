@@ -3,8 +3,9 @@ import worker, { PublicDemoEnv } from './worker';
 
 const publicOrigin = 'https://console.example.invalid';
 const apiOrigin = 'https://api.example.invalid';
+const originToken = crypto.randomUUID().replaceAll('-', '') + crypto.randomUUID().replaceAll('-', '');
 const assets = { fetch: vi.fn<(request: Request) => Promise<Response>>() };
-const env: PublicDemoEnv = { API_ORIGIN: apiOrigin, ASSETS: assets };
+const env: PublicDemoEnv = { API_ORIGIN: apiOrigin, API_ORIGIN_TOKEN: originToken, ASSETS: assets };
 
 afterEach(() => { vi.unstubAllGlobals(); vi.clearAllMocks(); vi.useRealTimers(); });
 
@@ -19,6 +20,27 @@ function transport(response = Response.json({ status: 'PENDENTE' })) {
   vi.stubGlobal('fetch', upstream);
   return upstream;
 }
+
+it.each([
+  { nome: 'ausente', valor: undefined }, { nome: 'vazia', valor: '' }, { nome: 'curta', valor: 'ficticia' },
+  { nome: 'caractere inválido', valor: originToken + '!' }, { nome: 'longa', valor: 'x'.repeat(129) }
+])('recusa configuração de origem $nome sem chamar backend', async ({ valor }) => {
+  const upstream = transport();
+  const response = await worker.fetch(request('/auth/csrf'), { ...env, API_ORIGIN_TOKEN: valor });
+  expect(response.status).toBe(503);
+  expect(upstream).not.toHaveBeenCalled();
+});
+
+it('injeta a credencial configurada e descarta a origem forjada pelo cliente', async () => {
+  const upstream = transport();
+  const response = await worker.fetch(request('/auth/csrf', 'GET', undefined,
+    { 'X-CredPay-Origin': 'valor-ficticio-do-cliente' }), env);
+  expect(response.status).toBe(200);
+  const outbound = upstream.mock.calls[0][0] as Request;
+  expect(outbound.headers.get('X-CredPay-Origin')).toBe(originToken);
+  expect(response.headers.get('X-CredPay-Origin')).toBeNull();
+  expect(await response.text()).not.toContain(originToken);
+});
 
 it('encaminha somente a rota de token ao HTTPS configurado, sem cache', async () => {
   const upstream = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ token: 'fixture' }));

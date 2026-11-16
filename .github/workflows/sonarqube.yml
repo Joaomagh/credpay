@@ -112,11 +112,18 @@ jobs:
           fi
 
       - name: Authenticate public image pulls
+        id: dockerhub_login
+        continue-on-error: true
         if: ${{ steps.dockerhub_auth.outputs.available == 'true' }}
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           username: ${{ secrets.CREDPAY_DOCKERHUB_USERNAME }}
           password: ${{ secrets.CREDPAY_DOCKERHUB_TOKEN }}
+      - name: Fall back to anonymous public image pulls
+        if: ${{ steps.dockerhub_login.outcome == 'failure' }}
+        run: |
+          docker logout >/dev/null 2>&1 || true
+          echo 'Docker Hub credential rejected; public image pulls will run anonymously and still must pass.'
 
       - name: Verify both services and collect their analysis classpaths
         run: |

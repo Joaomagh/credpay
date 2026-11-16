@@ -38,6 +38,9 @@ service-account.json
 .aws/
 .docker/
 .npmrc
+.wrangler/
+.dev.vars
+.dev.vars.*
 .pypirc
 id_rsa
 id_dsa
