@@ -1,5 +1,9 @@
 # Triagem de dependências e imagens
 
+## Candidata isolada em avaliação — 17/11/2026
+
+A [PR #243](https://github.com/Joaomagh/credpay/pull/243) integrou o teste do proxy no runtime local Workers após7checks/gate verdes; o bot Sonar indicou6 novos riscos de dependência ainda não triados. Isso não altera o bloqueio da imagem PostgreSQL. Próximo experimento: [PostgreSQL17.12/Alpine3.24 derivado](postgres-candidate/README.md), com `su-exec`0.3-r0 substituindo o binário Go `gosu` no filesystem final. Base oficial fixada por digest; o CI nativo deve executar inicialização, escrita, reinício em volume próprio e scan completo. Até revisar resultados em AMD64/ARM64, a candidata não é baseline aprovada, não toca volumes Bookworm e não autoriza URL pública. Nenhum achado foi suprimido ou aceito.
+
 ## Inventário nativo da PR241 — 16/11/2026
 
 O [run 43813561379](https://github.com/Joaomagh/credpay/actions/runs/43813561379) passou em AMD64 e ARM64, com Trivy0.75.0 e bases atualizadas. O resultado `lang-pkgs/gobinary` atribuiu o alvo a `usr/local/bin/gosu` **tanto na imagem PostgreSQL ativa quanto na candidata Alpine**. A identidade do binário está comprovada; alcance e exploração de cada CVE ainda exigem triagem por ID e versão. Contagens em cada arquitetura: Bookworm CRITICAL4/HIGH135/MEDIUM229/LOW176/UNKNOWN11; Alpine CRITICAL1/HIGH44/MEDIUM38/LOW3/UNKNOWN2; RabbitMQ CRITICAL0/HIGH0/MEDIUM1; base UBI10 e quatro alvos de aplicativos sem achados neste scan. Os números de 07/11 abaixo são históricos, com outra versão da base de vulnerabilidades. Nenhuma imagem foi promovida, achado suprimido ou risco aceito.

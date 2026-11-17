@@ -25,10 +25,11 @@
 - PR240: perfil public-demo/HTTPS e prazo absoluto de sessão integrados em f64ebb9 após17checks/gate96,3% do delta; fallback de pull público validado em CI, sem deploy. spec§9.170.
 - PR241: `gosu` atribuído nas imagens PostgreSQL ativa/candidata em AMD64/ARM64;5checks verdes no SHA4a9d65e, merge9856ac1. Banco continua bloqueado, spec§9.171.
 - PR242: resumo do inventário mantém as quatro linhas da tabela e apresenta alvos `gosu` depois;5checks/gate verdes, merge69fd79d. spec§9.172-9.173.
+- PR243: quatro contratos no runtime Workers, frontend/Compose/secret scan/Sonar verdes;7checks/gate OK, merge42cc931. O Sonar exibiu6 novos riscos de dependência não triados; spec§9.173.
 
 ## Agora
 
-- [ ] Validar o proxy no runtime local Workers: quatro cenários de assets/API/cookie passaram após instalação pinada e `npm ci --ignore-scripts`;71 testes Node, tipos, auditoria0 e diff limpo. Repetir build/testes no CI e conferir gate antes de integrar. Sem deploy ou conclusão de HTTPS/cotas/retencão no destino. spec§9.173.
+- [ ] Avaliar PostgreSQL17.12 Alpine com `su-exec`0.3-r0 **somente como candidata**. O Dockerfile, a prova descartável e o relatório sanitizado têm testes locais; executar CI nativo AMD64/ARM64, revisar CVEs e comportamento antes de qualquer promoção. A imagem ativa e volumes locais não mudam. spec§9.174.
 
 ## Próximo
 
@@ -36,7 +37,7 @@
 - Revisar ocorrências contextuais por ID, mantendo achados da pesquisa e referências históricas preservados.
 - Preparar publicação gratuita com HTTPS, retenção e limites validados. Contas Cloudflare/Oracle ainda dependem de João; nenhum deploy.
 - PostgreSQL Bookworm C4/H135 e candidato Alpine C1/H44 no scan de 16/11; o alvo Go é `gosu` em ambos. Investigar versões corrigidas e demais achados antes de publicar, sem supressão ou aceite residual.
-- Após inventário/triagem, validar proxy no runtime Workers e perfil HTTPS/sessões/retenção com dados fictícios, antes do aceite externo.
+- Triage dos6 riscos novos de dependência apontados pelo Sonar naPR243; `npm audit`0 não os encerra. Validar HTTPS/sessões/retenção com dados fictícios no destino antes do aceite externo.
 
 ## Depois
 

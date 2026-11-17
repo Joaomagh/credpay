@@ -1,0 +1,10 @@
+# PostgreSQL Alpine candidate — evaluation only
+
+This directory does not replace the active PostgreSQL image or migrate any data.
+The base is the [Docker Official Image `postgres:17.12-alpine3.24`](https://hub.docker.com/_/postgres/tags?name=17.12-alpine3.24), pinned to index digest `sha256:a77aa70e641402a21411b92b721c58d10f23b50ae5fdd2333efd22d166e1e5f7` (AMD64 manifest `005c5c37…`, ARM64 manifest `93f3c32b…`, checked 16 November 2026). This remains PostgreSQL major 17 and Alpine 3.24.
+
+The official [entrypoint](https://github.com/docker-library/postgres/blob/master/docker-entrypoint.sh) calls `gosu postgres` when started as root. The candidate installs Alpine main's [`su-exec` 0.3-r0](https://pkgs.alpinelinux.org/packages?branch=v3.24&name=su-exec) (MIT, C implementation), removes the vulnerable Go `gosu` binary from the final filesystem and keeps the entrypoint interface through a symlink. This is a focused dependency change for the observed `gosu` findings, not a security waiver. The image build still depends on Alpine's package repository; the resolved package and image IDs are checked in the native CI result. The parent image, package mirror and CI runner remain in the trust base.
+
+`postgres-candidate.yml` builds natively on AMD64 and ARM64, verifies the user drop, initializes a database, writes a row, restarts against its **own** labeled volume, and checks the row. The CI job then scans the saved image with pinned Trivy 0.75.0 and an empty ignore file. `report_candidate.py` projects package names, versions and every vulnerability ID/severity without publishing image environment. Missing OS coverage, wrong architecture, a missing `su-exec` package or a remaining `gosu` Go binary fail the job. Findings other than that stay visible, and a green job does not approve the image.
+
+Promotion requires reviewing the actual AMD64/ARM64 inventories, handling any remaining CRITICAL/HIGH findings, full service tests, migration/restore from a fresh backup, Compose/Kubernetes recovery and an explicit release decision. Existing Bookworm volumes must never be mounted directly into this Alpine candidate for a test.
