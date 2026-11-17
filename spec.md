@@ -3593,6 +3593,8 @@ Critério: workflow separado em runners nativos AMD64/ARM64, sem modo privilegia
 
 Primeiro CI da PR244/69d1acc: as duas arquiteturas concluíram build e prova de inicialização/reinício, mas o projetor recusou `usr/local/bin/gosu` no scan. O `rm` em camada superior não elimina os bytes da camada base distribuída no TAR, portanto o achado deve permanecer bloqueante. Correção candidata: estágio `scratch` copia o filesystem preparado já sem o binário original e restaura `PATH`, `LANG`, `PG_MAJOR`, `PG_VERSION`, `PGDATA`, volume, entrypoint, stop signal, porta e comando da imagem oficial. Repetir exatamente a prova e o inventário em AMD64/ARM64; não inferir resultado antes do CI.
 
+[Run44026136151](https://github.com/Joaomagh/credpay/actions/runs/44026136151) no head79802ef: ambos os jobs nativos passaram a prova de UID, inicialização/SQL, reinício com volume próprio e projetor sanitizado. O scanner informou Alpine3.24.4/46 pacotes OS e as duas tabelas de resumo registraram UNKNOWN0/LOW0/MEDIUM0/HIGH0/CRITICAL0. Inventários selecionados por arquitetura foram anexados ao run. Essa evidência cobre a candidata achatada naquele corte de feed; não substitui revisão de cada inventário, testes de integração, portabilidade/restauração de dados nem promoção. Os outros checks da PR ainda estavam em andamento neste registro.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

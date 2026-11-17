@@ -29,7 +29,7 @@
 
 ## Agora
 
-- [ ] Avaliar PostgreSQL17.12 Alpine com `su-exec`0.3-r0 **somente como candidata**. PR244 abriu; primeiro CI aprovou startup/reinício, mas recusou `gosu` ainda contido na camada base. Repetir CI nativo AMD64/ARM64 com imagem final achatada, revisar CVEs e comportamento antes de qualquer promoção. A imagem ativa e volumes locais não mudam. spec§9.174.
+- [ ] Avaliar PostgreSQL17.12 Alpine com `su-exec`0.3-r0 **somente como candidata**. PR244/run44026136151: dois jobs nativos verdes, startup/reinício e inventário selecionado com zero achados em ambos. Conferir demais gates e revisar inventários; integração, portabilidade/restauração e decisão de promoção ficam para incremento próprio. A imagem ativa e volumes locais não mudam. spec§9.174.
 
 ## Próximo
 
