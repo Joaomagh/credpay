@@ -27,6 +27,8 @@ cleanup() {
 trap cleanup EXIT
 
 test "$(docker image inspect --format '{{.Os}}/{{.Architecture}}' "$image")" = "linux/$arch"
+test "$(docker image inspect --format '{{.Config.User}}' "$image")" = postgres
+test "$(docker run --rm --network none --entrypoint id "$image" -u)" = 70
 docker run --rm --network none --user postgres --entrypoint postgres "$image" --version \
   | grep -Eq '^postgres \(PostgreSQL\) 17\.12([ .]|$)'
 docker run --rm --network none --entrypoint sh "$image" -ec \
