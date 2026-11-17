@@ -1,6 +1,10 @@
 # CredPay — Backlog do MVP
 
-Atualizado em 2026-11-16. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos e evidências: [spec](../spec.md). Uma única ação executável: [task](../task.md). Papéis: [P.O.](roles/product-owner.md), [dev sênior](roles/senior-developer.md) e [Scrum Master](roles/scrum-master.md).
+Atualizado em 2026-11-17. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos e evidências: [spec](../spec.md). Passos e critérios para fechar o produto: [roteiro do MVP](MVP_CLOSURE_RUNBOOK.md). Uma única ação executável: [task](../task.md). Papéis: [P.O.](roles/product-owner.md), [dev sênior](roles/senior-developer.md) e [Scrum Master](roles/scrum-master.md).
+
+## Estado de fechamento — 17/11/2026
+
+O fluxo técnico local, o console Angular com contas, o diagnóstico causal e o Kubernetes assistido têm evidências registradas. A candidata PostgreSQL da PR244 passou os jobs nativos AMD64/ARM64 no head6a05c55, mas **não foi promovida**. O Sonar desse head parou antes do scanner porque o `npm audit` completo passou a reportar HIGH em `picomatch` transitivo, sem versão corrigida publicada na consulta de17/11; nenhuma regra/gate foi reduzido. Próxima ação: acompanhar correção ou alternativa revisada, repetir os checks e só então integrar a candidata. Após isso, validar banco ativo, triar riscos de dependência, fixar o SHA, conduzir o ensaio pessoal e decidir a release. A URL pública exige ainda operação, contas, TLS e autorização do destino. O [roteiro](MVP_CLOSURE_RUNBOOK.md) define a ordem e as provas de saída; a tabela histórica abaixo não transforma etapas pendentes em concluídas.
 
 ## Prioridades
 
