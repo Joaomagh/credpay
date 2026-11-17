@@ -34,6 +34,16 @@ Não instalar CLI global, contratar serviço, publicar site ou alterar CORS do b
 
 Inspeção responsiva no navegador: viewports320/390/1280, sem overflow horizontal nos recortes conferidos; foco visível e validação negativa observados. Não constitui auditoria completa WCAG nem jornada de sucesso com backend ativo. Capturas locais em .local/frontend, sem substituir as referências originais.
 
+## Worker no runtime de teste — baseline antes da instalação (16/11/2026)
+
+Necessidade: os 71 testes do proxy usam APIs Web do Node, mas ainda não exercitam a implementação de Request, Headers, fetch e assets do runtime Workers. Antes de publicar, executar cenários curtos no runtime local do fornecedor, em CI descartável, sem origem real, token real ou deploy. O teste não comprova TLS, DNS, cotas ou contenção de egress do destino.
+
+Pacote candidato de desenvolvimento `@cloudflare/vitest-plugin` 1.8.3, MIT, SRI `sha512-S1Pp6RchJBt4tFyPuTisx8ieOgJ55rjR7Gk/gESwBuytVz9OeuFCYJ7cRo89jjvhNWILPBBv5w+4WmLuKVHYDw==` consultado no registro npm em 16/11. Peer Vitest `^4.1.0 || ^5.0.0` inclui a versão fixada 5.0.5; transitivos declarados: Wrangler 4.163.0, Miniflare 5.20261116.0-beta, esbuild 0.28.2, zod 4.6.6 e cjs-module-lexer 1.2.3. A dependência Miniflare beta e o volume da árvore exigem auditoria/execução antes de aceitar o incremento. Fixar a resolução no lockfile, instalar sem scripts, não instalar Wrangler global nem criar conta. Se a integração exigir baixar código não pinado, modificar segurança do runner ou falhar na auditoria, não integrar.
+
+Tipos de teste candidatos: `@cloudflare/workers-types` 5.20261116.1, MIT OR Apache-2.0, SRI `sha512-bym4dNT9Hnm+goedLTTTH85T6S4wOJJaOpKgk9MlEGU18/JKsChN+wHvSWUAIy5YVSm6LnuaUu3d3N4K0m8Dtg==`. O gerador local do Wrangler produziu um arquivo de 631 KiB; preferir o pacote de tipos versionado para não comitar esse código gerado. Não habilitar Node compatibility no Worker público apenas para o teste.
+
+Referências: [integração oficial Vitest](https://developers.cloudflare.com/workers/testing/vitest-integration/) e [primeiro teste](https://developers.cloudflare.com/workers/testing/vitest-integration/write-your-first-test/). O runtime local é uma aproximação para testes, não o ambiente público de produção.
+
 ## F03 — Navegador real no CI (baseline anterior à resolução)
 
 Necessidade: a jornada real foi provada manualmente, mas faltava regressão automática das telas contra os dois serviços. Adicionar somente em dev @playwright/test/playwright/playwright-core1.64.1 (Apache-2.0, Node>=20), integridades do registro npm em dependencies-baseline.json antes da instalação. Reutiliza Node24.22.1. Chromium oficial correspondente à revisão desse pacote será baixado somente no runner GitHub, com PLAYWRIGHT_BROWSERS_PATH no temporário; não instalar navegador/ferramenta global no computador de João. Manifesto de browsers/revisão deve ser conferido após resolução, antes do download em CI. Sem apt/install-with-deps: usar bibliotecas do runner hospedado e falhar se faltar requisito, sem enfraquecer testes.

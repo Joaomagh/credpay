@@ -2,6 +2,19 @@
   "consulted": "2026-10-22",
   "source": "https://registry.npmjs.org/",
   "packages": {
+    "@cloudflare/vitest-plugin": {
+      "version": "1.8.3",
+      "license": "MIT",
+      "peers": { "vitest": "^4.1.0 || ^5.0.0" },
+      "integrity": "sha512-S1Pp6RchJBt4tFyPuTisx8ieOgJ55rjR7Gk/gESwBuytVz9OeuFCYJ7cRo89jjvhNWILPBBv5w+4WmLuKVHYDw==",
+      "url": "https://registry.npmjs.org/@cloudflare/vitest-plugin/-/vitest-plugin-1.8.3.tgz"
+    },
+    "@cloudflare/workers-types": {
+      "version": "5.20261116.1",
+      "license": "MIT OR Apache-2.0",
+      "integrity": "sha512-bym4dNT9Hnm+goedLTTTH85T6S4wOJJaOpKgk9MlEGU18/JKsChN+wHvSWUAIy5YVSm6LnuaUu3d3N4K0m8Dtg==",
+      "url": "https://registry.npmjs.org/@cloudflare/workers-types/-/workers-types-5.20261116.1.tgz"
+    },
     "@vitest/coverage-v8": {
       "version": "5.0.5",
       "license": "MIT",

@@ -24,10 +24,11 @@
 - PR239: APT removido com UBI10,16checks/gate95,2% do delta; merge bfb7715. JARs/imagens sem achados nos2perfis; banco continua bloqueado, spec§9.169.
 - PR240: perfil public-demo/HTTPS e prazo absoluto de sessão integrados em f64ebb9 após17checks/gate96,3% do delta; fallback de pull público validado em CI, sem deploy. spec§9.170.
 - PR241: `gosu` atribuído nas imagens PostgreSQL ativa/candidata em AMD64/ARM64;5checks verdes no SHA4a9d65e, merge9856ac1. Banco continua bloqueado, spec§9.171.
+- PR242: resumo do inventário mantém as quatro linhas da tabela e apresenta alvos `gosu` depois;5checks/gate verdes, merge69fd79d. spec§9.172-9.173.
 
 ## Agora
 
-- [ ] Corrigir a apresentação da identidade Go no resumo do inventário, mantendo a tabela de quatro imagens contígua. Teste red/green e suíte Python22 passaram localmente (1skip de symlink Windows); revalidar inventários nativos, secret scan e gate no CI. Em paralelo apenas como pesquisa, avaliar baseline PostgreSQL corrigida: `gosu` 1.20 oficial ainda usa Go1.24.6, portanto não declarar correção por versão.
+- [ ] Validar o proxy no runtime local Workers: quatro cenários de assets/API/cookie passaram após instalação pinada e `npm ci --ignore-scripts`;71 testes Node, tipos, auditoria0 e diff limpo. Repetir build/testes no CI e conferir gate antes de integrar. Sem deploy ou conclusão de HTTPS/cotas/retencão no destino. spec§9.173.
 
 ## Próximo
 

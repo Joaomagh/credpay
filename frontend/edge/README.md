@@ -22,9 +22,12 @@ Na pasta `frontend`, com o runtime já fixado:
 npm.cmd run check:edge
 npm.cmd run test:edge
 npm.cmd run build -- --configuration production,contas
+npm.cmd run test:worker
 ```
 
 Os71testes usam Request/Response/Streams reais do Node24, com fetch e assets controlados na fronteira. Não acessam rede, Docker ou contas. A cobertura V8 real em `coverage/edge/lcov.info` é validada/projetada para o Sonar preservando os hits. Isso não executa Workers, não comprova certificado/cookie no navegador e não substitui smoke externo ou revisão manual com backend real.
+
+Depois do build, quatro testes separados executam o Worker no runtime local de testes do fornecedor, com o binding de assets apontando ao bundle Angular produzido. Conferem shell, recusa da API sem configuração, bloqueio de rota interna/método de escrita e encaminhamento de cookie seguro com upstream fictício. A configuração de exemplo mantém `API_ORIGIN` vazia, sem token real ou rede externa; o teste de upstream usa apenas resposta controlada na fronteira. Isso confirma compatibilidade local das APIs de Workers, sem reproduzir DNS, TLS público, cota global, autenticação/retencão do destino ou isolamento do ambiente hospedado. Dependências de teste, integridades e limites em [baseline](../../docs/frontend/BASELINE.md).
 
 `wrangler.example.jsonc` é um modelo revisável, sem instalação de Wrangler ou comando de deploy. Aponta exclusivamente para `dist/console/browser`, mantém API_ORIGIN vazia e URLs de preview/workers.dev desabilitadas. `run_worker_first: true` impede que navegação transforme API em HTML; somente as quatro rotas do console recebem o shell. Toda requisição, inclusive asset, invoca o Worker e participa da franquia. Confirmar limites gratuitos e medir CPU no runtime antes da adoção. Não copiar `.env`, `.local`, checkout ou mapas de fontes para assets.
 

@@ -507,4 +507,6 @@ Resultado intermediário PR241: o [inventário nativo de16/11](https://github.co
 
 PR241/9856ac1 integrada após5checks no head4a9d65e, incluindo inventários AMD64/ARM64, secret scan e Sonar. Atribuição `gosu` comprovada; correção pendente. O release oficial `gosu`1.20 ainda declara Go1.24.6, então atualização simples não comprova remediação dos CVEs stdlib. Ajustar apresentação da tabela do inventário, avaliar baseline corrigida/alcance, testar persistência e recuperação antes de promover PostgreSQL. Sem URL pública ou aceite residual. spec§9.172.
 
+PR242/69fd79d integrada após5checks/gate OK: resumo de inventário exibe as quatro imagens em tabela contígua e os alvos `gosu` em seguida, sem mudar contagens ou esconder achados. Próximo incremento: quatro testes do Worker no runtime local do fornecedor passaram, com asset Angular de produção, falha fechada sem origem/token, rotas internas e cookie seguro na fronteira fictícia. `npm ci --ignore-scripts`, tipos,71testes Node, `npm audit`0 e diff local verde; CI/gate ainda pendentes. A execução local não comprova TLS/cotas/retencão no destino nem resolve PostgreSQL. spec§9.173.
+
 Painel Prometheus/Grafana, Jenkins de laboratório e pesquisa de sandbox permanecem evoluções separadas, conforme o recorte já escolhido. Achados e lacunas históricas continuam preservados.
