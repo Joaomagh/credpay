@@ -28,7 +28,7 @@
 
 ## Agora
 
-- [ ] Validar o proxy no runtime local Workers: quatro cenários de assets/API/cookie passaram após instalação pinada e `npm ci --ignore-scripts`;71 testes Node, tipos, auditoria0 e diff limpo. Repetir build/testes no CI e conferir gate antes de integrar. Sem deploy ou conclusão de HTTPS/cotas/retencão no destino. spec§9.173.
+- [ ] Investigar o bloqueio novo do `npm audit` completo no Sonar da PR #244: GHSA-fc5q-39xc-vjpf em `picomatch`4.0.7, sem versão corrigida publicada na consulta de17/11. CI contou16 HIGH e consulta local14 no feed atual; `--omit=dev`0 é só recorte de alcance. Manter gate, não forçar upgrade incompatível nem promover a candidata. Sequência e aceites em docs/MVP_CLOSURE_RUNBOOK.md.
 
 ## Próximo
 
@@ -36,7 +36,7 @@
 - Revisar ocorrências contextuais por ID, mantendo achados da pesquisa e referências históricas preservados.
 - Preparar publicação gratuita com HTTPS, retenção e limites validados. Contas Cloudflare/Oracle ainda dependem de João; nenhum deploy.
 - PostgreSQL Bookworm C4/H135 e candidato Alpine C1/H44 no scan de 16/11; o alvo Go é `gosu` em ambos. Investigar versões corrigidas e demais achados antes de publicar, sem supressão ou aceite residual.
-- Após inventário/triagem, validar proxy no runtime Workers e perfil HTTPS/sessões/retenção com dados fictícios, antes do aceite externo.
+- PR243/42cc931 integrou quatro testes no runtime Workers local; HTTPS/sessões/retenção no destino continuam pendentes. PR244: candidata PostgreSQL passou os dois jobs nativos no head6a05c55, mas Sonar não analisou o head por causa do audit; não integrar com check vermelho.
 
 ## Depois
 
