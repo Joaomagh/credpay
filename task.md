@@ -29,7 +29,7 @@
 
 ## Agora
 
-- [ ] Avaliar PostgreSQL17.12 Alpine com `su-exec`0.3-r0 **somente como candidata**. PR244/run44026136151: dois jobs nativos verdes, inventário selecionado com zero achados em ambos. O head documental seguinte expôs uma corrida do probe com o servidor temporário; aguardar o PID1 definitivo e `SELECT 1`, repetir gates e revisar inventários. Integração, portabilidade/restauração e promoção ficam para incremento próprio. A imagem ativa e volumes locais não mudam. spec§9.174.
+- [ ] Investigar o bloqueio novo do `npm audit` completo no Sonar da PR #244: GHSA-fc5q-39xc-vjpf em `picomatch`4.0.7, sem versão corrigida publicada na consulta de17/11. CI contou16 HIGH e consulta local14 no feed atual; `--omit=dev`0 é só recorte de alcance. Manter gate, não forçar upgrade incompatível nem promover a candidata. Sequência e aceites em docs/MVP_CLOSURE_RUNBOOK.md.
 
 ## Próximo
 
@@ -37,7 +37,8 @@
 - Revisar ocorrências contextuais por ID, mantendo achados da pesquisa e referências históricas preservados.
 - Preparar publicação gratuita com HTTPS, retenção e limites validados. Contas Cloudflare/Oracle ainda dependem de João; nenhum deploy.
 - PostgreSQL Bookworm C4/H135 e candidato Alpine C1/H44 no scan de 16/11; o alvo Go é `gosu` em ambos. Investigar versões corrigidas e demais achados antes de publicar, sem supressão ou aceite residual.
-- Triage dos6 riscos novos de dependência apontados pelo Sonar naPR243; `npm audit`0 não os encerra. Validar HTTPS/sessões/retenção com dados fictícios no destino antes do aceite externo.
+- PR243/42cc931 integrou quatro testes no runtime Workers local; HTTPS/sessões/retenção no destino continuam pendentes. PR244: candidata PostgreSQL passou os dois jobs nativos no head6a05c55, mas Sonar não analisou o head por causa do audit; não integrar com check vermelho.
+- Triar os6 riscos de dependência apontados pelo Sonar naPR243. Após o audit corrigido, repetir gate e revisar os inventários selecionados da candidata antes de integrar. Portabilidade/restauração e promoção do banco exigem incremento próprio.
 
 ## Depois
 
