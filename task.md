@@ -29,7 +29,7 @@
 
 ## Agora
 
-- [ ] Avaliar PostgreSQL17.12 Alpine com `su-exec`0.3-r0 **somente como candidata**. PR244/run44026136151: dois jobs nativos verdes, startup/reinício e inventário selecionado com zero achados em ambos. Conferir demais gates e revisar inventários; integração, portabilidade/restauração e decisão de promoção ficam para incremento próprio. A imagem ativa e volumes locais não mudam. spec§9.174.
+- [ ] Avaliar PostgreSQL17.12 Alpine com `su-exec`0.3-r0 **somente como candidata**. PR244/run44026136151: dois jobs nativos verdes, inventário selecionado com zero achados em ambos. O head documental seguinte expôs uma corrida do probe com o servidor temporário; aguardar o PID1 definitivo e `SELECT 1`, repetir gates e revisar inventários. Integração, portabilidade/restauração e promoção ficam para incremento próprio. A imagem ativa e volumes locais não mudam. spec§9.174.
 
 ## Próximo
 

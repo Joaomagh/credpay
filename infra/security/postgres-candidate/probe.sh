@@ -39,7 +39,8 @@ docker run -d --name "$name" --label "$label" --network none \
   -v "$volume:/var/lib/postgresql/data" "$image" >/dev/null
 ready=0
 for _ in $(seq 1 60); do
-  if docker exec -u postgres "$name" pg_isready -U postgres -d fixture >/dev/null 2>&1; then ready=1; break; fi
+  if [ "$(docker exec "$name" cat /proc/1/comm 2>/dev/null || true)" = postgres ] \
+    && docker exec -u postgres "$name" psql -v ON_ERROR_STOP=1 -U postgres -d fixture -Atqc 'SELECT 1' >/dev/null 2>&1; then ready=1; break; fi
   sleep 1
 done
 test "$ready" -eq 1
@@ -54,7 +55,8 @@ docker run -d --name "$name" --label "$label" --network none \
   -v "$volume:/var/lib/postgresql/data" "$image" >/dev/null
 ready=0
 for _ in $(seq 1 60); do
-  if docker exec -u postgres "$name" pg_isready -U postgres -d fixture >/dev/null 2>&1; then ready=1; break; fi
+  if [ "$(docker exec "$name" cat /proc/1/comm 2>/dev/null || true)" = postgres ] \
+    && docker exec -u postgres "$name" psql -v ON_ERROR_STOP=1 -U postgres -d fixture -Atqc 'SELECT 1' >/dev/null 2>&1; then ready=1; break; fi
   sleep 1
 done
 test "$ready" -eq 1

@@ -3595,6 +3595,8 @@ Primeiro CI da PR244/69d1acc: as duas arquiteturas concluíram build e prova de 
 
 [Run44026136151](https://github.com/Joaomagh/credpay/actions/runs/44026136151) no head79802ef: ambos os jobs nativos passaram a prova de UID, inicialização/SQL, reinício com volume próprio e projetor sanitizado. O scanner informou Alpine3.24.4/46 pacotes OS e as duas tabelas de resumo registraram UNKNOWN0/LOW0/MEDIUM0/HIGH0/CRITICAL0. Inventários selecionados por arquitetura foram anexados ao run. Essa evidência cobre a candidata achatada naquele corte de feed; não substitui revisão de cada inventário, testes de integração, portabilidade/restauração de dados nem promoção. Os outros checks da PR ainda estavam em andamento neste registro.
 
+No head5f464fc, o job AMD64 falhou na prova depois de `pg_isready`: o comando viu o servidor temporário da inicialização, que fechou antes do primeiro `psql` ("the database system is shutting down"). O mesmo código havia passado em AMD64/ARM64 no head anterior; o teste era sensível ao timing. Agora o probe aguarda `/proc/1/comm=postgres` (entrypoint já fez `exec`) e `SELECT 1` bem-sucedido, tanto na primeira partida quanto após o restart. Repetir CI; não classificar como flake ignorável nem reduzir o cenário.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
