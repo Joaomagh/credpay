@@ -22,6 +22,7 @@ ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
     PG_VERSION=17.12 \
     PGDATA=/var/lib/postgresql/data
 VOLUME /var/lib/postgresql/data
+USER postgres
 ENTRYPOINT ["docker-entrypoint.sh"]
 STOPSIGNAL SIGINT
 EXPOSE 5432
