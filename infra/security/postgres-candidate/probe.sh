@@ -27,13 +27,16 @@ cleanup() {
 trap cleanup EXIT
 
 test "$(docker image inspect --format '{{.Os}}/{{.Architecture}}' "$image")" = "linux/$arch"
-test "$(docker image inspect --format '{{.Config.User}}' "$image")" = postgres
-test "$(docker run --rm --network none --entrypoint id "$image" -u)" = 70
+test "$(docker image inspect --format '{{.Config.User}}' "$image")" = postgres \
+  || { echo 'Candidate default image user must be postgres.' >&2; exit 1; }
+test "$(docker run --rm --network none --entrypoint id "$image" -u)" = 70 \
+  || { echo 'Candidate default runtime UID must be 70.' >&2; exit 1; }
 docker run --rm --network none --user postgres --entrypoint postgres "$image" --version \
   | grep -Eq '^postgres \(PostgreSQL\) 17\.12([ .]|$)'
 docker run --rm --network none --entrypoint sh "$image" -ec \
   'test -L /usr/local/bin/gosu && test "$(readlink /usr/local/bin/gosu)" = /sbin/su-exec'
-test "$(docker run --rm --network none --entrypoint gosu "$image" postgres id -u)" = 70
+test "$(docker run --rm --network none --user root --entrypoint gosu "$image" postgres id -u)" = 70 \
+  || { echo 'Candidate root-start fallback failed to drop to postgres.' >&2; exit 1; }
 docker volume create --label "$label" "$volume" >/dev/null
 docker run -d --name "$name" --label "$label" --network none \
   --security-opt no-new-privileges:true \
