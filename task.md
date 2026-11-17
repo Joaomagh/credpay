@@ -29,7 +29,7 @@
 
 ## Agora
 
-- [ ] Avaliar PostgreSQL17.12 Alpine com `su-exec`0.3-r0 **somente como candidata**. O Dockerfile, a prova descartável e o relatório sanitizado têm testes locais; executar CI nativo AMD64/ARM64, revisar CVEs e comportamento antes de qualquer promoção. A imagem ativa e volumes locais não mudam. spec§9.174.
+- [ ] Avaliar PostgreSQL17.12 Alpine com `su-exec`0.3-r0 **somente como candidata**. PR244 abriu; primeiro CI aprovou startup/reinício, mas recusou `gosu` ainda contido na camada base. Repetir CI nativo AMD64/ARM64 com imagem final achatada, revisar CVEs e comportamento antes de qualquer promoção. A imagem ativa e volumes locais não mudam. spec§9.174.
 
 ## Próximo
 

@@ -3591,6 +3591,8 @@ Objetivo: reduzir o bloqueio do banco sem alterar a imagem ativa, os volumes Boo
 
 Critério: workflow separado em runners nativos AMD64/ARM64, sem modo privilegiado; testa queda de UID, inicialização, SQL, parada/reinício e leitura no mesmo volume **próprio descartável**. Trivy0.75.0 fixado por hash varre o TAR com ignore vazio; relatório selecionado valida imagem, arquitetura, cobertura OS e versão do pacote, preserva cada ID/severidade e recusa alvo Go `usr/local/bin/gosu`. Quatro testes do projetor começaram vermelhos por contagem ausente e guards sem efeito; dois cenários adicionais exercem a escrita sanitizada e a recusa de JSON ambíguo. Os seis passaram localmente, com 96% de cobertura do projetor; sintaxe Bash local passou. No PC atual não há daemon Docker acessível; build, startup e inventários reais permanecem pendentes no CI. Mesmo resultado verde é avaliação, não promoção: revisar achados, executar suíte de serviços, restauração/portabilidade, Compose/Kubernetes e decisão posterior antes de trocar o banco. Fontes e limites em `infra/security/postgres-candidate/README.md`.
 
+Primeiro CI da PR244/69d1acc: as duas arquiteturas concluíram build e prova de inicialização/reinício, mas o projetor recusou `usr/local/bin/gosu` no scan. O `rm` em camada superior não elimina os bytes da camada base distribuída no TAR, portanto o achado deve permanecer bloqueante. Correção candidata: estágio `scratch` copia o filesystem preparado já sem o binário original e restaura `PATH`, `LANG`, `PG_MAJOR`, `PG_VERSION`, `PGDATA`, volume, entrypoint, stop signal, porta e comando da imagem oficial. Repetir exatamente a prova e o inventário em AMD64/ARM64; não inferir resultado antes do CI.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
