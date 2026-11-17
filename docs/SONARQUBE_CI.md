@@ -64,3 +64,20 @@ O teste Pester executa os50 controles reais de `check-disposable-secret.ps1` e13
 O Cobertura original é preservado; `prepare_sonar.py` transforma somente hits medidos em XML genérico para `sonar.coverageReportPaths`. Recusa relatório ausente/inválido, arquivo desconhecido/ausente/duplicado, linha fora da fonte/duplicada e hits inválidos. Mantém linhas não executadas como `covered=false`; não inventa branches ou execuções. Os dois XML nomeados são publicados com os demais relatórios; pacote/módulo não entram nos artefatos. [Formato genérico](https://docs.sonarsource.com/sonarqube-server/analyzing-source-code/test-coverage/generic-test-data).
 
 Na conclusão da PR232, a medição inclui também `scan.ps1`:5 testes Pester,350 comandos/94,57%,160 linhas mapeadas em4 fontes. Os três testes adicionais executam o controlador real com processo de scanner fictício em pasta própria, cobrindo ARM64, perfil inconsistente e falha operacional. Um red revelou saída relativa divergente da raiz de trabalho; caminhos absolutos corrigiram a falha. Gate100% apenas do código novo da PR, sem condições ignoradas; não atribuir esse percentual ao projeto inteiro. Scans reais continuam separados e podem conter vulnerabilidades mesmo com gate Sonar verde.
+
+## Riscos de dependência da PR #243 — triagem de 17/11/2026
+
+A página de riscos do Sonar, acessada com a sessão GitHub existente, mostrou seis riscos abertos em `undici` 7.30.1 no `frontend/package-lock.json`. A origem é de desenvolvimento: `@cloudflare/vitest-plugin` 1.8.3 → `miniflare` 5.20261116.0-beta (também alcançado por `wrangler` 4.163.0) → `undici`. O lockfile continha ainda `jsdom` 30.1.3 → `undici` 8.12.3. O código do Worker não declara `undici` como dependência de produção; isso delimita o caminho observado, sem afirmar que o risco é inexplorável no ambiente de build/teste.
+
+| CVE apontada pelo Sonar | Condição resumida | Correção proposta no lockfile |
+| --- | --- | --- |
+| CVE-2026-116592 | Cache de redirecionamento entre origens | 7.30.2 / 8.12.4 |
+| CVE-2026-120474 | Resposta com credencial reutilizada pelo cache | 7.30.2 / 8.12.4 |
+| CVE-2026-116630 | Revalidação de cache após redirecionamento entre origens | 7.30.2 / 8.12.4 |
+| CVE-2026-120222 | Exceção não tratada na repetição de cache | 7.30.2 / 8.12.4 |
+| CVE-2026-120415 | Credencial em cabeçalhos de array após redirecionamento | 7.30.2 / 8.12.4 |
+| CVE-2026-120423 | Integridade ignorada com certos espaços ASCII | 7.30.2 / 8.12.4 |
+
+Fonte primária para os seis IDs e as duas versões corrigidas: [release `undici` 7.30.2](https://github.com/nodejs/undici/releases/tag/v7.30.2) e [release 8.12.4](https://github.com/nodejs/undici/releases/tag/v8.12.4). `miniflare` fixa 7.30.1 exatamente; por isso o manifesto aplica um override apenas nesse ramo. `jsdom` aceita `^8.12.1` e recebe 8.12.4 por atualização normal do lockfile. Nenhuma regra, severidade ou condição do gate foi alterada. `npm ci`, tipos, build, 50 testes Angular, 71 testes edge e quatro testes no runtime Workers passaram localmente; `npm audit` completo ainda retorna 16 ocorrências HIGH associadas à advisory independente de `picomatch`. A correção dos seis riscos **ainda precisa de nova análise Sonar e confirmação por ID**; o estado histórico da PR #243 não foi alterado nem fechado manualmente.
+
+O primeiro CI da PR #246 confirmou a falha do job Angular no passo `Audit all resolved packages`. O workflow Sonar executava o mesmo `npm audit` antes do scanner e, assim, não produzia análise dos seis IDs quando a advisory `picomatch` bloqueava o job. A ordem foi alterada: testes, relatórios e scanner continuam obrigatórios, e o comando `npm audit --audit-level=low` permanece como último passo **sem** `continue-on-error`. Uma vulnerabilidade ainda deixa o job vermelho e impede integração; a análise anterior apenas permite inspecionar os riscos por ID. O novo corte de CI precisa provar essa sequência. Não há waiver ou supressão.
