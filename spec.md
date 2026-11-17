@@ -3591,6 +3591,8 @@ Na sessão GitHub já autenticada, os seis riscos da PR243 apontaram para `undic
 
 Evidência local: antes da mudança `npm ls undici --all` mostrou7.30.1/8.12.3; depois,7.30.2/8.12.4. `npm ci --ignore-scripts`, tipos Angular/edge, `ng build`,2 testes de decimais,50 Angular,71 edge e4 testes no runtime Workers passaram. O `npm audit` completo passou a contar16 HIGH, todos propagados de `picomatch` no feed desta execução; não lista `undici`. O recorte `--omit=dev` retornou0, sem substituir o gate. Não há nova análise Sonar deste branch nem estado FIXED confirmado dos seis IDs; CI, browser e integração pendentes. A PR244 do banco permanece bloqueada separadamente.
 
+A PR246 foi aberta como draft no SHA `f9bbebd`. O primeiro CI Frontend falhou, como esperado, no passo de audit completo. Para obter análise Sonar mesmo com esse bloqueio, o workflow passou a executar o mesmo `npm audit --audit-level=low` depois do scanner; ele continua sendo um passo obrigatório que reprova o job. A verificação dessa ordem e dos estados dos seis IDs depende do próximo run. Nenhum check vermelho pode ser tratado como aprovação de merge ou release.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

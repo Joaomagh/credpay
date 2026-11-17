@@ -25,11 +25,11 @@
 - PR240: perfil public-demo/HTTPS e prazo absoluto de sessão integrados em f64ebb9 após17checks/gate96,3% do delta; fallback de pull público validado em CI, sem deploy. spec§9.170.
 - PR241: `gosu` atribuído nas imagens PostgreSQL ativa/candidata em AMD64/ARM64;5checks verdes no SHA4a9d65e, merge9856ac1. Banco continua bloqueado, spec§9.171.
 - PR242: resumo do inventário mantém as quatro linhas da tabela e apresenta alvos `gosu` depois;5checks/gate verdes, merge69fd79d. spec§9.172-9.173.
-- PR243: quatro contratos no runtime Workers, sete checks/gate verdes, merge42cc931. Seis riscos `undici` do Sonar triados em docs/SONARQUBE_CI.md; correção local aguarda CI e confirmação por ID.
+- PR243: quatro contratos no runtime Workers, sete checks/gate verdes, merge42cc931. Seis riscos `undici` do Sonar triados em docs/SONARQUBE_CI.md; correção na draft PR246 aguarda nova análise por ID.
 
 ## Agora
 
-- [ ] Investigar o bloqueio novo do `npm audit` completo no Sonar da PR #244: GHSA-fc5q-39xc-vjpf em `picomatch`4.0.7, sem versão corrigida publicada na consulta de17/11. CI contou16 HIGH e consulta local14 no feed atual; `--omit=dev`0 é só recorte de alcance. Manter gate, não forçar upgrade incompatível nem promover a candidata. Sequência e aceites em docs/MVP_CLOSURE_RUNBOOK.md.
+- [ ] Confirmar na draft PR246 que o scanner Sonar executa antes do mesmo audit obrigatório, que o job permanece vermelho por `picomatch` e que os seis riscos `undici` podem ser revisados por ID. O `picomatch`4.0.7 segue sem versão corrigida publicada em17/11; manter gate, não forçar upgrade incompatível nem promover a candidata PostgreSQL. Sequência e aceites em docs/MVP_CLOSURE_RUNBOOK.md.
 
 ## Próximo
 
