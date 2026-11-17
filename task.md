@@ -25,6 +25,7 @@
 - PR240: perfil public-demo/HTTPS e prazo absoluto de sessão integrados em f64ebb9 após17checks/gate96,3% do delta; fallback de pull público validado em CI, sem deploy. spec§9.170.
 - PR241: `gosu` atribuído nas imagens PostgreSQL ativa/candidata em AMD64/ARM64;5checks verdes no SHA4a9d65e, merge9856ac1. Banco continua bloqueado, spec§9.171.
 - PR242: resumo do inventário mantém as quatro linhas da tabela e apresenta alvos `gosu` depois;5checks/gate verdes, merge69fd79d. spec§9.172-9.173.
+- PR243: quatro contratos no runtime Workers, frontend/Compose/secret scan/Sonar verdes;7checks/gate OK, merge42cc931. O Sonar exibiu6 novos riscos de dependência não triados; spec§9.173.
 
 ## Agora
 
@@ -37,6 +38,7 @@
 - Preparar publicação gratuita com HTTPS, retenção e limites validados. Contas Cloudflare/Oracle ainda dependem de João; nenhum deploy.
 - PostgreSQL Bookworm C4/H135 e candidato Alpine C1/H44 no scan de 16/11; o alvo Go é `gosu` em ambos. Investigar versões corrigidas e demais achados antes de publicar, sem supressão ou aceite residual.
 - PR243/42cc931 integrou quatro testes no runtime Workers local; HTTPS/sessões/retenção no destino continuam pendentes. PR244: candidata PostgreSQL passou os dois jobs nativos no head6a05c55, mas Sonar não analisou o head por causa do audit; não integrar com check vermelho.
+- Triar os6 riscos de dependência apontados pelo Sonar naPR243. Após o audit corrigido, repetir gate e revisar os inventários selecionados da candidata antes de integrar. Portabilidade/restauração e promoção do banco exigem incremento próprio.
 
 ## Depois
 

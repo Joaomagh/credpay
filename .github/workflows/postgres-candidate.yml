@@ -1,0 +1,117 @@
+name: PostgreSQL Candidate
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "infra/security/postgres-candidate/**"
+      - ".github/workflows/postgres-candidate.yml"
+  push:
+    branches: [main]
+    paths:
+      - "infra/security/postgres-candidate/**"
+      - ".github/workflows/postgres-candidate.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: postgres-candidate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  evaluate:
+    name: Candidate linux/${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: amd64
+            machine: x86_64
+            scanner: trivy_0.75.0_Linux-64bit.tar.gz
+            sha256: c6e65abddb348e25f10549df887045629cf28cc72453cd1c63acb717316b3f3f
+            suffix: ""
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+            machine: aarch64
+            scanner: trivy_0.75.0_Linux-ARM64.tar.gz
+            sha256: a1ee9f6ffb7d112b64ff726a2a0717c21175c1114361391f4a132956751a13b3
+            suffix: -arm64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    env:
+      EXPECTED_ARCH: ${{ matrix.arch }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Require native architecture
+        env:
+          EXPECTED_MACHINE: ${{ matrix.machine }}
+        run: test "$(uname -m)" = "$EXPECTED_MACHINE"
+      - name: Check public pull authentication availability
+        id: dockerhub_auth
+        if: ${{ github.actor != 'dependabot[bot]' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        env:
+          CREDPAY_DOCKERHUB_USERNAME: ${{ secrets.CREDPAY_DOCKERHUB_USERNAME }}
+          CREDPAY_DOCKERHUB_TOKEN: ${{ secrets.CREDPAY_DOCKERHUB_TOKEN }}
+        run: |
+          if [ -n "$CREDPAY_DOCKERHUB_USERNAME" ] && [ -n "$CREDPAY_DOCKERHUB_TOKEN" ]; then
+            echo 'available=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'available=false' >> "$GITHUB_OUTPUT"
+            echo 'Public pulls remain enabled without a Docker Hub token.'
+          fi
+      - name: Authenticate public image pulls
+        id: dockerhub_login
+        if: ${{ steps.dockerhub_auth.outputs.available == 'true' }}
+        continue-on-error: true
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.CREDPAY_DOCKERHUB_USERNAME }}
+          password: ${{ secrets.CREDPAY_DOCKERHUB_TOKEN }}
+      - name: Fall back to anonymous public image pulls
+        if: ${{ steps.dockerhub_login.outcome == 'failure' }}
+        run: |
+          docker logout >/dev/null 2>&1 || true
+          echo 'Docker Hub credential rejected; candidate build still must pass with anonymous pulls.'
+      - name: Check report controls
+        run: python3 -I -B -m unittest discover -s infra/security/postgres-candidate -p test_report_candidate.py
+      - name: Build and probe separate candidate
+        run: |
+          set -euo pipefail
+          image="credpay-postgres-candidate:$GITHUB_SHA"
+          docker build --pull --tag "$image" infra/security/postgres-candidate
+          test "$(docker image inspect --format '{{.Os}}/{{.Architecture}}' "$image")" = "linux/$EXPECTED_ARCH"
+          bash infra/security/postgres-candidate/probe.sh "$image" "$EXPECTED_ARCH"
+          mkdir -p .local/security/postgres-candidate
+          docker image inspect --format '{{.Id}}' "$image" > .local/security/postgres-candidate/image-id.txt
+          docker save --output .local/security/postgres-candidate/image.tar "$image"
+      - name: Download pinned Trivy and scan the candidate
+        env:
+          TRIVY_FILE: ${{ matrix.scanner }}
+          TRIVY_SHA256: ${{ matrix.sha256 }}
+        run: |
+          set -euo pipefail
+          area=.local/security/postgres-candidate
+          mkdir -p "$area/bin" "$area/cache"
+          curl --disable --fail --location --proto '=https' --proto-redir '=https' --retry 3 \
+            --output "$area/bin/trivy.tar.gz" "https://github.com/aquasecurity/trivy/releases/download/v0.75.0/$TRIVY_FILE"
+          printf '%s  %s\n' "$TRIVY_SHA256" "$area/bin/trivy.tar.gz" | sha256sum --check
+          tar -xzf "$area/bin/trivy.tar.gz" -C "$area/bin" trivy
+          : > "$area/empty-ignore"
+          "$area/bin/trivy" image --cache-dir "$area/cache" --scanners vuln --format json \
+            --list-all-pkgs --exit-code 0 --ignorefile "$area/empty-ignore" --timeout 10m \
+            --skip-java-db-update --input "$area/image.tar" --output "$area/raw.json"
+          python3 -I -B infra/security/postgres-candidate/report_candidate.py --architecture "$EXPECTED_ARCH"
+          cat "$area/reports/summary.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Publish selected candidate evidence
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: postgres-candidate${{ matrix.suffix }}-${{ github.sha }}
+          path: .local/security/postgres-candidate/reports/*
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7

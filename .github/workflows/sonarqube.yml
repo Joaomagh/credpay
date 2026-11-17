@@ -71,7 +71,7 @@ jobs:
             --disable-pip-version-check --no-cache-dir -r infra/quality/coverage-requirements.txt
           mkdir -p .local/sonar-python
           "$coverage_python" -I -B -m coverage erase --rcfile=infra/quality/coverage.ini
-          for folder in infra/quality infra/agent-sandbox infra/security; do
+          for folder in infra/quality infra/agent-sandbox infra/security infra/security/postgres-candidate; do
             "$coverage_python" -I -B -m coverage run --append --rcfile=infra/quality/coverage.ini \
               -m unittest discover -s "$folder" -p 'test_*.py'
           done
