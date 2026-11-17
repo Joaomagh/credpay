@@ -17,25 +17,25 @@ if docker container inspect "$name" >/dev/null 2>&1 || docker volume inspect "$v
 fi
 
 cleanup() {
-  if [ "$(docker container inspect --format '{{index .Config.Labels "credpay.candidate.owner"}}' "$name" 2>/dev/null || true)" = "$owner" ]; then
+if [[ "$(docker container inspect --format '{{index .Config.Labels "credpay.candidate.owner"}}' "$name" 2>/dev/null || true)" = "$owner" ]]; then
     docker rm -f "$name" >/dev/null
   fi
-  if [ "$(docker volume inspect --format '{{index .Labels "credpay.candidate.owner"}}' "$volume" 2>/dev/null || true)" = "$owner" ]; then
+  if [[ "$(docker volume inspect --format '{{index .Labels "credpay.candidate.owner"}}' "$volume" 2>/dev/null || true)" = "$owner" ]]; then
     docker volume rm "$volume" >/dev/null
   fi
 }
 trap cleanup EXIT
 
-test "$(docker image inspect --format '{{.Os}}/{{.Architecture}}' "$image")" = "linux/$arch"
-test "$(docker image inspect --format '{{.Config.User}}' "$image")" = postgres \
+[[ "$(docker image inspect --format '{{.Os}}/{{.Architecture}}' "$image")" = "linux/$arch" ]]
+[[ "$(docker image inspect --format '{{.Config.User}}' "$image")" = postgres ]] \
   || { echo 'Candidate default image user must be postgres.' >&2; exit 1; }
-test "$(docker run --rm --network none --entrypoint id "$image" -u)" = 70 \
+[[ "$(docker run --rm --network none --entrypoint id "$image" -u)" = 70 ]] \
   || { echo 'Candidate default runtime UID must be 70.' >&2; exit 1; }
 docker run --rm --network none --user postgres --entrypoint postgres "$image" --version \
   | grep -Eq '^postgres \(PostgreSQL\) 17\.12([ .]|$)'
 docker run --rm --network none --entrypoint sh "$image" -ec \
   'test -L /usr/local/bin/gosu && test "$(readlink /usr/local/bin/gosu)" = /sbin/su-exec'
-test "$(docker run --rm --network none --user root --entrypoint gosu "$image" postgres id -u)" = 70 \
+[[ "$(docker run --rm --network none --user root --entrypoint gosu "$image" postgres id -u)" = 70 ]] \
   || { echo 'Candidate root-start fallback failed to drop to postgres.' >&2; exit 1; }
 docker volume create --label "$label" "$volume" >/dev/null
 docker run -d --name "$name" --label "$label" --network none \
@@ -44,12 +44,12 @@ docker run -d --name "$name" --label "$label" --network none \
   -v "$volume:/var/lib/postgresql/data" "$image" >/dev/null
 ready=0
 for _ in $(seq 1 60); do
-  if [ "$(docker exec "$name" cat /proc/1/comm 2>/dev/null || true)" = postgres ] \
+  if [[ "$(docker exec "$name" cat /proc/1/comm 2>/dev/null || true)" = postgres ]] \
     && docker exec -u postgres "$name" psql -v ON_ERROR_STOP=1 -U postgres -d fixture -Atqc 'SELECT 1' >/dev/null 2>&1; then ready=1; break; fi
   sleep 1
 done
-test "$ready" -eq 1
-test "$(docker exec "$name" awk '/^Uid:/ {print $2}' /proc/1/status)" = "$(docker exec "$name" id -u postgres)"
+[[ "$ready" -eq 1 ]]
+[[ "$(docker exec "$name" awk '/^Uid:/ {print $2}' /proc/1/status)" = "$(docker exec "$name" id -u postgres)" ]]
 docker exec -u postgres "$name" psql -v ON_ERROR_STOP=1 -U postgres -d fixture -Atqc \
   'CREATE TABLE candidate_probe (id integer PRIMARY KEY); INSERT INTO candidate_probe VALUES (7);' >/dev/null
 docker stop "$name" >/dev/null
@@ -60,10 +60,10 @@ docker run -d --name "$name" --label "$label" --network none \
   -v "$volume:/var/lib/postgresql/data" "$image" >/dev/null
 ready=0
 for _ in $(seq 1 60); do
-  if [ "$(docker exec "$name" cat /proc/1/comm 2>/dev/null || true)" = postgres ] \
+  if [[ "$(docker exec "$name" cat /proc/1/comm 2>/dev/null || true)" = postgres ]] \
     && docker exec -u postgres "$name" psql -v ON_ERROR_STOP=1 -U postgres -d fixture -Atqc 'SELECT 1' >/dev/null 2>&1; then ready=1; break; fi
   sleep 1
 done
-test "$ready" -eq 1
-test "$(docker exec -u postgres "$name" psql -v ON_ERROR_STOP=1 -U postgres -d fixture -Atqc 'SELECT id FROM candidate_probe')" = 7
+[[ "$ready" -eq 1 ]]
+[[ "$(docker exec -u postgres "$name" psql -v ON_ERROR_STOP=1 -U postgres -d fixture -Atqc 'SELECT id FROM candidate_probe')" = 7 ]]
 printf 'Candidate probe: linux/%s, privilege drop, initialization and restart with owned volume passed.\n' "$arch"
