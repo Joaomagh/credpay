@@ -3585,6 +3585,12 @@ Primeira execução dos quatro testes no runtime falhou por expectativa incorret
 
 Revisão de17/11: o feed de auditoria mudou sem alteração do lockfile. No [Sonar da PR244](https://github.com/Joaomagh/credpay/actions/runs/44171875816), testes Java, Angular e Worker concluíram, mas a etapa `npm audit` retornou 16 ocorrências HIGH e impediu o scanner; não há gate desse head. Consulta local no mesmo lockfile retornou 14 HIGH, todos propagados da [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf) em `picomatch`<=4.0.7. A consulta local `npm view picomatch version` retornou4.0.7 e a advisory marca patched versions: none. `npm audit --omit=dev --json` retornou zero no recorte de produção, evidência de alcance, não substituto do audit completo. `npm audit fix --force` sugere downgrades incompatíveis com Angular22/Vitest5; nenhum downgrade, waiver, supressão ou redução do gate foi aplicado. Estado: bloqueio externo registrado até correção publicada ou alternativa revisada, com os checks aplicáveis repetidos. O número de ocorrências varia com o feed e não deve ser chamado de número de CVEs únicos.
 
+### 9.175 Triagem dos seis riscos `undici` no Sonar
+
+Na sessão GitHub já autenticada, os seis riscos da PR243 apontaram para `undici`7.30.1 transitivo no plugin de teste Cloudflare/Miniflare. O lockfile também continha a linha8.12.3 via `jsdom`. Os seis CVEs, condições e releases primários estão discriminados em [SONARQUBE_CI.md](docs/SONARQUBE_CI.md). O incremento atual fixa 7.30.2 por override limitado ao Miniflare, pois seu manifesto exige7.30.1 exatamente, e atualiza a linha8.x para8.12.4 dentro do intervalo `jsdom`. Não mudou contrato de API, código de negócio, scanner ou gate.
+
+Evidência local: antes da mudança `npm ls undici --all` mostrou7.30.1/8.12.3; depois,7.30.2/8.12.4. `npm ci --ignore-scripts`, tipos Angular/edge, `ng build`,2 testes de decimais,50 Angular,71 edge e4 testes no runtime Workers passaram. O `npm audit` completo passou a contar16 HIGH, todos propagados de `picomatch` no feed desta execução; não lista `undici`. O recorte `--omit=dev` retornou0, sem substituir o gate. Não há nova análise Sonar deste branch nem estado FIXED confirmado dos seis IDs; CI, browser e integração pendentes. A PR244 do banco permanece bloqueada separadamente.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

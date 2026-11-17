@@ -35,7 +35,7 @@ A v1 termina por critérios comprovados, não por percentual ou número de PRs. 
 
 ### 3. Fechar os achados de qualidade
 
-**Responsável:** engenharia. A [PR #243](https://github.com/Joaomagh/credpay/pull/243) passou o gate, mas o Sonar mostrou seis riscos novos de dependência sem triagem detalhada.
+**Responsável:** engenharia. A [PR #243](https://github.com/Joaomagh/credpay/pull/243) passou o gate, mas o Sonar mostrou seis riscos novos de dependência. Os seis IDs `undici` foram triados em [SONARQUBE_CI.md](SONARQUBE_CI.md); o lockfile corrigido passou nos testes locais, mas aguarda CI e confirmação de cada ID no Sonar.
 
 1. Registrar os seis IDs, pacote/versão, severidade, caminho de entrada e condição de exploração com fonte primária. Conferir código e lockfile; `npm audit` zero não encerra o Sonar.
 2. Para cada ID, corrigir e testar ou registrar disposição individual sustentada. Não encerrar por contagem agregada ou supressão ampla.
