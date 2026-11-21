@@ -3593,6 +3593,8 @@ Evidência local: antes da mudança `npm ls undici --all` mostrou7.30.1/8.12.3; 
 
 A PR246 foi aberta como draft no SHA `f9bbebd`. O primeiro CI Frontend falhou, como esperado, no passo de audit completo. Para obter análise Sonar mesmo com esse bloqueio, o workflow passou a executar o mesmo `npm audit --audit-level=low` depois do scanner; ele continua sendo um passo obrigatório que reprova o job. A verificação dessa ordem e dos estados dos seis IDs depende do próximo run. Nenhum check vermelho pode ser tratado como aprovação de merge ou release.
 
+Revisão de21/11: a [advisory de `picomatch`](https://github.com/advisories/GHSA-fc5q-39xc-vjpf) foi retirada em18/11 por não ser uma questão de segurança. `npm audit --audit-level=low` no lockfile da PR246 retornou0 vulnerabilidades, com as versões `undici`7.30.2/8.12.4 ainda resolvidas. A falha dos runs de17/11 permanece histórica; novos checks no SHA corrente são necessários. Nenhuma exceção de audit, waiver ou alteração de dependência foi usada para obter esse resultado.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

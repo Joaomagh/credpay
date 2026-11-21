@@ -29,7 +29,7 @@
 
 ## Agora
 
-- [ ] Confirmar na draft PR246 que o scanner Sonar executa antes do mesmo audit obrigatório, que o job permanece vermelho por `picomatch` e que os seis riscos `undici` podem ser revisados por ID. O `picomatch`4.0.7 segue sem versão corrigida publicada em17/11; manter gate, não forçar upgrade incompatível nem promover a candidata PostgreSQL. Sequência e aceites em docs/MVP_CLOSURE_RUNBOOK.md.
+- [ ] Reexecutar a draft PR246 no SHA novo: conferir audit completo, Frontend/Compose/Secret Scan/Sonar e os seis riscos `undici` por ID. A advisory `picomatch` foi retirada em18/11 e o audit local completo retornou0 em21/11; os checks vermelhos anteriores não viraram verdes retroativamente. Depois integrar a correção e repetir os gates da candidata PostgreSQL. Sequência e aceites em docs/MVP_CLOSURE_RUNBOOK.md.
 
 ## Próximo
 
@@ -38,7 +38,7 @@
 - Preparar publicação gratuita com HTTPS, retenção e limites validados. Contas Cloudflare/Oracle ainda dependem de João; nenhum deploy.
 - PostgreSQL Bookworm C4/H135 e candidato Alpine C1/H44 no scan de 16/11; o alvo Go é `gosu` em ambos. Investigar versões corrigidas e demais achados antes de publicar, sem supressão ou aceite residual.
 - PR243/42cc931 integrou quatro testes no runtime Workers local; HTTPS/sessões/retenção no destino continuam pendentes. PR244: candidata PostgreSQL passou os dois jobs nativos no head6a05c55, mas Sonar não analisou o head por causa do audit; não integrar com check vermelho.
-- Confirmar na próxima análise Sonar os seis riscos `undici` corrigidos no lockfile, sem fechá-los manualmente. O audit completo ainda reporta HIGH transitivo em `picomatch`; manter o gate e a PR de banco bloqueados.
+- Confirmar na próxima análise Sonar os seis riscos `undici` corrigidos no lockfile, sem fechá-los manualmente. Reexecutar o audit completo no CI após a retirada da advisory `picomatch`; manter a PR de banco bloqueada até os checks verdes.
 
 ## Depois
 
