@@ -29,7 +29,7 @@
 
 ## Agora
 
-- [ ] Identificar e corrigir o HIGH do scan PostgreSQL da PR #244: o run44954572482 encontrou HIGH1/CRITICAL0 em AMD64 e ARM64. O gate novo deve falhar após preservar os inventários; conferir os IDs nos dois ZIPs antes de mudar a imagem. Sem promoção. A advisory de `picomatch` foi retirada e o Sonar atual da candidata passou; ver spec§9.174.
+- [ ] Validar os pacotes corrigidos da candidata PostgreSQL na PR #244: os dois ZIPs conferidos apontaram `CVE-2026-86144` em libxml2 r2 e achados OpenSSL em libcrypto3/libssl3 r0; o Dockerfile agora fixa libxml2 r3 e OpenSSL r1. O run44957409647 provou o gate vermelho nas duas arquiteturas com evidência preservada. Exigir build, probe, inventário e demais checks verdes antes de promoção; ver spec§9.174.
 
 ## Próximo
 
