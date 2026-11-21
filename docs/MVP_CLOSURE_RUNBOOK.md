@@ -1,8 +1,8 @@
 # Fechamento do MVP CredPay — roteiro executável
 
-Atualizado em 17/11/2026. Este roteiro organiza os aceites existentes; não declara uma release nem autoriza implantação externa. Referências: [backlog](BACKLOG.md), [candidato](V1_CANDIDATE.md), [validação](V1_VALIDATION.md), [demo](DEMO.md), [triagem](../infra/security/TRIAGE.md) e [plano público](PUBLIC_DEMO_PLAN.md).
+Atualizado em 21/11/2026. Este roteiro organiza os aceites existentes; não declara uma release nem autoriza implantação externa. Referências: [backlog](BACKLOG.md), [candidato](V1_CANDIDATE.md), [validação](V1_VALIDATION.md), [demo](DEMO.md), [triagem](../infra/security/TRIAGE.md) e [plano público](PUBLIC_DEMO_PLAN.md).
 
-**Bloqueio observado hoje:** os dois jobs nativos da candidata PostgreSQL passaram no head `6a05c55`, mas o job Sonar parou antes do scanner porque o `npm audit` completo do frontend passou a encontrar HIGH em dependências de desenvolvimento. O run CI contou 16 ocorrências; consulta local ao mesmo lockfile contou 14, diferença temporal do feed que não deve ser escondida. Ambas apontam a [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf) de `picomatch` até 4.0.7, sem versão corrigida publicada na consulta de 17/11. O audit local `--omit=dev` contou zero apenas no recorte de produção; **não substitui o gate completo**. A PR #244 permanece sem merge até uma correção de fornecedor ou alternativa tecnicamente revisada passar o mesmo gate. Não executar `npm audit fix --force` nem reduzir o escopo da auditoria para fazê-lo passar.
+**Gate em revalidação:** os dois jobs nativos da candidata PostgreSQL passaram no head `6a05c55`, mas o Sonar desse corte falhou no audit. Os runs de 17/11 apontaram 14–16 ocorrências HIGH propagadas de `picomatch`; são evidência histórica. A [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf) foi **retirada em 18/11** por não ser uma questão de segurança. Em 21/11, o mesmo audit completo, sem `--omit=dev`, retornou `found 0 vulnerabilities` no lockfile da draft PR #246. Isso elimina a causa observada do bloqueio, mas **não substitui novos checks verdes no SHA corrente**, análise Sonar por ID nem revisão dos inventários da candidata. PRs #244/#246 continuam sem merge até esses aceites. Nenhuma regra ou gate foi reduzido.
 
 ## Dois resultados distintos
 
@@ -35,13 +35,13 @@ A v1 termina por critérios comprovados, não por percentual ou número de PRs. 
 
 ### 3. Fechar os achados de qualidade
 
-**Responsável:** engenharia. A [PR #243](https://github.com/Joaomagh/credpay/pull/243) passou o gate, mas o Sonar mostrou seis riscos novos de dependência sem triagem detalhada.
+**Responsável:** engenharia. A [PR #243](https://github.com/Joaomagh/credpay/pull/243) passou o gate, mas o Sonar mostrou seis riscos novos de dependência. Os seis IDs `undici` foram triados em [SONARQUBE_CI.md](SONARQUBE_CI.md); o lockfile corrigido passou nos testes locais, mas aguarda CI e confirmação de cada ID no Sonar.
 
 1. Registrar os seis IDs, pacote/versão, severidade, caminho de entrada e condição de exploração com fonte primária. Conferir código e lockfile; `npm audit` zero não encerra o Sonar.
 2. Para cada ID, corrigir e testar ou registrar disposição individual sustentada. Não encerrar por contagem agregada ou supressão ampla.
 3. Reexecutar as suítes e jornadas afetadas. Exigir gate A, Secret Scan e inventários aplicáveis no SHA final. **Saída:** seis decisões rastreáveis e nenhum bloqueador sem disposição válida.
 
-**Novo primeiro item desta etapa:** identificar a versão corrigida de `picomatch` quando existir, confirmar integridade/proveniência e compatibilidade com Angular/Vitest, atualizar lockfile e repetir `npm ci`, tipos, testes, build, browser e `npm audit` completo. Se não houver versão publicada, manter o bloqueio explícito; uma contagem menor com `--omit=dev` é informação de alcance, não aceite de segurança.
+**Primeiro item desta etapa:** reexecutar `npm ci`, tipos, testes, build, browser e `npm audit` completo no CI após a retirada da advisory `picomatch`. Conferir o resultado do scanner Sonar por ID e preservar o gate inalterado. O audit local zero em21/11 não basta para integrar um head cujos checks permanecem vermelhos.
 
 ### 4. Congelar o candidato técnico
 
