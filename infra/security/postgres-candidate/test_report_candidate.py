@@ -51,14 +51,28 @@ class CandidateReportTest(unittest.TestCase):
         workspace.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=workspace) as temporary:
             directory = Path(temporary)
-            (directory / 'raw.json').write_text(json.dumps(self.raw()), encoding='utf-8')
+            raw = self.raw()
+            raw['Results'][0]['Vulnerabilities'] = []
+            (directory / 'raw.json').write_text(json.dumps(raw), encoding='utf-8')
             (directory / 'image-id.txt').write_text('sha256:' + 'a' * 64, encoding='utf-8')
             main(['--architecture', 'amd64'], directory)
             report = json.loads((directory / 'reports/inventory.json').read_text(encoding='utf-8'))
-            self.assertEqual(1, report['Counts']['HIGH'])
+            self.assertEqual(0, report['Counts']['HIGH'])
             self.assertNotIn('DO_NOT_PUBLISH', str(report))
             self.assertIn('candidate-not-approved', str(report))
             self.assertIn('HIGH | CRITICAL', (directory / 'reports/summary.md').read_text(encoding='utf-8'))
+
+    def test_high_fails_after_preserving_selected_evidence(self):
+        workspace = Path(__file__).resolve().parents[3] / '.local/security'
+        workspace.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=workspace) as temporary:
+            directory = Path(temporary)
+            (directory / 'raw.json').write_text(json.dumps(self.raw()), encoding='utf-8')
+            (directory / 'image-id.txt').write_text('sha256:' + 'a' * 64, encoding='utf-8')
+            with self.assertRaisesRegex(ValueError, 'HIGH'):
+                main(['--architecture', 'amd64'], directory)
+            report = json.loads((directory / 'reports/inventory.json').read_text(encoding='utf-8'))
+            self.assertEqual(1, report['Counts']['HIGH'])
 
     def test_rejects_duplicate_json_keys(self):
         with self.assertRaisesRegex(ValueError, 'Duplicate JSON key'):
