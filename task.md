@@ -29,7 +29,7 @@
 
 ## Agora
 
-- [ ] Validar os pacotes corrigidos da candidata PostgreSQL na PR #244: os dois ZIPs conferidos apontaram `CVE-2026-86144` em libxml2 r2 e achados OpenSSL em libcrypto3/libssl3 r0; o Dockerfile agora fixa libxml2 r3 e OpenSSL r1. O run44957409647 provou o gate vermelho nas duas arquiteturas com evidência preservada. Exigir build, probe, inventário e demais checks verdes antes de promoção; ver spec§9.174.
+- [ ] Fechar a avaliação da candidata PostgreSQL PR #244: run44958057682 passou os dois jobs nativos, e os ZIPs conferidos registram pacotes corrigidos e zero achados. Aguardar inventário geral/Sonar no mesmo head, revisar a PR e integrar apenas o experimento. Depois iniciar prova de backup/restauração em volume novo, sem trocar a imagem ativa automaticamente; ver spec§9.174.
 
 ## Próximo
 

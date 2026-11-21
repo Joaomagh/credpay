@@ -1,8 +1,8 @@
 # Fechamento do MVP CredPay — roteiro executável
 
-Atualizado em 17/11/2026. Este roteiro organiza os aceites existentes; não declara uma release nem autoriza implantação externa. Referências: [backlog](BACKLOG.md), [candidato](V1_CANDIDATE.md), [validação](V1_VALIDATION.md), [demo](DEMO.md), [triagem](../infra/security/TRIAGE.md) e [plano público](PUBLIC_DEMO_PLAN.md).
+Atualizado em 21/11/2026. Este roteiro organiza os aceites existentes; não declara uma release nem autoriza implantação externa. Referências: [backlog](BACKLOG.md), [candidato](V1_CANDIDATE.md), [validação](V1_VALIDATION.md), [demo](DEMO.md), [triagem](../infra/security/TRIAGE.md) e [plano público](PUBLIC_DEMO_PLAN.md).
 
-**Bloqueio observado hoje:** os dois jobs nativos da candidata PostgreSQL passaram no head `6a05c55`, mas o job Sonar parou antes do scanner porque o `npm audit` completo do frontend passou a encontrar HIGH em dependências de desenvolvimento. O run CI contou 16 ocorrências; consulta local ao mesmo lockfile contou 14, diferença temporal do feed que não deve ser escondida. Ambas apontam a [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf) de `picomatch` até 4.0.7, sem versão corrigida publicada na consulta de 17/11. O audit local `--omit=dev` contou zero apenas no recorte de produção; **não substitui o gate completo**. A PR #244 permanece sem merge até uma correção de fornecedor ou alternativa tecnicamente revisada passar o mesmo gate. Não executar `npm audit fix --force` nem reduzir o escopo da auditoria para fazê-lo passar.
+**Estado observado em 21/11:** a advisory [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf) de `picomatch` foi retirada pelo publicador em 18/11; o `npm audit` completo voltou a zero sem redução do gate. O scan recente da candidata PostgreSQL encontrou `CVE-2026-86144` HIGH em `libxml2` nas duas arquiteturas. O controle novo recusou esse resultado, preservando os inventários. Após fixar os pacotes Alpine indicados como corrigidos, o [run 44958057682](https://github.com/Joaomagh/credpay/actions/runs/44958057682) passou build, probe e scan nativos AMD64/ARM64; os inventários selecionados conferidos têm zero achados nas cinco severidades. A PR #244 ainda exige os demais gates e integração; a imagem **não foi promovida**. Restauração em volume novo e testes completos continuam no passo 2.
 
 ## Dois resultados distintos
 
@@ -41,7 +41,7 @@ A v1 termina por critérios comprovados, não por percentual ou número de PRs. 
 2. Para cada ID, corrigir e testar ou registrar disposição individual sustentada. Não encerrar por contagem agregada ou supressão ampla.
 3. Reexecutar as suítes e jornadas afetadas. Exigir gate A, Secret Scan e inventários aplicáveis no SHA final. **Saída:** seis decisões rastreáveis e nenhum bloqueador sem disposição válida.
 
-**Novo primeiro item desta etapa:** identificar a versão corrigida de `picomatch` quando existir, confirmar integridade/proveniência e compatibilidade com Angular/Vitest, atualizar lockfile e repetir `npm ci`, tipos, testes, build, browser e `npm audit` completo. Se não houver versão publicada, manter o bloqueio explícito; uma contagem menor com `--omit=dev` é informação de alcance, não aceite de segurança.
+**Atualização de 21/11:** a advisory de `picomatch` foi retirada; a PR #246 passou o audit completo e os quatro checks no head `15ae104`. A página dos seis riscos por ID exige Advanced Security no plano atual. Preservar essa limitação e a triagem individual pendente; não declarar IDs CLOSED/FIXED só por `npm audit` zero.
 
 ### 4. Congelar o candidato técnico
 
