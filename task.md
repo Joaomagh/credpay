@@ -29,7 +29,7 @@
 
 ## Agora
 
-- [ ] Investigar o bloqueio novo do `npm audit` completo no Sonar da PR #244: GHSA-fc5q-39xc-vjpf em `picomatch`4.0.7, sem versão corrigida publicada na consulta de17/11. CI contou16 HIGH e consulta local14 no feed atual; `--omit=dev`0 é só recorte de alcance. Manter gate, não forçar upgrade incompatível nem promover a candidata. Sequência e aceites em docs/MVP_CLOSURE_RUNBOOK.md.
+- [ ] Identificar e corrigir o HIGH do scan PostgreSQL da PR #244: o run44954572482 encontrou HIGH1/CRITICAL0 em AMD64 e ARM64. O gate novo deve falhar após preservar os inventários; conferir os IDs nos dois ZIPs antes de mudar a imagem. Sem promoção. A advisory de `picomatch` foi retirada e o Sonar atual da candidata passou; ver spec§9.174.
 
 ## Próximo
 
@@ -37,8 +37,8 @@
 - Revisar ocorrências contextuais por ID, mantendo achados da pesquisa e referências históricas preservados.
 - Preparar publicação gratuita com HTTPS, retenção e limites validados. Contas Cloudflare/Oracle ainda dependem de João; nenhum deploy.
 - PostgreSQL Bookworm C4/H135 e candidato Alpine C1/H44 no scan de 16/11; o alvo Go é `gosu` em ambos. Investigar versões corrigidas e demais achados antes de publicar, sem supressão ou aceite residual.
-- PR243/42cc931 integrou quatro testes no runtime Workers local; HTTPS/sessões/retenção no destino continuam pendentes. PR244: candidata PostgreSQL passou os dois jobs nativos no head6a05c55, mas Sonar não analisou o head por causa do audit; não integrar com check vermelho.
-- Triar os6 riscos de dependência apontados pelo Sonar naPR243. Após o audit corrigido, repetir gate e revisar os inventários selecionados da candidata antes de integrar. Portabilidade/restauração e promoção do banco exigem incremento próprio.
+- PR243/42cc931 integrou quatro testes no runtime Workers local; HTTPS/sessões/retenção no destino continuam pendentes. PR244: Sonar gate OK no headb4370dd; scan nativo atual encontrou HIGH1 nas duas arquiteturas e a candidata segue bloqueada.
+- Triar os6 riscos de dependência apontados pelo Sonar naPR243. A PR246 passou Angular, Compose, Secret Scan e Sonar no head15ae104; `npm audit` completo0. A página de riscos requer Advanced Security no plano atual, portanto não declarar os IDs fechados no Sonar. Portabilidade/restauração e promoção do banco exigem incremento próprio.
 
 ## Depois
 

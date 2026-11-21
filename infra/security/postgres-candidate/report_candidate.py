@@ -87,6 +87,8 @@ def main(argv=None, directory=None):
              'A green workflow does not accept findings or approve deployment. Inspect inventory.json before promotion.']
     (output / 'summary.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
     print(f'Candidate inventory: linux/{arguments.architecture}, CRITICAL={counts["CRITICAL"]}, HIGH={counts["HIGH"]}; triage pending.')
+    require(counts['CRITICAL'] == 0 and counts['HIGH'] == 0,
+            'Candidate inventory contains CRITICAL/HIGH findings; review selected evidence.')
 
 
 if __name__ == '__main__':

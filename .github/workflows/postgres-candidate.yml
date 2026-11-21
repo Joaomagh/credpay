@@ -106,8 +106,8 @@ jobs:
             --list-all-pkgs --exit-code 0 --ignorefile "$area/empty-ignore" --timeout 10m \
             --skip-java-db-update --input "$area/image.tar" --output "$area/raw.json"
           python3 -I -B infra/security/postgres-candidate/report_candidate.py --architecture "$EXPECTED_ARCH"
-          cat "$area/reports/summary.md" >> "$GITHUB_STEP_SUMMARY"
       - name: Publish selected candidate evidence
+        if: ${{ always() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: postgres-candidate${{ matrix.suffix }}-${{ github.sha }}
@@ -115,3 +115,9 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 7
+      - name: Show selected candidate summary
+        if: ${{ always() }}
+        run: |
+          if [ -f .local/security/postgres-candidate/reports/summary.md ]; then
+            cat .local/security/postgres-candidate/reports/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
