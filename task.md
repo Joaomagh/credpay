@@ -25,10 +25,11 @@
 - PR240: perfil public-demo/HTTPS e prazo absoluto de sessão integrados em f64ebb9 após17checks/gate96,3% do delta; fallback de pull público validado em CI, sem deploy. spec§9.170.
 - PR241: `gosu` atribuído nas imagens PostgreSQL ativa/candidata em AMD64/ARM64;5checks verdes no SHA4a9d65e, merge9856ac1. Banco continua bloqueado, spec§9.171.
 - PR242: resumo do inventário mantém as quatro linhas da tabela e apresenta alvos `gosu` depois;5checks/gate verdes, merge69fd79d. spec§9.172-9.173.
+- PR243: quatro contratos no runtime Workers, frontend/Compose/secret scan/Sonar verdes;7checks/gate OK, merge42cc931. O Sonar exibiu6 novos riscos de dependência não triados; spec§9.173.
 
 ## Agora
 
-- [ ] Investigar o bloqueio novo do `npm audit` completo no Sonar da PR #244: GHSA-fc5q-39xc-vjpf em `picomatch`4.0.7, sem versão corrigida publicada na consulta de17/11. CI contou16 HIGH e consulta local14 no feed atual; `--omit=dev`0 é só recorte de alcance. Manter gate, não forçar upgrade incompatível nem promover a candidata. Sequência e aceites em docs/MVP_CLOSURE_RUNBOOK.md.
+- [ ] Fechar a avaliação da candidata PostgreSQL PR #244: run44958057682 passou os dois jobs nativos, e os ZIPs conferidos registram pacotes corrigidos e zero achados. Aguardar inventário geral/Sonar no mesmo head, revisar a PR e integrar apenas o experimento. Depois iniciar prova de backup/restauração em volume novo, sem trocar a imagem ativa automaticamente; ver spec§9.174.
 
 ## Próximo
 
@@ -36,7 +37,8 @@
 - Revisar ocorrências contextuais por ID, mantendo achados da pesquisa e referências históricas preservados.
 - Preparar publicação gratuita com HTTPS, retenção e limites validados. Contas Cloudflare/Oracle ainda dependem de João; nenhum deploy.
 - PostgreSQL Bookworm C4/H135 e candidato Alpine C1/H44 no scan de 16/11; o alvo Go é `gosu` em ambos. Investigar versões corrigidas e demais achados antes de publicar, sem supressão ou aceite residual.
-- PR243/42cc931 integrou quatro testes no runtime Workers local; HTTPS/sessões/retenção no destino continuam pendentes. PR244: candidata PostgreSQL passou os dois jobs nativos no head6a05c55, mas Sonar não analisou o head por causa do audit; não integrar com check vermelho.
+- PR243/42cc931 integrou quatro testes no runtime Workers local; HTTPS/sessões/retenção no destino continuam pendentes. PR244: Sonar gate OK no headb4370dd; scan nativo atual encontrou HIGH1 nas duas arquiteturas e a candidata segue bloqueada.
+- Triar os6 riscos de dependência apontados pelo Sonar naPR243. A PR246 passou Angular, Compose, Secret Scan e Sonar no head15ae104; `npm audit` completo0. A página de riscos requer Advanced Security no plano atual, portanto não declarar os IDs fechados no Sonar. Portabilidade/restauração e promoção do banco exigem incremento próprio.
 
 ## Depois
 
