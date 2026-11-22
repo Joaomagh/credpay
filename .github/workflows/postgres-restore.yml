@@ -1,0 +1,52 @@
+name: PostgreSQL Restore Candidate
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "infra/security/postgres-candidate/**"
+      - ".github/workflows/postgres-restore.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: postgres-restore-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  restore:
+    name: Restore linux/${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: amd64
+            machine: x86_64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+            machine: aarch64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    env:
+      EXPECTED_ARCH: ${{ matrix.arch }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Require native architecture and shell syntax
+        env:
+          EXPECTED_MACHINE: ${{ matrix.machine }}
+        run: |
+          test "$(uname -m)" = "$EXPECTED_MACHINE"
+          bash -n infra/security/postgres-candidate/restore-fixture.sh
+          bash -n infra/security/postgres-candidate/test-restore.sh
+      - name: Build candidate and pull active source
+        run: |
+          set -euo pipefail
+          docker build --pull --tag "credpay-postgres-restore:$GITHUB_SHA" infra/security/postgres-candidate
+          docker pull postgres@sha256:665dc7b37ac52a17e298511414c21d23ffa4e6a6ef6225b3e5d59c7afb35e994
+      - name: Prove logical restore into new volumes
+        run: bash infra/security/postgres-candidate/test-restore.sh "credpay-postgres-restore:$GITHUB_SHA"
