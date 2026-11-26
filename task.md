@@ -9,7 +9,7 @@
 
 ## Agora
 
-- [ ] C01 em andamento — contrato inicial em spec§6; observar o red HTTP de cadastro de cliente vinculado à conta autenticada e seguir pela implementação mínima. Entregar cadastro/consulta/lista pela API e Angular, isolamento entre contas e persistência. Dados iniciais: UUID, conta e nome de exibição; sem dependência nova. Critérios em docs/BACKLOG.md, seção de cobranças.
+- [ ] C01 em andamento — publicar draft dos testes de persistência e observar o red PostgreSQL no CI antes de implementar V12/adapter SQL. O foco local de domínio/aplicação/MVC/filtros passou 80 testes, compilando os testes reais sem executá-los. Depois concluir persistência, HTTP com duas contas/perfil público e Angular. Contrato em spec§6 e evidência em §9.176; sem dependência nova. Não integrar o scaffold de persistência sem comportamento.
 
 Execução ativa autorizada em 26/11: 18:37:41–23:37:41 (`America/Sao_Paulo`), cinco horas. Driver mantém implementação única; revisão/P.O. em paralelo conforme os papéis. Branch `feat/gestao-cobrancas` criada a partir da main local, preservando `feat/postgres-alpine-restore` e seu checkpoint. No fim da janela, deixar evidências e uma próxima ação recuperável.
 

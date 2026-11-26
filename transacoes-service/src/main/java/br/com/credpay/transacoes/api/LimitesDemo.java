@@ -29,6 +29,12 @@ final class LimitesDemo {
             PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/transacoes");
     private static final PathPatternRequestMatcher CONSULTA =
             PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/transacoes/{id}");
+    private static final PathPatternRequestMatcher CADASTRO_CLIENTE =
+            PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/clientes");
+    private static final PathPatternRequestMatcher LISTA_CLIENTES =
+            PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/clientes");
+    private static final PathPatternRequestMatcher CONSULTA_CLIENTE =
+            PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/clientes/{id}");
 
     private final Clock relogio;
     private final Map<Operacao, Janela> janelas = new EnumMap<>(Operacao.class);
@@ -53,9 +59,9 @@ final class LimitesDemo {
             throws IOException, ServletException {
         var http = (HttpServletRequest) requisicao;
         Operacao operacao;
-        if (CRIACAO.matches(http)) {
+        if (CRIACAO.matches(http) || CADASTRO_CLIENTE.matches(http)) {
             operacao = Operacao.CRIACAO;
-        } else if (CONSULTA.matches(http)) {
+        } else if (CONSULTA.matches(http) || LISTA_CLIENTES.matches(http) || CONSULTA_CLIENTE.matches(http)) {
             operacao = Operacao.CONSULTA;
         } else {
             proximo.doFilter(requisicao, resposta);
