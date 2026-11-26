@@ -2,15 +2,15 @@
 
 > Fonte de verdade do sistema que existe hoje. Preencher somente com decisão tomada, contrato aceito ou comportamento comprovado. Planos futuros ficam em `CREDPAY_PLAN.md`; próximas ações ficam em `task.md`.
 
-**Última atualização:** 2026-10-25
+**Última atualização:** 2026-11-26 (direção de produto em §1.1 e registro em §9.175; evidências anteriores mantêm suas datas).
 
-**Fase atual:** fechamento da v1 backend — candidato final/checks/inventários, ensaio com João e lacunas de publicação. Pesquisa de sandbox separada por João em18/10, incompleta e sem aceite/liberação; frontend retomado por solicitação de João em22/10, fora dos aceites da v1 backend; servidores Prometheus/Grafana adiados. Métricas/diagnóstico HTTP preservados.
+**Fase atual:** transição para gestão de cobranças e acompanhamento de recebimentos, aprovada por João em 26/11/2026. A definição inicial está no plano; a implementação existente continua sendo o simulador. O fechamento da base v1, inventários, ensaio pessoal e lacunas de publicação mantêm seus aceites pendentes. Pesquisa de sandbox separada por João em18/10, incompleta e sem aceite/liberação; frontend retomado em22/10; servidores Prometheus/Grafana adiados. Métricas/diagnóstico HTTP preservados.
 
 **Estado:** fluxo POST → duas outboxes → GET APROVADA/REJEITADA, idempotência, concorrência, retry/DLQ e recuperação comprovados nos cenários registrados. FALHOU percorreu transporte/encerramento causal em cenário controlado (§9.96); isso não o transforma em mecanismo operacional genérico. Kubernetes descartável hospedado comprovou startup/persistência, fluxo/replay/parada/recuperação (§9.93/9.97); Primeiro percurso Compose pessoal passou em22/10 (§9.125); Validate Kubernetes local assistido passou em25/10 (§9.136.6), e Remove próprio também passou. Run/Remove do diagnóstico causal por métricas passaram localmente em25/10 (§9.138.1); explicação e autonomia pessoais continuam adiadas. Flags seguem desligados por padrão e ativação exige roteiro. Migração de plataforma/imagem dos apps e exportação de métricas opt-in integradas (§9.94/9.98); nenhum deploy externo autorizado. Sandbox tem core mínimo, negativos parciais e limites de CPU/memória sob excesso comprovados somente no Linux CI (§9.100–9.108), com baseline sem aceite pelos advisories; não contém comprovadamente o agente atual.
 
 ## 1. Contexto e limites atuais
 
-CredPay é um laboratório de processamento assíncrono de transações, sem dinheiro ou integrações financeiras reais. Possui dois serviços independentes em monorepo:
+A implementação atual do CredPay é um laboratório de processamento assíncrono de transações, sem dinheiro ou integrações financeiras reais. A evolução de produto aprovada em 26/11 está em §1.1, sem nova funcionalidade de cobranças entregue por essa decisão. Possui dois serviços independentes em monorepo:
 
 - `transacoes-service`: recebe pedidos, valida regras de entrada, mantém o estado consultável e publica eventos;
 - `processamento-service`: consome pedidos de processamento, decide o resultado e publica o evento correspondente.
@@ -22,6 +22,16 @@ CredPay é um laboratório de processamento assíncrono de transações, sem din
 **Fluxo vertical e idempotência comprovados:** domínio final, estado/histórico atômicos, idempotência sequencial/concorrente e replay HTTP original. Parser/topologia/políticas e listener opt-in comprovam commit antes de ack, replay sem novo histórico/Clock, permanentes para DLQ sem retry e três tentativas operacionais com rollback real. Dois JARs reais percorrem POST → processador/duas outboxes → GET APROVADA/REJEITADA; duplicatas dos dois eventos e replay POST preservam cinco tabelas completas, resposta/Location original e GET final. Ativação manual exige conferência do runbook, flags padrão false. Transporte de FALHOU e fluxo Kubernetes foram comprovados em cenários CI controlados (§9.96/9.97); execução DockerDesktop, ensaio de demonstração e critérios restantes de segurança continuam pendentes. Imagens/Compose já foram comprovados no CI. Coordenação entre múltiplas réplicas publicadoras e HA de produção não são capacidades atuais. Sandbox tem implementação/provas parciais no Linux CI, sem aceite completo ou prova de contenção do agente.
 
 **Últimas entregas:** plataforma corrigida dos apps (§9.94), transporte causal FALHOU (§9.96), fluxo no cluster descartável (§9.97), métricas opt-in e referências frontend preservadas (§9.98), adiamento explícito do painel (§9.99), construção/inventário/negativos/triagem/limites CPU e memória do core (§9.100–9.108). Achados do core, controles restantes, lacunas históricas de publicação e ensaio com João seguem abertos. As seções por incremento preservam a evidência histórica; próximo passo vigente em task.md.
+
+### 1.1 Direção de produto aprovada em 26/11/2026
+
+João aprovou **CredPay | Gestão de cobranças e acompanhamento de recebimentos** para público geral. Uma nutricionista é um possível primeiro caso de uso; não houve entrevista, validação de necessidade, piloto ou adoção comprovados neste incremento. O [plano](CREDPAY_PLAN.md#primeiro-mvp-de-cobranças) registra a jornada e o recorte inicial; [C00–C06](docs/BACKLOG.md#evolução-do-produto--gestão-de-cobranças-26112026) distinguem definição, implementação futura e validação de utilidade.
+
+Decisão semântica: `APROVADA` é resultado da regra de limite do simulador e não representa recebimento. As novas cobranças terão contratos e dados próprios, sem conversão automática das transações existentes ou uso da aprovação fictícia para marcá-las pagas. A primeira jornada usará registro manual integral com autoria e auditoria; isso não comprova liquidação bancária.
+
+Decisão de transição: começar clientes e cobranças no serviço de entrada existente, reutilizando a autenticação e isolando todos os dados por conta. Não criar serviço adicional, compartilhar tabelas entre serviços ou renomear os contratos legados por antecipação. Novas rotas serão implementadas por TDD e comprovadas antes de serem apresentadas como disponíveis.
+
+Integração de provedor permanece posterior e começa em ambiente de testes. Não houve contratação, instalação de dependência, movimentação de dinheiro, tratamento de dados reais ou implantação. Pendências técnicas e aceites da base permanecem nos registros históricos; nenhum resultado remoto foi revalidado nesta definição documental.
 
 ## 2. Arquitetura vigente
 
@@ -473,6 +483,18 @@ credpay/
 `transacoes-service/target/` é saída local de build e está ignorado pelo Git.
 
 ## 6. Contratos
+
+### Clientes — contrato em implementação (C01, 26/11/2026)
+
+Rotas disponíveis somente no perfil de contas (`sessao-demo`, incluído por `public-demo`); não expor clientes no perfil anônimo. A conta vem da sessão e `X-CredPay-Conta` recusa contexto de tela antigo quando fornecido. CSRF continua obrigatório no POST.
+
+| Método e rota | Contrato planejado | Erros observáveis |
+| --- | --- | --- |
+| `POST /clientes` | JSON somente `nome` textual; `201`, `Location` e `{id,nome}`; cadastro não exige unicidade por nome | `400` para JSON/tipo/campos extras; `422` para nome inválido; `413` acima de 8192 bytes |
+| `GET /clientes/{id}` | UUID canônico; `200` com `{id,nome}` somente para o dono | `400` para UUID inválido; `404` indistinguível para ausente ou de outra conta |
+| `GET /clientes?limite=20&apos={uuid}` | `limite` de 1 a 50, padrão 20; cursor opcional; ordenar por UUID; `{itens,proximo}` com cursor nulo no fim; buscar no máximo limite+1 | `400` para limite/cursor/parâmetro inválido |
+
+Nome: remover espaços externos Unicode; aceitar de 1 a 120 pontos de código, preservando acentos e pontuação; rejeitar nomes compostos somente de espaços e caracteres de controle. A validação é do domínio e será repetida por constraints pertinentes no banco. Respostas não expõem a conta, usam `Cache-Control: no-store` e erros não refletem o nome informado. Criação e consultas compartilham as cotas já existentes de criação/consulta por conta; `429` conserva `Retry-After`. As proteções do perfil público permanecem obrigatórias. Este contrato ainda exige red/green e provas de persistência/HTTP/Angular; não é anúncio de funcionalidade pronta.
 
 ### API HTTP
 
@@ -3606,6 +3628,14 @@ Revisão21/11: [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39x
 Os dois artefatos selecionados de44954572482 foram baixados para `.local/security/postgres-candidate-review/`, ignorado pelo Git; SHA-256 de ambos coincidiu com os digests exibidos pelo GitHub. Em AMD64 e ARM64, `CVE-2026-86144` atingiu libxml2 2.13.9-r2 (HIGH, fixed r3); `CVE-2026-107496`, `CVE-2026-95691` e `CVE-2026-95692` apareceram em libcrypto3/libssl3 3.5.9-r0 (MEDIUM, fixed r1); `CVE-2026-88822` e `CVE-2026-88823` nos mesmos pacotes (LOW, fixed r1). O [run44957409647](https://github.com/Joaomagh/credpay/actions/runs/44957409647) confirmou os controles do relatório verdes, falha dos dois scans no HIGH e upload dos dois inventários. O índice Alpine3.24 consultado21/11 publicou libxml2 r3 e OpenSSL r1 em x86_64. Decisão: fixar libxml2 r3, libcrypto3 r1 e libssl3 r1 apenas na candidata, manter o digest da base e exigir resolução/probe/scan reais também em ARM64. Nenhuma supressão ou aceite; imagem ativa/volumes não alterados. Fontes: [libxml2 Alpine](https://pkgs.alpinelinux.org/packages?arch=x86_64&branch=v3.24&name=libxml2), [OpenSSL Alpine](https://pkgs.alpinelinux.org/packages?arch=x86_64&branch=v3.24&name=openssl&repo=main).
 
 No head2d750de, o [run44958057682](https://github.com/Joaomagh/credpay/actions/runs/44958057682) passou os dois jobs nativos de build, probe e scan. Os ZIPs selecionados baixados para `.local` bateram com os hashes publicados (`a4bb0933…` AMD64, `4ba8c84f…` ARM64). Ambos registram libxml2 2.13.9-r3, libcrypto3/libssl3 3.5.9-r1, su-exec 0.3-r0 e UNKNOWN0/LOW0/MEDIUM0/HIGH0/CRITICAL0; nenhum ID de vulnerabilidade na projeção. Isso prova a candidata nesses dois artefatos e nesse feed. Inventário geral e Sonar do head ainda em andamento no registro; portabilidade/restauração em volume novo e promoção não foram feitas.
+
+### 9.175 Definição da evolução para cobranças — 26/11/2026
+
+Incremento documental C00: direção aprovada por João, exemplo de jornada com dados fictícios, recorte de clientes/cobranças/recebimento manual, separação entre aprovação fictícia e recebimento e sequência C01–C06 registrados em plano/backlog. README distingue a capacidade atual da próxima evolução. O objetivo do P.O. e o roteiro de fechamento da base foram alinhados, preservando suas evidências e bloqueios. `task.md` passa a apontar o primeiro teste de cadastro de cliente como próxima ação, com manutenção anterior preservada.
+
+Nenhum código, migration, dependência, evento ou contrato HTTP existente foi alterado. O domínio do produto novo ainda não está implementado; este registro não é green de comportamento nem aceite de utilização por uma nutricionista.
+
+**Verificação e revisão:** `git diff --stat` confirmou somente os sete documentos previstos; `git diff --check` passou. A inspeção por PowerShell/.NET validou UTF-8 estrito dos sete arquivos, os 14 links locais adicionados e suas seis âncoras, sem marcadores de conflito. A tentativa inicial com `python` não executou porque o alias WindowsApps estava indisponível; as verificações foram concluídas com o runtime existente, sem instalação. O aviso inicial de normalização LF/CRLF em `task.md` foi resolvido preservando o padrão CRLF do checkout. Revisão assistida dos sete diffs não encontrou bloqueios de escopo ou semântica e pediu explicitar este registro de verificação, agora atendido. Suítes de runtime não foram executadas neste incremento exclusivamente documental. Mudanças permanecem locais, sem commit, push, merge ou resultado novo de CI; a branch e o checkpoint de restauração preexistentes foram preservados.
 
 ## 10. Observabilidade e SLOs de aprendizado
 

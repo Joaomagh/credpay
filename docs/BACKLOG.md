@@ -1,12 +1,32 @@
-# CredPay — Backlog do MVP
+# CredPay — Backlog do produto
 
-Atualizado em 2026-11-21. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos e evidências: [spec](../spec.md). Passos e critérios para fechar o produto: [roteiro do MVP](MVP_CLOSURE_RUNBOOK.md). Uma única ação executável: [task](../task.md). Papéis: [P.O.](roles/product-owner.md), [dev sênior](roles/senior-developer.md) e [Scrum Master](roles/scrum-master.md).
+Atualizado em 2026-11-26. Fonte da direção: [plano](../CREDPAY_PLAN.md). Fatos e evidências: [spec](../spec.md). Aceites da base v1: [roteiro](MVP_CLOSURE_RUNBOOK.md). Uma única ação executável: [task](../task.md). Papéis: [P.O.](roles/product-owner.md), [dev sênior](roles/senior-developer.md) e [Scrum Master](roles/scrum-master.md).
 
-## Estado de fechamento — 17/11/2026
+## Evolução do produto — gestão de cobranças (26/11/2026)
+
+João aprovou a direção **CredPay | Gestão de cobranças e acompanhamento de recebimentos**, sem limitar o público a nutricionistas. A nutricionista é o possível primeiro caso de uso, ainda sem entrevista ou piloto comprovados. O [plano](../CREDPAY_PLAN.md#primeiro-mvp-de-cobranças) define o recorte inicial e distingue recebimento manual de confirmação de provedor. O fluxo de cobranças ainda não está implementado.
+
+Esta sequência substitui a fila anterior como prioridade de produto. Os registros de fechamento abaixo conservam suas datas, bloqueios e evidências; não são uma instrução para promover o banco, publicar a demo antiga ou considerar encerrada a v1. Mantém-se uma única frente de implementação.
+
+| ID | Resultado | Critério de aceite | Dependência | Estado |
+| --- | --- | --- | --- | --- |
+| C00 | Direção e recorte do produto registrados | Plano, apresentação, papéis e próxima ação coerentes; separar legado, plano e evidência de uso real | Aprovação de João neste chat | Definição documental concluída; sem mudança no runtime |
+| C01 | Cadastrar e consultar clientes da própria conta | API autenticada e tela Angular permitem cadastro com nome e consulta/lista; rejeitar nome vazio; conta B não lista, consulta ou altera cliente da conta A; persistir após reinício; erros visíveis | C00, autenticação existente | Próximo incremento; começar pelo contrato e menor teste red |
+| C02 | Criar cobrança vinculada a cliente | Descrição, valor BRL positivo com precisão monetária e vencimento; cliente da mesma conta; idempotência de criação com conflito de payload; cobrança começa aberta; persistência e isolamento comprovados | C01 | Refinar contrato HTTP antes do TDD; sem evento de aprovação fictícia |
+| C03 | Acompanhar cobranças abertas, pagas e vencidas | Lista paginada somente da conta e consulta por ID; abertas incluem vencidas; atraso deriva da data de vencimento e relógio; hoje não conta como atraso; nenhuma cobrança paga aparece como vencida | C02 | Refinar junto da jornada; começar com cobranças abertas |
+| C04 | Registrar recebimento integral manual | Valor integral, data informada, autor e instante de registro; histórico preservado; replay não duplica e conflito não sobrescreve; concorrência prova registro único; cobrança passa à visão de pagas | C02 e C03 | Refinar antes do TDD; indicação manual não é confirmação bancária |
+| C05 | Demonstrar a jornada e validar utilidade | Jornada Angular/API/banco com dados fictícios, isolamento, reinício e testes; registrar feedback real de uma pessoa do público quando disponível | C01–C04 | Não iniciado; corrigir/refinar erro de recebimento antes de piloto real |
+| C06 | Integrar um provedor em ambiente de testes | Escolher um provedor por necessidade concreta e baseline; definir criação, notificação autenticada, duplicação, falha e recuperação; separar origem manual/provedor | Jornada de cobranças e decisão específica sobre provedor/conta | Posterior, sem dependência externa adicionada |
+
+**Primeiro recorte técnico de C01:** manter o identificador da conta autenticada como fonte de propriedade. Definir `POST /clientes`, `GET /clientes/{id}` e lista da própria conta em `transacoes-service`; a tela usa essas rotas conforme entregues. Dados iniciais: UUID, conta e nome de exibição, sem CPF, contato ou informação clínica. O primeiro teste deve observar o resultado do cadastro e o vínculo com a conta; testes HTTP/persistência e de acesso entre contas precedem a exposição da jornada. Não introduzir um serviço adicional nem alterar `/transacoes`.
+
+**Pendências preservadas da base:** a candidata PostgreSQL, restauração em volume novo, inventários, triagem Sonar, HTTPS/retenção no destino e aceite pessoal continuam em aberto nos respectivos registros. Este incremento documental não reconsultou GitHub ou scanners; os estados históricos abaixo não são uma verificação em tempo real. Dinheiro real, dados reais, gastos e implantação externa não foram autorizados pela mudança de produto.
+
+## Histórico de fechamento da base — 17/11/2026
 
 O fluxo técnico local, o console Angular com contas, o diagnóstico causal e o Kubernetes assistido têm evidências registradas. A candidata PostgreSQL da PR244 continua **sem promoção**: após o HIGH em libxml2 no scan de21/11, o controle falhou corretamente e os pacotes Alpine corrigidos passaram build, probe e scan nativos AMD64/ARM64 no run44958057682. Os ZIPs selecionados foram conferidos e mostram zero achados; os demais gates desse head ainda precisam terminar. A advisory de `picomatch` foi retirada. Após integrar o experimento, faltam restauração em volume novo, integração, triagem de dependências, SHA final, ensaio pessoal e decisão de release. A URL pública exige operação, contas, TLS e autorização do destino. O [roteiro](MVP_CLOSURE_RUNBOOK.md) define a ordem e as provas de saída; a tabela histórica abaixo não transforma etapas pendentes em concluídas.
 
-## Prioridades
+## Prioridades da base original — histórico
 
 | ID | Resultado | Aceite de saída | Dependências | Estado |
 |---|---|---|---|---|

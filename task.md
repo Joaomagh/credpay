@@ -1,46 +1,27 @@
-# CredPay - Tarefas
+# CredPay — Tarefas
 
-> Um incremento = um resultado verificável. Prioridades em docs/BACKLOG.md; evidências em spec.md.
+> Um incremento = um resultado verificável. Direção em CREDPAY_PLAN.md; prioridades em docs/BACKLOG.md; evidências em spec.md. Uma única frente de implementação.
 
-## Últimos incrementos
+## Último incremento
 
-- Candidato técnico da v1 e ensaios assistidos em docs/V1_VALIDATION.md e docs/V1_CANDIDATE.md; aceite pessoal adiado.
-- Contas, autorização, frontend e limites de recursos em spec§9.142-9.149; cobertura Java/Angular em§9.150.
-- PR219/221: ingestão Java/Angular/Python e análise contínua com gate OK, sem reduzir condições. Avisos preservados em SONARQUBE_CI.md.
-- PR220/222: seis downloads e NPE CLOSED/FIXED em main; cinco falsos positivos autorizados com justificativas individuais.
-- PR223: decimais lineares,2 workers/46 Angular e8 jornadas reais verdes; ambos IDs CLOSED/FIXED em main.
-- PR224: resultado antigo removido em consulta inválida,48 Angular/gate OK e Q04 CLOSED/FIXED.
-- PR225: moeda/UUID com semântica correta e foco visível no mobile;50 Angular,8 jornadas reais e gate OK.
-- PR226: variável automática preservada;6 checks, gate OK e recuperação causal/navegador aprovados, mergec0a3760.
-- PR227: credenciais Kubernetes próprias/reuso comprovados;6 checks e gate93,5% com cobertura PowerShell real, mergeac94cb7.
-- PR228: URLs literais e redirects recusados; Core/Noble reais,5 checks e gate96,3% no delta, merge648e785.
-- PR230: imagens/fluxo nativos em ARM64 e AMD64,5 checks verdes, merge2078d39; spec§9.162.
-- PR232: inventários nativos e controlador medido,5 checks/gate100% do delta, mergee668a8b. HIGHAPT bloqueia publicação; spec§9.163.
-- PR233:6 testes HTTP de sessão e fluxo em imagens verdes em ARM64/AMD64,5 checks/gate OK, mergec29af39; spec§9.164.
-- PR234: proxy preparado,65testes/8jornadas reais,7checks/gate99,6% do delta, merge02cbeea; sem deploy, spec§9.165.
-- PR235: RabbitMQ4.3.7 integrado em17581d5 após16checks; versão real/fluxo/sessão em ARM64/AMD64, persistência/recuperação e8jornadas verdes; spec§9.166.
-- PR237: cliente5.37.0/Netty4.2.18,16checks/gate93% do delta;3MEDIUM ausentes dos4alvos, merge9d2cd92; spec§9.167.
-- PR238: inventário banco/broker e guard de caminhos,5checks/gate94,1% do delta; merge dbf718f. Achados preservados; UBI9 recusada, spec§9.168.
-- PR239: APT removido com UBI10,16checks/gate95,2% do delta; merge bfb7715. JARs/imagens sem achados nos2perfis; banco continua bloqueado, spec§9.169.
-- PR240: perfil public-demo/HTTPS e prazo absoluto de sessão integrados em f64ebb9 após17checks/gate96,3% do delta; fallback de pull público validado em CI, sem deploy. spec§9.170.
-- PR241: `gosu` atribuído nas imagens PostgreSQL ativa/candidata em AMD64/ARM64;5checks verdes no SHA4a9d65e, merge9856ac1. Banco continua bloqueado, spec§9.171.
-- PR242: resumo do inventário mantém as quatro linhas da tabela e apresenta alvos `gosu` depois;5checks/gate verdes, merge69fd79d. spec§9.172-9.173.
-- PR243: quatro contratos no runtime Workers, frontend/Compose/secret scan/Sonar verdes;7checks/gate OK, merge42cc931. O Sonar exibiu6 novos riscos de dependência não triados; spec§9.173.
+- 26/11/2026 — C00: direção aprovada para **Gestão de cobranças e acompanhamento de recebimentos**, com público geral e nutricionista como possível primeiro caso, ainda sem validação real. Plano, backlog, apresentação e papéis alinhados; nenhuma funcionalidade nova entregue. Decisões e limites em spec§1.1/§9.175.
+- Base anterior: simulador com contas, Angular, processamento assíncrono, recuperação e CI. Evidências históricas em spec§9.142–9.174, docs/V1_VALIDATION.md e docs/V1_CANDIDATE.md; aceite pessoal da v1 permanece adiado.
 
 ## Agora
 
-- [ ] Fechar a avaliação da candidata PostgreSQL PR #244: run44958057682 passou os dois jobs nativos, e os ZIPs conferidos registram pacotes corrigidos e zero achados. Aguardar inventário geral/Sonar no mesmo head, revisar a PR e integrar apenas o experimento. Depois iniciar prova de backup/restauração em volume novo, sem trocar a imagem ativa automaticamente; ver spec§9.174.
+- [ ] C01 em andamento — contrato inicial em spec§6; observar o red HTTP de cadastro de cliente vinculado à conta autenticada e seguir pela implementação mínima. Entregar cadastro/consulta/lista pela API e Angular, isolamento entre contas e persistência. Dados iniciais: UUID, conta e nome de exibição; sem dependência nova. Critérios em docs/BACKLOG.md, seção de cobranças.
+
+Execução ativa autorizada em 26/11: 18:37:41–23:37:41 (`America/Sao_Paulo`), cinco horas. Driver mantém implementação única; revisão/P.O. em paralelo conforme os papéis. Branch `feat/gestao-cobrancas` criada a partir da main local, preservando `feat/postgres-alpine-restore` e seu checkpoint. No fim da janela, deixar evidências e uma próxima ação recuperável.
 
 ## Próximo
 
-- S11 e S12-S14 confirmados CLOSED/FIXED em main. Preservar recuperação causal e achados contextuais.
-- Revisar ocorrências contextuais por ID, mantendo achados da pesquisa e referências históricas preservados.
-- Preparar publicação gratuita com HTTPS, retenção e limites validados. Contas Cloudflare/Oracle ainda dependem de João; nenhum deploy.
-- PostgreSQL Bookworm C4/H135 e candidato Alpine C1/H44 no scan de 16/11; o alvo Go é `gosu` em ambos. Investigar versões corrigidas e demais achados antes de publicar, sem supressão ou aceite residual.
-- PR243/42cc931 integrou quatro testes no runtime Workers local; HTTPS/sessões/retenção no destino continuam pendentes. PR244: Sonar gate OK no headb4370dd; scan nativo atual encontrou HIGH1 nas duas arquiteturas e a candidata segue bloqueada.
-- Triar os6 riscos de dependência apontados pelo Sonar naPR243. A PR246 passou Angular, Compose, Secret Scan e Sonar no head15ae104; `npm audit` completo0. A página de riscos requer Advanced Security no plano atual, portanto não declarar os IDs fechados no Sonar. Portabilidade/restauração e promoção do banco exigem incremento próprio.
+- C02: criar cobrança com cliente da mesma conta, descrição, BRL, vencimento e idempotência. Depois C03/C04: consulta por situação e recebimento integral manual com histórico. Refinar o contrato de cada incremento antes do TDD.
+- Validar a rotina e a dificuldade de uma pessoa do público quando João trouxer acesso/feedback; não presumir entrevista ou uso pela nutricionista. Integração de provedor será posterior, em ambiente de testes.
 
-## Depois
+## Pendências preservadas da base
 
-- Ensaio pessoal e decisão final da v1 permanecem adiados; não declarar entendimento ou aceite por João a partir do CI.
-- Acompanhar GnuTLS/inventário. Painel e pesquisa de sandbox continuam adiados.
+- Candidata PostgreSQL PR244: os ZIPs do run 44958057682 registraram pacotes corrigidos e zero achados; inventário geral/revisão e restauração em volume novo ainda exigem evidências antes de promover a imagem ativa. No checkout inicial desta sessão, a branch `feat/postgres-alpine-restore` tinha o commit `486d203` de teste de restauração; ele não foi reexecutado nem integrado por este incremento documental. Estados históricos e critérios em spec§9.174 e docs/MVP_CLOSURE_RUNBOOK.md. Nenhuma troca de imagem ou remoção de volumes.
+- Preservar inventários/achados do banco e GnuTLS; revalidar o corte aplicável antes de publicação, sem inferir atualidade das contagens antigas. S11/S12–S14 CLOSED/FIXED e ocorrências contextuais continuam nos registros por ID.
+- Seis riscos Sonar da PR243 continuam sem triagem individual completa: a página exige Advanced Security no plano disponível. PR246/head `15ae104` passou Angular, Compose, Secret Scan e Sonar, com `npm audit` completo em zero; isso não comprova encerramento dos IDs Sonar.
+- Publicação gratuita: HTTPS, retenção, limites e recuperação no destino continuam pendentes. Contratos Workers locais passaram na PR243/42cc931; contas Cloudflare/Oracle dependem de João. Nenhum deploy, gasto, dinheiro real ou dados reais autorizado por esta evolução.
+- Ensaio autônomo e decisão final da v1 permanecem adiados. Painel e pesquisa de sandbox continuam adiados, sem aceite/liberação. A evolução de produto não encerra esses itens.

@@ -1,10 +1,44 @@
-# CredPay — Plano do Projeto
+# CredPay — Gestão de cobranças e acompanhamento de recebimentos
 
-> Projeto **build to learn** para praticar Java backend, sistemas distribuídos, Kubernetes e observabilidade com XP e TDD. Este arquivo define direção e escopo. O `spec.md` registra o que foi decidido e construído; o `task.md` contém apenas o trabalho próximo.
+> Plano do produto e de sua evolução com XP e TDD. O `spec.md` distingue decisões de funcionalidades comprovadas; o `task.md` contém apenas o trabalho próximo. A base existente foi construída como simulador e ainda executa esse fluxo.
 
 ## 1. Objetivo e critério de sucesso
 
-CredPay simula um fluxo pequeno de processamento assíncrono de transações financeiras. Seu objetivo é gerar aprendizado demonstrável e evidências de engenharia para uma candidatura Java júnior/trainee em até cinco meses — não reproduzir um banco real.
+**Direção aprovada por João em 26/11/2026:** evoluir o CredPay para gestão de cobranças e acompanhamento de recebimentos de profissionais e pequenos negócios, sem limitar o produto a uma profissão. Uma nutricionista é o possível primeiro caso de uso; ainda não há entrevista, necessidade validada, piloto ou adoção comprovados.
+
+O primeiro resultado de produto será permitir que uma conta organize clientes e cobranças, registre recebimentos manualmente e acompanhe o que está em aberto, vencido ou pago. O aprendizado e as evidências de engenharia continuam objetivos do projeto. A direção aprovada não significa que essas funcionalidades já existem.
+
+### Primeiro MVP de cobranças
+
+Jornada: entrar na conta → cadastrar cliente → criar cobrança com descrição, valor e vencimento → consultar situação → registrar recebimento integral manual → consultar histórico.
+
+Recorte inicial de implementação:
+
+- **Cliente:** identificador, conta proprietária e nome de exibição. Dados clínicos, CPF e contatos não são necessários a essa primeira jornada.
+- **Cobrança:** identificador, conta proprietária, cliente da mesma conta, descrição, valor em BRL e vencimento como data de calendário. Valores usam `BigDecimal`, são positivos e têm no máximo duas casas decimais significativas; não há arredondamento silencioso. Isso é um contrato novo e não altera a precisão das transações legadas.
+- **Recebimento manual:** integral e único por cobrança, com data do recebimento informada pelo usuário, autor e instante do registro. O sistema distingue a data informada do instante de auditoria. A indicação de paga significa recebimento registrado pelo usuário, sem confirmação bancária.
+- **Situação:** `ABERTA` enquanto não há recebimento; `PAGA` após o registro. Na consulta, uma cobrança aberta com vencimento anterior à data atual aparece como `VENCIDA`; no próprio vencimento permanece aberta no prazo. A data atual usa relógio controlável e zona `America/Sao_Paulo`. O filtro de abertas inclui as vencidas; o filtro de vencidas seleciona somente esse subconjunto. Não persistir uma mudança diária de estado apenas para apresentar atraso.
+- **Autorização:** clientes, cobranças e recebimentos pertencem à conta autenticada. Outra conta não pode consultar ou alterar os dados; o proprietário não é escolhido pelo corpo da requisição.
+- **Repetição segura:** reenviar a criação da cobrança com a mesma chave e pedido preserva a cobrança original; payload diferente gera conflito. Repetir o mesmo registro de recebimento não duplica o registro; tentativa divergente não sobrescreve o anterior.
+
+Exemplo de aceite com dados fictícios e relógio fixo em 26/11/2026: uma conta cadastra Cliente Exemplo e cria uma cobrança de R$ 250,00, descrição “Serviço de acompanhamento”, com vencimento em 25/11/2026. A consulta mostra vencida. Após registrar o recebimento integral com data de 26/11/2026, a consulta mostra paga e o histórico conserva vencimento, data informada, autor e instante do registro. A conta de outro usuário não acessa essa cobrança. O exemplo descreve o comportamento a implementar, não uma execução realizada.
+
+Este recorte começa com recebimento integral único. Parcelamento, juros, descontos, recebimentos parciais, cancelamento e estorno precisam de refinamento próprio antes de entrar no produto. Correção de registro manual incorreto precisa de regra e testes antes de um piloto com dados reais. Não há prontuário, prescrição ou gestão clínica nesse MVP.
+
+### Transição da base existente
+
+- Preservar os contratos `/transacoes`, eventos v1, dados e cenários de recuperação existentes durante a evolução. Não converter transações históricas em cobranças.
+- `APROVADA` continua sendo decisão do simulador por limite de valor; nunca equivale a `PAGA`. Novas cobranças não serão aprovadas pelo processador fictício.
+- Começar clientes e cobranças no `transacoes-service`, com tabelas e contratos próprios. Reaproveitar autenticação e autorização; refinar as novas rotas antes do TDD HTTP. Não criar um terceiro serviço nem compartilhar dados entre os bancos por antecipação.
+- Adicionar telas Angular conforme cada jornada existir na API. Não renomear os serviços ou reescrever o fluxo legado para aparentar uma entrega concluída.
+- Provedor de pagamentos entra depois, começando por um único ambiente de testes e contrato próprio. Escolha do provedor, conta e credenciais não foram definidas. Dinheiro real, despesas, serviços externos, publicação e uso de dados reais continuam sujeitos a autorização específica.
+- As pendências de banco, segurança, publicação e aceite pessoal da v1 continuam registradas. A nova direção não promove imagens, libera implantação ou declara concluído o candidato anterior.
+
+### Critério de saída do MVP de cobranças
+
+Uma conta percorre a jornada acima pela interface com API e persistência reais em ambiente de teste, com isolamento entre contas, criação idempotente, recebimento único, histórico e classificação de vencimento testados. Reinício preserva os registros. Evidências usam dados fictícios. A hipótese de utilidade será validada separadamente com uma pessoa do público; não inferir uso real de testes automatizados.
+
+### Critérios de portfólio preservados
 
 O projeto estará pronto para portfólio quando João conseguir:
 
@@ -14,7 +48,7 @@ O projeto estará pronto para portfólio quando João conseguir:
 - subir o sistema localmente em Kubernetes seguindo o README;
 - mostrar um pipeline reproduzível e um histórico de decisões e aprendizados.
 
-### Fora do escopo da v1
+### Fora do escopo original da v1 backend — histórico preservado
 
 - implementação de frontend, autenticação de usuários, PIX real, cartão real, antifraude real e dinheiro real;
 - servidores de coleta Prometheus e painel Grafana, adiados por João em16/10/2026; preservar métricas/diagnósticos existentes e o experimento para etapa posterior;
@@ -26,7 +60,7 @@ O projeto estará pronto para portfólio quando João conseguir:
 
 João considerou uma interface Angular com design explorado no Google Stitch e depois pediu priorizar o backlog, preservando somente o briefing. `docs/FRONTEND_BRIEF.md` guarda o recorte futuro: criar transação, acompanhar estado e consultar por ID usando contratos existentes. Frontend não é critério para encerrar esta v1; a preparação inicial não criou dependências, tela externa ou aplicação. João retomou explicitamente a implementação em22/10, após a primeira demo Compose local: frontend/ inicia a etapa Angular em paralelo ao acompanhamento dos aceites pessoais restantes, com uma única frente de implementação. Isso não torna frontend requisito retroativo nem declara encerrada a v1 backend.
 
-## 2. Fluxo de negócio v1
+## 2. Fluxo de negócio v1 — simulador existente
 
 ```text
 POST /transacoes
@@ -53,7 +87,7 @@ Detalhes e casos de borda só entram no `spec.md` quando tratados por uma histó
 
 ## 3. Arquitetura e riscos que guiam o aprendizado
 
-**Decisão:** monorepo com dois aplicativos Spring Boot independentes e bancos/schemas isolados.
+**Base existente:** monorepo com dois aplicativos Spring Boot independentes e bancos/schemas isolados. A transição de produto está em §1; o desenho abaixo descreve o fluxo legado.
 
 ```text
 credpay/
@@ -80,7 +114,7 @@ O monorepo reduz manutenção para uma pessoa e facilita avaliação, sem elimin
 | Processamento indisponível | Mensagem durável, retry limitado, DLQ e teste de recuperação |
 | Estado divergente | Correlação, reconciliação observável e consistência eventual explícita |
 | Falha silenciosa | Logs estruturados, métricas, alertas locais e correlation ID |
-| Escopo crescente | v1 e critérios de saída definidos; frontend permanece fora do escopo |
+| Escopo crescente | recorte do MVP de cobranças em §1; frontend original retomado em etapa própria, sem alterar retroativamente os aceites da v1 backend |
 
 > Resilience4j só será aplicado a chamadas síncronas que realmente existirem. Retry de consumo/publicação será configurado na camada adequada; não se adiciona circuit breaker apenas como palavra-chave.
 
@@ -112,9 +146,9 @@ Para cada incremento vertical pequeno:
 
 O Navigator mantém a direção e aprova expansão de escopo e decisões irreversíveis. Dentro do plano, o ciclo pode seguir entre incrementos sem nova pergunta a cada tarefa. Uma entrega só termina com evidências e revisão; o backlog em `docs/BACKLOG.md` não substitui o próximo passo único de `task.md`. Não há promessa de agentes permanentes ou execução fora da sessão ativa.
 
-## 6. Plano por fases
+## 6. Plano por fases da base original — histórico
 
-As durações são estimativas, não prazos. Cada sessão deve produzir uma evidência pequena e verificável.
+As durações são estimativas, não prazos. Cada sessão deve produzir uma evidência pequena e verificável. A sequência de evolução do produto aprovada em 26/11 está no backlog de cobranças; as fases abaixo preservam o plano original e seus aceites.
 
 ### Fase 1 — Governança e sandbox do agente
 

@@ -1,4 +1,4 @@
-# CredPay
+# CredPay | Gestão de cobranças e acompanhamento de recebimentos
 
 [![Transaction Service CI](https://github.com/Joaomagh/credpay/actions/workflows/transacoes-service-ci.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/transacoes-service-ci.yml)
 [![Processing Service CI](https://github.com/Joaomagh/credpay/actions/workflows/processamento-service-ci.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/processamento-service-ci.yml)
@@ -8,9 +8,13 @@
 [![Secret Scan](https://github.com/Joaomagh/credpay/actions/workflows/secret-scan.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/secret-scan.yml)
 [![SonarQube analysis](https://github.com/Joaomagh/credpay/actions/workflows/sonarqube.yml/badge.svg)](https://github.com/Joaomagh/credpay/actions/workflows/sonarqube.yml)
 
-> Simulador de transações assíncronas com Java, Spring Boot, RabbitMQ e Angular.
+> Em evolução para gestão de cobranças e acompanhamento de recebimentos de profissionais e pequenos negócios.
 
-O CredPay permite cadastrar uma transação fictícia em reais, acompanhar seu processamento e consultar o resultado por UUID. A aprovação segue um limite configurável por moeda. Os dados são fictícios e o fluxo é voltado a portfólio e aprendizado de engenharia de software.
+**Disponível hoje:** simulador de transações assíncronas com Java, Spring Boot, RabbitMQ e Angular. Permite cadastrar uma transação fictícia em reais, acompanhar seu processamento e consultar o resultado por UUID. A aprovação segue um limite configurável por moeda.
+
+**Próxima evolução:** clientes, cobranças com descrição e vencimento, registro manual de recebimento e consulta de valores em aberto, pagos ou vencidos. Esse fluxo ainda não está implementado. Uma nutricionista é o possível primeiro caso de uso, sem restringir o produto a essa profissão ou declarar uso real. [Escopo e critérios do MVP](CREDPAY_PLAN.md#primeiro-mvp-de-cobranças) · [Backlog de cobranças](docs/BACKLOG.md#evolução-do-produto--gestão-de-cobranças-26112026)
+
+Os dados das demonstrações são fictícios. A aprovação de uma transação no simulador não comprova um recebimento. Integração com provedor será uma etapa posterior, começando em ambiente de testes.
 
 **João Pedro Magalhães · Engenheiro de software no projeto CredPay**
 

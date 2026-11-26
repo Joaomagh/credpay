@@ -1,4 +1,6 @@
-# Fechamento do MVP CredPay — roteiro executável
+# Fechamento da base v1 CredPay — roteiro executável
+
+> Desde 26/11/2026, o produto evolui para gestão de cobranças e acompanhamento de recebimentos. Este roteiro preserva os aceites da base anterior e suas pendências técnicas; não define a sequência do novo MVP. A prioridade vigente está no [backlog de cobranças](BACKLOG.md#evolução-do-produto--gestão-de-cobranças-26112026) e em [task.md](../task.md).
 
 Atualizado em 21/11/2026. Este roteiro organiza os aceites existentes; não declara uma release nem autoriza implantação externa. Referências: [backlog](BACKLOG.md), [candidato](V1_CANDIDATE.md), [validação](V1_VALIDATION.md), [demo](DEMO.md), [triagem](../infra/security/TRIAGE.md) e [plano público](PUBLIC_DEMO_PLAN.md).
 
