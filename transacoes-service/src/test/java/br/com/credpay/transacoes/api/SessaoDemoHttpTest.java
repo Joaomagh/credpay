@@ -261,6 +261,61 @@ class SessaoDemoHttpTest {
         }
     }
 
+    @Test
+    void clientes_devePersistirEIsolarDuasContas_comSessaoECsrfReais() throws Exception {
+        var senhaA = registrarConta("clientes-a");
+        var senhaB = registrarConta("clientes-b");
+        try (var a = HttpClient.newBuilder().cookieHandler(new CookieManager()).build();
+             var b = HttpClient.newBuilder().cookieHandler(new CookieManager()).build()) {
+            assertThat(post(a, "/auth/login", formulario("clientes-a", senhaA), csrf(a))).isEqualTo(204);
+            assertThat(post(b, "/auth/login", formulario("clientes-b", senhaB), csrf(b))).isEqualTo(204);
+            var csrfA = csrf(a);
+            var csrfB = csrf(b);
+            assertThat(cadastrarCliente(a, "{\"nome\":\"Cliente Exemplo\"}", null).statusCode()).isEqualTo(403);
+            assertThat(cadastrarCliente(a, "{\"nome\":\"Cliente Exemplo\"}", csrfB).statusCode()).isEqualTo(403);
+
+            var criacao = cadastrarCliente(a, "{\"nome\":\" Cliente Exemplo \"}", csrfA);
+            assertThat(criacao.statusCode()).isEqualTo(201);
+            var id = json.readTree(criacao.body()).path("id").asText();
+            assertThat(criacao.headers().firstValue("Location")).contains("/clientes/" + id);
+            var consulta = get(a, "/clientes/" + id);
+            assertThat(consulta.statusCode()).isEqualTo(200);
+            assertThat(json.readTree(consulta.body()).path("nome").asText()).isEqualTo("Cliente Exemplo");
+            assertThat(consulta.headers().firstValue("Cache-Control")).contains("no-store");
+
+            var alheio = get(b, "/clientes/" + id);
+            var ausente = get(b, "/clientes/" + UUID.randomUUID());
+            assertThat(alheio.statusCode()).isEqualTo(404);
+            assertThat(ausente.statusCode()).isEqualTo(404);
+            assertThat(json.readTree(alheio.body()).path("detail").asText())
+                    .isEqualTo(json.readTree(ausente.body()).path("detail").asText());
+            var listaB = get(b, "/clientes");
+            assertThat(listaB.statusCode()).isEqualTo(200);
+            assertThat(json.readTree(listaB.body()).path("itens").size()).isZero();
+
+            var segunda = cadastrarCliente(a, "{\"nome\":\"Cliente Exemplo\"}", csrfA);
+            assertThat(segunda.statusCode()).isEqualTo(201);
+            var segundoId = json.readTree(segunda.body()).path("id").asText();
+            assertThat(segundoId).isNotEqualTo(id);
+            var primeiraPagina = json.readTree(get(a, "/clientes?limite=1").body());
+            assertThat(primeiraPagina.path("itens").size()).isEqualTo(1);
+            var cursor = primeiraPagina.path("proximo").asText();
+            assertThat(cursor).isEqualTo(primeiraPagina.path("itens").get(0).path("id").asText());
+            var seguinte = json.readTree(get(a, "/clientes?limite=1&apos=" + cursor).body());
+            assertThat(seguinte.path("itens").size()).isEqualTo(1);
+            assertThat(seguinte.path("proximo").isNull()).isTrue();
+            assertThat(java.util.List.of(primeiraPagina.path("itens").get(0).path("id").asText(),
+                    seguinte.path("itens").get(0).path("id").asText())).containsExactlyInAnyOrder(id, segundoId);
+        }
+    }
+
+    private HttpResponse<String> cadastrarCliente(HttpClient cliente, String corpo, String csrf) throws Exception {
+        var pedido = requisicao("/clientes").header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(corpo));
+        if (csrf != null) { pedido.header("X-CSRF-TOKEN", csrf); }
+        return cliente.send(pedido.build(), HttpResponse.BodyHandlers.ofString());
+    }
+
     private String registrarConta(String nome) {
         var senhaFicticia = UUID.randomUUID() + " +";
         jdbc.update("INSERT INTO contas (id, usuario, senha_hash) VALUES (?, ?, ?)",

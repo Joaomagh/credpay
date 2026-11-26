@@ -9,7 +9,7 @@
 
 ## Agora
 
-- [ ] C01 em andamento — publicar draft dos testes de persistência e observar o red PostgreSQL no CI antes de implementar V12/adapter SQL. O foco local de domínio/aplicação/MVC/filtros passou 80 testes, compilando os testes reais sem executá-los. Depois concluir persistência, HTTP com duas contas/perfil público e Angular. Contrato em spec§6 e evidência em §9.176; sem dependência nova. Não integrar o scaffold de persistência sem comportamento.
+- [ ] C01 em andamento — PR248/head37ceffd confirmou red PostgreSQL (647 testes/16 falhas de clientes/0 erros/skips). Observar também o red da extensão HTTP/HTTPS/reinício antes do green V12/SQL. Foco local80 e compilação da extensão verdes. Angular da mesma jornada em TDD local. Contrato em spec§6 e evidências em §9.176; sem dependência nova. Não integrar o scaffold de persistência sem comportamento.
 
 Execução ativa autorizada em 26/11: 18:37:41–23:37:41 (`America/Sao_Paulo`), cinco horas. Driver mantém implementação única; revisão/P.O. em paralelo conforme os papéis. Branch `feat/gestao-cobrancas` criada a partir da main local, preservando `feat/postgres-alpine-restore` e seu checkpoint. No fim da janela, deixar evidências e uma próxima ação recuperável.
 

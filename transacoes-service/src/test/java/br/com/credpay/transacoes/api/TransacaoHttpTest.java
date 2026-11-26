@@ -71,6 +71,14 @@ class TransacaoHttpTest {
     private JdbcTemplate jdbcTemplate;
 
     @Test
+    void clientes_devePermanecerIndisponivel_noPerfilAnonimoLegado() throws Exception {
+        mockMvc.perform(get("/clientes")).andExpect(status().isNotFound());
+        mockMvc.perform(get("/clientes/" + UUID.randomUUID())).andExpect(status().isNotFound());
+        mockMvc.perform(post("/clientes").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nome\":\"Cliente Exemplo\"}")).andExpect(status().isNotFound());
+    }
+
+    @Test
     void buscar_deveRetornarTransacaoPersistida_quandoIdExistir() throws Exception {
         var criacao = mockMvc.perform(postTransacoes()
                         .contentType(MediaType.APPLICATION_JSON)
