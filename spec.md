@@ -3699,6 +3699,10 @@ O primeiro green focado encontrou1 erro de ambiente: `HttpClientImpl.SelectorMan
 
 O scanner staged retornou achado e o driver avançou indevidamente ao commit local; o hook bloqueou o push. Inspeção do relatório com redação100% localizou somente a lista compacta de versões em spec.md interpretada como `generic-api-key`. O texto foi formatado com nomes e versões separados, sem regra/exceção nova no scanner; corrigir o commit exclusivamente local antes de publicar e repetir staged/histórico/hook.
 
+Callback em TDD: fixture de provedor usa Tomcat já existente, HTTP loopback, chaves RSA somente em memória, código de uso único, JWT assinado e conferência do verificador PKCE. A primeira tentativa de fixture com o servidor HTTP do JDK foi recusada pela regra de imports; adaptada ao Tomcat, sem exceção de Checkstyle ou dependência adicional. Red MVC/protocolo:9 testes/8 falhas/0 erros/skips; sucesso não autenticou e os negativos ainda não trocaram código (contador esperado1/observado0). Estado inválido já foi recusado antes da troca. Esse teste exige troca HTTP real antes de considerar comprovada a rejeição do JWT.
+
+Adicionado red ponta a ponta para o CI: duas identidades, contas individuais reais em PostgreSQL, cliente de A invisível a B e novo login de A preservando o cadastro. Apenas o registro do provedor é substituído por configuração de teste; autorização, token/JWKS, assinatura, filtros, sessão, cadastro e SQL são reais. Não é login no Google real, não relaxa TLS de produção e não usa credenciais reais. O callback/principal ainda não foi implementado neste checkpoint.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
