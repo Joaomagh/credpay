@@ -17,13 +17,13 @@ describe('Rota de clientes no modo contas', () => {
       {provide: AUTH_REQUIRED, useValue: true}]});
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('a[href="/clientes"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('a[href="/cadastros/clientes"]')).not.toBeNull();
   });
 
-  it('abre a jornada após confirmar a sessão', async () => {
+  it('abre a jornada por endereço de página separado do endpoint HTTP', async () => {
     TestBed.configureTestingModule({providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter(consoleRoutes),
       {provide: AUTH_REQUIRED, useValue: true}, {provide: SessionApi, useValue: {current: () => of(conta)}}]});
-    const harness = await RouterTestingHarness.create('/clientes');
+    const harness = await RouterTestingHarness.create('/cadastros/clientes');
     expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toContain('Clientes');
     const http = TestBed.inject(HttpTestingController);
     http.expectOne(request => request.url === '/clientes').flush({itens: [], proximo: null});
@@ -33,7 +33,7 @@ describe('Rota de clientes no modo contas', () => {
   it('pede login quando não há sessão', async () => {
     TestBed.configureTestingModule({providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter(consoleRoutes),
       {provide: AUTH_REQUIRED, useValue: true}, {provide: SessionApi, useValue: {current: () => of(null)}}]});
-    const harness = await RouterTestingHarness.create('/clientes');
+    const harness = await RouterTestingHarness.create('/cadastros/clientes');
     expect(harness.routeNativeElement?.textContent).toContain('Entre na sua conta');
     TestBed.inject(HttpTestingController).expectNone(request => request.url === '/clientes');
   });
@@ -41,7 +41,7 @@ describe('Rota de clientes no modo contas', () => {
   it('mantém clientes fora do console anônimo', async () => {
     TestBed.configureTestingModule({providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter(consoleRoutes),
       {provide: AUTH_REQUIRED, useValue: false}]});
-    const harness = await RouterTestingHarness.create('/clientes');
+    const harness = await RouterTestingHarness.create('/cadastros/clientes');
     expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toContain('Nova transação');
     TestBed.inject(HttpTestingController).expectNone(request => request.url === '/clientes');
   });

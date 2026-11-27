@@ -7,7 +7,7 @@ import { ClientsPage } from './clients-page';
 
 export const consoleRoutes: Routes = [
   { path: 'entrar', component: LoginPage, title: 'Entrar · CredPay' },
-  { path: 'clientes', component: ClientsPage, canActivate: [clientsRequired], title: 'Clientes · CredPay' },
+  { path: 'cadastros/clientes', component: ClientsPage, canActivate: [clientsRequired], title: 'Clientes · CredPay' },
   { path: 'nova', component: CreatePage, canActivate: [sessionRequired], title: 'Nova transação · CredPay' },
   { path: 'consultar', component: QueryPage, canActivate: [sessionRequired], title: 'Consultar · CredPay' },
   { path: '**', redirectTo: 'nova' }

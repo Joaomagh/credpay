@@ -30,7 +30,7 @@ test('duas contas isolam cadastro e consulta de clientes', async ({page}, testIn
     if (request.method() === 'POST' && new URL(request.url()).pathname === '/clientes') posts++;
   });
   await test.step('cadastrar e consultar cliente com a conta A', async () => {
-    await page.goto('/clientes');
+    await page.goto('/cadastros/clientes');
     await entrar(page, 'conta-ci-a', senhaA);
     await page.getByRole('link', {name: 'Clientes', exact: true}).click();
     await expect(page.getByRole('heading', {name: 'Clientes.'})).toBeVisible();

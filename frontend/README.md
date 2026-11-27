@@ -28,7 +28,7 @@ Abra `/entrar`. A tela confirma a sessão no servidor e libera o console para a 
 
 ## Clientes no perfil de contas
 
-Com a migration V12 aplicada e o backend no perfil `sessao-demo`, entre pela tela de autenticação e abra **Clientes** no menu. O proxy também encaminha `/clientes` para a API local. É possível cadastrar um nome, consultar o cadastro e percorrer a lista de 20 clientes por página. Nomes iguais são permitidos; o identificador distingue os cadastros.
+Com a migration V12 aplicada e o backend no perfil `sessao-demo`, entre pela tela de autenticação e abra **Clientes** no menu, em `/cadastros/clientes`. A página tem endereço separado da API `/clientes`, inclusive no reload. O proxy encaminha somente a rota da API ao backend local. É possível cadastrar um nome, consultar o cadastro e percorrer a lista de 20 clientes por página. Nomes iguais são permitidos; o identificador distingue os cadastros.
 
 Em falha de comunicação no cadastro, confira a lista antes de enviar novamente: o cadastro de clientes não tem retry automático nem o contrato idempotente das transações. Troca de conta remove os dados da tela; respostas de uma geração anterior de login não invalidam a sessão nova.
 

@@ -9,7 +9,7 @@
 
 ## Agora
 
-- [ ] C01 em revisão — PR248/head86fae9c passou Maven completo, Compose, Flow, Kubernetes, Sonar e inventário. Images ARM64 passou; AMD64 não executou o smoke por HTTP429 do Maven Central ao resolver Surefire. Angular passou81 testes, dois controles Node, tipos e builds padrão/contas. Próxima ação: publicar tela e jornada real de duas contas, observar CI final e revisar antes de integrar. Contrato/evidências em spec§6/§9.176; sem dependência nova.
+- [ ] C01 em revisão — PR248/backend86fae9c passou Maven/Compose/Flow/Kubernetes/Sonar/inventário. Images repetido no ddad205 passou nas duas arquiteturas. Angular81+2 controles Node, tipos e builds passaram. QA encontrou colisão página/API: red de navegação observado e rota da página corrigida para `/cadastros/clientes`, API preservada. Próxima ação: publicar correção e observar as dez jornadas/gates finais antes de integrar. QA manual autenticado indisponível sem API local; evidências em spec§6/§9.176.
 
 Execução ativa autorizada em 26/11: 18:37:41–23:37:41 (`America/Sao_Paulo`), cinco horas. Driver mantém implementação única; revisão/P.O. em paralelo conforme os papéis. Branch `feat/gestao-cobrancas` criada a partir da main local, preservando `feat/postgres-alpine-restore` e seu checkpoint. No fim da janela, deixar evidências e uma próxima ação recuperável.
 
