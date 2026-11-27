@@ -10,9 +10,9 @@
 
 > Em evolução para gestão de cobranças e acompanhamento de recebimentos de profissionais e pequenos negócios.
 
-**Disponível hoje:** simulador de transações assíncronas com Java, Spring Boot, RabbitMQ e Angular. Permite cadastrar uma transação fictícia em reais, acompanhar seu processamento e consultar o resultado por UUID. A aprovação segue um limite configurável por moeda.
+**Disponível hoje:** cadastro, lista paginada e consulta de clientes da própria conta, com API Java/Spring Boot, persistência PostgreSQL e tela Angular. A base também conserva o simulador de transações assíncronas com RabbitMQ: criar uma transação fictícia em reais, acompanhar o processamento e consultar o resultado por UUID. A aprovação segue um limite configurável por moeda.
 
-**Próxima evolução:** clientes, cobranças com descrição e vencimento, registro manual de recebimento e consulta de valores em aberto, pagos ou vencidos. Esse fluxo ainda não está implementado. Uma nutricionista é o possível primeiro caso de uso, sem restringir o produto a essa profissão ou declarar uso real. [Escopo e critérios do MVP](CREDPAY_PLAN.md#primeiro-mvp-de-cobranças) · [Backlog de cobranças](docs/BACKLOG.md#evolução-do-produto--gestão-de-cobranças-26112026)
+**Próxima evolução:** login com Google, cobranças com descrição e vencimento, registro manual de recebimento e consulta de valores em aberto, pagos ou vencidos. O fluxo de cobranças e o login externo ainda não estão implementados. Uma nutricionista é o possível primeiro caso de uso, sem restringir o produto a essa profissão ou declarar uso real. [Escopo e critérios do MVP](CREDPAY_PLAN.md#primeiro-mvp-de-cobranças) · [Backlog de cobranças](docs/BACKLOG.md#evolução-do-produto--gestão-de-cobranças-26112026)
 
 Os dados das demonstrações são fictícios. A aprovação de uma transação no simulador não comprova um recebimento. Integração com provedor será uma etapa posterior, começando em ambiente de testes.
 
@@ -22,6 +22,7 @@ Responsável pela direção do projeto, pelas decisões de arquitetura e escopo 
 
 ## O que dá para demonstrar
 
+- **Clientes** — no modo de contas, cadastrar um nome, consultar o cadastro e percorrer a lista de 20 clientes por página. Outra conta não acessa esses cadastros. A página `/cadastros/clientes` tem endereço separado da API `/clientes`. [Guia de clientes](frontend/README.md#clientes-no-perfil-de-contas)
 - **Nova transação** — enviar um valor pelo console Angular, receber o estado `PENDENTE` e acompanhar o pedido pelo mesmo UUID.
 - **Consulta** — ver o estado atualizado, inclusive `APROVADA` ou `REJEITADA`, e retomar a consulta com o identificador.
 - **Reenvio seguro** — repetir o mesmo pedido com a mesma `Idempotency-Key` preserva a resposta original. Reutilizar a chave para outro pedido retorna conflito.
@@ -32,8 +33,8 @@ Responsável pela direção do projeto, pelas decisões de arquitetura e escopo 
 
 ```mermaid
 flowchart LR
-    UI["Console Angular"] -->|"POST e GET /transacoes"| T["Serviço de Transações"]
-    T <-->|"Transações, histórico e outbox"| DBT[("PostgreSQL de Transações")]
+    UI["Console Angular"] -->|"POST e GET /transacoes e /clientes"| T["Serviço de Transações"]
+    T <-->|"Clientes, transações, histórico e outbox"| DBT[("PostgreSQL de Transações")]
     T -->|"TransacaoCriada"| MQ["RabbitMQ"]
     MQ -->|"TransacaoCriada"| P["Serviço de Processamento"]
     P <-->|"Decisões e outbox"| DBP[("PostgreSQL de Processamento")]

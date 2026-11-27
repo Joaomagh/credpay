@@ -42,7 +42,7 @@ Uma conta percorre a jornada acima pela interface com API e persistência reais 
 
 João pediu avaliar e implementar OAuth2/OIDC ao retomar a execução. O próximo refinamento de autenticação (C07) será após fechar a frente C01, sem trocar o login existente de forma parcial. OAuth2 define autorização delegada; OpenID Connect acrescenta autenticação. Proposta: login OIDC no Spring Security, com Authorization Code e PKCE, mantendo a sessão no backend e as permissões por conta no CredPay. Tokens não serão guardados no armazenamento do Angular.
 
-Antes do incremento, escolher um provedor e registrar a baseline necessária. O vínculo entre a identidade externa (`issuer`, `subject`) e a conta local deve preservar a propriedade dos dados; não unir contas automaticamente por e-mail. Os testes deverão provar callback válido, rejeição de emissor/assinatura/audiência/nonce/estado inválidos, expiração e isolamento dos clientes. A definição não implementa OAuth2/OIDC nem autoriza criar conta externa, adicionar credencial real, contratar serviço ou publicar o sistema.
+João escolheu **Entrar com Google**, com configuração da conta e credenciais pelo próprio João. Registrar a baseline necessária antes de adicionar dependências. O vínculo entre a identidade externa (`issuer`, `subject`) e a conta local deve preservar a propriedade dos dados; não unir contas automaticamente por e-mail. Os testes deverão provar callback válido, rejeição de emissor/assinatura/audiência/nonce/estado inválidos, expiração e isolamento dos clientes. A definição não implementa OAuth2/OIDC nem autoriza criar conta externa, adicionar credencial real, contratar serviço ou publicar o sistema.
 
 ### Critérios de portfólio preservados
 
