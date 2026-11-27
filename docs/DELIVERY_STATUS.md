@@ -1,0 +1,19 @@
+# Estado da entrega — 27/11/2026
+
+Este quadro é um checkpoint, não um aceite de publicação. Evidências detalhadas em spec§9.176–9.177 e prioridades em BACKLOG.md.
+
+| Item | Estado comprovado | Próximo passo | Depende de João |
+| --- | --- | --- | --- |
+| Clientes C01 | Integrado na main, API e Angular, isolamento e persistência testados | Preservar regressões | Não |
+| Google C07 — backend | V13/V14 passaram CI; callback/principal/limites com verify local114 sem falhas | Validar PostgreSQL/HTTP e todos os gates no novo head da PR250; revisar antes do merge | Não para os testes fictícios |
+| Google C07 — interface e proxy | Pendente | Botão condicionado à configuração, retorno e rotas estritas no Worker, com TDD | Não |
+| Google real | Projeto ainda não configurado | Criar projeto/cliente e cadastrar redirect definitivo; segredo fora do Git/chat | Sim, conta e credenciais |
+| Cobranças C02 | Planejado, sem implementação | Contrato HTTP, TDD de valor/vencimento/cliente/idempotência e persistência | Não |
+| Consultas C03 | Planejado | Filtros aberta/paga/vencida, relógio e isolamento | Não |
+| Recebimento manual C04 | Planejado | Registro integral único, repetição/conflito e histórico | Não |
+| Publicação gratuita | Compose primeiro aprovado; nenhuma hospedagem preparada | Artefato e configuração revisáveis, HTTPS, retenção, recuperação e ensaio no destino | Sim, contas/destino e etapas pessoais de configuração |
+| Banco e segurança da base | Candidata não promovida; pendências históricas preservadas | Restore em volume novo, inventários e triagem conforme MVP_CLOSURE_RUNBOOK.md | Eventuais acessos aos serviços |
+| Demonstração C05 | Ainda sem jornada completa de cobranças | Percorrer Angular/API/banco; depois obter feedback real | Sim para feedback e aceite pessoal |
+| k3s e provedor C06 | Posteriores ao primeiro recorte | Retomar com baseline e necessidade concreta | Sim para ampliar escopo externo |
+
+Publicar o código na PR não publica a aplicação. Testes do emissor fictício não comprovam login no Google real. Não há movimentação financeira, piloto ou adoção real comprovados.

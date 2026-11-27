@@ -25,6 +25,10 @@ final class LimitesDemo {
             PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/auth/csrf");
     private static final PathPatternRequestMatcher LOGIN =
             PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/auth/login");
+    private static final PathPatternRequestMatcher INICIO_GOOGLE =
+            PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/auth/externo/google");
+    private static final PathPatternRequestMatcher RETORNO_GOOGLE =
+            PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/auth/retorno/google");
     private static final PathPatternRequestMatcher CRIACAO =
             PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/transacoes");
     private static final PathPatternRequestMatcher CONSULTA =
@@ -48,7 +52,7 @@ final class LimitesDemo {
         var http = (HttpServletRequest) requisicao;
         if (TOKEN.matches(http)) {
             aplicar(Operacao.TOKEN, http.getRemoteAddr(), http, (HttpServletResponse) resposta, proximo);
-        } else if (LOGIN.matches(http)) {
+        } else if (LOGIN.matches(http) || INICIO_GOOGLE.matches(http) || RETORNO_GOOGLE.matches(http)) {
             aplicar(Operacao.LOGIN, http.getRemoteAddr(), http, (HttpServletResponse) resposta, proximo);
         } else {
             proximo.doFilter(requisicao, resposta);
