@@ -3,6 +3,7 @@ package br.com.credpay.transacoes.api;
 import java.time.Clock;
 import java.util.UUID;
 
+import br.com.credpay.transacoes.application.CadastroContaExterna;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.ObjectProvider;
@@ -14,7 +15,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -61,7 +61,8 @@ class SessaoDemoConfiguration {
     SecurityFilterChain filtrosDaSessao(HttpSecurity http, JdbcTemplate jdbc, PasswordEncoder encoder,
             @Qualifier("clock") Clock relogio,
             ObjectProvider<SessaoDemoPublica> politicaPublica,
-            ObjectProvider<ClientRegistrationRepository> registrosGoogle) {
+            ObjectProvider<ClientRegistrationRepository> registrosGoogle,
+            ObjectProvider<CadastroContaExterna> cadastroExterno) {
         var autenticador = new DaoAuthenticationProvider(usuario -> jdbc.query("""
                 SELECT id, usuario, senha_hash FROM contas WHERE usuario = ? AND senha_hash IS NOT NULL
                 """, (rs, linha) -> new ContaDemoPrincipal(rs.getObject("id", UUID.class),
@@ -72,7 +73,7 @@ class SessaoDemoConfiguration {
         var login = PathPatternRequestMatcher.pathPattern(HttpMethod.POST, LOGIN);
         var limites = new LimitesDemo(relogio);
         var publica = politicaPublica.getIfAvailable();
-        http.authenticationManager(new ProviderManager(autenticador))
+        http.authenticationProvider(autenticador)
                 .requestCache(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(acesso -> acesso
                         .requestMatchers(HttpMethod.GET, "/auth/csrf", "/actuator/health").permitAll()
@@ -118,6 +119,8 @@ class SessaoDemoConfiguration {
                     .loginPage("/entrar")
                     .authorizationEndpoint(inicio -> inicio.baseUri("/auth/externo"))
                     .redirectionEndpoint(retorno -> retorno.baseUri("/auth/retorno/google"))
+                    .userInfoEndpoint(info -> info.oidcUserService(
+                            new ContaGoogleOidcUserService(cadastroExterno.getObject())))
                     .successHandler((req, resp, autenticacao) -> {
                         if (publica != null) { publica.registrarLogin(req); }
                         resp.sendRedirect("/entrar");

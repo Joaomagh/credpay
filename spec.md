@@ -3703,6 +3703,8 @@ Callback em TDD: fixture de provedor usa Tomcat já existente, HTTP loopback, ch
 
 Adicionado red ponta a ponta para o CI: duas identidades, contas individuais reais em PostgreSQL, cliente de A invisível a B e novo login de A preservando o cadastro. Apenas o registro do provedor é substituído por configuração de teste; autorização, token/JWKS, assinatura, filtros, sessão, cadastro e SQL são reais. Não é login no Google real, não relaxa TLS de produção e não usa credenciais reais. O callback/principal ainda não foi implementado neste checkpoint.
 
+Retomada em27/11: red integrado do callback confirmado no head `e44f362`, [Maven](https://github.com/Joaomagh/credpay/actions/runs/45935019991/job/140296117434):695 testes/9 falhas/0 erros/skips. O manager exclusivo de senha impedia a troca OAuth2. A cadeia agora registra o provider de senha permitindo os providers OIDC; o serviço recebe a identidade validada pelo framework, resolve/cria a conta e adapta o principal ao UUID local. Não usa e-mail como chave. O principal tem representação textual sem claims/tokens. Green local: callback9/0 e verify afetado112/0 falhas/erros/skips, log `.local/evidence/c07-google-conta-verify.log`,15,558s. Fixture Tomcat emite warnings de inspeção de ThreadLocal/RMI por módulos fechados; não foram suprimidos nem adicionadas permissões JVM. PostgreSQL/HTTP integrado e gates completos continuam pendentes no novo head. A interrupção anterior veio de limite do revisor automático antes de executar o comando, sem conclusão de insegurança; teste retomado com autorização normal, sem contorno. AGENTS atualizado a pedido de João: continuidade, prioridades e tabela final verificável.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
