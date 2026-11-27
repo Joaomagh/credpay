@@ -12,11 +12,15 @@ export default class SafeReporter implements Reporter {
     else if (result.status === 'skipped') this.skipped++;
     else this.failed++;
     console.log(`Browser: ${result.status} — ${test.parent.project()?.name} / ${test.title}`);
+    for (const error of result.errors) {
+      const source = error.stack?.match(/contas\.spec\.ts:(\d+):\d+/);
+      if (source) console.log(`Browser: contas.spec.ts line ${source[1]}; error values omitted.`);
+    }
   }
   onStepEnd(_test: TestCase, _result: TestResult, step: TestStep): void {
     if (step.category === 'test.step' && step.error) console.log(`Browser: failed step — ${step.title}`);
-    if (step.category === 'expect' && step.error && step.location) {
-      console.log(`Browser: assertion failed at line ${step.location.line}; request data omitted.`);
+    if (step.error && step.location) {
+      console.log(`Browser: failed at line ${step.location.line}; request data omitted.`);
     }
   }
   onError(): void { this.errors++; console.log('Browser: runner error; no request data published.'); }
