@@ -14,10 +14,34 @@ describe('Entrada no console', () => {
   }));
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
+  it('oferece Google somente quando o servidor confirma disponibilidade', async () => {
+    const harness = await RouterTestingHarness.create('/entrar');
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne('/auth/sessao').flush(null, {status: 401, statusText: 'Unauthorized'});
+    harness.detectChanges();
+    expect(harness.routeNativeElement?.querySelector('a[href="/auth/externo/google"]')).toBeNull();
+    http.expectOne('/auth/metodos').flush({google: true});
+    harness.detectChanges();
+    expect(harness.routeNativeElement?.querySelector('a[href="/auth/externo/google"]')?.textContent)
+      .toContain('Entrar com Google');
+  });
+
+  it('explica falha Google sem repetir detalhes recebidos na URL', async () => {
+    const harness = await RouterTestingHarness.create('/entrar?falha=google&error_description=nao-exibir');
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne('/auth/sessao').flush(null, {status: 401, statusText: 'Unauthorized'});
+    http.expectOne('/auth/metodos').flush({google: true});
+    harness.detectChanges();
+    expect(harness.routeNativeElement?.querySelector('[role="alert"]')?.textContent)
+      .toContain('Não foi possível entrar com Google');
+    expect(harness.routeNativeElement?.textContent).not.toContain('nao-exibir');
+  });
+
   it('abre a tela de login com campos nomeados para teclado e leitor de tela', async () => {
     const harness = await RouterTestingHarness.create('/entrar');
     TestBed.inject(HttpTestingController).expectOne('/auth/sessao')
       .flush(null, {status: 401, statusText: 'Unauthorized'});
+    TestBed.inject(HttpTestingController).expectOne('/auth/metodos').flush({google: false});
     harness.detectChanges();
     expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toContain('Entre na sua conta');
     expect(harness.routeNativeElement?.querySelector('label[for="usuario"]')?.textContent).toContain('Usuário');
@@ -29,6 +53,7 @@ describe('Entrada no console', () => {
     const http = TestBed.inject(HttpTestingController);
     const harness = await RouterTestingHarness.create();
     const page = await harness.navigateByUrl('/entrar', LoginPage);
+    http.expectOne('/auth/metodos').flush({google: false});
     http.expectOne('/auth/sessao').flush(null, {status: 401, statusText: 'Unauthorized'});
     page.usuario = conta.usuario;
     page.senha = 'ficticia +';
@@ -59,6 +84,7 @@ describe('Entrada no console', () => {
     const http = TestBed.inject(HttpTestingController);
     const harness = await RouterTestingHarness.create();
     const page = await harness.navigateByUrl('/entrar', LoginPage);
+    http.expectOne('/auth/metodos').flush({google: false});
     http.expectOne('/auth/sessao').flush(conta);
     page.sair();
     http.expectOne('/auth/logout').flush(null, {status: 403, statusText: 'Forbidden'});
@@ -71,6 +97,7 @@ describe('Entrada no console', () => {
     const http = TestBed.inject(HttpTestingController);
     const harness = await RouterTestingHarness.create();
     const page = await harness.navigateByUrl('/entrar', LoginPage);
+    http.expectOne('/auth/metodos').flush({google: false});
     http.expectOne('/auth/sessao').flush(null, {status: 401, statusText: 'Unauthorized'});
     page.usuario = conta.usuario;
     page.senha = 'ficticia +';

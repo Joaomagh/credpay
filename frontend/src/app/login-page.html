@@ -17,6 +17,10 @@
         {{ busy() ? 'Encerrando sessão…' : 'Sair da conta' }}
       </button>
     } @else {
+      @if (google() && !busy()) {
+        <a class="button primary" href="/auth/externo/google">Entrar com Google</a>
+        <p>Seu primeiro acesso cria uma conta individual vazia.</p>
+      }
       <p>Use as credenciais da sua conta de demonstração.</p>
       <form (ngSubmit)="entrar()" [attr.aria-busy]="busy()">
         <label for="usuario">Usuário</label>

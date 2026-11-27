@@ -10,7 +10,7 @@
 
 ## Agora
 
-- [ ] C07 em andamento — callback teve red integrado695/9 falhas; principal Google resolve a conta local, com validação JWT/PKCE/CSRF. Limites OAuth tiveram red2/green; verify afetado114/0. Próxima ação: comprovar green PostgreSQL/HTTP e gates do novo head na PR250. Depois Angular/proxy e Google real. V13/V14 já passaram Maven. Login Google público ainda indisponível; spec§9.177. Quadro de pendências: docs/DELIVERY_STATUS.md.
+- [ ] C07 em andamento — callback teve red integrado695/9 falhas; principal Google resolve a conta local, com validação JWT/PKCE/CSRF. Limites OAuth tiveram red2/green; verify afetado114/0. Próxima ação: comprovar green PostgreSQL/HTTP e gates do novo head na PR250. Tela Google com disponibilidade/erro passou83 Angular+2 Node e build; próximo incremento é proxy estrito e Google real. V13/V14 já passaram Maven. Login Google público ainda indisponível; spec§9.177. Quadro de pendências: docs/DELIVERY_STATUS.md.
 
 Execução ativa autorizada em 26/11: 18:37:41–23:37:41 (`America/Sao_Paulo`), cinco horas. Driver mantém implementação única; revisão/P.O. em paralelo conforme os papéis. Branch `feat/gestao-cobrancas` criada a partir da main local, preservando `feat/postgres-alpine-restore` e seu checkpoint. No fim da janela, deixar evidências e uma próxima ação recuperável.
 

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 import java.net.URI;
 import java.time.Clock;
@@ -53,6 +54,14 @@ class GoogleLoginSecurityTest {
                 .clientId("cliente-ficticio").clientSecret("segredo-ficticio-nao-real")
                 .scope("openid").redirectUri("http://localhost/auth/retorno/google")
                 .clientSettings(ClientRegistration.ClientSettings.builder().requireProofKey(true).build()).build());
+    }
+
+    @Test
+    void metodos_deveIndicarGoogleDisponivelSemExporConfiguracao() throws Exception {
+        mvc.perform(get("/auth/metodos")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.google").value(true))
+                .andExpect(jsonPath("$.clientId").doesNotExist())
+                .andExpect(jsonPath("$.clientSecret").doesNotExist());
     }
 
     @Test

@@ -76,7 +76,7 @@ class SessaoDemoConfiguration {
         http.authenticationProvider(autenticador)
                 .requestCache(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(acesso -> acesso
-                        .requestMatchers(HttpMethod.GET, "/auth/csrf", "/actuator/health").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/auth/csrf", "/auth/metodos", "/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/auth/sessao", "/transacoes/{id}",
                                 "/clientes", "/clientes/{id}").authenticated()
                         .requestMatchers(HttpMethod.POST, "/transacoes", "/clientes").authenticated()

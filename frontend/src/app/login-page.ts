@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { Icon } from './icon';
 import { SessionApi } from './session-api';
@@ -23,8 +23,16 @@ export class LoginPage {
   readonly busy = signal(true);
   readonly error = signal('');
   readonly note = signal('');
+  readonly google = signal(false);
 
   constructor() {
+    if (inject(ActivatedRoute).snapshot.queryParamMap.get('falha') === 'google') {
+      this.error.set('Não foi possível entrar com Google. Tente novamente.');
+    }
+    this.api.methods().pipe(takeUntilDestroyed(this.destroy)).subscribe({
+      next: methods => this.google.set(methods.google),
+      error: () => this.google.set(false)
+    });
     this.context.check().pipe(takeUntilDestroyed(this.destroy), finalize(() => this.busy.set(false))).subscribe({
       error: () => this.error.set('O serviço de login está indisponível. Tente novamente em instantes.')
     });

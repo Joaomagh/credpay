@@ -32,7 +32,8 @@ describe('Rota de clientes no modo contas', () => {
 
   it('pede login quando não há sessão', async () => {
     TestBed.configureTestingModule({providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter(consoleRoutes),
-      {provide: AUTH_REQUIRED, useValue: true}, {provide: SessionApi, useValue: {current: () => of(null)}}]});
+      {provide: AUTH_REQUIRED, useValue: true},
+      {provide: SessionApi, useValue: {current: () => of(null), methods: () => of({google: false})}}]});
     const harness = await RouterTestingHarness.create('/cadastros/clientes');
     expect(harness.routeNativeElement?.textContent).toContain('Entre na sua conta');
     TestBed.inject(HttpTestingController).expectNone(request => request.url === '/clientes');
