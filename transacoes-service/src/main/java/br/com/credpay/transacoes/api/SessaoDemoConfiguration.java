@@ -28,6 +28,8 @@ import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizedClientRepository;
 
 @Configuration(proxyBeanMethods = false)
 @Profile("sessao-demo")
@@ -58,7 +60,8 @@ class SessaoDemoConfiguration {
     @Bean
     SecurityFilterChain filtrosDaSessao(HttpSecurity http, JdbcTemplate jdbc, PasswordEncoder encoder,
             @Qualifier("clock") Clock relogio,
-            ObjectProvider<SessaoDemoPublica> politicaPublica) {
+            ObjectProvider<SessaoDemoPublica> politicaPublica,
+            ObjectProvider<ClientRegistrationRepository> registrosGoogle) {
         var autenticador = new DaoAuthenticationProvider(usuario -> jdbc.query("""
                 SELECT id, usuario, senha_hash FROM contas WHERE usuario = ? AND senha_hash IS NOT NULL
                 """, (rs, linha) -> new ContaDemoPrincipal(rs.getObject("id", UUID.class),
@@ -108,6 +111,19 @@ class SessaoDemoConfiguration {
                     }
                     chain.doFilter(req, resp);
                 }, UsernamePasswordAuthenticationFilter.class);
+        var registros = registrosGoogle.getIfAvailable();
+        if (registros != null) {
+            http.oauth2Login(google -> google.clientRegistrationRepository(registros)
+                    .authorizedClientRepository(new HttpSessionOAuth2AuthorizedClientRepository())
+                    .loginPage("/entrar")
+                    .authorizationEndpoint(inicio -> inicio.baseUri("/auth/externo"))
+                    .redirectionEndpoint(retorno -> retorno.baseUri("/auth/retorno/google"))
+                    .successHandler((req, resp, autenticacao) -> {
+                        if (publica != null) { publica.registrarLogin(req); }
+                        resp.sendRedirect("/entrar");
+                    })
+                    .failureHandler((req, resp, erro) -> resp.sendRedirect("/entrar?falha=google")));
+        }
         return http.build();
     }
 }

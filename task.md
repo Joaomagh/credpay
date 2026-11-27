@@ -10,7 +10,7 @@
 
 ## Agora
 
-- [ ] C07 em andamento — V13 passou Maven real. Primeiro acesso: red672/6 falhas esperadas/0 erros; V14/criação atômica implementados depois, preflight90 verde. Confirmar green real e integrar fluxo OIDC/principal/sessão. Início Google tem red HTTP302/401 observado; configuração tem12 reds e guard de perfil1red. Nenhuma credencial adicionada; login Google ainda indisponível, spec§9.177.
+- [ ] C07 em andamento — V13/V14 e criação atômica passaram Maven real. Início/configuração Google: reds observados e verify local103 verdes com loopback, sem Docker/credencial real. Próxima ação: testar callback com provedor local/JWT assinado, integrar principal à conta e preservar CSRF/isolamento. Depois Angular/proxy e ensaio externo. Callback completo/login Google ainda indisponíveis; spec§9.177.
 
 Execução ativa autorizada em 26/11: 18:37:41–23:37:41 (`America/Sao_Paulo`), cinco horas. Driver mantém implementação única; revisão/P.O. em paralelo conforme os papéis. Branch `feat/gestao-cobrancas` criada a partir da main local, preservando `feat/postgres-alpine-restore` e seu checkpoint. No fim da janela, deixar evidências e uma próxima ação recuperável.
 
