@@ -10,7 +10,7 @@
 
 ## Agora
 
-- [ ] C07 pronto para iniciar — Google escolhido por João. Primeiro recorte: teste do vínculo estável `(issuer,subject)` com uma conta local, sem identificação por e-mail ou senha fictícia para identidade externa. Depois baseline, Authorization Code/PKCE, principal/sessão e tela. Nenhuma dependência OAuth2 ou credencial adicionada. Plano de testes e riscos no backlog/spec§9.176.
+- [ ] C07 em andamento — primeiro recorte do vínculo estável `(issuer,subject)` com a conta local. Dez reds observados; verify local90 verdes, sem falhas/erros/skips. Domínio e resolução ainda sem SQL, principal ou callback; login Google não funciona neste checkpoint. Próxima ação: provar persistência do vínculo em PostgreSQL real antes do adapter. Depois baseline, Authorization Code/PKCE e tela. Nenhuma dependência OAuth2 ou credencial adicionada; CI/revisão final pendentes, spec§9.177.
 
 Execução ativa autorizada em 26/11: 18:37:41–23:37:41 (`America/Sao_Paulo`), cinco horas. Driver mantém implementação única; revisão/P.O. em paralelo conforme os papéis. Branch `feat/gestao-cobrancas` criada a partir da main local, preservando `feat/postgres-alpine-restore` e seu checkpoint. No fim da janela, deixar evidências e uma próxima ação recuperável.
 

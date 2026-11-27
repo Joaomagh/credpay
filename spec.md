@@ -3671,6 +3671,14 @@ Validação do head corrigido `d003f93`: [Maven](https://github.com/Joaomagh/cre
 
 Para explicar o incremento: a sessão define a conta; o servidor gera o UUID do cliente e grava a relação no banco. Todo SELECT usa a conta e o identificador/cursor, evitando carregar dados alheios para filtrar em Java. A lista busca limite+1 para descobrir a próxima página sem acumular o cadastro inteiro no navegador. A revisão da sessão impede que uma resposta antiga apareça depois de outro login. Recebimento e cobrança continuam próximos incrementos, sem transformar APROVADA em PAGA.
 
+### 9.177 C07 — primeiro recorte de identidade externa
+
+Após integrar C01/PR248 e seu fechamento documental/PR249 (main `7af4525`), iniciada a branch `feat/identidade-google`. Critério do recorte: resolver uma identidade externa já validada pelo futuro adaptador OIDC para o UUID de sua conta local, preservando o par exato emissor/sujeito e recusando vínculo desconhecido. A fronteira não recebe e-mail e não cria contas automaticamente. A política de primeiro cadastro e o provisionamento de vínculos ainda precisam de contrato antes de exposição; este recorte não abre cadastro público.
+
+TDD: `IdentidadeExternaTest,ResolverContaExternaTest` executaram10 testes/10 falhas/0 erros/skips, por campos vazios aceitos, conta nula observada e ausência da recusa de desconhecidos. Não foi red de compilação. O green mínimo valida presença dos dois campos e consulta uma porta de persistência; mantém o UUID da conta e recusa outra origem, outro sujeito ou capitalização diferente. Fixture de fronteira baseada em Map, sem mocks de entidade. Evidência ignorada `.local/evidence/c07-identidade-red.log`.
+
+Green/regressão: verify offline com os10 cenários novos e80 anteriores executou90 testes/0falhas/erros/skips, gerou JAR e terminou BUILD SUCCESS em59,078s. Compilação de todos os testes preservada; log `.local/evidence/c07-identidade-green.log`. CI e revisão final ainda pendentes. Ainda não há adapter SQL, migration de identidade, integração Spring Security, JWT verificado, callback ou botão Google. Classes não foram conectadas à cadeia de filtros; nenhuma nova dependência foi resolvida. A presença dos campos não valida um token: o futuro adaptador deve verificar emissor, assinatura, audiência, nonce, estado e expiração antes de resolver a conta. Próximo teste deve provar vínculo/constraints/isolamento em PostgreSQL real, sem Docker local pelo agente.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
