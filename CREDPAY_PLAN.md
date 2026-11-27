@@ -53,7 +53,7 @@ O projeto estará pronto para portfólio quando João conseguir:
 - explicar o fluxo ponta a ponta e os trade-offs sem depender da IA;
 - demonstrar testes unitários, de integração e de falhas;
 - provocar indisponibilidade/reentrega e observar recuperação, logs e métricas;
-- subir o sistema localmente em Kubernetes seguindo o README;
+- demonstrar execução reproduzível com Docker Compose; Kubernetes existente fica como evidência histórica e k3s está fora da fila atual por decisão de João em27/11;
 - mostrar um pipeline reproduzível e um histórico de decisões e aprendizados.
 
 ### Fora do escopo original da v1 backend — histórico preservado

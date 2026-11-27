@@ -10,7 +10,7 @@
 
 ## Agora
 
-- [ ] C07 em andamento — callback teve red integrado695/9 falhas; principal Google resolve a conta local, com validação JWT/PKCE/CSRF. Limites OAuth tiveram red2/green; verify afetado114/0. Próxima ação: comprovar green PostgreSQL/HTTP e gates do novo head na PR250. Tela Google com disponibilidade/erro passou83 Angular+2 Node e build; proxy estrito passou96 contratos+4 runtime; conferir CI/revisão e preparar Google real. V13/V14 já passaram Maven. Login Google público ainda indisponível; spec§9.177. Quadro de pendências: docs/DELIVERY_STATUS.md.
+- [ ] Fechar C07 na PR250 — Maven integrado699/0 no f59b75f, Compose/Flow/imagens/inventário/frontend/Kubernetes/Secret Scan passaram; Sonar apontou duas comparações de string vazia na V13 pelo dialeto PL/SQL; refatoradas para comprimento>0 com a regra preservada. Repetir SQL/gates e revisão antes do merge. Tela83 Angular+2 Node/build; Worker96 contratos+4 runtime. Google real depende de projeto/configuração por João, roteiro em docs/GOOGLE_SETUP.md e overlay local preparados. Sem hospedagem/domínio, manter custo zero e k3s fora da fila. spec§9.177; quadro docs/DELIVERY_STATUS.md.
 
 Execução ativa autorizada em 26/11: 18:37:41–23:37:41 (`America/Sao_Paulo`), cinco horas. Driver mantém implementação única; revisão/P.O. em paralelo conforme os papéis. Branch `feat/gestao-cobrancas` criada a partir da main local, preservando `feat/postgres-alpine-restore` e seu checkpoint. No fim da janela, deixar evidências e uma próxima ação recuperável.
 
@@ -19,7 +19,7 @@ Houve interrupção por limite de uso aproximadamente às19:43 e retomada às22:
 ## Próximo
 
 - C07: concluir callback validado e Angular; primeiro Google válido cria conta vazia por escolha de João. Hospedagem/projeto Google ainda não existem. Preparar configuração antes do provisionamento, Cloudflare Free e Compose; k3s retirado da fila em27/11. Preservar sessão/propriedade; não vincular por e-mail, simular senha local ou armazenar tokens no Angular.
-- C02: criar cobrança com cliente da mesma conta, descrição, BRL, vencimento e idempotência. Depois C03/C04: consulta por situação e recebimento integral manual com histórico. Refinar o contrato de cada incremento antes do TDD.
+- C02: criar cobrança com cliente da mesma conta, descrição, BRL, vencimento e idempotência; contrato refinado em docs/BILLING_CONTRACT.md, ainda sem implementação. Depois C03/C04: consulta por situação e recebimento integral manual com histórico.
 - Validar a rotina e a dificuldade de uma pessoa do público quando João trouxer acesso/feedback; não presumir entrevista ou uso pela nutricionista. Integração de provedor será posterior, em ambiente de testes.
 
 ## Pendências preservadas da base
