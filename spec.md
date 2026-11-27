@@ -484,17 +484,17 @@ credpay/
 
 ## 6. Contratos
 
-### Clientes — contrato em implementação (C01, 26/11/2026)
+### Clientes — contrato implementado (C01, 26/11/2026)
 
 Rotas disponíveis somente no perfil de contas (`sessao-demo`, incluído por `public-demo`); não expor clientes no perfil anônimo. A conta vem da sessão e `X-CredPay-Conta` recusa contexto de tela antigo quando fornecido. CSRF continua obrigatório no POST.
 
-| Método e rota | Contrato planejado | Erros observáveis |
+| Método e rota | Contrato | Erros observáveis |
 | --- | --- | --- |
 | `POST /clientes` | JSON somente `nome` textual; `201`, `Location` e `{id,nome}`; cadastro não exige unicidade por nome | `400` para JSON/tipo/campos extras; `422` para nome inválido; `413` acima de 8192 bytes |
 | `GET /clientes/{id}` | UUID canônico; `200` com `{id,nome}` somente para o dono | `400` para UUID inválido; `404` indistinguível para ausente ou de outra conta |
 | `GET /clientes?limite=20&apos={uuid}` | `limite` de 1 a 50, padrão 20; cursor opcional; ordenar por UUID; `{itens,proximo}` com cursor nulo no fim; buscar no máximo limite+1 | `400` para limite/cursor/parâmetro inválido |
 
-Nome: remover espaços externos Unicode; aceitar de 1 a 120 pontos de código, preservando acentos e pontuação; rejeitar nomes compostos somente de espaços e caracteres de controle. A validação é do domínio e será repetida por constraints pertinentes no banco. Respostas não expõem a conta, usam `Cache-Control: no-store` e erros não refletem o nome informado. Criação e consultas compartilham as cotas já existentes de criação/consulta por conta; `429` conserva `Retry-After`. As proteções do perfil público permanecem obrigatórias. Este contrato ainda exige red/green e provas de persistência/HTTP/Angular; não é anúncio de funcionalidade pronta.
+Nome: remover espaços externos Unicode; aceitar de 1 a 120 pontos de código, preservando acentos e pontuação; rejeitar nomes compostos somente de espaços e caracteres de controle. A validação é do domínio e repetida por constraints pertinentes no banco. Respostas não expõem a conta, usam `Cache-Control: no-store` e erros não refletem o nome informado. Criação e consultas compartilham as cotas já existentes de criação/consulta por conta; `429` conserva `Retry-After`. As proteções do perfil público permanecem obrigatórias. Persistência, HTTP/HTTPS, reinício e Angular passaram após reds observados; integração na PR248, evidências e limites em9.176. Página em `/cadastros/clientes`; não há publicação externa.
 
 ### API HTTP
 
@@ -3637,7 +3637,7 @@ Nenhum código, migration, dependência, evento ou contrato HTTP existente foi a
 
 **Verificação e revisão:** `git diff --stat` confirmou somente os sete documentos previstos; `git diff --check` passou. A inspeção por PowerShell/.NET validou UTF-8 estrito dos sete arquivos, os 14 links locais adicionados e suas seis âncoras, sem marcadores de conflito. A tentativa inicial com `python` não executou porque o alias WindowsApps estava indisponível; as verificações foram concluídas com o runtime existente, sem instalação. O aviso inicial de normalização LF/CRLF em `task.md` foi resolvido preservando o padrão CRLF do checkout. Revisão assistida dos sete diffs não encontrou bloqueios de escopo ou semântica e pediu explicitar este registro de verificação, agora atendido. Suítes de runtime não foram executadas neste incremento exclusivamente documental. Mudanças permanecem locais, sem commit, push, merge ou resultado novo de CI; a branch e o checkpoint de restauração preexistentes foram preservados.
 
-### 9.176 C01 — cadastro e consulta de clientes em desenvolvimento
+### 9.176 C01 — cadastro e consulta de clientes
 
 Execução ativa solicitada por João em26/11, cinco horas a partir de18:37:41 até23:37:41 (`America/Sao_Paulo`). O incremento documental C00 foi salvo em `d373c45`, na branch `feat/gestao-cobrancas` criada a partir da main local. A branch/checkpoint anterior de restauração foi preservada; não houve execução Docker local pelo agente.
 
@@ -3663,7 +3663,13 @@ A execução foi interrompida pelo limite de uso aproximadamente às19:43 e reto
 
 Revisão de URL após `ddad205`: o navegador encontrou colisão entre a página `/clientes` e o proxy da API, causando falha no acesso direto/reload. Teste de navegação para `/cadastros/clientes` falhou antes do ajuste, esperado Clientes/observado Nova transação (4 testes/1 falha), e passou4/4 após separar a rota da página. API mantém `/clientes`; navegação e E2E atualizados. Logs `c01-page-url-red.log` e `c01-page-url-green.log`. O [Compose do head anterior](https://github.com/Joaomagh/credpay/actions/runs/45926010219/job/140267488668) confirmou as seis jornadas legadas verdes e falha na primeira etapa do cenário novo de clientes; o reporter não publica o payload ou detalhe bruto da exceção. Causa reproduzida localmente, sem dispensar o cenário. Novo CI completo necessário.
 
-QA manual sem API: servidor Angular inicialmente inacessível no sandbox; a execução em loopback fora dele respondeu200. Navegador confirmou erro de zero, UUID inválido, navegação, foco por Tab no botão Consultar e largura do documento375 igual à viewport375, sem rolagem horizontal. Viewport temporária restaurada. A página separada abriu diretamente e o modo anônimo redirecionou para Nova transação como previsto. Health da API indisponível; não houve cadastro/consulta autenticados manuais nem alegação de QA integrado concluído. A skill local orientou essa checagem e suas limitações.
+QA manual sem API: servidor Angular inicialmente inacessível no sandbox; a execução em loopback fora dele respondeu200. Navegador confirmou erro de zero, UUID inválido, navegação, foco por Tab no botão Consultar e largura do documento375 igual à viewport375, sem rolagem horizontal. Viewport temporária restaurada. A página separada abriu diretamente e o modo anônimo redirecionou para Nova transação como previsto. Health da API indisponível; não houve cadastro/consulta autenticados manuais nem alegação de QA integrado concluído. A skill local orientou essa checagem e suas limitações. Servidor próprio encerrado após a revisão.
+
+Direção de C07 confirmada por João: Google, com configuração da conta/credenciais por ele. A [documentação Google](https://developers.google.com/identity/openid-connect/openid-connect) exige projeto, cliente e redirect URI e orienta usar `sub` como identidade estável. O CredPay fixa Boot4.0.8/Security7.0.8; a documentação corrente consultada da linha7.0 identifica7.0.9, portanto não substitui a baseline dos artefatos exatos antes da resolução. [Spring7.0 — configuração](https://docs.spring.io/spring-security/reference/7.0/servlet/oauth2/login/core.html). Refinamento: vínculo persistente antes do fluxo, principal compatível com a conta local, login local preservado quando a integração estiver desativada, Authorization Code/PKCE e JWT com validação real, sem tokens no Angular. Nenhum módulo OAuth2 foi adicionado ou baixado nesse refinamento. Isso é planejamento, sem green ou login Google realizado.
+
+Validação do head corrigido `d003f93`: [Maven](https://github.com/Joaomagh/credpay/actions/runs/45926824459/job/140269970874) confirmou651 testes/0falhas/erros/skips e BUILD SUCCESS. [Compose](https://github.com/Joaomagh/credpay/actions/runs/45926824498/job/140270086370) passou as seis jornadas legadas e as quatro autenticadas: clientes e transações em desktop/mobile, sem falhas/erros/skips. Cadastro, consulta, reload sem novo POST e isolamento do cliente de A para B foram observados no cenário real. Angular, Flow, Kubernetes, imagens AMD64/ARM64, inventários e Secret Scan passaram no mesmo SHA. [Sonar](https://github.com/Joaomagh/credpay/actions/runs/45926824454) passou com quality gate OK,94,5% de cobertura no código novo,0 novos issues/hotspots e0 aceites no recorte da PR; não encerra a triagem histórica da base. A suíte local81 e o build contas368,02kB foram repetidos após a separação de URL, com tipos/E2E estáticos verdes. Revisão final do frontend feita pelo driver; o revisor assistido anterior não estava disponível na retomada. A PR248 foi integrada somente após17 checks verdes, main `e54cd39`; sem implantação externa. README atualizado no fechamento documental, com C07 Google ainda planejado.
+
+Para explicar o incremento: a sessão define a conta; o servidor gera o UUID do cliente e grava a relação no banco. Todo SELECT usa a conta e o identificador/cursor, evitando carregar dados alheios para filtrar em Java. A lista busca limite+1 para descobrir a próxima página sem acumular o cadastro inteiro no navegador. A revisão da sessão impede que uma resposta antiga apareça depois de outro login. Recebimento e cobrança continuam próximos incrementos, sem transformar APROVADA em PAGA.
 
 ## 10. Observabilidade e SLOs de aprendizado
 
