@@ -21,6 +21,99 @@ function transport(response = Response.json({ status: 'PENDENTE' })) {
   return upstream;
 }
 
+it.each(['/auth/metodos', '/clientes?limite=20',
+  '/clientes?limite=20&apos=11111111-1111-4111-8111-111111111111',
+  '/clientes/11111111-1111-4111-8111-111111111111'])('encaminha contrato de contas %s', async path => {
+  const upstream = transport(Response.json({google: false}));
+  expect((await worker.fetch(request(path), env)).status).toBe(200);
+  expect((upstream.mock.calls[0][0] as Request).url).toBe(apiOrigin + path);
+});
+
+it('preserva Location relativo do cadastro de clientes', async () => {
+  const location = '/clientes/11111111-1111-4111-8111-111111111111';
+  transport(Response.json({id: location.split('/').at(-1)}, {status: 201, headers: {Location: location}}));
+  const response = await worker.fetch(request('/clientes', 'POST', '{"nome":"Cliente Exemplo"}',
+    {'Content-Type':'application/json'}), env);
+  expect(response.status).toBe(201);
+  expect(response.headers.get('Location')).toBe(location);
+});
+
+it('serve a página de clientes sem encaminhar ao backend', async () => {
+  const upstream = transport();
+  assets.fetch.mockResolvedValue(new Response('shell'));
+  expect((await worker.fetch(request('/cadastros/clientes'), env)).status).toBe(200);
+  expect(upstream).not.toHaveBeenCalled();
+});
+
+function googleLocation() {
+  const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+  for (const [key,value] of Object.entries({client_id:'ficticio', redirect_uri:publicOrigin+'/auth/retorno/google',
+    response_type:'code', scope:'openid', state:'estado-ficticio', nonce:'nonce-ficticio',
+    code_challenge_method:'S256', code_challenge:'a'.repeat(43)})) url.searchParams.set(key,value);
+  return url.href;
+}
+
+it('permite somente início Google validado e mantém cookie seguro', async () => {
+  const location = googleLocation();
+  transport(new Response(null,{status:302,headers:{Location:location,
+    'Set-Cookie':'JSESSIONID=ficticio; Path=/; Secure; HttpOnly; SameSite=Lax'}}));
+  const response = await worker.fetch(request('/auth/externo/google'),env);
+  expect(response.status).toBe(302);
+  expect(response.headers.get('Location')).toBe(location);
+  expect(response.headers.get('Set-Cookie')).toContain('HttpOnly');
+});
+
+it('encaminha callback cross-site somente com query OIDC limitada e reescreve destino fixo', async () => {
+  const upstream = transport(new Response(null,{status:302,headers:{Location:apiOrigin+'/entrar'}}));
+  const path='/auth/retorno/google?code=ficticio&state=estado-ficticio';
+  const response=await worker.fetch(request(path,'GET',undefined,{'Sec-Fetch-Site':'cross-site'}),env);
+  expect(response.status).toBe(302);
+  expect(response.headers.get('Location')).toBe('/entrar');
+  expect((upstream.mock.calls[0][0] as Request).url).toBe(apiOrigin+path);
+});
+
+it.each(['/clientes?limite=21','/clientes?limite=20&limite=20','/clientes?apos=invalido',
+  '/auth/externo/google?redirect_uri=https://outro.example', '/auth/retorno/google?code=x',
+  '/auth/retorno/google?code=x&state=y&redirect_uri=https://outro.example',
+  '/auth/retorno/google?code=x&code=y&state=z'])('recusa query fora do contrato %s',async path=>{
+  const upstream=transport();
+  expect((await worker.fetch(request(path),env)).status).toBe(400);
+  expect(upstream).not.toHaveBeenCalled();
+});
+
+it.each(['https://outro.example/entrar', publicOrigin+'/entrar', apiOrigin+'/entrar?next=https://outro.example',
+  '/entrar#fragmento'])('recusa desvio no retorno OIDC %s',async location=>{
+  transport(new Response(null,{status:302,headers:{Location:location}}));
+  expect((await worker.fetch(request('/auth/retorno/google?code=x&state=y'),env)).status).toBe(502);
+});
+
+it.each(['redirect_uri','scope','code_challenge_method','nonce'])('recusa início Google com %s divergente',async key=>{
+  const location=new URL(googleLocation());
+  location.searchParams.set(key,key==='redirect_uri'?'https://outro.example/retorno':'incorreto');
+  if(key==='nonce') location.searchParams.delete(key);
+  transport(new Response(null,{status:302,headers:{Location:location.href}}));
+  expect((await worker.fetch(request('/auth/externo/google'),env)).status).toBe(502);
+});
+
+it('recusa destino externo e query duplicada no início Google',async()=>{
+  const location=new URL(googleLocation());
+  location.hostname='outro.example';
+  const upstream=transport(new Response(null,{status:302,headers:{Location:location.href}}));
+  expect((await worker.fetch(request('/auth/externo/google'),env)).status).toBe(502);
+  const duplicate=new URL(googleLocation());
+  duplicate.searchParams.append('state','outro');
+  upstream.mockResolvedValueOnce(new Response(null,{status:302,headers:{Location:duplicate.href}}));
+  expect((await worker.fetch(request('/auth/externo/google'),env)).status).toBe(502);
+});
+
+it('permite falha fixa de callback sem divulgar corpo do backend',async()=>{
+  transport(new Response('detalhe-interno',{status:302,headers:{Location:'/entrar?falha=google'}}));
+  const response=await worker.fetch(request('/auth/retorno/google?error=access_denied&state=ficticio'),env);
+  expect(response.status).toBe(302);
+  expect(response.headers.get('Location')).toBe('/entrar?falha=google');
+  expect(await response.text()).toBe('');
+});
+
 it.each([
   { nome: 'ausente', valor: undefined }, { nome: 'vazia', valor: '' }, { nome: 'curta', valor: 'ficticia' },
   { nome: 'caractere inválido', valor: originToken + '!' }, { nome: 'longa', valor: 'x'.repeat(129) }

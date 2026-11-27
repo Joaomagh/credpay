@@ -32,7 +32,11 @@ Com a migration V12 aplicada e o backend no perfil `sessao-demo`, entre pela tel
 
 Em falha de comunicação no cadastro, confira a lista antes de enviar novamente: o cadastro de clientes não tem retry automático nem o contrato idempotente das transações. Troca de conta remove os dados da tela; respostas de uma geração anterior de login não invalidam a sessão nova.
 
-O Worker candidato ainda não encaminha `/clientes`; a jornada atual é local no modo contas. Habilitar essa rota no destino público exige incremento e testes próprios, sem ampliar a allowlist por prefixo genérico.
+O Worker candidato encaminha as rotas exatas de clientes e paginação validada; serve `/cadastros/clientes` pelo shell. A configuração ainda não foi implantada.
+
+## Google opcional
+
+O backend no perfil `google-login` informa disponibilidade por `GET /auth/metodos`. A tela mostra **Entrar com Google** somente quando recebe confirmação; o navegador segue o fluxo Authorization Code/PKCE e recebe uma sessão do backend. O primeiro login válido cria uma conta individual vazia. Tokens não são guardados pelo Angular. Projeto/cliente Google e ensaio real ainda dependem de configuração; as evidências atuais usam emissor fictício com JWT e HTTP reais no teste. O Worker candidato permite somente o destino de autorização Google previsto e um retorno fixo para a página de entrada, sem proxy de redirect genérico.
 
 ## Teste manual no navegador
 

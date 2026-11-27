@@ -6,7 +6,7 @@ Este quadro é um checkpoint, não um aceite de publicação. Evidências detalh
 | --- | --- | --- | --- |
 | Clientes C01 | Integrado na main, API e Angular, isolamento e persistência testados | Preservar regressões | Não |
 | Google C07 — backend | V13/V14 passaram CI; callback/principal/limites com verify local114 sem falhas | Validar PostgreSQL/HTTP e todos os gates no novo head da PR250; revisar antes do merge | Não para os testes fictícios |
-| Google C07 — interface e proxy | Pendente | Botão condicionado à configuração, retorno e rotas estritas no Worker, com TDD | Não |
+| Google C07 — interface e proxy | Tela83 testes Angular+2 Node/build; Worker96 contratos+4 runtime locais | Validar gates, revisão e ensaio integrado final | Não |
 | Google real | Projeto ainda não configurado | Criar projeto/cliente e cadastrar redirect definitivo; segredo fora do Git/chat | Sim, conta e credenciais |
 | Cobranças C02 | Planejado, sem implementação | Contrato HTTP, TDD de valor/vencimento/cliente/idempotência e persistência | Não |
 | Consultas C03 | Planejado | Filtros aberta/paga/vencida, relógio e isolamento | Não |
