@@ -47,9 +47,10 @@ class EncerramentoConfirmadoMigrationIntegrationTest {
 
         atual.migrate();
 
-        assertThat(atual.info().current().getVersion().getVersion()).isEqualTo("12");
+        assertThat(atual.info().current().getVersion().getVersion()).isEqualTo("14");
         assertThat(jdbc.queryForObject("SELECT count(*) FROM contas", Integer.class)).isZero();
         assertThat(jdbc.queryForObject("SELECT count(*) FROM clientes", Integer.class)).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM identidades_externas", Integer.class)).isZero();
         assertThat(jdbc.queryForList("SELECT id, valor, moeda, status FROM transacoes ORDER BY id"))
                 .isEqualTo(transacoes);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM transacoes WHERE conta_id IS NOT NULL", Integer.class))

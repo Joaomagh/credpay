@@ -1,0 +1,10 @@
+# Opt-in local; exige cliente Google configurado pelo operador.
+# Não usar este overlay HTTP como configuração pública.
+services:
+  transacoes:
+    environment:
+      SPRING_PROFILES_ACTIVE: google-login
+      SERVER_ADDRESS: 0.0.0.0
+      CREDPAY_GOOGLE_CLIENT_ID: ${CREDPAY_GOOGLE_CLIENT_ID:?configure o cliente Google}
+      CREDPAY_GOOGLE_CLIENT_SECRET: ${CREDPAY_GOOGLE_CLIENT_SECRET:?configure o segredo fora do Git}
+      CREDPAY_GOOGLE_REDIRECT_URI: http://127.0.0.1:4200/auth/retorno/google

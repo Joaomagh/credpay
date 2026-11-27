@@ -10,16 +10,16 @@
 
 ## Agora
 
-- [ ] C07 pronto para iniciar — Google escolhido por João. Primeiro recorte: teste do vínculo estável `(issuer,subject)` com uma conta local, sem identificação por e-mail ou senha fictícia para identidade externa. Depois baseline, Authorization Code/PKCE, principal/sessão e tela. Nenhuma dependência OAuth2 ou credencial adicionada. Plano de testes e riscos no backlog/spec§9.176.
+- [ ] Fechar C07 na PR250:9d8134c passou Maven699/0, Flow, imagens, inventários e Sonar89,8%/0 apontamentos novos. Compose falhou no primeiro cenário desktop de clientes; causa ainda desconhecida. Instrumentação isolada fcd2ad5/run46049424627 passou4 jornadas na primeira tentativa; repetição em andamento. Levar diagnóstico à PR e repetir gates, sem enfraquecer testes. Google real/provisionamento pendentes; login obrigatório, conta inicial vazia, custo zero e sem k3s. spec§9.177 e docs/DELIVERY_STATUS.md.
 
 Execução ativa autorizada em 26/11: 18:37:41–23:37:41 (`America/Sao_Paulo`), cinco horas. Driver mantém implementação única; revisão/P.O. em paralelo conforme os papéis. Branch `feat/gestao-cobrancas` criada a partir da main local, preservando `feat/postgres-alpine-restore` e seu checkpoint. No fim da janela, deixar evidências e uma próxima ação recuperável.
 
-Houve interrupção por limite de uso aproximadamente às19:43 e retomada às22:48 a pedido de João. A janela autorizada não equivale a cinco horas de execução contínua.
+Houve interrupção por limite de uso aproximadamente às19:43 e retomada às22:48 a pedido de João. A janela autorizada não equivale a cinco horas de execução contínua. João corrigiu a contagem ao retomar às23:44: ainda restam53% das cinco horas (2h39 de execução). Prosseguir com esse saldo e priorizar a versão publicável; não encerrar pela janela de relógio anterior. Publicação solicitada, destino/acesso e teto zero em verificação; não criar gasto.
 
 ## Próximo
 
-- C07: João escolheu Entrar com Google; conta e credenciais configuradas por ele. Após C01, começar pelo teste do vínculo `(issuer,subject)` com a conta local, depois baseline/fluxo OAuth2-OIDC e Angular. Preservar sessão e propriedade dos clientes; não vincular por e-mail, simular senha local ou armazenar tokens no Angular. Nenhuma integração externa criada.
-- C02: criar cobrança com cliente da mesma conta, descrição, BRL, vencimento e idempotência. Depois C03/C04: consulta por situação e recebimento integral manual com histórico. Refinar o contrato de cada incremento antes do TDD.
+- C07: concluir callback validado e Angular; primeiro Google válido cria conta vazia por escolha de João. Hospedagem/projeto Google ainda não existem. Preparar configuração antes do provisionamento, Cloudflare Free e Compose; k3s retirado da fila em27/11. Preservar sessão/propriedade; não vincular por e-mail, simular senha local ou armazenar tokens no Angular.
+- C02: criar cobrança com cliente da mesma conta, descrição, BRL, vencimento e idempotência; contrato refinado em docs/BILLING_CONTRACT.md, ainda sem implementação. Depois C03/C04: consulta por situação e recebimento integral manual com histórico.
 - Validar a rotina e a dificuldade de uma pessoa do público quando João trouxer acesso/feedback; não presumir entrevista ou uso pela nutricionista. Integração de provedor será posterior, em ambiente de testes.
 
 ## Pendências preservadas da base

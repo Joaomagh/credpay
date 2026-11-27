@@ -3,6 +3,7 @@ package br.com.credpay.transacoes.api;
 import java.time.Clock;
 import java.util.UUID;
 
+import br.com.credpay.transacoes.application.CadastroContaExterna;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.ObjectProvider;
@@ -14,7 +15,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -28,6 +28,8 @@ import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.HttpSessionOAuth2AuthorizedClientRepository;
 
 @Configuration(proxyBeanMethods = false)
 @Profile("sessao-demo")
@@ -58,9 +60,11 @@ class SessaoDemoConfiguration {
     @Bean
     SecurityFilterChain filtrosDaSessao(HttpSecurity http, JdbcTemplate jdbc, PasswordEncoder encoder,
             @Qualifier("clock") Clock relogio,
-            ObjectProvider<SessaoDemoPublica> politicaPublica) {
+            ObjectProvider<SessaoDemoPublica> politicaPublica,
+            ObjectProvider<ClientRegistrationRepository> registrosGoogle,
+            ObjectProvider<CadastroContaExterna> cadastroExterno) {
         var autenticador = new DaoAuthenticationProvider(usuario -> jdbc.query("""
-                SELECT id, usuario, senha_hash FROM contas WHERE usuario = ?
+                SELECT id, usuario, senha_hash FROM contas WHERE usuario = ? AND senha_hash IS NOT NULL
                 """, (rs, linha) -> new ContaDemoPrincipal(rs.getObject("id", UUID.class),
                         rs.getString("usuario"), rs.getString("senha_hash")), usuario)
                 .stream().findFirst().orElseThrow(() -> new UsernameNotFoundException("Conta inválida")));
@@ -69,10 +73,10 @@ class SessaoDemoConfiguration {
         var login = PathPatternRequestMatcher.pathPattern(HttpMethod.POST, LOGIN);
         var limites = new LimitesDemo(relogio);
         var publica = politicaPublica.getIfAvailable();
-        http.authenticationManager(new ProviderManager(autenticador))
+        http.authenticationProvider(autenticador)
                 .requestCache(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(acesso -> acesso
-                        .requestMatchers(HttpMethod.GET, "/auth/csrf", "/actuator/health").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/auth/csrf", "/auth/metodos", "/actuator/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/auth/sessao", "/transacoes/{id}",
                                 "/clientes", "/clientes/{id}").authenticated()
                         .requestMatchers(HttpMethod.POST, "/transacoes", "/clientes").authenticated()
@@ -108,6 +112,21 @@ class SessaoDemoConfiguration {
                     }
                     chain.doFilter(req, resp);
                 }, UsernamePasswordAuthenticationFilter.class);
+        var registros = registrosGoogle.getIfAvailable();
+        if (registros != null) {
+            http.oauth2Login(google -> google.clientRegistrationRepository(registros)
+                    .authorizedClientRepository(new HttpSessionOAuth2AuthorizedClientRepository())
+                    .loginPage("/entrar")
+                    .authorizationEndpoint(inicio -> inicio.baseUri("/auth/externo"))
+                    .redirectionEndpoint(retorno -> retorno.baseUri("/auth/retorno/google"))
+                    .userInfoEndpoint(info -> info.oidcUserService(
+                            new ContaGoogleOidcUserService(cadastroExterno.getObject())))
+                    .successHandler((req, resp, autenticacao) -> {
+                        if (publica != null) { publica.registrarLogin(req); }
+                        resp.sendRedirect("/entrar");
+                    })
+                    .failureHandler((req, resp, erro) -> resp.sendRedirect("/entrar?falha=google")));
+        }
         return http.build();
     }
 }

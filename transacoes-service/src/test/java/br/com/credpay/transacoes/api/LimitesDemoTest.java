@@ -16,6 +16,24 @@ import org.springframework.mock.web.MockHttpServletResponse;
 class LimitesDemoTest {
 
     @ParameterizedTest
+    @CsvSource({"/auth/externo/google", "/auth/retorno/google"})
+    void googleDeveCompartilharLimiteDeLoginPorOrigem(String caminho) throws Exception {
+        var limites = new LimitesDemo(Clock.fixed(Instant.parse("2026-11-04T12:00:43Z"), ZoneOffset.UTC));
+        var login = new MockHttpServletRequest("POST", "/auth/login");
+        for (int tentativa = 0; tentativa < 20; tentativa++) {
+            limites.antesDeCsrf(login, new MockHttpServletResponse(), new MockFilterChain());
+        }
+        var resposta = new MockHttpServletResponse();
+        var proximo = new MockFilterChain();
+
+        limites.antesDeCsrf(new MockHttpServletRequest("GET", caminho), resposta, proximo);
+
+        assertThat(resposta.getStatus()).isEqualTo(429);
+        assertThat(resposta.getHeader("Retry-After")).isEqualTo("17");
+        assertThat(proximo.getRequest()).isNull();
+    }
+
+    @ParameterizedTest
     @CsvSource({"POST, /transacoes, CRIACAO, 120", "GET, /transacoes/123, CONSULTA, 300"})
     void deveRecusarIdentidadeAusenteSemAvancarOuConsumirCota(String metodo, String caminho,
                                                             LimitesDemo.Operacao operacao, int cota) throws Exception {

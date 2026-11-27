@@ -44,14 +44,18 @@ João pediu avaliar e implementar OAuth2/OIDC ao retomar a execução. O próxim
 
 João escolheu **Entrar com Google**, com configuração da conta e credenciais pelo próprio João. Registrar a baseline necessária antes de adicionar dependências. O vínculo entre a identidade externa (`issuer`, `subject`) e a conta local deve preservar a propriedade dos dados; não unir contas automaticamente por e-mail. Os testes deverão provar callback válido, rejeição de emissor/assinatura/audiência/nonce/estado inválidos, expiração e isolamento dos clientes. A definição não implementa OAuth2/OIDC nem autoriza criar conta externa, adicionar credencial real, contratar serviço ou publicar o sistema.
 
+Na retomada de27/11, João definiu que o primeiro login Google válido deve criar uma conta individual vazia. Criar conta e vínculo atomicamente, sem senha local fictícia ou associação por e-mail, e serializar logins simultâneos da mesma identidade. João pediu publicação, preferiu Compose e depois retirou k3s da fila em27/11, e informou que hospedagem/projeto Google ainda não existem. Cloudflare Free e VM gratuita são o caminho em preparação; capacidade, conta, região, configuração, TLS e operação precisam ser comprovados antes do deploy, mantendo teto zero e dados de demonstração. Comparação de infraestrutura em docs/PUBLIC_DEMO_PLAN.md.
+
 ### Critérios de portfólio preservados
+
+Para a primeira publicação de portfólio, João reafirmou em27/11 que o RH deve acessar com login obrigatório pelo Google, com entrada simples e primeiro acesso criando conta vazia. A proposta de consulta anônima com dados prontos não foi escolhida. O público do produto continua geral; essa decisão define a apresentação atual, sem piloto ou uso real comprovado. Sem domínio próprio, manter custo zero.
 
 O projeto estará pronto para portfólio quando João conseguir:
 
 - explicar o fluxo ponta a ponta e os trade-offs sem depender da IA;
 - demonstrar testes unitários, de integração e de falhas;
 - provocar indisponibilidade/reentrega e observar recuperação, logs e métricas;
-- subir o sistema localmente em Kubernetes seguindo o README;
+- demonstrar execução reproduzível com Docker Compose; Kubernetes existente fica como evidência histórica e k3s está fora da fila atual por decisão de João em27/11;
 - mostrar um pipeline reproduzível e um histórico de decisões e aprendizados.
 
 ### Fora do escopo original da v1 backend — histórico preservado

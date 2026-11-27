@@ -1,5 +1,17 @@
 # Demonstração pública do CredPay — opções e recorte
 
+## Revisão com João — 27/11/2026
+
+João informou não ter hospedagem ou projeto Google preparados e pediu comparar infraestrutura gratuita para praticar operação. Escolheu **publicar com Docker Compose** e depois retirou k3s da fila. Confirmou também não ter domínio próprio e manter teto zero. Cloudflare Free serve Angular/proxy, GitHub Actions mantém CI/CD e uma VM Linux ainda precisa ser provisionada para os dois Java, PostgreSQL e RabbitMQ. Oracle Always Free A1 continua candidata, com disponibilidade regional e conta ainda não comprovadas. Não houve criação de recursos ou aceite de termos/gastos.
+
+Endereço sem compra de domínio: [workers.dev](https://developers.cloudflare.com/workers/configuration/routing/workers-dev/) fornece subdomínio para projetos pessoais; o template permanece desabilitado até o destino estar pronto. Para a API na VM, [nip.io/sslip.io](https://nip.io/) é candidata de DNS baseada no IP público, com emissão TLS por ACME/HTTP-01 conforme [Let's Encrypt](https://letsencrypt.org/docs/challenge-types/). Depende de terceiro, estabilidade do IP, acesso para validar/renovar certificado e cotas de emissão compartilhadas; não garante disponibilidade. A compatibilidade com o destino e o proxy ainda não foi ensaiada. Não houve escolha de hostname, solicitação de certificado ou implantação. Configuração pessoal Google em GOOGLE_SETUP.md.
+
+Consulta oficial atual: [Cloudflare](https://developers.cloudflare.com/workers/platform/pricing/) mantém Workers Free com100mil chamadas/dia e10msCPU/invocação; Containers pertence ao plano pago, portanto não é hospedagem Java gratuita nesta proposta. [GitHub](https://docs.github.com/en/billing/concepts/product-billing/github-actions) mantém runners padrão gratuitos para repositórios públicos, com armazenamento/caches e modalidades pagas separados. [Oracle](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm) informa2OCPUs/12GB na franquia A1, capacidade sujeita à região e possível retomada por ociosidade. Isso não garante operação24/7.
+
+Avaliação de engenharia: manter PostgreSQL evita reescrever/revalidar migrations, constraints, JDBC e transações apenas para usar [Atlas Free](https://www.mongodb.com/docs/atlas/reference/free-shared-limitations/). MongoDB é outra opção de banco, não substitui a VM que executa Java/RabbitMQ. Compose reaproveita a baseline existente e exercita imagens, redes, volumes, recuperação e deploy. k3s acrescenta operação de cluster, Ingress e volumes; em uma VM continua sem alta disponibilidade. O [mínimo documentado](https://docs.k3s.io/installation/requirements) do servidor é2cores/2GB, além dos aplicativos. Não houve autorização de mudança de banco ou instalação k3s no computador de João.
+
+Primeiro login Google criará uma conta individual vazia, conforme escolha explícita. O cadastro será apenas após validação OIDC, sem e-mail como chave. Configuração do projeto/cliente Google será feita por João; nenhum segredo será solicitado no chat. O restante deste arquivo conserva o histórico e suas datas; não antecipa publicação ou remoção de bloqueios.
+
 Pesquisa em 24/10/2026, a pedido de João. **Planejamento para depois do aceite local em andamento; destino não escolhido e nenhum deploy, conta, gasto ou recurso externo criado.** Links e limites precisam ser reconferidos antes da contratação/publicação. A exceção de Kubernetes local não autoriza implantação externa nem acesso do agente ao daemon.
 
 ## Recomendação

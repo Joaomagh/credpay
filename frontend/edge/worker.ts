@@ -5,11 +5,16 @@ export interface PublicDemoEnv {
 }
 
 const transactionPath = /^\/transacoes\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const clientPath = /^\/clientes\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const googleStart = '/auth/externo/google';
+const googleReturn = '/auth/retorno/google';
 const routes = new Map([
   ['/auth/csrf', 'GET'], ['/auth/sessao', 'GET'], ['/auth/login', 'POST'],
-  ['/auth/logout', 'POST'], ['/transacoes', 'POST']
+  ['/auth/logout', 'POST'], ['/transacoes', 'POST'], ['/auth/metodos', 'GET'],
+  [googleStart, 'GET'], [googleReturn, 'GET']
 ]);
-const shell = new Set(['/', '/entrar', '/nova', '/consultar']);
+const shell = new Set(['/', '/entrar', '/nova', '/consultar', '/cadastros/clientes']);
 const publicAsset = /^\/[a-z0-9_/-]+\.(?:js|css|svg|ico|png|webp|woff2)$/i;
 const requestHeaders = ['Accept', 'Content-Type', 'Idempotency-Key', 'X-CSRF-TOKEN', 'X-CredPay-Conta'];
 const responseHeaders = ['Content-Type', 'Retry-After', 'Location'];
@@ -105,7 +110,7 @@ function payloadError(request: Request, path: string): number | null {
 function apiResponse(upstream: Response, bytes: Uint8Array<ArrayBuffer>): Response {
   const cookies = sessionCookies(upstream.headers);
   const location = upstream.headers.get('Location');
-  if (!cookies || (location !== null && !transactionPath.test(location))) return failure(502);
+  if (!cookies || (location !== null && !transactionPath.test(location) && !clientPath.test(location))) return failure(502);
   const result = new Headers({ 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
   for (const name of responseHeaders) {
     const value = upstream.headers.get(name);
@@ -115,10 +120,60 @@ function apiResponse(upstream: Response, bytes: Uint8Array<ArrayBuffer>): Respon
   return new Response(bytes.length ? bytes.buffer : null, { status: upstream.status, headers: result });
 }
 
+function validQuery(url: URL): boolean {
+  if (url.href.includes('#')) return false;
+  const params = url.searchParams;
+  if (new Set(params.keys()).size !== [...params.keys()].length) return false;
+  if (url.pathname === '/clientes') {
+    return [...params.keys()].every(key => key === 'limite' || key === 'apos')
+      && (!params.has('limite') || /^(?:[1-9]|1[0-9]|20)$/.test(params.get('limite')!))
+      && (!params.has('apos') || uuid.test(params.get('apos')!));
+  }
+  if (url.pathname === googleReturn) {
+    const allowed = new Set(['code', 'state', 'error', 'scope', 'authuser', 'prompt']);
+    return url.search.length <= 8192 && [...params].every(([key,value]) => allowed.has(key)
+      && value.length > 0 && value.length <= 4096 && !/[\u0000-\u001f\u007f]/.test(value))
+      && params.has('state') && (params.has('code') !== params.has('error'));
+  }
+  return !url.href.includes('?');
+}
+
+function redirectResponse(upstream: Response, path: string, origin: string, publicOrigin: string): Response {
+  const cookies = sessionCookies(upstream.headers);
+  let location = upstream.headers.get('Location');
+  if (!cookies || upstream.status !== 302 || !location || location.length > 8192) return failure(502);
+  if (path === googleStart) {
+    try {
+      const destination = new URL(location);
+      const params = destination.searchParams;
+      const allowed = new Set(['client_id','redirect_uri','response_type','scope','state','nonce',
+        'code_challenge','code_challenge_method']);
+      if (destination.origin !== 'https://accounts.google.com' || destination.username || destination.password
+          || destination.pathname !== '/o/oauth2/v2/auth' || destination.hash
+          || new Set(params.keys()).size !== [...params.keys()].length
+          || [...params.keys()].some(key => !allowed.has(key))
+          || params.get('redirect_uri') !== publicOrigin + googleReturn
+          || params.get('response_type') !== 'code' || params.get('scope') !== 'openid'
+          || params.get('code_challenge_method') !== 'S256'
+          || !/^[A-Za-z0-9_-]{43}$/.test(params.get('code_challenge') ?? '')
+          || ['client_id','state','nonce'].some(key => !params.get(key)
+            || params.get(key)!.length > 2048 || /[\u0000-\u0020\u007f]/.test(params.get(key)!))) return failure(502);
+    } catch { return failure(502); }
+  } else if (path === googleReturn) {
+    const destinations = ['/entrar', '/entrar?falha=google'];
+    location = destinations.find(destination => location === destination || location === origin + destination) ?? null;
+    if (!location) return failure(502);
+  } else return failure(502);
+  const headers = new Headers({'Location':location,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'});
+  for (const cookie of cookies) headers.append('Set-Cookie',cookie);
+  return new Response(null,{status:302,headers});
+}
+
 async function proxy(request: Request, origin: string, path: string, originToken: string): Promise<Response> {
   const headers = forwardedHeaders(request.headers);
   if (!headers) return failure(400);
   headers.set('X-CredPay-Origin', originToken);
+  const url = new URL(request.url);
   const invalid = payloadError(request, path);
   if (invalid) return failure(invalid);
   const controller = new AbortController();
@@ -126,14 +181,15 @@ async function proxy(request: Request, origin: string, path: string, originToken
   let readingRequest = true;
   try {
     const body = await boundedBody(request.body, 8192, controller.signal);
-    const outbound = new Request(origin + path, { method: request.method, headers,
+    const outbound = new Request(origin + path + url.search, { method: request.method, headers,
       body: body.length ? body.buffer : undefined, redirect: 'manual', cache: 'no-store', signal: controller.signal });
     readingRequest = false;
     const upstream = await fetch(outbound);
     const encoding = upstream.headers.get('Content-Encoding');
     if ((upstream.status >= 300 && upstream.status < 400) || (encoding !== null && encoding !== 'identity')) {
       await upstream.body?.cancel();
-      return failure(502);
+      return encoding === null || encoding === 'identity'
+        ? redirectResponse(upstream, path, origin, url.origin) : failure(502);
     }
     const bytes = await boundedBody(upstream.body, 32768, controller.signal);
     return apiResponse(upstream, bytes);
@@ -161,13 +217,16 @@ export default {
   async fetch(request: Request, env: PublicDemoEnv): Promise<Response> {
     const url = new URL(request.url);
     if (url.protocol !== 'https:') return failure(400);
-    const method = routes.get(url.pathname) ?? (transactionPath.test(url.pathname) ? 'GET' : undefined);
+    const method = routes.get(url.pathname) ?? (transactionPath.test(url.pathname) || clientPath.test(url.pathname) ? 'GET'
+      : url.pathname === '/clientes' ? (request.method === 'POST' ? 'POST' : 'GET') : undefined);
     if (method) {
-      if (/[?#]/.test(url.href)) return failure(400);
+      if (!validQuery(url)) return failure(400);
       if (request.method !== method) return failure(405, { Allow: method });
       const origin = request.headers.get('Origin');
-      if ((origin !== null && origin !== url.origin) || (method === 'POST' && origin === null)
-          || request.headers.get('Sec-Fetch-Site') === 'cross-site') return failure(403);
+      const callback = url.pathname === googleReturn;
+      if ((origin !== null && origin !== url.origin && !(callback && origin === 'https://accounts.google.com'))
+          || (method === 'POST' && origin === null)
+          || (!callback && request.headers.get('Sec-Fetch-Site') === 'cross-site')) return failure(403);
       const backend = apiOrigin(env.API_ORIGIN, url.origin);
       const token = env.API_ORIGIN_TOKEN;
       return backend && typeof token === 'string' && /^[a-z0-9_-]{43,128}$/i.test(token)

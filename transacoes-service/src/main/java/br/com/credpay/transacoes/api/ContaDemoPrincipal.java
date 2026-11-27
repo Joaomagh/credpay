@@ -9,7 +9,7 @@ import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.web.server.ResponseStatusException;
 
-final class ContaDemoPrincipal extends User {
+final class ContaDemoPrincipal extends User implements ContaAutenticada {
 
     private static final long serialVersionUID = 1L;
 
@@ -20,13 +20,16 @@ final class ContaDemoPrincipal extends User {
         this.contaId = contaId;
     }
 
+    @Override
+    public UUID contaId() { return contaId; }
+
     static UUID idDaConta(Principal principal) {
         if (principal == null) {
             return null;
         }
         if (principal instanceof Authentication autenticacao
-                && autenticacao.isAuthenticated() && autenticacao.getPrincipal() instanceof ContaDemoPrincipal conta) {
-            return conta.contaId;
+                && autenticacao.isAuthenticated() && autenticacao.getPrincipal() instanceof ContaAutenticada conta) {
+            return conta.contaId();
         }
         throw new ResponseStatusException(HttpStatus.FORBIDDEN);
     }

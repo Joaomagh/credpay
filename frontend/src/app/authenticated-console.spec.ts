@@ -21,7 +21,8 @@ describe('Console com sessão obrigatória', () => {
   beforeEach(() => {
     conta = null;
     TestBed.configureTestingModule({providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter(consoleRoutes),
-      {provide: AUTH_REQUIRED, useValue: true}, {provide: SessionApi, useValue: {current: () => of(conta)}}]});
+      {provide: AUTH_REQUIRED, useValue: true},
+      {provide: SessionApi, useValue: {current: () => of(conta), methods: () => of({google: false})}}]});
   });
   afterEach(() => {
     try { TestBed.inject(HttpTestingController).verify(); }

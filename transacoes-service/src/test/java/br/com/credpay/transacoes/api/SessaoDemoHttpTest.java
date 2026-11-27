@@ -1,6 +1,7 @@
 package br.com.credpay.transacoes.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 import java.net.CookieManager;
 import java.net.HttpCookie;
@@ -44,6 +45,19 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @Testcontainers
 class SessaoDemoHttpTest {
+
+    @Test
+    void contaExternaDeveRecusarSenhaLocalSemAutenticar() throws Exception {
+        var id = UUID.randomUUID();
+        var usuario = "google-" + id;
+        assertThatCode(() -> jdbc.update("INSERT INTO contas (id, usuario, senha_hash) VALUES (?, ?, NULL)",
+                id, usuario)).doesNotThrowAnyException();
+
+        try (var cliente = HttpClient.newBuilder().cookieHandler(new CookieManager()).build()) {
+            assertThat(post(cliente, "/auth/login", formulario(usuario, "senha-ficticia"), csrf(cliente))).isEqualTo(401);
+            assertThat(get(cliente, "/auth/sessao").statusCode()).isEqualTo(401);
+        }
+    }
 
     @Container
     static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer(

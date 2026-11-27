@@ -14,6 +14,14 @@ function object(value: unknown): Record<string, unknown> {
 export class SessionApi {
   private readonly http = inject(HttpClient);
 
+  methods() {
+    return this.http.get<unknown>('/auth/metodos').pipe(timeout(8000), map(value => {
+      const {google} = object(value);
+      if (typeof google !== 'boolean') throw new Error('Métodos de entrada inválidos.');
+      return {google};
+    }));
+  }
+
   current() {
     return this.http.get<unknown>('/auth/sessao').pipe(timeout(8000), map(value => {
       const { id, usuario, csrf } = object(value);

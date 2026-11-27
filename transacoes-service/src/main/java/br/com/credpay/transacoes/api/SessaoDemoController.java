@@ -3,7 +3,9 @@ package br.com.credpay.transacoes.api;
 import java.security.Principal;
 import java.util.UUID;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,6 +15,15 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/auth")
 class SessaoDemoController {
+
+    private final ObjectProvider<ClientRegistrationRepository> registros;
+
+    SessaoDemoController(ObjectProvider<ClientRegistrationRepository> registros) { this.registros = registros; }
+
+    @GetMapping("/metodos")
+    Metodos metodos() { return new Metodos(registros.getIfAvailable() != null); }
+
+    record Metodos(boolean google) { }
 
     @GetMapping("/csrf")
     CsrfToken csrf(CsrfToken token) {
