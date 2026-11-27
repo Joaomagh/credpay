@@ -44,6 +44,8 @@ João pediu avaliar e implementar OAuth2/OIDC ao retomar a execução. O próxim
 
 João escolheu **Entrar com Google**, com configuração da conta e credenciais pelo próprio João. Registrar a baseline necessária antes de adicionar dependências. O vínculo entre a identidade externa (`issuer`, `subject`) e a conta local deve preservar a propriedade dos dados; não unir contas automaticamente por e-mail. Os testes deverão provar callback válido, rejeição de emissor/assinatura/audiência/nonce/estado inválidos, expiração e isolamento dos clientes. A definição não implementa OAuth2/OIDC nem autoriza criar conta externa, adicionar credencial real, contratar serviço ou publicar o sistema.
 
+Na retomada de27/11, João definiu que o primeiro login Google válido deve criar uma conta individual vazia. Criar conta e vínculo atomicamente, sem senha local fictícia ou associação por e-mail, e serializar logins simultâneos da mesma identidade. João pediu publicação, preferiu Compose primeiro e k3s depois, e informou que hospedagem/projeto Google ainda não existem. Cloudflare Free e VM gratuita são o caminho em preparação; capacidade, conta, região, configuração, TLS e operação precisam ser comprovados antes do deploy, mantendo teto zero e dados de demonstração. Comparação de infraestrutura em docs/PUBLIC_DEMO_PLAN.md.
+
 ### Critérios de portfólio preservados
 
 O projeto estará pronto para portfólio quando João conseguir:

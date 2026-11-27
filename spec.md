@@ -3687,6 +3687,10 @@ Baseline proposta para a etapa OIDC, antes de resolver artefatos novos: dependê
 
 Red SQL confirmado no head `381d0a4`, [Maven](https://github.com/Joaomagh/credpay/actions/runs/45930937060/job/140283141429):666 testes,5 falhas esperadas,0 erros/skips; a tabela `identidades_externas` não existia. V13 e SELECT parametrizado pelo par foram implementados somente depois dessa observação. PK do par impede trocar a conta por outro INSERT; FK exige conta existente e campos obrigatórios têm checks. Upgrade para13 mantém as comparações financeiras e exige identidades vazias. Green real ainda pendente. Preflight preservou aviso de API depreciada em `ClienteRestartIntegrationTest`; não foi ocultado ou tratado como falha de persistência.
 
+Green da primeira persistência: head `6f204ab` passou o [Maven completo](https://github.com/Joaomagh/credpay/actions/runs/45931610265), imagens nas duas arquiteturas, inventários e Flow; demais gates ainda estavam em execução nesse corte. Verify local90 testes passou sem falhas/erros/skips antes do push. João então autorizou conta individual vazia no primeiro Google válido e preferiu Compose primeiro/k3s depois; hospedagem e projeto Google ainda não existem. Avaliação/cotas e limites em docs/PUBLIC_DEMO_PLAN.md, sem mudança para MongoDB.
+
+Novo red em preparação: `CadastroContaExterna` e método stub no mesmo adapter, com testes de conta vazia sem senha, vínculo existente, repetição/identidades distintas, concorrência e rollback sem conta órfã. HTTP exige que conta externa sem hash não autentique por senha local. Migration de nullable/SQL de criação ainda ausentes; observar red real antes de implementar. O domínio não passa a confiar em token por existir esse cadastro: somente o adaptador OIDC validado poderá chamá-lo.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

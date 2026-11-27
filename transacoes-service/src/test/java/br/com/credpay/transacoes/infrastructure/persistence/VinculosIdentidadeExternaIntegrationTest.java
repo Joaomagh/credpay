@@ -7,8 +7,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.sql.SQLException;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import br.com.credpay.transacoes.application.VinculosIdentidadeExterna;
+import br.com.credpay.transacoes.application.CadastroContaExterna;
 import br.com.credpay.transacoes.domain.IdentidadeExterna;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,9 +53,72 @@ class VinculosIdentidadeExternaIntegrationTest {
     @Autowired
     private VinculosIdentidadeExterna vinculos;
     @Autowired
+    private CadastroContaExterna cadastro;
+    @Autowired
     private JdbcTemplate jdbc;
     @Autowired
     private PlatformTransactionManager transacoes;
+
+    @Test
+    void obterOuCriar_deveReutilizarContaJaVinculada_semAlterarLoginLocal() {
+        var conta = conta();
+        var identidade = identidade();
+        inserir(identidade, conta);
+
+        assertThat(cadastro.obterOuCriar(identidade)).isEqualTo(conta);
+        assertThat(jdbc.queryForObject("SELECT senha_hash FROM contas WHERE id = ?", String.class, conta))
+                .isEqualTo("0".repeat(96));
+    }
+
+    @Test
+    void obterOuCriar_deveCriarContaIndividualVazia_semSenhaLocal() {
+        var identidade = identidade();
+        var conta = cadastro.obterOuCriar(identidade);
+
+        assertThat(conta).isNotNull();
+        assertThat(vinculos.buscarConta(identidade)).contains(conta);
+        assertThat(jdbc.queryForObject("SELECT usuario FROM contas WHERE id = ?", String.class, conta))
+                .isEqualTo("google-" + conta);
+        assertThat(jdbc.queryForObject("SELECT senha_hash FROM contas WHERE id = ?", String.class, conta)).isNull();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM clientes WHERE conta_id = ?", Integer.class, conta))
+                .isZero();
+    }
+
+    @Test
+    void obterOuCriar_deveDistinguirSujeitos_eRepetirOMesmoLoginSemNovaConta() {
+        var identidade = identidade();
+        var primeira = cadastro.obterOuCriar(identidade);
+        var segunda = cadastro.obterOuCriar(new IdentidadeExterna(identidade.emissor(), "outro-" + identidade.sujeito()));
+
+        assertThat(primeira).isNotNull().isNotEqualTo(segunda);
+        assertThat(cadastro.obterOuCriar(identidade)).isEqualTo(primeira);
+    }
+
+    @Test
+    void obterOuCriar_deveSerializarPrimeiroAcessoConcorrente_semContaOrfa() throws Exception {
+        var identidade = identidade();
+        var antes = jdbc.queryForObject("SELECT count(*) FROM contas", Integer.class);
+        var inicio = new CountDownLatch(1);
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var primeiro = executor.submit(() -> { inicio.await(); return cadastro.obterOuCriar(identidade); });
+            var segundo = executor.submit(() -> { inicio.await(); return cadastro.obterOuCriar(identidade); });
+            inicio.countDown();
+            var conta = primeiro.get(15, TimeUnit.SECONDS);
+            assertThat(conta).isNotNull().isEqualTo(segundo.get(15, TimeUnit.SECONDS));
+            assertThat(vinculos.buscarConta(identidade)).contains(conta);
+        }
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM contas", Integer.class)).isEqualTo(antes + 1);
+    }
+
+    @Test
+    void obterOuCriar_deveReverterContaSeGravacaoDoVinculoFalhar() {
+        var antes = jdbc.queryForObject("SELECT count(*) FROM contas", Integer.class);
+        var invalidaNoBanco = new IdentidadeExterna("https://accounts.google.com", "a".repeat(256));
+
+        assertThatThrownBy(() -> cadastro.obterOuCriar(invalidaNoBanco))
+                .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM contas", Integer.class)).isEqualTo(antes);
+    }
 
     @Test
     void buscarConta_devePreservarVinculoAposCommit_eUsarOParExato() {
