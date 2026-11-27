@@ -48,6 +48,8 @@ Na retomada de27/11, João definiu que o primeiro login Google válido deve cria
 
 ### Critérios de portfólio preservados
 
+Para a primeira publicação de portfólio, João reafirmou em27/11 que o RH deve acessar com login obrigatório pelo Google, com entrada simples e primeiro acesso criando conta vazia. A proposta de consulta anônima com dados prontos não foi escolhida. O público do produto continua geral; essa decisão define a apresentação atual, sem piloto ou uso real comprovado. Sem domínio próprio, manter custo zero.
+
 O projeto estará pronto para portfólio quando João conseguir:
 
 - explicar o fluxo ponta a ponta e os trade-offs sem depender da IA;

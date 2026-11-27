@@ -10,7 +10,7 @@
 
 ## Agora
 
-- [ ] Fechar C07 na PR250 — Maven integrado699/0 no f59b75f, Compose/Flow/imagens/inventário/frontend/Kubernetes/Secret Scan passaram; Sonar apontou duas comparações de string vazia na V13 pelo dialeto PL/SQL; refatoradas para comprimento>0 com a regra preservada. Repetir SQL/gates e revisão antes do merge. Tela83 Angular+2 Node/build; Worker96 contratos+4 runtime. Google real depende de projeto/configuração por João, roteiro em docs/GOOGLE_SETUP.md e overlay local preparados. Sem hospedagem/domínio, manter custo zero e k3s fora da fila. spec§9.177; quadro docs/DELIVERY_STATUS.md.
+- [ ] Fechar C07 na PR250:9d8134c passou Maven699/0, Flow, imagens, inventários e Sonar89,8%/0 apontamentos novos. Compose falhou no primeiro cenário desktop de clientes; causa ainda desconhecida. Instrumentação isolada fcd2ad5/run46049424627 passou4 jornadas na primeira tentativa; repetição em andamento. Levar diagnóstico à PR e repetir gates, sem enfraquecer testes. Google real/provisionamento pendentes; login obrigatório, conta inicial vazia, custo zero e sem k3s. spec§9.177 e docs/DELIVERY_STATUS.md.
 
 Execução ativa autorizada em 26/11: 18:37:41–23:37:41 (`America/Sao_Paulo`), cinco horas. Driver mantém implementação única; revisão/P.O. em paralelo conforme os papéis. Branch `feat/gestao-cobrancas` criada a partir da main local, preservando `feat/postgres-alpine-restore` e seu checkpoint. No fim da janela, deixar evidências e uma próxima ação recuperável.
 

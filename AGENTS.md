@@ -25,6 +25,7 @@ Os papéis estão em `docs/roles/`; prioridades em `docs/BACKLOG.md`. Agentes s�
 - Continuar o ciclo autorizado de implementação, verificação, revisão e atualização do backlog durante a execução ativa. Interrupções por limite de uso não são tempo de trabalho comprovado; não declarar cinco horas executadas por diferença de relógio.
 - Prioridade atual: concluir C07 (Google), seguir C02–C04 e preparar publicação gratuita com Cloudflare e Docker Compose. k3s está fora da fila por decisão de João em27/11; manter PostgreSQL sem migração para MongoDB sem necessidade aprovada.
 - Primeiro login Google válido cria conta individual vazia; identidade pelo par emissor/sujeito, sem vínculo automático por e-mail. Hospedagem e projeto Google ainda precisam de configuração; nunca solicitar segredos no chat.
+- A demonstração pública atual será avaliada por recrutadores e mantém login obrigatório pelo Google, reafirmado por João em27/11. Não criar consulta anônima ou popular a conta do visitante automaticamente. Sem domínio próprio; manter teto zero. Isso não transforma a demo em operação com dinheiro/dados reais.
 - Ao encerrar uma execução, entregar tabela com item, estado comprovado, próximo passo e dependência de João. Distinguir código local, teste local, CI, integração e publicação; uma etapa não comprova as seguintes.
 - Manter este arquivo como acordo único, sem criar um CLAUDE.md duplicado. Atualizar cada documento somente quando houver decisão, estado ou evidência pertinente.
 
