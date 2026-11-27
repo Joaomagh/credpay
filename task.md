@@ -10,7 +10,7 @@
 
 ## Agora
 
-- [ ] C07 em andamento — primeiro recorte do vínculo estável `(issuer,subject)` com a conta local. Dez reds observados; verify local90 verdes, sem falhas/erros/skips. Domínio e resolução ainda sem SQL, principal ou callback; login Google não funciona neste checkpoint. Próxima ação: provar persistência do vínculo em PostgreSQL real antes do adapter. Depois baseline, Authorization Code/PKCE e tela. Nenhuma dependência OAuth2 ou credencial adicionada; CI/revisão final pendentes, spec§9.177.
+- [ ] C07 em andamento — red SQL real no381d0a4:666 testes/5 falhas esperadas/0 erros/skips. V13/SELECT por identidade implementados depois; confirmar green no CI. Em seguida integrar principal/sessão e fluxo OIDC. Baseline dos módulos7.0.8 registrada antes de resolver no cache próprio; POM do app ainda sem mudança e nenhuma credencial adicionada. Login Google ainda indisponível; spec§9.177.
 
 Execução ativa autorizada em 26/11: 18:37:41–23:37:41 (`America/Sao_Paulo`), cinco horas. Driver mantém implementação única; revisão/P.O. em paralelo conforme os papéis. Branch `feat/gestao-cobrancas` criada a partir da main local, preservando `feat/postgres-alpine-restore` e seu checkpoint. No fim da janela, deixar evidências e uma próxima ação recuperável.
 

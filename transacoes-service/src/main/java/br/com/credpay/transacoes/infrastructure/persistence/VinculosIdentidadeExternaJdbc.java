@@ -10,11 +10,16 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 class VinculosIdentidadeExternaJdbc implements VinculosIdentidadeExterna {
+    private final JdbcTemplate jdbc;
+
     VinculosIdentidadeExternaJdbc(JdbcTemplate jdbc) {
+        this.jdbc = jdbc;
     }
 
     @Override
     public Optional<UUID> buscarConta(IdentidadeExterna identidade) {
-        return Optional.empty();
+        return jdbc.query("SELECT conta_id FROM identidades_externas WHERE emissor = ? AND sujeito = ?",
+                (rs, linha) -> rs.getObject("conta_id", UUID.class), identidade.emissor(), identidade.sujeito())
+                .stream().findFirst();
     }
 }
