@@ -9,12 +9,15 @@
 
 ## Agora
 
-- [ ] C01 em andamento — PR248/headc03c985 confirmou red real (651/19 falhas esperadas/0 erros/skips), incluindo HTTP/HTTPS/reinício. V12/adapter SQL e upgrade implementados depois dos reds, revisados; publicar e observar green real. Angular segue por tela/rota após reds; cliente HTTP/sessão já tem22 testes focados verdes. AMD64 precisa executar de novo após429 MavenCentral. Contrato/evidências em spec§6/§9.176; sem dependência nova. C01 só termina com jornada e gates finais comprovados.
+- [ ] C01 em revisão — PR248/head86fae9c passou Maven completo, Compose, Flow, Kubernetes, Sonar e inventário. Images ARM64 passou; AMD64 não executou o smoke por HTTP429 do Maven Central ao resolver Surefire. Angular passou81 testes, dois controles Node, tipos e builds padrão/contas. Próxima ação: publicar tela e jornada real de duas contas, observar CI final e revisar antes de integrar. Contrato/evidências em spec§6/§9.176; sem dependência nova.
 
 Execução ativa autorizada em 26/11: 18:37:41–23:37:41 (`America/Sao_Paulo`), cinco horas. Driver mantém implementação única; revisão/P.O. em paralelo conforme os papéis. Branch `feat/gestao-cobrancas` criada a partir da main local, preservando `feat/postgres-alpine-restore` e seu checkpoint. No fim da janela, deixar evidências e uma próxima ação recuperável.
 
+Houve interrupção por limite de uso aproximadamente às19:43 e retomada às22:48 a pedido de João. A janela autorizada não equivale a cinco horas de execução contínua.
+
 ## Próximo
 
+- C07 solicitado na retomada: refinar login OAuth2/OIDC após C01, com provedor escolhido, baseline e TDD. Preservar sessão no backend e propriedade dos clientes; não vincular contas por e-mail nem armazenar tokens no Angular. Escolha de provedor apresentada a João; nenhuma integração externa criada.
 - C02: criar cobrança com cliente da mesma conta, descrição, BRL, vencimento e idempotência. Depois C03/C04: consulta por situação e recebimento integral manual com histórico. Refinar o contrato de cada incremento antes do TDD.
 - Validar a rotina e a dificuldade de uma pessoa do público quando João trouxer acesso/feedback; não presumir entrevista ou uso pela nutricionista. Integração de provedor será posterior, em ambiente de testes.
 

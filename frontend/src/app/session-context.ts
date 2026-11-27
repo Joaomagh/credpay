@@ -15,6 +15,8 @@ export class SessionContext {
   private generation = 0;
   private readonly channel?: BroadcastChannel;
 
+  get revision(): number { return this.generation; }
+
   constructor() {
     if (!this.required) return;
     const view = inject(DOCUMENT).defaultView;
@@ -81,4 +83,9 @@ export const sessionRequired: CanActivateFn = () => {
     context.clear();
     return of(login);
   }));
+};
+
+export const clientsRequired: CanActivateFn = (route, state) => {
+  if (!inject(SessionContext).required) return inject(Router).createUrlTree(['/nova']);
+  return sessionRequired(route, state);
 };

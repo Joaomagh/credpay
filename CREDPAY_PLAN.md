@@ -38,6 +38,12 @@ Este recorte começa com recebimento integral único. Parcelamento, juros, desco
 
 Uma conta percorre a jornada acima pela interface com API e persistência reais em ambiente de teste, com isolamento entre contas, criação idempotente, recebimento único, histórico e classificação de vencimento testados. Reinício preserva os registros. Evidências usam dados fictícios. A hipótese de utilidade será validada separadamente com uma pessoa do público; não inferir uso real de testes automatizados.
 
+### Login OAuth2/OpenID Connect solicitado em 26/11
+
+João pediu avaliar e implementar OAuth2/OIDC ao retomar a execução. O próximo refinamento de autenticação (C07) será após fechar a frente C01, sem trocar o login existente de forma parcial. OAuth2 define autorização delegada; OpenID Connect acrescenta autenticação. Proposta: login OIDC no Spring Security, com Authorization Code e PKCE, mantendo a sessão no backend e as permissões por conta no CredPay. Tokens não serão guardados no armazenamento do Angular.
+
+Antes do incremento, escolher um provedor e registrar a baseline necessária. O vínculo entre a identidade externa (`issuer`, `subject`) e a conta local deve preservar a propriedade dos dados; não unir contas automaticamente por e-mail. Os testes deverão provar callback válido, rejeição de emissor/assinatura/audiência/nonce/estado inválidos, expiração e isolamento dos clientes. A definição não implementa OAuth2/OIDC nem autoriza criar conta externa, adicionar credencial real, contratar serviço ou publicar o sistema.
+
 ### Critérios de portfólio preservados
 
 O projeto estará pronto para portfólio quando João conseguir:

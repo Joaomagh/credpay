@@ -1,0 +1,22 @@
+:host { display:block }
+.clients-grid { display:grid; grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr); gap:24px; align-items:start }
+.client-form,.client-directory,.client-detail,.client-receipt { padding:24px }
+.client-form h2 { margin-bottom:24px }
+.client-form label { display:block; margin-bottom:10px }
+.client-form input { width:100%; min-width:0; border:1px solid #c5cedb; border-radius:10px; padding:13px; background:white; color:inherit }
+.client-form .helper { margin:10px 0 20px }
+.client-receipt,.client-detail { margin-top:20px }
+.client-receipt h2 { margin:10px 0; overflow-wrap:anywhere }
+.client-directory .section-line { gap:12px; flex-wrap:wrap }
+.client-list { list-style:none; padding:0; margin:10px 0 20px }
+.client-list li { display:flex; gap:16px; align-items:center; justify-content:space-between; padding:18px 0; border-bottom:1px solid var(--line) }
+.client-label { min-width:0; overflow-wrap:anywhere }
+.client-label strong { display:block; margin-bottom:6px }
+.client-id { display:block; color:var(--muted); font: .8rem/1.6 ui-monospace,monospace; overflow-wrap:anywhere }
+.client-pagination { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap }
+.client-empty { padding:28px 0 }
+.client-empty p { margin:12px 0 0; color:var(--muted) }
+dt { font-size:.8rem; color:var(--muted); margin-top:14px }
+dd { margin:5px 0 0; overflow-wrap:anywhere }
+@media(max-width:1000px) { .clients-grid { grid-template-columns:minmax(0,1fr) } }
+@media(max-width:520px) { .client-list li { align-items:stretch; flex-direction:column; gap:10px } .client-list button { align-self:flex-start } .client-form,.client-directory,.client-detail,.client-receipt { padding:20px } }
