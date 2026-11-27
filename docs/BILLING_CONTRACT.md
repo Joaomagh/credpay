@@ -6,7 +6,7 @@ Refinamento de C02–C04 dentro do recorte aprovado em CREDPAY_PLAN.md. Este doc
 
 `POST /cobrancas`, sessão autenticada, CSRF e `Idempotency-Key` UUID obrigatório. `X-CredPay-Conta` opcional confirma a conta esperada, como nas APIs existentes; o proprietário vem da sessão.
 
-Corpo contém somente `clienteId` (UUID), `descricao` (1–240 caracteres após remoção de espaços nas extremidades, sem controles), `valor` (decimal JSON exato positivo), `moeda` (`BRL`) e `vencimento` (data ISO sem horário). Valor admite no máximo duas casas significativas, sem arredondamento, e até17 dígitos inteiros para persistência `numeric(19,2)`. `10.000` equivale a `10.00`; `10.001` é inválido. A precisão das transações legadas permanece própria.
+Corpo contém somente `clienteId` (UUID), `descricao` (1–240 caracteres após remoção de espaços nas extremidades, sem controles), `valor` (decimal JSON exato positivo), `moeda` (`BRL`) e `vencimento` (data ISO sem horário, anos0001–9999). Valor admite no máximo duas casas significativas, sem arredondamento, e até17 dígitos inteiros. Persistir como `numeric` sem coerção de escala, com CHECKs de faixa e casas significativas: `numeric(19,2)` arredondaria antes da constraint. `10.000` equivale a `10.00`; `10.001` é inválido. A precisão das transações legadas permanece própria. O instante de criação é normalizado a microssegundos antes da escrita, preservando equivalência no replay.
 
 Retorno201 com Location relativo `/cobrancas/{id}`, sem cache, identificador, cliente, descrição, valor/moeda, vencimento e instante de criação UTC. Sem aprovação pelo processador fictício ou publicação de evento legado. Repetição da mesma chave e pedido normalizado na mesma conta devolve o registro original; payload diferente retorna409. Outra conta pode usar a mesma chave sem compartilhar registro.
 
@@ -26,4 +26,4 @@ Data de recebimento futura é recusada; retroativa é permitida como declaraçã
 
 ## Ordem de prova
 
-Domínio red/green → aplicação/idempotência red/green → SQL/constraints/concorrência reais no CI → contrato HTTP/segurança → Angular e Worker → jornada de duas contas com reinício. Manter uma frente de implementação; C07 está em fechamento antes de abrir C02.
+Domínio red/green → aplicação/idempotência red/green → SQL/constraints/concorrência reais no CI → contrato HTTP/segurança → Angular e Worker → jornada de duas contas com reinício. C07 foi integrado na PR250; C02 é a única frente de implementação.

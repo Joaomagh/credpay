@@ -12,7 +12,9 @@
 
 **Disponível hoje:** cadastro, lista paginada e consulta de clientes da própria conta, com API Java/Spring Boot, persistência PostgreSQL e tela Angular. A base também conserva o simulador de transações assíncronas com RabbitMQ: criar uma transação fictícia em reais, acompanhar o processamento e consultar o resultado por UUID. A aprovação segue um limite configurável por moeda.
 
-**Próxima evolução:** login com Google, cobranças com descrição e vencimento, registro manual de recebimento e consulta de valores em aberto, pagos ou vencidos. O fluxo de cobranças e o login externo ainda não estão implementados. Uma nutricionista é o possível primeiro caso de uso, sem restringir o produto a essa profissão ou declarar uso real. [Escopo e critérios do MVP](CREDPAY_PLAN.md#primeiro-mvp-de-cobranças) · [Backlog de cobranças](docs/BACKLOG.md#evolução-do-produto--gestão-de-cobranças-26112026)
+**Google:** a implementação por OpenID Connect/PKCE está integrada, com sessão no backend e primeiro login válido criando conta individual vazia. Os ensaios usam emissor fictício com JWT assinado e HTTP reais; projeto Google, credenciais, ensaio no provedor e publicação ainda dependem de configuração. [Preparar Google](docs/GOOGLE_SETUP.md).
+
+**Próxima evolução:** cobranças com descrição e vencimento, registro manual de recebimento e consulta de valores em aberto, pagos ou vencidos. O fluxo de cobranças ainda não está disponível. Uma nutricionista é o possível primeiro caso de uso, sem restringir o produto a essa profissão ou declarar uso real. [Escopo e critérios do MVP](CREDPAY_PLAN.md#primeiro-mvp-de-cobranças) · [Backlog de cobranças](docs/BACKLOG.md#evolução-do-produto--gestão-de-cobranças-26112026)
 
 Os dados das demonstrações são fictícios. A aprovação de uma transação no simulador não comprova um recebimento. Integração com provedor será uma etapa posterior, começando em ambiente de testes.
 

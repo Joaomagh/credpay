@@ -2,6 +2,15 @@ name: Transaction Service CI
 
 on:
   workflow_dispatch:
+    inputs:
+      test_scope:
+        description: 'Manual rehearsal; pull requests and pushes always run the full suite'
+        type: choice
+        required: true
+        default: full
+        options:
+          - full
+          - billing-persistence
   pull_request:
     paths:
       - "config/checkstyle/**"
@@ -23,14 +32,16 @@ permissions:
   contents: read
 
 concurrency:
-  group: transacoes-service-ci-${{ github.workflow }}-${{ github.ref }}
+  group: transacoes-service-ci-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && inputs.test_scope == 'billing-persistence' && 'billing-persistence' || 'full' }}
   cancel-in-progress: true
 
 jobs:
   verify:
-    name: Maven verify
+    name: ${{ github.event_name == 'workflow_dispatch' && inputs.test_scope == 'billing-persistence' && 'Billing persistence rehearsal' || 'Maven verify' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      BILLING_REHEARSAL: ${{ github.event_name == 'workflow_dispatch' && inputs.test_scope == 'billing-persistence' }}
 
     defaults:
       run:
@@ -85,9 +96,15 @@ jobs:
         run: ../config/checkstyle/check-controls.ps1 -Module transacoes-service
 
       - name: Verify transaction service
-        run: ./mvnw --batch-mode --no-transfer-progress -Pcoverage -DargLine=-XX:-EnableDynamicAgentLoading verify
+        run: |
+          if [ "$BILLING_REHEARSAL" = true ]; then
+            ./mvnw --batch-mode --no-transfer-progress -Pcoverage -DargLine=-XX:-EnableDynamicAgentLoading -Dtest=CobrancaPersistenceIntegrationTest verify
+          else
+            ./mvnw --batch-mode --no-transfer-progress -Pcoverage -DargLine=-XX:-EnableDynamicAgentLoading verify
+          fi
 
       - name: Store transaction coverage
+        if: ${{ env.BILLING_REHEARSAL != 'true' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-transacoes-service
