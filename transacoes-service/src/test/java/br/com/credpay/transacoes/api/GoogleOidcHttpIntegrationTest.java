@@ -97,7 +97,9 @@ class GoogleOidcHttpIntegrationTest {
         var resposta = cliente.send(HttpRequest.newBuilder(URI.create(retorno)).timeout(Duration.ofSeconds(10)).build(),
                 HttpResponse.BodyHandlers.ofString());
         assertThat(resposta.statusCode()).isEqualTo(302);
-        assertThat(resposta.headers().firstValue("Location")).contains("/entrar");
+        var destino = URI.create(resposta.headers().firstValue("Location").orElseThrow());
+        assertThat(pedido("/entrar").build().uri().resolve(destino))
+                .isEqualTo(pedido("/entrar").build().uri());
         var sessao = get(cliente, "/auth/sessao");
         assertThat(sessao.statusCode()).isEqualTo(200);
         return json.readTree(sessao.body());

@@ -15,6 +15,9 @@ export default class SafeReporter implements Reporter {
   }
   onStepEnd(_test: TestCase, _result: TestResult, step: TestStep): void {
     if (step.category === 'test.step' && step.error) console.log(`Browser: failed step — ${step.title}`);
+    if (step.category === 'expect' && step.error && step.location) {
+      console.log(`Browser: assertion failed at line ${step.location.line}; request data omitted.`);
+    }
   }
   onError(): void { this.errors++; console.log('Browser: runner error; no request data published.'); }
   async onEnd(result: FullResult): Promise<{status: 'passed' | 'failed'}> {

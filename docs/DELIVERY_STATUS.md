@@ -14,6 +14,6 @@ Este quadro é um checkpoint, não um aceite de publicação. Evidências detalh
 | Publicação gratuita | Compose primeiro aprovado; nenhuma hospedagem preparada | Artefato e configuração revisáveis, HTTPS, retenção, recuperação e ensaio no destino | Sim, contas/destino e etapas pessoais de configuração |
 | Banco e segurança da base | Candidata não promovida; pendências históricas preservadas | Restore em volume novo, inventários e triagem conforme MVP_CLOSURE_RUNBOOK.md | Eventuais acessos aos serviços |
 | Demonstração C05 | Ainda sem jornada completa de cobranças | Percorrer Angular/API/banco; depois obter feedback real | Sim para feedback e aceite pessoal |
-| k3s e provedor C06 | Posteriores ao primeiro recorte | Retomar com baseline e necessidade concreta | Sim para ampliar escopo externo |
+| Provedor C06 | Posterior ao primeiro recorte | Retomar com baseline e necessidade concreta | Sim para ampliar escopo externo |
 
 Publicar o código na PR não publica a aplicação. Testes do emissor fictício não comprovam login no Google real. Não há movimentação financeira, piloto ou adoção real comprovados.

@@ -18,7 +18,7 @@ Houve interrupção por limite de uso aproximadamente às19:43 e retomada às22:
 
 ## Próximo
 
-- C07: concluir callback validado e Angular; primeiro Google válido cria conta vazia por escolha de João. Hospedagem/projeto Google ainda não existem. Preparar configuração antes do provisionamento, Cloudflare Free/Compose primeiro e k3s depois. Preservar sessão/propriedade; não vincular por e-mail, simular senha local ou armazenar tokens no Angular.
+- C07: concluir callback validado e Angular; primeiro Google válido cria conta vazia por escolha de João. Hospedagem/projeto Google ainda não existem. Preparar configuração antes do provisionamento, Cloudflare Free e Compose; k3s retirado da fila em27/11. Preservar sessão/propriedade; não vincular por e-mail, simular senha local ou armazenar tokens no Angular.
 - C02: criar cobrança com cliente da mesma conta, descrição, BRL, vencimento e idempotência. Depois C03/C04: consulta por situação e recebimento integral manual com histórico. Refinar o contrato de cada incremento antes do TDD.
 - Validar a rotina e a dificuldade de uma pessoa do público quando João trouxer acesso/feedback; não presumir entrevista ou uso pela nutricionista. Integração de provedor será posterior, em ambiente de testes.
 

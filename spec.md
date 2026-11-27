@@ -3707,6 +3707,8 @@ Retomada em27/11: red integrado do callback confirmado no head `e44f362`, [Maven
 
 Limites Google: dois cenários novos esgotam20 tentativas locais e exigem429/Retry-After17 nas rotas GET de início e retorno Google. Red observado:5 testes/2 falhas,200 em vez de429, sem erros/skips (`c07-google-limites-red.log`). As duas rotas agora compartilham o orçamento LOGIN por origem/global. Verify afetado114/0 falhas/erros/skips,23,341s (`c07-google-limites-green.log`). Nenhum orçamento foi ampliado. O head anterior `e360ac3` foi enviado à PR250: Secret Scan passou; demais workflows ainda executavam na consulta. Sem merge ou deploy.
 
+Retomada seguinte27/11: João retirou k3s da fila; prioridade permanece concluir/publicar com Compose. Consulta ao head17ca9c2: Maven697/1 falha/0 erros/skips; callback MVC9 passou. Única falha integrada era a expectativa de Location relativo: Tomcat retornou URL absoluta na mesma origem. Asserção corrigida para resolver o destino e exigir URI completa idêntica a `/entrar` na origem local, preservando recusa de host/query/caminho divergentes. Preflight verify14/0,19,697s; green integrado pendente. Compose passou3 jornadas de contas e falhou1 desktop em cadastro/consulta de cliente; diagnóstico ainda sem causa comprovada. Reporter passa a mostrar somente linha da asserção, sem corpo/valor/credenciais, para localizar a falha no novo ensaio; tipos E2E passaram. Imagens, inventário, Flow, Kubernetes e Secret Scan passaram no head17ca9c2; Sonar falhou, ainda sem causa consultada. Nenhum merge/deploy ou alegação de green completo.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
