@@ -14,7 +14,7 @@
 
 Execução ativa autorizada em 26/11: 18:37:41–23:37:41 (`America/Sao_Paulo`), cinco horas. Driver mantém implementação única; revisão/P.O. em paralelo conforme os papéis. Branch `feat/gestao-cobrancas` criada a partir da main local, preservando `feat/postgres-alpine-restore` e seu checkpoint. No fim da janela, deixar evidências e uma próxima ação recuperável.
 
-Houve interrupção por limite de uso aproximadamente às19:43 e retomada às22:48 a pedido de João. A janela autorizada não equivale a cinco horas de execução contínua.
+Houve interrupção por limite de uso aproximadamente às19:43 e retomada às22:48 a pedido de João. A janela autorizada não equivale a cinco horas de execução contínua. João corrigiu a contagem ao retomar às23:44: ainda restam53% das cinco horas (2h39 de execução). Prosseguir com esse saldo e priorizar a versão publicável; não encerrar pela janela de relógio anterior. Publicação solicitada, destino/acesso e teto zero em verificação; não criar gasto.
 
 ## Próximo
 
