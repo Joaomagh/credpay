@@ -16,7 +16,7 @@ export default defineConfig({
   timeout: 45000,
   globalTimeout: 180000,
   expect: { timeout: 15000 },
-  reporter: listing ? [['list']] : [['./e2e/safe-reporter.ts', {expected: accounts ? 2 : 6}]],
+  reporter: listing ? [['list']] : [['./e2e/safe-reporter.ts', {expected: accounts ? 4 : 6}]],
   outputDir: '../.local/frontend/browser-results',
   use: { baseURL: 'http://127.0.0.1:4300', browserName: 'chromium', trace: 'off', video: 'off', screenshot: 'off' },
   projects: [

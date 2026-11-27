@@ -1,6 +1,6 @@
 # CredPay — Console Angular
 
-O console tem as telas **Nova transação** e **Consultar**, com criação por POST real e acompanhamento por GET. A tela **Entrar** exercita a autenticação do perfil local de contas. O ambiente usa dados fictícios.
+O console tem as telas **Nova transação** e **Consultar**, com criação por POST real e acompanhamento por GET. No perfil de contas, **Clientes** permite cadastrar, listar e consultar clientes da conta autenticada. A tela **Entrar** confirma a sessão. O ambiente usa dados fictícios; cobranças e recebimentos ainda serão implementados.
 
 ## Executar no PowerShell
 
@@ -25,6 +25,14 @@ npm.cmd start -- --configuration contas
 ```
 
 Abra `/entrar`. A tela confirma a sessão no servidor e libera o console para a conta verificada. Criação e consulta carregam o identificador da conta esperada e retornam à entrada quando a sessão deixa de ser válida. O recibo salvo na aba reaparece somente quando a mesma conta entra novamente. O console revalida a identidade ao receber foco e reage a login e logout em outras abas da mesma origem quando `BroadcastChannel` está disponível. O Compose CI prepara duas contas fictícias em seu projeto descartável para exercitar essa jornada em desktop e mobile.
+
+## Clientes no perfil de contas
+
+Com a migration V12 aplicada e o backend no perfil `sessao-demo`, entre pela tela de autenticação e abra **Clientes** no menu, em `/cadastros/clientes`. A página tem endereço separado da API `/clientes`, inclusive no reload. O proxy encaminha somente a rota da API ao backend local. É possível cadastrar um nome, consultar o cadastro e percorrer a lista de 20 clientes por página. Nomes iguais são permitidos; o identificador distingue os cadastros.
+
+Em falha de comunicação no cadastro, confira a lista antes de enviar novamente: o cadastro de clientes não tem retry automático nem o contrato idempotente das transações. Troca de conta remove os dados da tela; respostas de uma geração anterior de login não invalidam a sessão nova.
+
+O Worker candidato ainda não encaminha `/clientes`; a jornada atual é local no modo contas. Habilitar essa rota no destino público exige incremento e testes próprios, sem ampliar a allowlist por prefixo genérico.
 
 ## Teste manual no navegador
 

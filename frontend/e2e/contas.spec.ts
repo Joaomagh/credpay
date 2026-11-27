@@ -21,6 +21,49 @@ async function sair(page: Page): Promise<void> {
   await expect(page.getByText('Sessão encerrada.', {exact: true})).toBeVisible();
 }
 
+test('duas contas isolam cadastro e consulta de clientes', async ({page}, testInfo) => {
+  if (!senhaA || !senhaB) throw new Error('As contas descartáveis do ensaio não foram preparadas.');
+  let posts = 0;
+  let clienteId = '';
+  const nomeCliente = 'Cliente Exemplo ' + testInfo.project.name;
+  page.on('request', request => {
+    if (request.method() === 'POST' && new URL(request.url()).pathname === '/clientes') posts++;
+  });
+  await test.step('cadastrar e consultar cliente com a conta A', async () => {
+    await page.goto('/cadastros/clientes');
+    await entrar(page, 'conta-ci-a', senhaA);
+    await page.getByRole('link', {name: 'Clientes', exact: true}).click();
+    await expect(page.getByRole('heading', {name: 'Clientes.'})).toBeVisible();
+    await page.getByLabel('Nome do cliente', {exact: true}).fill(nomeCliente);
+    const created = page.waitForResponse(response => response.request().method() === 'POST'
+      && new URL(response.url()).pathname === '/clientes');
+    await page.getByRole('button', {name: 'Cadastrar cliente', exact: true}).click();
+    const response = await created;
+    expect(response.status()).toBe(201);
+    clienteId = (await response.json() as {id: string}).id;
+    await expect(page.getByText('Cliente cadastrado', {exact: true})).toBeVisible();
+    const list = page.getByRole('list', {name: 'Clientes da sua conta'});
+    await expect(list).toContainText(nomeCliente);
+    const query = page.waitForResponse(response => new URL(response.url()).pathname === '/clientes/' + clienteId);
+    await list.getByRole('button', {name: 'Ver cadastro de ' + nomeCliente, exact: true}).click();
+    expect((await query).status()).toBe(200);
+    await expect(page.getByRole('heading', {name: 'Cadastro do cliente'})).toBeVisible();
+  });
+  await test.step('recarregar preserva o cadastro sem outro POST', async () => {
+    await page.reload();
+    await expect(page.getByRole('list', {name: 'Clientes da sua conta'})).toContainText(nomeCliente);
+    expect(posts).toBe(1);
+  });
+  await test.step('a conta B não encontra o cliente de A', async () => {
+    await sair(page);
+    await entrar(page, 'conta-ci-b', senhaB);
+    await page.getByRole('link', {name: 'Clientes', exact: true}).click();
+    await expect(page.getByRole('heading', {name: 'Nenhum cliente cadastrado.'})).toBeVisible();
+    await expect(page.getByText(nomeCliente, {exact: true})).toHaveCount(0);
+    expect((await page.request.get('/clientes/' + clienteId)).status()).toBe(404);
+  });
+});
+
 test('duas contas isolam sessão, consulta e recibo na mesma aba', async ({page, context}) => {
   if (!senhaA || !senhaB) throw new Error('As contas descartáveis do ensaio não foram preparadas.');
   let posts = 0;

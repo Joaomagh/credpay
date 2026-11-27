@@ -182,6 +182,32 @@ class SessaoPublicaHttpsTest {
         }
     }
 
+    @Test
+    void clientesEmHttps_deveIsolarContasExigirOrigem_eExpirarSessao() throws Exception {
+        var contaA = cadastrar();
+        var contaB = cadastrar();
+        try (var a = cliente(new CookieManager()); var b = cliente(new CookieManager())) {
+            entrar(a, contaA);
+            entrar(b, contaB);
+            var sessao = json.readTree(get(a, "/auth/sessao").body());
+            var criacao = a.send(requisicao("/clientes")
+                    .header("Content-Type", "application/json")
+                    .header("X-CredPay-Conta", contaA.id().toString())
+                    .header("X-CSRF-TOKEN", sessao.path("csrf").asText())
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"nome\":\"Cliente Exemplo\"}")).build(),
+                    HttpResponse.BodyHandlers.ofString());
+            assertThat(criacao.statusCode()).isEqualTo(201);
+            var id = json.readTree(criacao.body()).path("id").asText();
+            assertThat(get(a, "/clientes/" + id).statusCode()).isEqualTo(200);
+            assertThat(get(b, "/clientes/" + id).statusCode()).isEqualTo(404);
+            var semOrigem = HttpRequest.newBuilder(URI.create("https://127.0.0.1:" + porta + "/clientes/" + id))
+                    .timeout(Duration.ofSeconds(5)).GET().build();
+            assertThat(a.send(semOrigem, HttpResponse.BodyHandlers.discarding()).statusCode()).isEqualTo(403);
+            relogio.avancar(Duration.ofMinutes(15));
+            assertThat(get(a, "/clientes/" + id).statusCode()).isEqualTo(401);
+        }
+    }
+
     private HttpClient cliente(CookieManager cookies) throws Exception {
         return HttpClient.newBuilder().sslContext(TLS.confianca()).cookieHandler(cookies)
                 .connectTimeout(Duration.ofSeconds(5)).build();

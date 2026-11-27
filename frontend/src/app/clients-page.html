@@ -1,0 +1,60 @@
+@if (permitted()) {
+  <div class="page-heading"><div><p class="eyebrow">Gestão de cobranças</p><h1>Clientes<span>.</span></h1></div></div>
+  <p class="page-description">Organize os clientes da sua conta. Comece pelo nome e consulte os cadastros quando precisar.</p>
+  <div class="clients-grid">
+    <div>
+      <form class="card client-form" (ngSubmit)="submit()" novalidate>
+        <h2>Novo cliente</h2>
+        <label class="eyebrow" for="client-name">Nome do cliente</label>
+        <input id="client-name" name="nome" [(ngModel)]="nome" [readOnly]="saving()" required
+          autocomplete="off" aria-describedby="client-help client-error"
+          [attr.aria-invalid]="nameInvalid() ? 'true' : null" />
+        <p class="helper" id="client-help">Use o nome pelo qual você identifica o cliente. Até 120 caracteres.</p>
+        <div class="error-message" id="client-error" role="alert" [hidden]="!error()">{{error()}}</div>
+        <button class="button primary wide" type="submit" [disabled]="saving()">{{saving() ? 'Cadastrando…' : 'Cadastrar cliente'}}</button>
+      </form>
+      @if (created(); as cliente) {
+        <section class="card client-receipt" role="status">
+          <span class="eyebrow">Cliente cadastrado</span><h2>{{cliente.nome}}</h2>
+          <p class="helper">O cadastro foi confirmado na sua conta.</p>
+          <button class="button secondary wide" type="button" (click)="consult(cliente.id)">Consultar cliente cadastrado</button>
+        </section>
+      }
+      @if (loadingDetail() || selected() || detailError()) {
+        <section class="card client-detail" aria-live="polite" [attr.aria-busy]="loadingDetail()">
+          <h2>Cadastro do cliente</h2>
+          @if (loadingDetail()) { <p role="status">Consultando cadastro…</p> }
+          @if (selected(); as cliente) {
+            <dl><dt>Nome</dt><dd>{{cliente.nome}}</dd><dt>Identificador</dt><dd class="client-id">{{cliente.id}}</dd></dl>
+            <p class="helper">O identificador distingue cadastros com o mesmo nome.</p>
+          }
+          @if (detailError()) { <p class="error-message" role="alert">{{detailError()}}</p> }
+        </section>
+      }
+    </div>
+    <section class="card client-directory" [attr.aria-busy]="loadingList()">
+      <div class="section-line"><h2>Clientes da sua conta</h2><button class="button secondary" type="button" (click)="load()" [disabled]="loadingList()">Atualizar lista</button></div>
+      @if (loadingList()) { <p class="helper" role="status">Carregando clientes…</p> }
+      <div class="error-message" role="alert" [hidden]="!listError()">{{listError()}}</div>
+      @if (items().length) {
+        <ul class="client-list" aria-label="Clientes da sua conta">
+          @for (cliente of items(); track cliente.id) {
+            <li><div class="client-label"><strong>{{cliente.nome}}</strong><span class="client-id">{{cliente.id}}</span></div>
+              <button class="button secondary" type="button" (click)="consult(cliente.id)"
+                [attr.aria-label]="'Ver cadastro de ' + cliente.nome">Ver cadastro</button></li>
+          }
+        </ul>
+      } @else if (!loadingList() && !listError()) {
+        <div class="client-empty"><h2>Nenhum cliente cadastrado.</h2><p>Cadastre o primeiro cliente usando o formulário.</p></div>
+      }
+      <div class="client-pagination">
+        <button class="button secondary" type="button" (click)="load()" [disabled]="loadingList() || !cursor()">Primeira página</button>
+        <button class="button secondary" type="button" aria-label="Próxima página de clientes"
+          (click)="load(next())" [disabled]="loadingList() || !next()">Próxima página</button>
+      </div>
+      <p class="helper">Até 20 clientes por página.</p>
+    </section>
+  </div>
+} @else {
+  <p role="status">Confirme a sessão para continuar.</p>
+}
