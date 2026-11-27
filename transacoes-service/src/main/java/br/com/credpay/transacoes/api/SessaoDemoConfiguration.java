@@ -60,7 +60,7 @@ class SessaoDemoConfiguration {
             @Qualifier("clock") Clock relogio,
             ObjectProvider<SessaoDemoPublica> politicaPublica) {
         var autenticador = new DaoAuthenticationProvider(usuario -> jdbc.query("""
-                SELECT id, usuario, senha_hash FROM contas WHERE usuario = ?
+                SELECT id, usuario, senha_hash FROM contas WHERE usuario = ? AND senha_hash IS NOT NULL
                 """, (rs, linha) -> new ContaDemoPrincipal(rs.getObject("id", UUID.class),
                         rs.getString("usuario"), rs.getString("senha_hash")), usuario)
                 .stream().findFirst().orElseThrow(() -> new UsernameNotFoundException("Conta inválida")));

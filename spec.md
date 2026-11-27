@@ -3691,6 +3691,8 @@ Green da primeira persistência: head `6f204ab` passou o [Maven completo](https:
 
 Novo red em preparação: `CadastroContaExterna` e método stub no mesmo adapter, com testes de conta vazia sem senha, vínculo existente, repetição/identidades distintas, concorrência e rollback sem conta órfã. HTTP exige que conta externa sem hash não autentique por senha local. Migration de nullable/SQL de criação ainda ausentes; observar red real antes de implementar. O domínio não passa a confiar em token por existir esse cadastro: somente o adaptador OIDC validado poderá chamá-lo.
 
+Red do cadastro confirmado no `815cb08`, [Maven](https://github.com/Joaomagh/credpay/actions/runs/45932569063/job/140288316987):672 testes/6 falhas esperadas/0 erros/skips. Retorno nulo do stub e ausência da criação/recusa/rollback esperados foram observados antes da implementação. Green mínimo: V14 permite hash nulo em conta externa; login por senha consulta somente hashes presentes. Criação usa transação e lock PostgreSQL por identidade, relê vínculo antes de inserir UUID/alias local e vínculo. Colisão de hash do lock apenas serializa identidades distintas; a consulta/PK do par continuam exatas. Falha do vínculo reverte a conta no mesmo commit. Green real ainda pendente; nenhum callback acessa esse cadastro até integrar OIDC.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

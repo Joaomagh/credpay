@@ -10,7 +10,7 @@
 
 ## Agora
 
-- [ ] C07 em andamento — red SQL real no381d0a4:666 testes/5 falhas esperadas/0 erros/skips. V13/SELECT por identidade implementados depois; confirmar green no CI. Em seguida integrar principal/sessão e fluxo OIDC. Baseline dos módulos7.0.8 registrada antes de resolver no cache próprio; POM do app ainda sem mudança e nenhuma credencial adicionada. Login Google ainda indisponível; spec§9.177.
+- [ ] C07 em andamento — V13 passou Maven real. Primeiro acesso: red672/6 falhas esperadas/0 erros; V14/criação atômica implementados depois, preflight90 verde. Confirmar green real e integrar fluxo OIDC/principal/sessão. Início Google tem red HTTP302/401 observado; configuração tem12 reds e guard de perfil1red. Nenhuma credencial adicionada; login Google ainda indisponível, spec§9.177.
 
 Execução ativa autorizada em 26/11: 18:37:41–23:37:41 (`America/Sao_Paulo`), cinco horas. Driver mantém implementação única; revisão/P.O. em paralelo conforme os papéis. Branch `feat/gestao-cobrancas` criada a partir da main local, preservando `feat/postgres-alpine-restore` e seu checkpoint. No fim da janela, deixar evidências e uma próxima ação recuperável.
 
@@ -18,7 +18,7 @@ Houve interrupção por limite de uso aproximadamente às19:43 e retomada às22:
 
 ## Próximo
 
-- C07: João escolheu Entrar com Google; conta e credenciais configuradas por ele. Após C01, começar pelo teste do vínculo `(issuer,subject)` com a conta local, depois baseline/fluxo OAuth2-OIDC e Angular. Preservar sessão e propriedade dos clientes; não vincular por e-mail, simular senha local ou armazenar tokens no Angular. Nenhuma integração externa criada.
+- C07: concluir callback validado e Angular; primeiro Google válido cria conta vazia por escolha de João. Hospedagem/projeto Google ainda não existem. Preparar configuração antes do provisionamento, Cloudflare Free/Compose primeiro e k3s depois. Preservar sessão/propriedade; não vincular por e-mail, simular senha local ou armazenar tokens no Angular.
 - C02: criar cobrança com cliente da mesma conta, descrição, BRL, vencimento e idempotência. Depois C03/C04: consulta por situação e recebimento integral manual com histórico. Refinar o contrato de cada incremento antes do TDD.
 - Validar a rotina e a dificuldade de uma pessoa do público quando João trouxer acesso/feedback; não presumir entrevista ou uso pela nutricionista. Integração de provedor será posterior, em ambiente de testes.
 
