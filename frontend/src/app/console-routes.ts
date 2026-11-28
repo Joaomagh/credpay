@@ -1,4 +1,6 @@
 import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { AUTH_REQUIRED } from './auth-mode';
 import { CreatePage } from './create-page';
 import { LoginPage } from './login-page';
 import { QueryPage } from './query-page';
@@ -10,5 +12,5 @@ export const consoleRoutes: Routes = [
   { path: 'cadastros/clientes', component: ClientsPage, canActivate: [clientsRequired], title: 'Clientes · CredPay' },
   { path: 'nova', component: CreatePage, canActivate: [sessionRequired], title: 'Nova transação · CredPay' },
   { path: 'consultar', component: QueryPage, canActivate: [sessionRequired], title: 'Consultar · CredPay' },
-  { path: '**', redirectTo: 'nova' }
+  { path: '**', redirectTo: () => inject(AUTH_REQUIRED) ? 'cadastros/clientes' : 'nova' }
 ];

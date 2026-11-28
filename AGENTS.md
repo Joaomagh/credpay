@@ -28,6 +28,7 @@ Os papéis estão em `docs/roles/`; prioridades em `docs/BACKLOG.md`. Agentes s�
 - A demonstração pública atual será avaliada por recrutadores e mantém login obrigatório pelo Google, reafirmado por João em27/11. Não criar consulta anônima ou popular a conta do visitante automaticamente. Sem domínio próprio; manter teto zero. Isso não transforma a demo em operação com dinheiro/dados reais.
 - Ao encerrar uma execução, entregar tabela com item, estado comprovado, próximo passo e dependência de João. Distinguir código local, teste local, CI, integração e publicação; uma etapa não comprova as seguintes.
 - Manter este arquivo como acordo único, sem criar um CLAUDE.md duplicado. Atualizar cada documento somente quando houver decisão, estado ou evidência pertinente.
+- João reafirmou foco no produto de cobranças: interface principal com Google/cadastro automático, entrada direta na área útil, temas claro/escuro e linguagem de negócio, sem UUIDs ou console intermediário. A skill de frontend do repositório deve refletir essa direção. Preservar o simulador como legado e não apresentar cobranças/recebimentos ainda incompletos como disponíveis.
 
 ### Leitura e contexto
 

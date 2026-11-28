@@ -25,7 +25,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'node node_modules/@angular/cli/bin/ng.js serve --host 127.0.0.1 --port 4300'
-      + (accounts ? ' --configuration contas' : ''),
+      + (accounts ? ' --configuration contas' : ' --configuration legado'),
     url: 'http://127.0.0.1:4300',
     reuseExistingServer: false,
     timeout: 60000,

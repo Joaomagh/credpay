@@ -1,22 +1,38 @@
 ---
 name: credpay-frontend
-description: Desenvolver, revisar e testar manualmente o console Angular do CredPay, incluindo criação, consulta, recuperação de intenção e revisão responsiva no navegador local.
+description: Desenvolver e revisar a experiência Angular do CredPay como produto de gestão de cobranças, com autenticação Google, clientes, acessibilidade, temas e revisão responsiva; preservar regressões do simulador legado quando afetadas.
 ---
 
 # Frontend do CredPay
 
-Leia `AGENTS.md` e o [guia do frontend](../../../../frontend/README.md) no checkout do CredPay. Se esta skill estiver instalada fora do repositório, abra `frontend/README.md` a partir da raiz do checkout ativo.
+Leia `AGENTS.md`, `task.md` e o [guia do frontend](../../../../frontend/README.md) no checkout ativo. Consulte o [contrato de cobranças](../../../../docs/BILLING_CONTRACT.md) antes de alterar essa jornada. Se instalada fora do repositório, resolva os documentos pela raiz do checkout.
 
-## Alterações
+## Direção do produto
 
-- Preserve a relação entre POST e GET. O POST devolve o recibo original `PENDENTE`, inclusive em replay. A consulta por UUID mostra o estado atual.
-- Preserve a chave e o valor da intenção em falha ambígua ou reload. Retry reutiliza a mesma intenção. Nova intenção exige ação explícita. Trabalhe com decimal exato, sem conversão monetária para `Number`.
-- Escreva e execute o menor teste red antes de corrigir um comportamento. Use os testes e componentes existentes. Rode `npm.cmd run check`, `npm.cmd test` e `npm.cmd run build` em `frontend/` quando alterar código.
+CredPay organiza clientes, cobranças e recebimentos de profissionais e pequenos negócios. Priorize a tarefa do usuário. Use o backlog para distinguir o que funciona do que ainda será entregue; não invente saldo, métricas, cobrança paga, confirmação bancária ou ações sem API real.
 
-## Teste manual
+- O perfil padrão exige sessão. `/entrar` cadastra ou autentica via Google; o primeiro acesso cria conta vazia, sem popular exemplos. Google é a ação principal, com imagem oficial local e explicação clara do cadastro. Acesso existente por senha é secundário; não oferecer cadastro por senha sem implementação própria.
+- Após autenticar, encaminhe à área útil já disponível, atualmente Clientes. Não interrompa a jornada com tela de sessão, botão Abrir console ou identificador `google-...`. Não exiba UUIDs de conta/cliente por conveniência técnica; IDs seguem nos contratos internos.
+- O simulador permanece compatível em rotas anteriores e configuração `legado`; ele não é a navegação principal do produto. Preserve seus avisos e semântica nos fluxos próprios. Não rebatize aprovação fictícia como recebimento.
+- A interface principal usa linguagem de negócio, sem badges Demo, detalhes da stack ou avisos repetidos de dados fictícios. Documentação mantém os limites reais de publicação, uso e pagamentos. Remover copy antiga não autoriza dados reais nem equivale a implantar produção.
 
-1. Use o navegador integrado ou o plugin Computer Use para abrir `http://127.0.0.1:4200/nova` em uma aba de teste própria. Se o frontend estiver parado e as dependências já estiverem presentes, inicie com `npm.cmd start` em `frontend/`. Verifique o health local da API antes dos casos integrados. Respeite as autorizações de infraestrutura em `AGENTS.md`.
-2. Confira as rotas Nova transação e Consultar. Envie valor zero e UUID inválido e confira a mensagem associada ao campo ou à operação. Teste teclado, indicação de foco e viewport estreito e largo. Se ajustar o viewport, restaure-o ao final.
-3. Com a API ativa e dados fictícios, use um valor positivo dentro do limite configurado e outro acima. Confira recibo, navegação para consulta, UUID estável e estado final esperado. Recarregue a criação na mesma aba e confirme que a intenção ou o recibo original foi recuperado. Se houver acesso à rede do navegador, verifique também que o reload não envia outro POST. Consulte um UUID válido ausente e confira o estado de ausência.
-4. Com a API indisponível, use no máximo um envio fictício para conferir o tratamento do erro, a opção de repetir com a mesma intenção e a restauração após reload. Marque os casos integrados como bloqueados. Use o [roteiro de demo](../../../../docs/DEMO.md) no checkout para ensaios de falha já autorizados.
-5. Relate o que passou, falhou ou ficou bloqueado, com passos curtos e o escopo observado. Separe evidência visual, resposta da API e checagem de rede. Use os cenários de navegador existentes em `frontend/e2e/` como referência de regressão. Registre somente dados de teste necessários e sem credenciais.
+## Critérios visuais
+
+- Preserve identidade verde e use os tokens compartilhados de `src/styles.css`. Escuro é o padrão; controle claro/escuro tem nome acessível e escolha persistida localmente. A interface continua utilizável se armazenamento estiver bloqueado.
+- Dê hierarquia à ação principal; revise alinhamento, largura de leitura, margens e espaços entre formulário, ajuda e botões. Prefira estados vazios úteis a conteúdo de exemplo automático.
+- Confira contraste nos dois temas, foco de teclado, rótulos de campos, mensagens associadas e alvos de pelo menos44px. No celular, navegação não pode cobrir campos, conteúdo ou ações. Restaure overrides de viewport ao concluir.
+- Use ícones existentes/SVG local e assets oficiais para marcas de terceiros. Consulte as [diretrizes Google](https://developers.google.com/identity/branding-guidelines) se alterar o botão; preserve cores/proporções do G. Não introduza CDN, SDK de login paralelo, fonte ou framework visual sem necessidade aprovada.
+
+## Verificação da jornada
+
+Comportamento novo começa por teste red conforme AGENTS. Reutilize testes/componentes e rode `npm.cmd run check`, `npm.cmd test`, `npm.cmd run build`; se afetar navegação, rode tipos/listagem E2E e preserve cenários de isolamento, CSRF, saída e recuperação.
+
+1. Abra uma aba própria em `/entrar` no servidor local existente. Inicie `npm.cmd start` somente se necessário e com dependências presentes. Mudança de assets/configuração pode exigir reiniciar o dev server. Não interrompa processos do usuário sem coordenar.
+2. Confira login Google disponível, cadastro explicado, senha secundária e erro acionável. Não capture segredo, cookie, código OAuth ou URL de retorno. Credenciais/aceites pessoais permanecem com João; siga GOOGLE_SETUP.md.
+3. Com sessão válida, confira encaminhamento direto, cadastro/listagem/consulta de cliente e saída. Mesmo Google deve recuperar os dados; segunda identidade não acessa os da primeira. Separe testes de fronteira HTTP de evidência com backend real.
+4. Revise entrada e área autenticada em tela estreita e larga, claro/escuro, teclado e após reload. Não use execução Docker local pelo agente: respeite AGENTS e os guards dos E2E de CI.
+5. Relate o que passou, falhou e ficou pendente. Não transforme inspeção visual em prova de persistência ou testes fictícios em aceite do Google real. Atualize task/spec/backlog conforme o incremento.
+
+## Regressões do legado quando afetadas
+
+Preserve relação POST/GET: criação retorna recibo original PENDENTE, consulta mostra estado atual. Dinheiro usa representação decimal exata, sem Number. Falha ambígua e reload preservam chave/payload; retry não cria intenção nova automaticamente. Revalide a sessão e descarte respostas de outra conta. Use `frontend/e2e/console.spec.ts` e `contas.spec.ts`; não reduza assertions, retries ou deadlines para passar. Os cenários antigos continuam importantes mesmo fora da navegação principal.

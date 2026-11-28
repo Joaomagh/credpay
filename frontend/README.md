@@ -1,6 +1,6 @@
-# CredPay — Console Angular
+# CredPay — Aplicação Angular
 
-O console tem as telas **Nova transação** e **Consultar**, com criação por POST real e acompanhamento por GET. No perfil de contas, **Clientes** permite cadastrar, listar e consultar clientes da conta autenticada. A tela **Entrar** confirma a sessão. O ambiente usa dados fictícios; cobranças e recebimentos ainda serão implementados.
+A entrada padrão exige sessão e prioriza **Clientes**, com cadastro, lista e consulta da própria conta. **Continuar com Google** cria a conta no primeiro acesso ou recupera a existente e encaminha diretamente à área útil. Escuro é o tema inicial; o controle do cabeçalho alterna para claro e preserva a escolha no navegador. A apresentação é de produto; cobranças e recebimentos ainda serão implementados. **Nova transação** e **Consultar** continuam compatíveis como legado, fora da navegação principal autenticada.
 
 ## Executar no PowerShell
 
@@ -14,7 +14,7 @@ npm.cmd start
 
 Abra http://127.0.0.1:4200. Para parar o servidor frontend, use Ctrl+C. Nenhuma CLI global é necessária.
 
-Para criar e consultar dados no modo padrão, prepare e ative o backend conforme o [roteiro Compose](../infra/compose/README.md). O proxy de desenvolvimento encaminha `/transacoes` e `/auth/**` para `http://127.0.0.1:8080`, na mesma origem do console e em loopback. Se a porta da API foi alterada, ajuste `proxy.conf.json`. O proxy é configuração de desenvolvimento. Hospedar o bundle exige configuração própria de origem e fallback das rotas.
+Prepare o backend com sessão e, para Google, siga [GOOGLE_SETUP.md](../docs/GOOGLE_SETUP.md). O proxy de desenvolvimento encaminha `/clientes`, `/transacoes` e `/auth/**` para `http://127.0.0.1:8080`, na mesma origem e em loopback. Se a porta da API foi alterada, ajuste `proxy.conf.json`. Hospedar o bundle exige origem e fallback próprios. Alterações em angular.json/assets podem exigir reiniciar o servidor Angular.
 
 ## Entrada no perfil de contas
 
@@ -24,11 +24,13 @@ Com o serviço de transações no perfil `sessao-demo` e uma conta fictícia pro
 npm.cmd start -- --configuration contas
 ```
 
-Abra `/entrar`. A tela confirma a sessão no servidor e libera o console para a conta verificada. Criação e consulta carregam o identificador da conta esperada e retornam à entrada quando a sessão deixa de ser válida. O recibo salvo na aba reaparece somente quando a mesma conta entra novamente. O console revalida a identidade ao receber foco e reage a login e logout em outras abas da mesma origem quando `BroadcastChannel` está disponível. O Compose CI prepara duas contas fictícias em seu projeto descartável para exercitar essa jornada em desktop e mobile.
+Abra `/entrar`. Sessão confirmada segue direto para Clientes. `contas` permanece como alias explícito do perfil padrão. O botão Sair encerra a sessão com CSRF; falha de comunicação não confirma saída. Criação e consulta carregam a conta esperada sem apresentar seu identificador na interface. O recibo legado salvo na aba reaparece somente para a mesma conta. A aplicação revalida identidade ao receber foco e reage a login/logout em outras abas quando BroadcastChannel está disponível. O Compose CI prepara duas contas fictícias para a regressão desktop/mobile.
+
+Para executar somente o simulador anterior sem sessão, use `npm.cmd start -- --configuration legado`. O E2E anônimo usa esse perfil explicitamente; o build padrão continua autenticado.
 
 ## Clientes no perfil de contas
 
-Com a migration V12 aplicada e o backend no perfil `sessao-demo`, entre pela tela de autenticação e abra **Clientes** no menu, em `/cadastros/clientes`. A página tem endereço separado da API `/clientes`, inclusive no reload. O proxy encaminha somente a rota da API ao backend local. É possível cadastrar um nome, consultar o cadastro e percorrer a lista de 20 clientes por página. Nomes iguais são permitidos; o identificador distingue os cadastros.
+Com V12 aplicada e sessão ativa, Clientes abre em `/cadastros/clientes`, separado da API `/clientes`, inclusive no reload. É possível cadastrar um nome, consultar o cadastro e percorrer a lista de20 clientes por página. Nomes iguais são permitidos; IDs distinguem os registros internamente e não são exibidos como conteúdo de produto.
 
 Em falha de comunicação no cadastro, confira a lista antes de enviar novamente: o cadastro de clientes não tem retry automático nem o contrato idempotente das transações. Troca de conta remove os dados da tela; respostas de uma geração anterior de login não invalidam a sessão nova.
 
@@ -36,7 +38,9 @@ O Worker candidato encaminha as rotas exatas de clientes e paginação validada;
 
 ## Google opcional
 
-O backend no perfil `google-login` informa disponibilidade por `GET /auth/metodos`. A tela mostra **Entrar com Google** somente quando recebe confirmação; o navegador segue o fluxo Authorization Code/PKCE e recebe uma sessão do backend. O primeiro login válido cria uma conta individual vazia. Tokens não são guardados pelo Angular. Projeto/cliente Google e ensaio real ainda dependem de configuração; as evidências atuais usam emissor fictício com JWT e HTTP reais no teste. O Worker candidato permite somente o destino de autorização Google previsto e um retorno fixo para a página de entrada, sem proxy de redirect genérico.
+O backend no perfil `google-login` informa disponibilidade por `GET /auth/metodos`. A tela mostra **Continuar com Google** somente quando recebe confirmação; o navegador segue Authorization Code/PKCE e recebe sessão do backend. O primeiro acesso cadastra conta vazia, sem senha local; a mesma ação também entra em conta existente. Não há cadastro por usuário/senha, apenas entrada de contas previamente provisionadas. Tokens não são guardados pelo Angular. João confirmou login Google real local e cliente preservado após sair/entrar; segunda identidade/reinício/publicação permanecem aceites próprios. O Worker conserva o destino Google e o retorno fixo; Angular encaminha a sessão válida para Clientes.
+
+A imagem local em `public/assets/google-signin.svg` veio do [pacote oficial Google](https://developers.google.com/identity/branding-guidelines), sem SDK/CDN/fontes/dependências novas. Reinicie o dev server após adicionar o mapeamento de assets no angular.json.
 
 ## Teste manual no navegador
 

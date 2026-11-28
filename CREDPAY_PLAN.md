@@ -8,6 +8,8 @@
 
 O primeiro resultado de produto será permitir que uma conta organize clientes e cobranças, registre recebimentos manualmente e acompanhe o que está em aberto, vencido ou pago. O aprendizado e as evidências de engenharia continuam objetivos do projeto. A direção aprovada não significa que essas funcionalidades já existem.
 
+**Refinamento de experiência em27/11:** a entrada padrão deve apresentar o produto, com Google como ação principal para criar conta ou entrar, sem tela intermediária de sessão ou identificadores técnicos. A primeira área útil é Clientes enquanto cobranças e recebimentos são concluídos. O simulador permanece compatível como legado fora da navegação principal. Temas claro/escuro, responsividade e clareza de cadastro fazem parte da experiência; isso não amplia o escopo para cadastro por senha, pagamentos reais ou implantação externa.
+
 ### Primeiro MVP de cobranças
 
 Jornada: entrar na conta → cadastrar cliente → criar cobrança com descrição, valor e vencimento → consultar situação → registrar recebimento integral manual → consultar histórico.

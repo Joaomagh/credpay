@@ -5,6 +5,8 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { consoleRoutes } from './console-routes';
 import { LoginPage } from './login-page';
+import { AUTH_REQUIRED } from './auth-mode';
+import { Router } from '@angular/router';
 
 const conta = {id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479', usuario: 'conta-ensaio', csrf: 'token-autenticado'};
 
@@ -13,6 +15,31 @@ describe('Entrada no console', () => {
     providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter(consoleRoutes)]
   }));
   afterEach(() => TestBed.inject(HttpTestingController).verify());
+
+  it('apresenta Google como entrada e cadastro, com imagem e sem credenciais concorrendo', async () => {
+    const harness = await RouterTestingHarness.create('/entrar');
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne('/auth/sessao').flush(null, {status: 401, statusText: 'Unauthorized'});
+    http.expectOne('/auth/metodos').flush({google: true});
+    harness.detectChanges();
+    const root = harness.routeNativeElement!;
+    expect(root.querySelector('a[href="/auth/externo/google"] img')).not.toBeNull();
+    expect(root.textContent).toContain('Crie sua conta ou entre');
+    expect(root.textContent).toContain('Não precisa criar uma senha');
+    expect(root.querySelector('details:not([open]) form')).not.toBeNull();
+  });
+
+  it('leva sessão autenticada direto para clientes sem mostrar identificador técnico', async () => {
+    TestBed.overrideProvider(AUTH_REQUIRED, {useValue: true});
+    const harness = await RouterTestingHarness.create('/entrar');
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigateByUrl').mockResolvedValue(true);
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne('/auth/metodos').flush({google: true});
+    http.expectOne('/auth/sessao').flush({...conta, usuario: 'google-identificador-interno'});
+    harness.detectChanges();
+    expect(navigate).toHaveBeenCalledWith('/cadastros/clientes', {replaceUrl: true});
+    expect(harness.routeNativeElement?.textContent).not.toContain('google-identificador-interno');
+  });
 
   it('oferece Google somente quando o servidor confirma disponibilidade', async () => {
     const harness = await RouterTestingHarness.create('/entrar');
@@ -23,7 +50,7 @@ describe('Entrada no console', () => {
     http.expectOne('/auth/metodos').flush({google: true});
     harness.detectChanges();
     expect(harness.routeNativeElement?.querySelector('a[href="/auth/externo/google"]')?.textContent)
-      .toContain('Entrar com Google');
+      .toContain('Continuar com Google');
   });
 
   it('explica falha Google sem repetir detalhes recebidos na URL', async () => {

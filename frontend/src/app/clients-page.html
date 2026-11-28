@@ -25,8 +25,7 @@
           <h2>Cadastro do cliente</h2>
           @if (loadingDetail()) { <p role="status">Consultando cadastro…</p> }
           @if (selected(); as cliente) {
-            <dl><dt>Nome</dt><dd>{{cliente.nome}}</dd><dt>Identificador</dt><dd class="client-id">{{cliente.id}}</dd></dl>
-            <p class="helper">O identificador distingue cadastros com o mesmo nome.</p>
+            <dl><dt>Nome</dt><dd>{{cliente.nome}}</dd></dl>
           }
           @if (detailError()) { <p class="error-message" role="alert">{{detailError()}}</p> }
         </section>
@@ -39,7 +38,7 @@
       @if (items().length) {
         <ul class="client-list" aria-label="Clientes da sua conta">
           @for (cliente of items(); track cliente.id) {
-            <li><div class="client-label"><strong>{{cliente.nome}}</strong><span class="client-id">{{cliente.id}}</span></div>
+            <li><div class="client-label"><strong>{{cliente.nome}}</strong></div>
               <button class="button secondary" type="button" (click)="consult(cliente.id)"
                 [attr.aria-label]="'Ver cadastro de ' + cliente.nome">Ver cadastro</button></li>
           }
