@@ -2,7 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { Icon } from './icon';
 import { SessionApi } from './session-api';
@@ -10,7 +10,7 @@ import { SessionContext } from './session-context';
 import { retryMessage } from './retry-message';
 
 @Component({
-  selector: 'cp-login', imports: [FormsModule, Icon], templateUrl: './login-page.html',
+  selector: 'cp-login', imports: [FormsModule, Icon, RouterLink], templateUrl: './login-page.html',
   styleUrl: './login-page.css'
 })
 export class LoginPage {
@@ -44,8 +44,11 @@ export class LoginPage {
     if (this.busy() || this.sessao()) return;
     this.error.set('');
     this.note.set('');
-    const usuario = this.usuario.trim();
-    if (!/^[a-z0-9][a-z0-9._-]{2,63}$/.test(usuario) || !this.senha || this.senha.length > 128) {
+    const entrada = this.usuario.trim();
+    const usuario = entrada.includes('@') ? entrada.toLowerCase() : entrada;
+    const valido = usuario.includes('@') ? usuario.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(usuario)
+      : /^[a-z0-9][a-z0-9._-]{2,63}$/.test(usuario);
+    if (!valido || !this.senha || this.senha.length > 256 || Array.from(this.senha).length > 128) {
       this.error.set('Confira o usuário e a senha da sua conta.');
       return;
     }

@@ -19,9 +19,9 @@ import { Theme } from './theme';
       </a>
       <div class="header-end">
         <button class="theme-toggle" type="button" (click)="theme.toggle()"
+          [attr.title]="theme.mode() === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'"
           [attr.aria-label]="theme.mode() === 'dark' ? 'Ativar tema claro' : 'Ativar tema escuro'">
           <cp-icon [name]="theme.mode() === 'dark' ? 'sun' : 'moon'" />
-          <span>{{ theme.mode() === 'dark' ? 'Claro' : 'Escuro' }}</span>
         </button>
         @if (accounts && context.session()) {
           <button class="account-action" type="button" aria-label="Sair da conta" [disabled]="leaving()" (click)="logout()">

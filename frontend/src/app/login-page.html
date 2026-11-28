@@ -30,20 +30,21 @@
         }
         <p class="signup-help">Novo por aqui? Sua conta é criada no primeiro acesso.<br>Não precisa criar uma senha.</p>
       } @else if (!busy()) {
-        <p class="auth-subtitle">Acesse com seu usuário e senha.</p>
+        <p class="auth-subtitle">Acesse com seu e-mail e senha.</p>
       }
       <details class="password-access" [open]="!google()">
-        <summary>Já tenho acesso com senha</summary>
+        <summary>Entrar com e-mail e senha</summary>
         <form (ngSubmit)="entrar()" [attr.aria-busy]="busy()">
-          <label for="usuario">Usuário</label>
+          <label for="usuario">E-mail ou usuário</label>
           <input id="usuario" name="usuario" autocomplete="username" autocapitalize="none" spellcheck="false"
-            [(ngModel)]="usuario" maxlength="64" required>
+            [(ngModel)]="usuario" maxlength="254" required>
           <label for="senha">Senha</label>
           <input id="senha" name="senha" type="password" autocomplete="current-password"
-            [(ngModel)]="senha" maxlength="128" required>
+            [(ngModel)]="senha" maxlength="256" required>
           <button class="button primary" type="submit" [disabled]="busy()">{{ busy() ? 'Verificando…' : 'Entrar' }}</button>
         </form>
       </details>
+      <p class="signup-help">Prefere uma conta com senha? <a class="auth-text-link" routerLink="/criar-conta">Criar conta com e-mail</a></p>
       <p class="auth-security"><cp-icon name="shield" /> Sua senha Google fica com o Google.</p>
     }
     <p class="auth-error" role="alert">{{ error() }}</p>

@@ -16,6 +16,32 @@ describe('Entrada no console', () => {
   }));
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 
+  it('oferece cadastro independente por e-mail mesmo com Google disponível', async () => {
+    const harness = await RouterTestingHarness.create('/entrar');
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne('/auth/metodos').flush({google: true});
+    http.expectOne('/auth/sessao').flush(null, {status: 401, statusText: 'Unauthorized'});
+    harness.detectChanges();
+    expect(harness.routeNativeElement?.querySelector('a[href="/criar-conta"]')?.textContent).toContain('Criar conta com e-mail');
+  });
+
+  it('entra por e-mail normalizado sem alterar a senha ou expor conta técnica', async () => {
+    const harness = await RouterTestingHarness.create('/entrar');
+    const http = TestBed.inject(HttpTestingController);
+    http.expectOne('/auth/metodos').flush({google: false});
+    http.expectOne('/auth/sessao').flush(null, {status: 401, statusText: 'Unauthorized'});
+    const page = harness.routeDebugElement!.componentInstance as LoginPage;
+    page.usuario = ' Pessoa+CredPay@EXAMPLE.COM ';
+    page.senha = ' minha senha ';
+    page.entrar();
+    http.expectOne('/auth/csrf').flush({token: 'csrf-anonimo'});
+    const request = http.expectOne('/auth/login');
+    expect(Object.fromEntries(new URLSearchParams(request.request.body))).toEqual({usuario: 'pessoa+credpay@example.com', senha: ' minha senha '});
+    request.flush(null, {status: 204, statusText: 'No Content'});
+    http.expectOne('/auth/sessao').flush({...conta, usuario: 'pessoa+credpay@example.com'});
+    expect(page.senha).toBe('');
+  });
+
   it('apresenta Google como entrada e cadastro, com imagem e sem credenciais concorrendo', async () => {
     const harness = await RouterTestingHarness.create('/entrar');
     const http = TestBed.inject(HttpTestingController);
@@ -71,7 +97,7 @@ describe('Entrada no console', () => {
     TestBed.inject(HttpTestingController).expectOne('/auth/metodos').flush({google: false});
     harness.detectChanges();
     expect(harness.routeNativeElement?.querySelector('h1')?.textContent).toContain('Entre na sua conta');
-    expect(harness.routeNativeElement?.querySelector('label[for="usuario"]')?.textContent).toContain('Usuário');
+    expect(harness.routeNativeElement?.querySelector('label[for="usuario"]')?.textContent).toContain('E-mail ou usuário');
     expect(harness.routeNativeElement?.querySelector('input#senha')?.getAttribute('autocomplete'))
       .toBe('current-password');
   });

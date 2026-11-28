@@ -11,4 +11,4 @@ Solicitado por João em28/11/2026. Google continua principal; cadastro próprio 
 
 Ainda não há confirmação de posse do e-mail, entrega de mensagens, recuperação de senha, MFA ou consulta a listas de senhas vazadas. E-mail é identificador de login não verificado neste incremento; não alegar propriedade nem usar para unir contas. Resolver envio/verificação/recuperação e política de senhas comprometidas antes de liberar cadastro para uso real. A publicação do portfólio conserva aceites próprios; este contrato não provisiona serviço externo nem autoriza dados reais.
 
-Estado: contrato refinado; implementação e evidências serão registradas em spec/task/backlog.
+Estado em28/11: backend no headec3e2b0 passou suíte integrada786/0 no run46103702991. Interface95 Angular+2 Node, Worker98 contratos e build387,90kB locais passaram. Jornada E2E de cadastro preparada para desktop/celular; execução e integração ainda pendentes. Confirmação de e-mail/recuperação não implementadas.

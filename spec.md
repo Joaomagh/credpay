@@ -3765,6 +3765,10 @@ RegistroContaController recebe somente email/senha, limite de corpo8192 herdado 
 
 Red real confirmado no run46103287318/job140850334077, headcb5bc02:7 testes,5 falhas e1 erro,0 skips; coluna email ausente, adapter stub e permissão ainda fechada. Depois implementados V16, INSERT único com ON CONFLICT sem sobrescrever, permissão anônima com CSRF e login por email normalizado mantendo usuário legado. Preflight verde76/0 em43,174s; green PostgreSQL real ainda pendente. Nenhuma execução Docker local.
 
+Continuidade C09: suíte completa no [run46103702991](https://github.com/Joaomagh/credpay/actions/runs/46103702991), headec3e2b0, passou786 testes/0 falhas/erros/skips, BUILD SUCCESS em3m03s. Inclui PostgreSQL/RabbitMQ reais, sete casos de cadastro e nove de persistência de cobranças. Assim, C02 SQL tem green real; API/tela de cobranças continuam fora deste incremento. Sessão Google/local anteriores conservadas. Imagens/Flow/inventários também passaram nesse head; outros gates ainda em andamento no corte.
+
+Frontend C09: red5/5 pela ausência da tela; green5/0 de campos/mínimo8/confirmação/CSRF/envio único/limite. Login por e-mail e link de cadastro tiveram red2/10 por ausência de link e recusa indevida do e-mail; suíte final95 Angular+2 Node/0. Worker red2/98 por rotas ausentes e green98/0 (linhas98,70%, branches97,52%); check/check:e2e/check:edge e build387,90kB em5,939s passaram. Novo E2E preserva quatro cenários existentes e acrescenta cadastro/conta vazia/cliente/reentrada em desktop/celular:6 casos de contas, sem alterar retries/deadlines; execução real pendente. QA visual no4200: cadastro desktop/390px, tema claro/escuro apenas ícones, confirmação divergente visível e nenhum POST válido enviado ao backend local antigo. Viewport restaurado/aba fechada. Skill/manifesto1.2.0 e documentação atualizados; sem nova dependência. O container local continua na versão integrada anterior até atualização pelo operador, não presumir cadastro local funcionando por causa da tela.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

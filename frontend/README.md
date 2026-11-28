@@ -38,15 +38,19 @@ O Worker candidato encaminha as rotas exatas de clientes e paginação validada;
 
 ## Google opcional
 
-O backend no perfil `google-login` informa disponibilidade por `GET /auth/metodos`. A tela mostra **Continuar com Google** somente quando recebe confirmação; o navegador segue Authorization Code/PKCE e recebe sessão do backend. O primeiro acesso cadastra conta vazia, sem senha local; a mesma ação também entra em conta existente. Não há cadastro por usuário/senha, apenas entrada de contas previamente provisionadas. Tokens não são guardados pelo Angular. João confirmou login Google real local e cliente preservado após sair/entrar; segunda identidade/reinício/publicação permanecem aceites próprios. O Worker conserva o destino Google e o retorno fixo; Angular encaminha a sessão válida para Clientes.
+O backend no perfil `google-login` informa disponibilidade por `GET /auth/metodos`. A tela mostra **Continuar com Google** somente quando recebe confirmação; o navegador segue Authorization Code/PKCE e recebe sessão do backend. O primeiro acesso cadastra conta vazia, sem senha local; a mesma ação também entra em conta existente. A alternativa Criar conta com e-mail abre /criar-conta; contas legadas continuam entrando pelo usuário. Tokens não são guardados pelo Angular. João confirmou login Google real local e cliente preservado após sair/entrar; segunda identidade/reinício/publicação permanecem aceites próprios. O Worker conserva o destino Google e o retorno fixo; Angular encaminha a sessão válida para Clientes.
 
 A imagem local em `public/assets/google-signin.svg` veio do [pacote oficial Google](https://developers.google.com/identity/branding-guidelines), sem SDK/CDN/fontes/dependências novas. Reinicie o dev server após adicionar o mapeamento de assets no angular.json.
+
+## Cadastro com e-mail e senha
+
+A alternativa ao Google recebe e-mail, senha e confirmação. Mínimo8 caracteres, máximo128 pontos de código; senha não é normalizada nem salva no storage. O servidor normaliza o e-mail em minúsculas e impede duplicação/sobrescrita de senha. A resposta202 é genérica; a próxima etapa é entrar. Conta nova começa sem clientes. CSRF e limites5/IP/min e10 globais/min protegem o cadastro por instância. Não há verificação de e-mail ou recuperação de senha; limites e aceites em [EMAIL_REGISTRATION.md](../docs/EMAIL_REGISTRATION.md). O backend precisa conter V16/C09; somente atualizar Angular não habilita a rota no container antigo.
 
 ## Teste manual no navegador
 
 Use a skill [credpay-frontend](../plugins/credpay-frontend-qa/skills/credpay-frontend/SKILL.md) para repetir a revisão de criação, consulta, teclado, responsividade e recuperação de intenção. No desktop, o plugin **credpay-frontend-qa** está no [catálogo do projeto](../.agents/plugins/marketplace.json). Reabra o aplicativo para carregar o catálogo CredPay, escolha o plugin no diretório e use a skill em uma nova sessão com o navegador integrado. O pacote fornece o roteiro e usa o controle de navegador disponível na sessão. [Documentação de plugins locais](https://developers.openai.com/plugins/build/plugins#install-a-local-plugin-manually)
 
-## Jornada
+## Jornada do simulador legado
 
 1. Em **Nova transação**, informe um valor positivo em BRL, com vírgula ou ponto decimal e sem separador de milhar. Não limitamos a duas casas: a API trabalha com decimal exato.
 2. Ao enviar, a intenção captura valor, moeda e uma chave UUID. O formulário trava o valor; cliques repetidos durante o envio não criam novo POST. Em falha/timeout, **Tentar com a mesma intenção** reaproveita chave e payload. HTTP400/422 e conflito409 são explicados separadamente.
@@ -77,13 +81,9 @@ Testes Angular/Vitest usam a fronteira HTTP controlada, sem RabbitMQ/PostgreSQL 
 
 Framework standalone, Router, Forms e HttpClient; estado assíncrono com signals/RxJS. `lossless-json` preserva o token decimal recebido/enviado sem converter dinheiro para `Number`; a formatação só desloca caracteres. CSS e ícones SVG são locais, sem fonte/CDN ou framework visual adicional. Baseline, justificativas e override de segurança do Vite estão em [docs/frontend/BASELINE.md](../docs/frontend/BASELINE.md).
 
-## Teste manual no navegador
-
-Use a skill [credpay-frontend](../plugins/credpay-frontend-qa/skills/credpay-frontend/SKILL.md) para repetir a revisão de criação, consulta, teclado, responsividade e recuperação de intenção. No desktop, o plugin **credpay-frontend-qa** está no [catálogo do projeto](../.agents/plugins/marketplace.json). Reabra o aplicativo para carregar o catálogo CredPay, escolha o plugin no diretório e use a skill em uma nova sessão com o navegador integrado. O pacote fornece o roteiro e usa o controle de navegador disponível na sessão. [Documentação de plugins locais](https://developers.openai.com/plugins/build/plugins#install-a-local-plugin-manually)
-
 ## Jornada automatizada no CI
 
-Compose CI executa seis cenários de navegador Chromium (desktop e celular) contra os dois aplicativos reais após Smoke: aprovação com decimal/HTTP201/Location, reload com mesmo recibo e sem outro POST, rejeição e validação/404. Não há mock de API nesses cenários. Banco/broker/apps pertencem somente ao projeto descartável credpay-ci; cleanup always permanece limitado a ele. O teste não controla o Docker do seu computador nem substitui todos os testes Java/concorrência/reentrega.
+Compose CI executa seis cenários legados e seis de contas (incluindo cadastro por e-mail), em navegador Chromium (desktop e celular) contra os dois aplicativos reais após Smoke: aprovação com decimal/HTTP201/Location, reload com mesmo recibo e sem outro POST, rejeição e validação/404. Não há mock de API nesses cenários. Banco/broker/apps pertencem somente ao projeto descartável credpay-ci; cleanup always permanece limitado a ele. O teste não controla o Docker do seu computador nem substitui todos os testes Java/concorrência/reentrega.
 
 Verificações estruturais sem abrir navegador:
 

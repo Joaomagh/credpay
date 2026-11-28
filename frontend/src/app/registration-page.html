@@ -1,0 +1,40 @@
+<section class="auth-page" aria-labelledby="auth-heading">
+  <div class="auth-intro">
+    <span class="eyebrow">SEU NEGÓCIO COMEÇA POR AQUI</span>
+    <h2 class="auth-title">Um espaço seu.<br>Uma rotina mais simples.</h2>
+    <p>Organize seus clientes com uma conta própria. Cadastre seu e-mail e escolha uma senha para começar.</p>
+    <div class="auth-benefits">
+      <p><cp-icon name="users" /> Seus clientes em um só lugar</p>
+      <p><cp-icon name="shield" /> Seus dados separados de outras contas</p>
+    </div>
+    <span class="auth-tag">CREDPAY · GESTÃO DE COBRANÇAS</span>
+  </div>
+  <div class="auth-card">
+    <span class="eyebrow">CONTA CREDPAY</span>
+    @if (accepted()) {
+      <div role="status">
+        <h1 id="auth-heading">Continue para entrar</h1>
+        <p class="auth-subtitle">Entre com seu e-mail e senha. Se já tinha uma conta, sua senha anterior continua valendo.</p>
+      </div>
+      <a class="button primary" routerLink="/entrar">Ir para entrar</a>
+    } @else {
+      <h1 id="auth-heading">Crie sua conta</h1>
+      <p class="auth-subtitle">Use seu e-mail para começar, sem precisar de uma conta Google.</p>
+      <form (ngSubmit)="submit()" novalidate [attr.aria-busy]="busy()">
+        <label for="email">E-mail</label>
+        <input id="email" name="email" type="email" autocomplete="email" autocapitalize="none" spellcheck="false"
+          [(ngModel)]="email" maxlength="254" [readOnly]="busy()" required>
+        <label for="senha">Senha</label>
+        <input id="senha" name="senha" type="password" autocomplete="new-password"
+          [(ngModel)]="senha" maxlength="256" aria-describedby="password-help" [readOnly]="busy()" required>
+        <p class="helper registration-help" id="password-help">Pelo menos 8 caracteres. Prefira uma senha única ou uma frase fácil de lembrar.</p>
+        <label for="confirmacao">Confirme a senha</label>
+        <input id="confirmacao" name="confirmacao" type="password" autocomplete="new-password"
+          [(ngModel)]="confirmacao" maxlength="256" [readOnly]="busy()" required>
+        <p class="auth-error" role="alert">{{error()}}</p>
+        <button class="button primary" type="submit" [disabled]="busy()">{{busy() ? 'Criando conta…' : 'Criar minha conta'}}</button>
+      </form>
+      <p class="signup-help">Já tem conta? <a class="auth-text-link" routerLink="/entrar">Entrar</a></p>
+    }
+  </div>
+</section>
