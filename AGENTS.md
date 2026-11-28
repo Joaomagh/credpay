@@ -29,6 +29,7 @@ Os papéis estão em `docs/roles/`; prioridades em `docs/BACKLOG.md`. Agentes s�
 - Ao encerrar uma execução, entregar tabela com item, estado comprovado, próximo passo e dependência de João. Distinguir código local, teste local, CI, integração e publicação; uma etapa não comprova as seguintes.
 - Manter este arquivo como acordo único, sem criar um CLAUDE.md duplicado. Atualizar cada documento somente quando houver decisão, estado ou evidência pertinente.
 - João reafirmou foco no produto de cobranças: interface principal com Google/cadastro automático, entrada direta na área útil, temas claro/escuro e linguagem de negócio, sem UUIDs ou console intermediário. A skill de frontend do repositório deve refletir essa direção. Preservar o simulador como legado e não apresentar cobranças/recebimentos ainda incompletos como disponíveis.
+- Em28/11, João ampliou autenticação para cadastro com e-mail/senha, mantendo Google principal e login obrigatório por qualquer um desses métodos. Isso substitui a preferência anterior por Google obrigatório e a exclusão anterior de cadastro próprio. Implementar C09 conforme docs/EMAIL_REGISTRATION.md, depois retomar C02–C04; tema só com ícones sol/lua, preservando nome acessível. Não associar contas pelo e-mail nem alegar e-mail verificado sem fluxo de confirmação.
 
 ### Leitura e contexto
 

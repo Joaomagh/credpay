@@ -11,11 +11,12 @@
 
 ## Agora
 
-- [ ] C02 na branch feat/cobrancas: PedidoCobranca red23/green23; serviço red9/green9 e precisão temporal red1/green. Verify afetado46/0 e preflight33/0, sem Docker local. Contrato em docs/BILLING_CONTRACT.md; spec§9.178.
-- Próxima ação única: provar green real de CobrancaPersistenceIntegrationTest no CI. Red observado9 testes/8 falhas esperadas no run46055051447; V15/adapter locais implementados, ainda sem green SQL comprovado. Modo manual focado usa job/concorrência separados e não substitui os gates completos de PR/main.
+- [ ] C09: João autorizou cadastro próprio com e-mail/senha em28/11; Google principal e tema só com ícones. Contrato em docs/EMAIL_REGISTRATION.md; começar por domínio/serviço em TDD, depois HTTP/SQL e Angular/Worker. Confirmação de e-mail e recuperação não estão implementadas.
+- Próxima ação única: observar red de PedidoCadastroContaTest e implementar somente suas regras.
 
 ## Próximo
 
+- Retomar C02 na branch feat/cobrancas: domínio/serviço verdes; red SQL9/8 observado no run46055051447, V15/adapter locais aguardam green real. Modo manual focado não substitui gates completos de PR/main. Contrato em docs/BILLING_CONTRACT.md; spec§9.178/9.180.
 - Concluir provas SQL de commit, constraints, concorrência, replay, conflito, isolamento e rollback. Depois HTTP/segurança e jornada Angular de criação.
 - C03: consultar/listar abertas e vencidas com Clock/São Paulo. C04: recebimento integral manual único e histórico. Cada comportamento começa pelo teste.
 - Primeiro login Google real local passou: sessão ativa observada na interface por João. João confirmou cliente preservado após sair/entrar; segunda identidade e reinício ainda pendentes. docs/GOOGLE_SETUP.md; conta vazia no primeiro login, Google obrigatório na apresentação ao RH, sem consulta anônima. Nunca enviar segredo no chat.

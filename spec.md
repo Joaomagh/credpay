@@ -3755,6 +3755,14 @@ Continuidade separada de C02: red SQL9 testes/8 falhas/0 erros observado no [run
 
 Pedido visual de João: retirar aspecto de botão dentro do botão. Removidas somente as duas paths da moldura do asset oficial; viewport do SVG ajustado ao glifo20x20, preservando paths, máscara, filtros, gradientes e proporções do G. CSS: espaçamento12px, padding equilibrado, tipografia sans-serif500, borda única, raio12px e estados hover/active/focus. Destino e comportamento OAuth preservados; alteração visual sem red artificial. check e build378,14kB em15,432s passaram; suíte88 Angular+2 Node/0. Logs ignorados google-button-build/tests. QA no4200 confirmou imagem visível sem caixa interna em desktop e390px; foco de teclado com outline contrastante. Viewport restaurado e aba temporária fechada. Nenhuma chamada Docker, dependência, CDN ou mudança de autenticação. Incremento local, sem CI/publicação.
 
+### 9.182 Cadastro próprio C09 — contrato e preparação do red SQL
+
+Em28/11, João autorizou cadastro e-mail/senha além de Google, tema somente sol/lua e retomada do backlog de negócio. Alterou explicitamente mínimo de senha de15 para8 caracteres; limite128 pontos de código, sem trim/truncamento, e política de tentativas mantida. Trade-off em docs/EMAIL_REGISTRATION.md: não alegar atendimento ao mínimo15 recomendado sem MFA. Não há envio/verificação de e-mail, recuperação, MFA ou bloqueio completo de senhas vazadas; não unir conta Google pelo endereço.
+
+TDD local: PedidoCadastroConta red24/24, serviço red3 (2 falhas e1 erro pelo stub esperado), mínimo8 red por rejeição indevida, HTTP red9/9 por404, limites red2/34 por ausência de429. Após implementação, verify focado76/0 em48,699s incluindo domínio/serviço/HTTP/limites e regressão do domínio/serviço C02. Slice MVC passou a importar JacksonConfiguration real para testar recusa de coerção numérica400; não afrouxar para422. Logs ignorados c09-pedido-red, c09-service-red, c09-minimo-oito-red, c09-http-red, c09-limites-red e c09-sql-red-preflight. Warning de CDS/Mockito e aviso de API depreciada anterior preservados; sem nova dependência.
+
+RegistroContaController recebe somente email/senha, limite de corpo8192 herdado do advice real, erro400/422/413 e resposta202 vazia/no-store. ContasEmailJdbc permanece stub e coluna email/migrationV16 não existem neste checkpoint, até observar red real. Sete casos novos em SessaoDemoHttpTest cobrem persistência/conta vazia/hash, duplicação sem alteração, concorrência, constraints, CSRF/login normalizado, resposta genérica e limite antes deCSRF. Foco manual email-registration no workflow existente usa job/concorrência próprios e não publica cobertura parcial; PR/main continuam na suíte completa. Sintaxe YAML validada com SnakeYAML em cache; compilação local não comprova SQL/HTTP integrado. Interface de registro em TDD local, ainda não entregue.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 

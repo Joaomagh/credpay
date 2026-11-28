@@ -12,6 +12,8 @@ O primeiro resultado de produto será permitir que uma conta organize clientes e
 
 ### Primeiro MVP de cobranças
 
+**Ampliação autorizada em28/11:** permitir cadastro próprio com e-mail/senha além de Google. Login continua obrigatório, com escolha do método; Google é principal. C09 cobre conta vazia, senha com hash, unicidade, CSRF, limites e interface, conforme docs/EMAIL_REGISTRATION.md. Não vincular contas por e-mail. Confirmação de e-mail/recuperação precisam de fluxo e serviço próprios; não fingir que existem.
+
 Jornada: entrar na conta → cadastrar cliente → criar cobrança com descrição, valor e vencimento → consultar situação → registrar recebimento integral manual → consultar histórico.
 
 Recorte inicial de implementação:

@@ -17,9 +17,15 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.UUID;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import tools.jackson.databind.ObjectMapper;
+import br.com.credpay.transacoes.application.CadastroContaEmail;
+import br.com.credpay.transacoes.domain.PedidoCadastroConta;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -81,6 +87,9 @@ class SessaoDemoHttpTest {
     private PasswordEncoder encoder;
 
     @Autowired
+    private CadastroContaEmail cadastroEmail;
+
+    @Autowired
     private ObjectMapper json;
 
     @Autowired
@@ -89,6 +98,114 @@ class SessaoDemoHttpTest {
     @BeforeEach
     void iniciarJanelaIsolada() {
         relogio.avancarMinuto();
+    }
+
+    @Test
+    void cadastroDevePersistirContaVaziaComHashEEmailUnico() {
+        var email = "vazia-" + UUID.randomUUID() + "@example.com";
+        var senha = "senha de ensaio";
+        assertThatCode(() -> cadastroEmail.cadastrar(new PedidoCadastroConta(email, senha))).doesNotThrowAnyException();
+        var conta = jdbc.queryForObject("SELECT id FROM contas WHERE email = ?", UUID.class, email);
+        var hash = jdbc.queryForObject("SELECT senha_hash FROM contas WHERE id = ?", String.class, conta);
+        assertThat(encoder.matches(senha, hash)).isTrue();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM clientes WHERE conta_id = ?", Integer.class, conta)).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM transacoes WHERE conta_id = ?", Integer.class, conta)).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM identidades_externas WHERE conta_id = ?", Integer.class, conta)).isZero();
+    }
+
+    @Test
+    void cadastroDuplicadoNaoDeveTrocarSenhaOuCriarOutraConta() {
+        var email = "repetida-" + UUID.randomUUID() + "@example.com";
+        var senha = "primeira senha de ensaio";
+        assertThatCode(() -> cadastroEmail.cadastrar(new PedidoCadastroConta(email, senha))).doesNotThrowAnyException();
+        var original = jdbc.queryForMap("SELECT id, senha_hash FROM contas WHERE email = ?", email);
+        cadastroEmail.cadastrar(new PedidoCadastroConta(email.toUpperCase(), "outra senha de ensaio"));
+        assertThat(jdbc.queryForMap("SELECT id, senha_hash FROM contas WHERE email = ?", email)).isEqualTo(original);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM contas WHERE email = ?", Integer.class, email)).isOne();
+    }
+
+    @Test
+    void cadastroConcorrenteDeveCriarSomenteUmaConta() throws Exception {
+        var email = "concorrente-" + UUID.randomUUID() + "@example.com";
+        var inicio = new CountDownLatch(1);
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var primeiro = executor.submit(() -> {
+                inicio.await();
+                cadastroEmail.cadastrar(new PedidoCadastroConta(email, "senha de ensaio A"));
+                return true;
+            });
+            var segundo = executor.submit(() -> {
+                inicio.await();
+                cadastroEmail.cadastrar(new PedidoCadastroConta(email, "senha de ensaio B"));
+                return true;
+            });
+            inicio.countDown();
+            assertThat(primeiro.get(15, TimeUnit.SECONDS)).isTrue();
+            assertThat(segundo.get(15, TimeUnit.SECONDS)).isTrue();
+        }
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM contas WHERE email = ?", Integer.class, email)).isOne();
+    }
+
+    @Test
+    void cadastroSqlDeveExigirEmailCanonicoEUnico() {
+        var email = "sql-" + UUID.randomUUID() + "@example.com";
+        var sql = "INSERT INTO contas (id, usuario, senha_hash, email) VALUES (?, ?, ?, ?)";
+        assertThatCode(() -> jdbc.update(sql, UUID.randomUUID(), "email-" + UUID.randomUUID(), "a".repeat(96), email))
+                .doesNotThrowAnyException();
+        org.assertj.core.api.Assertions.assertThatExceptionOfType(org.springframework.dao.DataIntegrityViolationException.class)
+                .isThrownBy(() -> jdbc.update(sql, UUID.randomUUID(), "email-" + UUID.randomUUID(), "a".repeat(96), email));
+        org.assertj.core.api.Assertions.assertThatExceptionOfType(org.springframework.dao.DataIntegrityViolationException.class)
+                .isThrownBy(() -> jdbc.update(sql, UUID.randomUUID(), "email-" + UUID.randomUUID(), "a".repeat(96), " Nome@EXAMPLE.COM "));
+    }
+
+    @Test
+    void cadastroHttpDeveExigirCsrfEPermitirLoginNormalizadoSemAutenticarNoCadastro() throws Exception {
+        var email = "pessoa+" + UUID.randomUUID() + "@example.com";
+        var senha = "senha de ensaio";
+        try (var cliente = HttpClient.newBuilder().cookieHandler(new CookieManager()).build()) {
+            assertThat(registrarEmail(cliente, email, senha, null).statusCode()).isEqualTo(403);
+            var resposta = registrarEmail(cliente, email, senha, csrf(cliente));
+            assertThat(resposta.statusCode()).isEqualTo(202);
+            assertThat(resposta.body()).isEmpty();
+            assertThat(resposta.headers().firstValue("Cache-Control")).contains("no-store");
+            assertThat(get(cliente, "/auth/sessao").statusCode()).isEqualTo(401);
+            assertThat(post(cliente, "/auth/login", formulario(" " + email.toUpperCase() + " ", senha), csrf(cliente))).isEqualTo(204);
+            conferirConta(cliente, email);
+            assertThat(registrarEmail(cliente, "outra@example.com", senha, csrf(cliente)).statusCode()).isEqualTo(403);
+        }
+    }
+
+    @Test
+    void cadastroHttpDuplicadoDeveTerMesmaRespostaSemSobrescreverCredencial() throws Exception {
+        var email = "replay-" + UUID.randomUUID() + "@example.com";
+        var senha = "senha de ensaio original";
+        try (var cliente = HttpClient.newBuilder().cookieHandler(new CookieManager()).build()) {
+            var token = csrf(cliente);
+            var primeira = registrarEmail(cliente, email, senha, token);
+            var repetida = registrarEmail(cliente, email, "outra senha de ensaio", token);
+            assertThat(primeira.statusCode()).isEqualTo(202);
+            assertThat(repetida.statusCode()).isEqualTo(primeira.statusCode());
+            assertThat(repetida.body()).isEqualTo(primeira.body());
+            assertThat(post(cliente, "/auth/login", formulario(email, "outra senha de ensaio"), token)).isEqualTo(401);
+            assertThat(post(cliente, "/auth/login", formulario(email, senha), csrf(cliente))).isEqualTo(204);
+        }
+    }
+
+    @Test
+    void cadastroHttpDeveLimitarAntesDeCsrfOuHash() throws Exception {
+        try (var cliente = HttpClient.newBuilder().cookieHandler(new CookieManager()).build()) {
+            for (int tentativa = 0; tentativa < 5; tentativa++) {
+                assertThat(registrarEmail(cliente, "limite@example.com", "senha de ensaio", null).statusCode()).isEqualTo(403);
+            }
+            conferirLimite(registrarEmail(cliente, "limite@example.com", "senha de ensaio", null));
+        }
+    }
+
+    private HttpResponse<String> registrarEmail(HttpClient cliente, String email, String senha, String csrf) throws Exception {
+        var pedido = requisicao("/auth/registro").header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(json.writeValueAsString(Map.of("email", email, "senha", senha))));
+        if (csrf != null) { pedido.header("X-CSRF-TOKEN", csrf); }
+        return cliente.send(pedido.build(), HttpResponse.BodyHandlers.ofString());
     }
 
     @Test
@@ -355,7 +472,7 @@ class SessaoDemoHttpTest {
     }
 
     private String formulario(String nome, String senha) {
-        return "usuario=" + nome + "&senha=" + URLEncoder.encode(senha, StandardCharsets.UTF_8);
+        return "usuario=" + URLEncoder.encode(nome, StandardCharsets.UTF_8) + "&senha=" + URLEncoder.encode(senha, StandardCharsets.UTF_8);
     }
 
     private HttpResponse<String> get(HttpClient cliente, String caminho) throws Exception {

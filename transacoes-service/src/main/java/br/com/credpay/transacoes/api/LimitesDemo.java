@@ -25,6 +25,8 @@ final class LimitesDemo {
             PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/auth/csrf");
     private static final PathPatternRequestMatcher LOGIN =
             PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/auth/login");
+    private static final PathPatternRequestMatcher REGISTRO =
+            PathPatternRequestMatcher.pathPattern(HttpMethod.POST, "/auth/registro");
     private static final PathPatternRequestMatcher INICIO_GOOGLE =
             PathPatternRequestMatcher.pathPattern(HttpMethod.GET, "/auth/externo/google");
     private static final PathPatternRequestMatcher RETORNO_GOOGLE =
@@ -50,7 +52,9 @@ final class LimitesDemo {
     void antesDeCsrf(ServletRequest requisicao, ServletResponse resposta, FilterChain proximo)
             throws IOException, ServletException {
         var http = (HttpServletRequest) requisicao;
-        if (TOKEN.matches(http)) {
+        if (REGISTRO.matches(http)) {
+            aplicar(Operacao.REGISTRO, http.getRemoteAddr(), http, (HttpServletResponse) resposta, proximo);
+        } else if (TOKEN.matches(http)) {
             aplicar(Operacao.TOKEN, http.getRemoteAddr(), http, (HttpServletResponse) resposta, proximo);
         } else if (LOGIN.matches(http) || INICIO_GOOGLE.matches(http) || RETORNO_GOOGLE.matches(http)) {
             aplicar(Operacao.LOGIN, http.getRemoteAddr(), http, (HttpServletResponse) resposta, proximo);
@@ -108,7 +112,7 @@ final class LimitesDemo {
     }
 
     enum Operacao {
-        TOKEN(30, 120), LOGIN(20, 60), CRIACAO(12, 120), CONSULTA(45, 300);
+        TOKEN(30, 120), LOGIN(20, 60), REGISTRO(5, 10), CRIACAO(12, 120), CONSULTA(45, 300);
 
         private final int porOrigem;
         private final int global;
