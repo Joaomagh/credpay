@@ -13,9 +13,11 @@
 .auth-card .eyebrow { color:var(--primary); }
 h1 { font-size:clamp(1.8rem,2.5vw,2.3rem); line-height:1.18; margin:16px 0; letter-spacing:-.04em; }
 .auth-subtitle { color:var(--muted); margin:0 0 28px; }
-.google-button { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; min-height:52px; padding:4px 16px 4px 8px; border:1px solid #747775; border-radius:10px; color:#1f1f1f; background:#fff; font-size:1rem; font-weight:600; }
-.google-button img { flex-shrink:0; }
-.google-button:hover { box-shadow:0 2px 8px #0002; background:#f8faf9; }
+.google-button { display:flex; align-items:center; justify-content:center; gap:12px; width:100%; min-height:52px; padding:14px 20px; border:1px solid #747775; border-radius:12px; color:#1f1f1f; background:#fff; font:500 1rem/1.25 "Segoe UI",Arial,sans-serif; letter-spacing:.01em; box-shadow:0 1px 3px #00000014; }
+.google-button img { display:block; width:20px; height:20px; flex-shrink:0; }
+.google-button:hover { border-color:#454746; box-shadow:0 3px 12px #00000020; background:#f8faf9; }
+.google-button:active { background:#edf2ef; box-shadow:inset 0 1px 3px #00000014; }
+.google-button:focus-visible { outline:3px solid var(--primary); outline-offset:4px; }
 .signup-help { color:var(--muted); font-size:.875rem; line-height:1.7; margin:16px 0 28px; }
 .password-access { border-top:1px solid var(--line); padding-top:22px; }
 summary { color:var(--muted); font-size:.875rem; cursor:pointer; min-height:44px; padding-block:10px; }

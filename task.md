@@ -7,7 +7,7 @@
 - C07 integrado na PR250/main df45ca5 após gates verdes no head29c8150: Maven699/0,83 Angular+2 Node,96 contratos Worker+4 runtime, Compose/Flow/imagens/inventários e Sonar89,8%/0 apontamentos novos. Primeiro login Google real local comprovado por João; hospedagem ainda pendente. spec§9.177/9.179.
 - C01 integrado na PR248/main e54cd39: clientes por conta, persistência e tela. Houve intermitência posterior no primeiro cenário desktop; três ensaios recentes com instrumentação passaram. Causa não identificada; preservar diagnóstico, sem declarar correção causal.
 
-- C08 local: entrada de produto, Google/cadastro automático, encaminhamento direto a Clientes, sem UUIDs, temas persistidos e margens responsivas.88 Angular+2 Node, build e4 runtime Worker passaram; CI/integracão pendentes. Skill atualizada. spec§9.180.
+- C08 local: entrada de produto, Google/cadastro automático, encaminhamento direto a Clientes, sem UUIDs, temas persistidos e margens responsivas.88 Angular+2 Node, build e4 runtime Worker passaram; CI/integracão pendentes. Skill atualizada. Refino visual do botão Google em28/11: glifo sem moldura extra, foco/hover e revisão desktop/celular; testes88+2/build passaram. spec§9.180–9.181.
 
 ## Agora
 

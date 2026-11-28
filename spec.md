@@ -3751,6 +3751,10 @@ Skill credpay-frontend e manifesto local1.1.0 atualizados para direção de prod
 
 Continuidade separada de C02: red SQL9 testes/8 falhas/0 erros observado no [run46055051447](https://github.com/Joaomagh/credpay/actions/runs/46055051447), ausência de cobrancas. V15/JDBC foram implementados depois, com verify afetado46/0 e BUILD SUCCESS em18,421s; green PostgreSQL real permanece pendente. A troca de foco para experiência não converte esse preflight em aceite SQL.
 
+### 9.181 Acabamento do botão Google — 28/11/2026
+
+Pedido visual de João: retirar aspecto de botão dentro do botão. Removidas somente as duas paths da moldura do asset oficial; viewport do SVG ajustado ao glifo20x20, preservando paths, máscara, filtros, gradientes e proporções do G. CSS: espaçamento12px, padding equilibrado, tipografia sans-serif500, borda única, raio12px e estados hover/active/focus. Destino e comportamento OAuth preservados; alteração visual sem red artificial. check e build378,14kB em15,432s passaram; suíte88 Angular+2 Node/0. Logs ignorados google-button-build/tests. QA no4200 confirmou imagem visível sem caixa interna em desktop e390px; foco de teclado com outline contrastante. Viewport restaurado e aba temporária fechada. Nenhuma chamada Docker, dependência, CDN ou mudança de autenticação. Incremento local, sem CI/publicação.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
