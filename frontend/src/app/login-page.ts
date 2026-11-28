@@ -2,12 +2,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { Icon } from './icon';
 import { SessionApi } from './session-api';
 import { SessionContext } from './session-context';
 import { retryMessage } from './retry-message';
+import { validEmail } from './email';
 
 @Component({
   selector: 'cp-login', imports: [FormsModule, Icon, RouterLink], templateUrl: './login-page.html',
@@ -17,6 +18,7 @@ export class LoginPage {
   private readonly api = inject(SessionApi);
   readonly context = inject(SessionContext);
   private readonly destroy = inject(DestroyRef);
+  private readonly router = inject(Router);
   usuario = '';
   senha = '';
   readonly sessao = this.context.session;
@@ -34,6 +36,7 @@ export class LoginPage {
       error: () => this.google.set(false)
     });
     this.context.check().pipe(takeUntilDestroyed(this.destroy), finalize(() => this.busy.set(false))).subscribe({
+      next: session => { if (session && this.context.required) this.openWorkspace(); },
       error: () => this.error.set('O serviço de login está indisponível. Tente novamente em instantes.')
     });
   }
@@ -42,9 +45,12 @@ export class LoginPage {
     if (this.busy() || this.sessao()) return;
     this.error.set('');
     this.note.set('');
-    const usuario = this.usuario.trim();
-    if (!/^[a-z0-9][a-z0-9._-]{2,63}$/.test(usuario) || !this.senha || this.senha.length > 128) {
-      this.error.set('Confira o usuário e a senha da sua conta de demonstração.');
+    const entrada = this.usuario.trim();
+    const usuario = entrada.includes('@') ? entrada.toLowerCase() : entrada;
+    const valido = usuario.includes('@') ? validEmail(usuario)
+      : /^[a-z0-9][a-z0-9._-]{2,63}$/.test(usuario);
+    if (!valido || !this.senha || this.senha.length > 256 || Array.from(this.senha).length > 128) {
+      this.error.set('Confira o usuário e a senha da sua conta.');
       return;
     }
     const senha = this.senha;
@@ -54,12 +60,17 @@ export class LoginPage {
       next: session => {
         this.usuario = '';
         this.context.confirm(session);
+        if (this.context.required) this.openWorkspace();
         this.note.set('Sessão confirmada.');
       },
       error: error => this.error.set(retryMessage(error, 'tentar entrar')
         ?? (error instanceof HttpErrorResponse && error.status === 401
           ? 'Usuário ou senha inválidos.' : 'Não foi possível confirmar a sessão. Tente novamente.'))
     });
+  }
+
+  private openWorkspace(): void {
+    void this.router.navigateByUrl('/cadastros/clientes', {replaceUrl: true});
   }
 
   sair(): void {

@@ -46,6 +46,16 @@ export class SessionApi {
     }));
   }
 
+  register(email: string, senha: string) {
+    return this.http.get<unknown>('/auth/csrf').pipe(timeout(8000), switchMap(value => {
+      const {token} = object(value);
+      if (typeof token !== 'string' || !token) throw new Error('Token de sessão inválido.');
+      return this.http.post<void>('/auth/registro', {email, senha}, {
+        headers: {'X-CSRF-TOKEN': token}
+      }).pipe(timeout(8000));
+    }));
+  }
+
   logout(session: AccountSession) {
     return this.http.post<void>('/auth/logout', '', { headers: { 'X-CSRF-TOKEN': session.csrf } })
       .pipe(timeout(8000));

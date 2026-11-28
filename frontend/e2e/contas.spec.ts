@@ -3,23 +3,62 @@ import { expect, test, type Page } from '@playwright/test';
 const senhaA = process.env['CREDPAY_CI_PASSWORD_A'];
 const senhaB = process.env['CREDPAY_CI_PASSWORD_B'];
 
-async function entrar(page: Page, usuario: string, senha: string): Promise<void> {
+async function entrar(page: Page, usuario: string, senha: string, legado = false): Promise<void> {
   await expect(page.getByRole('heading', {name: 'Entre na sua conta'})).toBeVisible();
-  await page.getByLabel('Usuário', {exact: true}).fill(usuario);
+  await page.getByLabel('E-mail ou usuário', {exact: true}).fill(usuario);
   await page.getByLabel('Senha', {exact: true}).fill(senha);
   const login = page.waitForResponse(response => new URL(response.url()).pathname === '/auth/login');
   await page.getByRole('button', {name: 'Entrar', exact: true}).click();
   expect((await login).status()).toBe(204);
-  await expect(page.getByRole('heading', {name: 'Sessão ativa'})).toBeVisible();
-  await page.getByRole('link', {name: 'Abrir console'}).click();
-  await expect(page.getByRole('heading', {name: 'Nova transação.'})).toBeVisible();
+  await expect(page.getByRole('heading', {name: 'Clientes.', exact: true})).toBeVisible();
+  if (legado) {
+    await page.goto('/nova');
+    await expect(page.getByRole('heading', {name: 'Nova transação.'})).toBeVisible();
+  }
 }
 
 async function sair(page: Page): Promise<void> {
   await page.goto('/entrar');
+  const logout = page.waitForResponse(response => new URL(response.url()).pathname === '/auth/logout');
   await page.getByRole('button', {name: 'Sair da conta'}).click();
-  await expect(page.getByText('Sessão encerrada.', {exact: true})).toBeVisible();
+  expect((await logout).status()).toBe(204);
+  await expect(page.getByRole('heading', {name: 'Entre na sua conta'})).toBeVisible();
 }
+
+test('cadastro por e-mail cria conta vazia e recupera clientes após reentrada', async ({page}, testInfo) => {
+  if (!senhaA) throw new Error('A senha descartável do ensaio não foi preparada.');
+  const email = 'cadastro-' + testInfo.project.name + '-' + crypto.randomUUID() + '@example.com';
+  const nomeCliente = 'Cliente do cadastro ' + testInfo.project.name;
+  await test.step('cadastrar por e-mail sem Google', async () => {
+    await page.goto('/entrar');
+    await page.getByRole('link', {name: 'Criar conta com e-mail', exact: true}).click();
+    await page.getByLabel('E-mail', {exact: true}).fill(email);
+    await page.getByLabel('Senha', {exact: true}).fill(senhaA);
+    await page.getByLabel('Confirme a senha', {exact: true}).fill(senhaA);
+    const registration = page.waitForResponse(response => new URL(response.url()).pathname === '/auth/registro');
+    await page.getByRole('button', {name: 'Criar minha conta', exact: true}).click();
+    expect((await registration).status()).toBe(202);
+    await expect(page.getByRole('heading', {name: 'Continue para entrar'})).toBeVisible();
+    expect((await page.request.get('/auth/sessao')).status()).toBe(401);
+  });
+  await test.step('entrar na conta vazia e cadastrar um cliente', async () => {
+    await page.getByRole('link', {name: 'Ir para entrar', exact: true}).click();
+    await entrar(page, email, senhaA);
+    await expect(page.getByRole('heading', {name: 'Nenhum cliente cadastrado.'})).toBeVisible();
+    await page.getByLabel('Nome do cliente', {exact: true}).fill(nomeCliente);
+    const created = page.waitForResponse(response => response.request().method() === 'POST'
+      && new URL(response.url()).pathname === '/clientes');
+    await page.getByRole('button', {name: 'Cadastrar cliente', exact: true}).click();
+    expect((await created).status()).toBe(201);
+    await expect(page.getByRole('list', {name: 'Clientes da sua conta'})).toContainText(nomeCliente);
+  });
+  await test.step('sair e reentrar na mesma conta preserva o cliente', async () => {
+    await sair(page);
+    await entrar(page, email.toUpperCase(), senhaA);
+    await expect(page.getByRole('list', {name: 'Clientes da sua conta'})).toContainText(nomeCliente);
+    expect(await page.locator('body').evaluate(body => body.scrollWidth <= document.documentElement.clientWidth)).toBe(true);
+  });
+});
 
 test('duas contas isolam cadastro e consulta de clientes', async ({page}, testInfo) => {
   if (!senhaA || !senhaB) throw new Error('As contas descartáveis do ensaio não foram preparadas.');
@@ -84,7 +123,7 @@ test('duas contas isolam sessão, consulta e recibo na mesma aba', async ({page,
 
   await test.step('autenticar A, criar e acompanhar a aprovação real', async () => {
     await page.goto('/nova');
-    await entrar(page, 'conta-ci-a', senhaA);
+    await entrar(page, 'conta-ci-a', senhaA, true);
     await page.getByRole('textbox', {name: 'Valor da transação'}).fill('50,001');
     const created = page.waitForResponse(response => response.request().method() === 'POST'
       && new URL(response.url()).pathname === '/transacoes');
@@ -109,7 +148,7 @@ test('duas contas isolam sessão, consulta e recibo na mesma aba', async ({page,
   });
 
   await test.step('autenticar B e recusar o UUID e o recibo de A', async () => {
-    await entrar(page, 'conta-ci-b', senhaB);
+    await entrar(page, 'conta-ci-b', senhaB, true);
     await expect(page.getByText('Intenção recuperada desta aba', {exact: true})).toHaveCount(0);
     await expect(page.getByRole('region', {name: 'Resultado da transação'})).toHaveCount(0);
     const denied = page.waitForResponse(response => new URL(response.url()).pathname === '/transacoes/' + id);
@@ -120,7 +159,7 @@ test('duas contas isolam sessão, consulta e recibo na mesma aba', async ({page,
 
   await test.step('retomar o recibo de A sem outro POST', async () => {
     await sair(page);
-    await entrar(page, 'conta-ci-a', senhaA);
+    await entrar(page, 'conta-ci-a', senhaA, true);
     await expect(page.getByText('Intenção recuperada desta aba', {exact: true})).toBeVisible();
     await expect(page.locator('code')).toHaveText(id);
     expect(posts).toBe(1);

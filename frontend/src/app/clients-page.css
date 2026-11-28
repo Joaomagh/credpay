@@ -20,3 +20,10 @@ dt { font-size:.8rem; color:var(--muted); margin-top:14px }
 dd { margin:5px 0 0; overflow-wrap:anywhere }
 @media(max-width:1000px) { .clients-grid { grid-template-columns:minmax(0,1fr) } }
 @media(max-width:520px) { .client-list li { align-items:stretch; flex-direction:column; gap:10px } .client-list button { align-self:flex-start } .client-form,.client-directory,.client-detail,.client-receipt { padding:20px } }
+.client-form input { background:var(--background); color:var(--text); border-color:var(--input-line); min-height:48px; }
+.client-list { margin:4px 0 24px; }
+.client-list li { padding:20px 0; }
+.client-label span { color:var(--muted); font-size:.8125rem; }
+.client-label strong { font-size:1rem; margin-bottom:6px; }
+.client-directory .section-line { margin-bottom:16px; }
+@media(max-width:520px) { .client-list li { flex-direction:row; align-items:center; } .client-list button { flex-shrink:0; } }

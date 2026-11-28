@@ -1,31 +1,29 @@
 # CredPay — Tarefas
 
-> Um incremento = um resultado verificável. Direção em CREDPAY_PLAN.md; prioridades em docs/BACKLOG.md; evidências em spec.md. Uma única frente de implementação.
+> Uma frente de implementação. Direção em CREDPAY_PLAN.md; prioridades em docs/BACKLOG.md; evidências em spec.md; quadro em docs/DELIVERY_STATUS.md.
 
 ## Último incremento
 
-- 26/11/2026 — C01 integrado na PR248/main `e54cd39`: API e tela de clientes, V12, isolamento e reinício. Head `d003f93` com17 checks verdes,651 testes Java,81 Angular+2 controles Node e10 jornadas reais. QA manual autenticado não realizado sem API local; CI cobriu o fluxo. spec§9.176.
-- 26/11/2026 — C00: direção aprovada para **Gestão de cobranças e acompanhamento de recebimentos**, com público geral e nutricionista como possível primeiro caso, ainda sem validação real. Plano, backlog, apresentação e papéis alinhados; nenhuma funcionalidade nova entregue. Decisões e limites em spec§1.1/§9.175.
-- Base anterior: simulador com contas, Angular, processamento assíncrono, recuperação e CI. Evidências históricas em spec§9.142–9.174, docs/V1_VALIDATION.md e docs/V1_CANDIDATE.md; aceite pessoal da v1 permanece adiado.
+- C07 integrado na PR250/main df45ca5 após gates verdes no head29c8150: Maven699/0,83 Angular+2 Node,96 contratos Worker+4 runtime, Compose/Flow/imagens/inventários e Sonar89,8%/0 apontamentos novos. Primeiro login Google real local comprovado por João; hospedagem ainda pendente. spec§9.177/9.179.
+- C01 integrado na PR248/main e54cd39: clientes por conta, persistência e tela. Houve intermitência posterior no primeiro cenário desktop; três ensaios recentes com instrumentação passaram. Causa não identificada; preservar diagnóstico, sem declarar correção causal.
+
+- C08 local: entrada de produto, Google/cadastro automático, encaminhamento direto a Clientes, sem UUIDs, temas persistidos e margens responsivas.88 Angular+2 Node, build e4 runtime Worker passaram; CI/integracão pendentes. Skill atualizada. Refino visual do botão Google em28/11: glifo sem moldura extra, foco/hover e revisão desktop/celular; testes88+2/build passaram. spec§9.180–9.181.
 
 ## Agora
 
-- [ ] Fechar C07 na PR250:9d8134c passou Maven699/0, Flow, imagens, inventários e Sonar89,8%/0 apontamentos novos. Compose falhou no primeiro cenário desktop de clientes; causa ainda desconhecida. Instrumentação isolada fcd2ad5/run46049424627 passou4 jornadas na primeira tentativa; repetição em andamento. Levar diagnóstico à PR e repetir gates, sem enfraquecer testes. Google real/provisionamento pendentes; login obrigatório, conta inicial vazia, custo zero e sem k3s. spec§9.177 e docs/DELIVERY_STATUS.md.
-
-Execução ativa autorizada em 26/11: 18:37:41–23:37:41 (`America/Sao_Paulo`), cinco horas. Driver mantém implementação única; revisão/P.O. em paralelo conforme os papéis. Branch `feat/gestao-cobrancas` criada a partir da main local, preservando `feat/postgres-alpine-restore` e seu checkpoint. No fim da janela, deixar evidências e uma próxima ação recuperável.
-
-Houve interrupção por limite de uso aproximadamente às19:43 e retomada às22:48 a pedido de João. A janela autorizada não equivale a cinco horas de execução contínua. João corrigiu a contagem ao retomar às23:44: ainda restam53% das cinco horas (2h39 de execução). Prosseguir com esse saldo e priorizar a versão publicável; não encerrar pela janela de relógio anterior. Publicação solicitada, destino/acesso e teto zero em verificação; não criar gasto.
+- [ ] C09: João autorizou cadastro próprio com e-mail/senha em28/11; Google principal e tema só com ícones. Contrato em docs/EMAIL_REGISTRATION.md; começar por domínio/serviço em TDD, depois HTTP/SQL e Angular/Worker. Confirmação de e-mail e recuperação não estão implementadas.
+- Próxima ação única: validar correções do gate e integrar C09. Head e06ad49 passou786 Java e Compose com6 jornadas de contas+6 legadas; Sonar recusou5 apontamentos, corrigidos sem supressão. Local:76 Java/114 Angular+2 Node/build verdes. Depois retomar HTTP/tela C02.
 
 ## Próximo
 
-- C07: concluir callback validado e Angular; primeiro Google válido cria conta vazia por escolha de João. Hospedagem/projeto Google ainda não existem. Preparar configuração antes do provisionamento, Cloudflare Free e Compose; k3s retirado da fila em27/11. Preservar sessão/propriedade; não vincular por e-mail, simular senha local ou armazenar tokens no Angular.
-- C02: criar cobrança com cliente da mesma conta, descrição, BRL, vencimento e idempotência; contrato refinado em docs/BILLING_CONTRACT.md, ainda sem implementação. Depois C03/C04: consulta por situação e recebimento integral manual com histórico.
-- Validar a rotina e a dificuldade de uma pessoa do público quando João trouxer acesso/feedback; não presumir entrevista ou uso pela nutricionista. Integração de provedor será posterior, em ambiente de testes.
+- Retomar C02 na branch feat/cobrancas: domínio/serviço verdes; red SQL9/8 observado no run46055051447, V15/adapter locais aguardam green real. Modo manual focado não substitui gates completos de PR/main. Contrato em docs/BILLING_CONTRACT.md; spec§9.178/9.180.
+- Concluir provas SQL de commit, constraints, concorrência, replay, conflito, isolamento e rollback. Depois HTTP/segurança e jornada Angular de criação.
+- C03: consultar/listar abertas e vencidas com Clock/São Paulo. C04: recebimento integral manual único e histórico. Cada comportamento começa pelo teste.
+- Primeiro login Google real local passou: sessão ativa observada na interface por João. João confirmou cliente preservado após sair/entrar; segunda identidade e reinício ainda pendentes. docs/GOOGLE_SETUP.md; conta vazia no primeiro login, Google principal e alternativa e-mail/senha na apresentação ao RH, sem consulta anônima. Nunca enviar segredo no chat.
 
-## Pendências preservadas da base
+## Publicação e pendências preservadas
 
-- Candidata PostgreSQL PR244: os ZIPs do run 44958057682 registraram pacotes corrigidos e zero achados; inventário geral/revisão e restauração em volume novo ainda exigem evidências antes de promover a imagem ativa. No checkout inicial desta sessão, a branch `feat/postgres-alpine-restore` tinha o commit `486d203` de teste de restauração; ele não foi reexecutado nem integrado por este incremento documental. Estados históricos e critérios em spec§9.174 e docs/MVP_CLOSURE_RUNBOOK.md. Nenhuma troca de imagem ou remoção de volumes.
-- Preservar inventários/achados do banco e GnuTLS; revalidar o corte aplicável antes de publicação, sem inferir atualidade das contagens antigas. S11/S12–S14 CLOSED/FIXED e ocorrências contextuais continuam nos registros por ID.
-- Seis riscos Sonar da PR243 continuam sem triagem individual completa: a página exige Advanced Security no plano disponível. PR246/head `15ae104` passou Angular, Compose, Secret Scan e Sonar, com `npm audit` completo em zero; isso não comprova encerramento dos IDs Sonar.
-- Publicação gratuita: HTTPS, retenção, limites e recuperação no destino continuam pendentes. Contratos Workers locais passaram na PR243/42cc931; contas Cloudflare/Oracle dependem de João. Nenhum deploy, gasto, dinheiro real ou dados reais autorizado por esta evolução.
-- Ensaio autônomo e decisão final da v1 permanecem adiados. Painel e pesquisa de sandbox continuam adiados, sem aceite/liberação. A evolução de produto não encerra esses itens.
+- Teto zero e sem domínio próprio. Cloudflare/Compose; k3s retirado da fila por João. Oracle Always Free é candidata recomendada, ainda sem cadastro/provisionamento; validação pessoal por cartão e eventual autorização temporária não foram realizadas. Endereços/TLS/retencão/recuperação ainda exigem prova no destino.
+- Candidata PostgreSQL PR244 não promovida. Checkpoint486d203 em feat/postgres-alpine-restore preservado; restore de volume novo e inventários/revisão seguem em docs/MVP_CLOSURE_RUNBOOK.md. Nenhum acesso Docker local pelo agente ou remoção de volumes.
+- Seis riscos históricos Sonar PR243 seguem sem triagem individual completa por limite do plano. Gate novo verde não encerra os IDs antigos nem aceita vulnerabilidades da base.
+- Aceite pessoal da v1, uso real/feedback e lacunas históricas conservam seus estados nos documentos próprios. Execução interrompida por limites não equivale a cinco horas contínuas de trabalho.

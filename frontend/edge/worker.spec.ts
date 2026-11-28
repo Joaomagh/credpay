@@ -9,6 +9,24 @@ const env: PublicDemoEnv = { API_ORIGIN: apiOrigin, API_ORIGIN_TOKEN: originToke
 
 afterEach(() => { vi.unstubAllGlobals(); vi.clearAllMocks(); vi.useRealTimers(); });
 
+it('encaminha cadastro JSON com CSRF sem alterar resposta genérica', async () => {
+  const upstream = transport(new Response(null, {status: 202}));
+  const response = await worker.fetch(request('/auth/registro', 'POST', '{"email":"pessoa@example.com","senha":"ensaio-ficticio"}',
+    {'Content-Type':'application/json', 'X-CSRF-TOKEN':'csrf-anonimo'}), env);
+  expect(response.status).toBe(202);
+  expect(response.headers.get('Cache-Control')).toBe('no-store');
+  const forwarded = upstream.mock.calls[0][0] as Request;
+  expect(forwarded.url).toBe(apiOrigin + '/auth/registro');
+  expect(forwarded.headers.get('X-CSRF-TOKEN')).toBe('csrf-anonimo');
+});
+
+it('serve o shell de cadastro sem acesso ao backend', async () => {
+  const upstream = transport();
+  assets.fetch.mockResolvedValue(new Response('shell'));
+  expect((await worker.fetch(request('/criar-conta'), env)).status).toBe(200);
+  expect(upstream).not.toHaveBeenCalled();
+});
+
 function request(path: string, method = 'GET', body?: string, extra: Record<string, string> = {}) {
   return new Request(publicOrigin + path, { method, body, headers: {
     ...(method === 'POST' ? { Origin: publicOrigin } : {}), ...extra

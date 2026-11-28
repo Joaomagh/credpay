@@ -1,38 +1,51 @@
 <section class="auth-page" aria-labelledby="auth-heading">
   <div class="auth-intro">
-    <span class="eyebrow"><cp-icon name="shield" /> ACESSO À DEMONSTRAÇÃO</span>
-    <p class="auth-title">Console de transações</p>
-    <p>Conheça o CredPay com dados fictícios. A conta individual separa as transações de cada visitante.</p>
-    <span class="auth-tag">CREDPAY · AMBIENTE DE DEMONSTRAÇÃO</span>
+    <span class="eyebrow">MAIS CLAREZA PARA O SEU NEGÓCIO</span>
+    <h2 class="auth-title">Menos planilhas.<br>Mais organização.</h2>
+    <p>Seu trabalho merece uma rotina mais simples. Comece organizando seus clientes em um espaço só seu.</p>
+    <div class="auth-benefits">
+      <p><cp-icon name="users" /> Seus clientes, sempre à mão</p>
+      <p><cp-icon name="shield" /> Uma conta exclusiva para o seu negócio</p>
+      <p><cp-icon name="check" /> Acesso simples com sua conta Google</p>
+    </div>
+    <span class="auth-tag">CREDPAY · GESTÃO DE COBRANÇAS</span>
   </div>
   <div class="auth-card">
-    <span class="eyebrow">CONTA CREDPAY</span>
-    <h1 id="auth-heading">{{ sessao() ? 'Sessão ativa' : 'Entre na sua conta' }}</h1>
-    @if (sessao(); as conta) {
-      <p>Você entrou como <strong>{{ conta.usuario }}</strong>.</p>
-      @if (context.required) {
-        <a class="button secondary" routerLink="/nova">Abrir console</a>
+    <span class="eyebrow">BEM-VINDO AO CREDPAY</span>
+    @if (sessao()) {
+      <h1 id="auth-heading">{{ context.required ? 'Preparando seu espaço…' : 'Sessão ativa' }}</h1>
+      <p>Sua conta está conectada.</p>
+      @if (!context.required) {
+        <button class="button secondary" type="button" [disabled]="busy()" (click)="sair()">Sair da conta</button>
       }
-      <button class="button primary" type="button" [disabled]="busy()" (click)="sair()">
-        {{ busy() ? 'Encerrando sessão…' : 'Sair da conta' }}
-      </button>
     } @else {
-      @if (google() && !busy()) {
-        <a class="button primary" href="/auth/externo/google">Entrar com Google</a>
-        <p>Seu primeiro acesso cria uma conta individual vazia.</p>
+      <h1 id="auth-heading">{{ google() ? 'Crie sua conta ou entre' : 'Entre na sua conta' }}</h1>
+      @if (google()) {
+        <p class="auth-subtitle">Seu próximo passo para uma rotina mais organizada.</p>
+        @if (!busy()) {
+          <a class="google-button" href="/auth/externo/google">
+            <img src="/assets/google-signin.svg" width="20" height="20" alt="" />
+            <span>Continuar com Google</span>
+          </a>
+        }
+        <p class="signup-help">Novo por aqui? Sua conta é criada no primeiro acesso.<br>Não precisa criar uma senha.</p>
+      } @else if (!busy()) {
+        <p class="auth-subtitle">Acesse com seu e-mail e senha.</p>
       }
-      <p>Use as credenciais da sua conta de demonstração.</p>
-      <form (ngSubmit)="entrar()" [attr.aria-busy]="busy()">
-        <label for="usuario">Usuário</label>
-        <input id="usuario" name="usuario" autocomplete="username" autocapitalize="none" spellcheck="false"
-          [(ngModel)]="usuario" maxlength="64" required>
-        <label for="senha">Senha</label>
-        <input id="senha" name="senha" type="password" autocomplete="current-password"
-          [(ngModel)]="senha" maxlength="128" required>
-        <button class="button primary" type="submit" [disabled]="busy()">
-          {{ busy() ? 'Verificando…' : 'Entrar' }} <cp-icon name="arrow" />
-        </button>
-      </form>
+      <details class="password-access" [open]="!google()">
+        <summary>Entrar com e-mail e senha</summary>
+        <form (ngSubmit)="entrar()" [attr.aria-busy]="busy()">
+          <label for="usuario">E-mail ou usuário</label>
+          <input id="usuario" name="usuario" autocomplete="username" autocapitalize="none" spellcheck="false"
+            [(ngModel)]="usuario" maxlength="254" required>
+          <label for="senha">Senha</label>
+          <input id="senha" name="senha" type="password" autocomplete="current-password"
+            [(ngModel)]="senha" maxlength="256" required>
+          <button class="button primary" type="submit" [disabled]="busy()">{{ busy() ? 'Verificando…' : 'Entrar' }}</button>
+        </form>
+      </details>
+      <p class="signup-help">Prefere uma conta com senha? <a class="auth-text-link" routerLink="/criar-conta">Criar conta com e-mail</a></p>
+      <p class="auth-security"><cp-icon name="shield" /> Sua senha Google fica com o Google.</p>
     }
     <p class="auth-error" role="alert">{{ error() }}</p>
     <p class="auth-note" role="status">{{ note() }}</p>

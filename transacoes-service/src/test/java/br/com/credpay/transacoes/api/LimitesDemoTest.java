@@ -15,6 +15,40 @@ import org.springframework.mock.web.MockHttpServletResponse;
 
 class LimitesDemoTest {
 
+    @Test
+    void cadastroDeveLimitarCincoPorIpAntesDeCsrf() throws Exception {
+        var limites = new LimitesDemo(Clock.fixed(Instant.parse("2026-11-28T12:00:43Z"), ZoneOffset.UTC));
+        for (int tentativa = 0; tentativa < 5; tentativa++) {
+            var proximo = new MockFilterChain();
+            limites.antesDeCsrf(new MockHttpServletRequest("POST", "/auth/registro"), new MockHttpServletResponse(), proximo);
+            assertThat(proximo.getRequest()).isNotNull();
+        }
+        var resposta = new MockHttpServletResponse();
+        var proximo = new MockFilterChain();
+        limites.antesDeCsrf(new MockHttpServletRequest("POST", "/auth/registro"), resposta, proximo);
+        assertThat(resposta.getStatus()).isEqualTo(429);
+        assertThat(resposta.getHeader("Retry-After")).isEqualTo("17");
+        assertThat(proximo.getRequest()).isNull();
+    }
+
+    @Test
+    void cadastroDeveTerTetoGlobalSeparadoDoLogin() throws Exception {
+        var limites = new LimitesDemo(Clock.fixed(Instant.parse("2026-11-28T12:00:43Z"), ZoneOffset.UTC));
+        for (int origem = 0; origem < 10; origem++) {
+            var request = new MockHttpServletRequest("POST", "/auth/registro");
+            request.setRemoteAddr("192.0.2." + origem);
+            limites.antesDeCsrf(request, new MockHttpServletResponse(), new MockFilterChain());
+        }
+        var resposta = new MockHttpServletResponse();
+        var request = new MockHttpServletRequest("POST", "/auth/registro");
+        request.setRemoteAddr("192.0.2.99");
+        limites.antesDeCsrf(request, resposta, new MockFilterChain());
+        assertThat(resposta.getStatus()).isEqualTo(429);
+        var proximo = new MockFilterChain();
+        limites.antesDeCsrf(new MockHttpServletRequest("POST", "/auth/login"), new MockHttpServletResponse(), proximo);
+        assertThat(proximo.getRequest()).isNotNull();
+    }
+
     @ParameterizedTest
     @CsvSource({"/auth/externo/google", "/auth/retorno/google"})
     void googleDeveCompartilharLimiteDeLoginPorOrigem(String caminho) throws Exception {

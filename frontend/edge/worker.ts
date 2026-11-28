@@ -11,10 +11,10 @@ const googleStart = '/auth/externo/google';
 const googleReturn = '/auth/retorno/google';
 const routes = new Map([
   ['/auth/csrf', 'GET'], ['/auth/sessao', 'GET'], ['/auth/login', 'POST'],
-  ['/auth/logout', 'POST'], ['/transacoes', 'POST'], ['/auth/metodos', 'GET'],
+  ['/auth/logout', 'POST'], ['/auth/registro', 'POST'], ['/transacoes', 'POST'], ['/auth/metodos', 'GET'],
   [googleStart, 'GET'], [googleReturn, 'GET']
 ]);
-const shell = new Set(['/', '/entrar', '/nova', '/consultar', '/cadastros/clientes']);
+const shell = new Set(['/', '/entrar', '/criar-conta', '/nova', '/consultar', '/cadastros/clientes']);
 const publicAsset = /^\/[a-z0-9_/-]+\.(?:js|css|svg|ico|png|webp|woff2)$/i;
 const requestHeaders = ['Accept', 'Content-Type', 'Idempotency-Key', 'X-CSRF-TOKEN', 'X-CredPay-Conta'];
 const responseHeaders = ['Content-Type', 'Retry-After', 'Location'];

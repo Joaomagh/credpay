@@ -1,6 +1,6 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "credpay-frontend-qa",
-  "version": "1.0.0",
-  "description": "Roteiro de engenharia e teste manual do console Angular do CredPay."
+  "version": "1.2.0",
+  "description": "Experiência de produto e revisão responsiva do CredPay Angular, com Google, clientes e temas."
 }

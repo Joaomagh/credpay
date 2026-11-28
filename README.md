@@ -12,7 +12,9 @@
 
 **Disponível hoje:** cadastro, lista paginada e consulta de clientes da própria conta, com API Java/Spring Boot, persistência PostgreSQL e tela Angular. A base também conserva o simulador de transações assíncronas com RabbitMQ: criar uma transação fictícia em reais, acompanhar o processamento e consultar o resultado por UUID. A aprovação segue um limite configurável por moeda.
 
-**Próxima evolução:** login com Google, cobranças com descrição e vencimento, registro manual de recebimento e consulta de valores em aberto, pagos ou vencidos. O fluxo de cobranças e o login externo ainda não estão implementados. Uma nutricionista é o possível primeiro caso de uso, sem restringir o produto a essa profissão ou declarar uso real. [Escopo e critérios do MVP](CREDPAY_PLAN.md#primeiro-mvp-de-cobranças) · [Backlog de cobranças](docs/BACKLOG.md#evolução-do-produto--gestão-de-cobranças-26112026)
+**Acesso:** Google por OpenID Connect/PKCE ou cadastro próprio com e-mail e senha, com sessão no backend e conta individual vazia. A entrada segue direto para Clientes; temas claro/escuro e cadastro responsivo fazem parte da interface. João confirmou Google real local e cliente preservado após sair/entrar. A publicação e a configuração do destino continuam pendentes. [Preparar Google](docs/GOOGLE_SETUP.md) · [Cadastro próprio e limites](docs/EMAIL_REGISTRATION.md).
+
+**Próxima evolução:** cobranças com descrição e vencimento, registro manual de recebimento e consulta de valores em aberto, pagos ou vencidos. O fluxo de cobranças ainda não está disponível. Uma nutricionista é o possível primeiro caso de uso, sem restringir o produto a essa profissão ou declarar uso real. [Escopo e critérios do MVP](CREDPAY_PLAN.md#primeiro-mvp-de-cobranças) · [Backlog de cobranças](docs/BACKLOG.md#evolução-do-produto--gestão-de-cobranças-26112026)
 
 Os dados das demonstrações são fictícios. A aprovação de uma transação no simulador não comprova um recebimento. Integração com provedor será uma etapa posterior, começando em ambiente de testes.
 
@@ -26,14 +28,14 @@ Responsável pela direção do projeto, pelas decisões de arquitetura e escopo 
 - **Nova transação** — enviar um valor pelo console Angular, receber o estado `PENDENTE` e acompanhar o pedido pelo mesmo UUID.
 - **Consulta** — ver o estado atualizado, inclusive `APROVADA` ou `REJEITADA`, e retomar a consulta com o identificador.
 - **Reenvio seguro** — repetir o mesmo pedido com a mesma `Idempotency-Key` preserva a resposta original. Reutilizar a chave para outro pedido retorna conflito.
-- **Contas de demonstração** — entrar e sair do console, criar e consultar somente as próprias transações e recuperar o recibo da própria conta. O perfil local inclui CSRF e limites por operação. [Guia do console](frontend/README.md#entrada-no-perfil-de-contas)
+- **Contas** — cadastrar com e-mail/senha ou entrar com Google, sem associar contas automaticamente pelo endereço. O cadastro próprio usa hash e limites de tentativas; confirmação de e-mail e recuperação ainda não estão disponíveis. A sessão inclui CSRF e isolamento dos dados. [Guia de acesso](frontend/README.md#entrada-no-perfil-de-contas)
 - **Recuperação** — com o processador indisponível, o pedido permanece pendente. Quando ele volta, o processamento pode concluir a transação original. O roteiro de diagnóstico também reproduz eventos sem rota e confirma a recuperação sem duplicar registros.
 
 ## Como funciona
 
 ```mermaid
 flowchart LR
-    UI["Console Angular"] -->|"POST e GET /transacoes e /clientes"| T["Serviço de Transações"]
+    UI["Aplicação Angular"] -->|"POST e GET /transacoes e /clientes"| T["Serviço de Transações"]
     T <-->|"Clientes, transações, histórico e outbox"| DBT[("PostgreSQL de Transações")]
     T -->|"TransacaoCriada"| MQ["RabbitMQ"]
     MQ -->|"TransacaoCriada"| P["Serviço de Processamento"]
@@ -65,7 +67,7 @@ Para verificar os módulos Java, execute `./mvnw.cmd --batch-mode --no-transfer-
 
 - **Bloqueio de publicação.** APT e os três achados anteriores do cliente AMQP foram corrigidos. O [inventário nativo de 16/11](https://github.com/Joaomagh/credpay/actions/runs/43813561379) registrou zero achados nos quatro alvos dos aplicativos, mas PostgreSQL Bookworm ainda tinha 4 CRITICAL/135 HIGH e a candidata Alpine 1 CRITICAL/44 HIGH. A base de vulnerabilidades muda as contagens; os achados completos e a avaliação de uma imagem derivada estão na [triagem](infra/security/TRIAGE.md). HTTPS, retenção e limites no destino continuam pendentes.
 - **Análise contínua.** SonarQube importa cobertura Java, Angular, Python e dos helpers PowerShell medidos. A [PR #243](https://github.com/Joaomagh/credpay/pull/243) passou sete checks e o gate; quatro cenários também rodaram no runtime local Workers. O bot apontou seis novos riscos de dependência ainda sem triagem detalhada. Gate verde não os encerra. [Pipeline e limites](docs/SONARQUBE_CI.md) · [Backlog](docs/BACKLOG.md)
-- **Testes.** Os cenários incluem concorrência, rollback, duplicatas, reentrega e fluxo com PostgreSQL e RabbitMQ reais. O CI de navegador executa seis casos no modo padrão e dois no modo de contas, em desktop e celular. [Validação da v1](docs/V1_VALIDATION.md) · [Jornadas com contas](https://github.com/Joaomagh/credpay/actions/runs/41907646479)
+- **Testes.** Os cenários incluem concorrência, rollback, duplicatas, reentrega e fluxo com PostgreSQL e RabbitMQ reais. O CI de navegador exercita o legado e as contas em desktop/celular, incluindo cadastro por e-mail, conta vazia e cliente preservado após reentrada. [Validação da v1](docs/V1_VALIDATION.md) · [Jornadas com cadastro](https://github.com/Joaomagh/credpay/actions/runs/46104398038)
 - **Operação local.** A execução assistida validou Compose, persistência e recuperação em Kubernetes, além do diagnóstico por métricas dos dois publicadores. Os aplicativos rodaram sem privilégios no recorte testado. [Kubernetes local](infra/k8s/LOCAL.md) · [Diagnóstico por métricas](infra/observability/README.md)
 - **Segurança.** O corte histórico de 04/11 do candidato `51f8476` não tinha HIGH/CRITICAL nos quatro alvos de aplicativos então analisados; não incluía banco e broker. O inventário ampliado atual acima substitui esse recorte para decisões de publicação. [Validação histórica](docs/V1_VALIDATION.md#manutenção-das-imagens--0411) · [Triagem](infra/security/TRIAGE.md)
 - **Fechamento.** O candidato operacional da v1 está registrado. A promoção aguarda o ensaio autônomo e a revisão final do corte. A demo pública está em planejamento. [Candidato da v1](docs/V1_CANDIDATE.md) · [Plano da demo pública](docs/PUBLIC_DEMO_PLAN.md)

@@ -1,6 +1,6 @@
 # Preparar o login Google
 
-O código está na PR250; não existe projeto Google, credencial ou ensaio Google real comprovado. A documentação oficial exige projeto, cliente OAuth e URI de retorno cadastrada: [Google OpenID Connect](https://developers.google.com/identity/openid-connect/openid-connect).
+O código foi integrado na PR250. Em27/11, João criou o projeto e o cliente web `CredPay — Local` no console Google e confirmou no próprio PowerShell que ID, segredo e retorno estavam carregados. Os valores não foram solicitados para inspeção nem versionados. Primeiro acesso Google real local concluído; limites no estado de aceite abaixo. A documentação oficial exige projeto, cliente OAuth e URI de retorno cadastrada: [Google OpenID Connect](https://developers.google.com/identity/openid-connect/openid-connect).
 
 ## Configuração pessoal de João
 
@@ -27,4 +27,4 @@ O retorno Google público será `https://ENDERECO_PUBLICO_CONFIRMADO/auth/retorn
 
 ## Estado de aceite
 
-Testes atuais usam emissor fictício, assinatura RSA/JWKS, PKCE, JWT e HTTP reais no ensaio, com persistência PostgreSQL no CI. Eles não comprovam a configuração da conta Google, consentimento, URI do destino ou disponibilidade pública. Registrar o ensaio real separadamente quando realizado.
+Os testes automatizados usam emissor fictício, assinatura RSA/JWKS, PKCE, JWT e HTTP reais no ensaio, com persistência PostgreSQL no CI. Em27/11, João também concluiu o primeiro login com Google real no ambiente local: containers saudáveis, `/auth/metodos` com Google ativo e interface exibindo sessão ativa após o fluxo. Antes houve `invalid_client`; após recarregar o ID no terminal e recriar somente o backend, o acesso funcionou. A causa exata do valor anterior não foi inspecionada. João confirmou que o cliente permaneceu após sair e entrar com a mesma conta. Ainda faltam isolamento com segunda identidade, reinício e ensaio no destino público. Não publicar cookies, códigos de retorno, segredo ou identificadores da conta nas evidências.

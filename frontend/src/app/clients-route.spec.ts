@@ -13,7 +13,7 @@ const conta = {id: '11111111-1111-4111-8111-111111111111', usuario: 'conta-a', c
 
 describe('Rota de clientes no modo contas', () => {
   it('oferece acesso a clientes pela navegação do modo contas', () => {
-    TestBed.configureTestingModule({imports: [App], providers: [provideRouter(consoleRoutes),
+    TestBed.configureTestingModule({imports: [App], providers: [provideRouter(consoleRoutes), provideHttpClient(),
       {provide: AUTH_REQUIRED, useValue: true}]});
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();

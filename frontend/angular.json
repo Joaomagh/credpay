@@ -19,9 +19,15 @@
             "styles": [
               "src/styles.css"
             ],
+            "assets": [{"glob": "**/*", "input": "public"}],
             "outputPath": "dist/console"
           },
           "configurations": {
+            "legado": {
+              "fileReplacements": [
+                {"replace": "src/console-profile.ts", "with": "src/console-profile.legacy.ts"}
+              ]
+            },
             "contas": {
               "fileReplacements": [
                 {"replace": "src/console-profile.ts", "with": "src/console-profile.contas.ts"}
@@ -51,7 +57,8 @@
             "proxyConfig": "proxy.conf.json"
           },
           "configurations": {
-            "contas": {"buildTarget": "console:build:development,contas"}
+            "contas": {"buildTarget": "console:build:development,contas"},
+            "legado": {"buildTarget": "console:build:development,legado"}
           }
         },
         "test": {

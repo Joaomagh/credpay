@@ -1,1 +1,1 @@
-export const REQUIRE_SESSION = false;
+export const REQUIRE_SESSION = true;

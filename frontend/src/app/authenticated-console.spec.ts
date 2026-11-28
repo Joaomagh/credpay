@@ -51,14 +51,14 @@ describe('Console com sessão obrigatória', () => {
     context.confirm(contaB);
     harness.detectChanges();
     expect(harness.routeNativeElement?.textContent).not.toContain(pedido);
-    await harness.navigateByUrl('/entrar');
+    await harness.navigateByUrl('/consultar');
     page = await harness.navigateByUrl('/nova', CreatePage);
     expect(page.creation.result()).toBeNull();
     expect(page.creation.intent()).toBeNull();
     http.expectNone('/transacoes');
     expect(sessionStorage.getItem(registro)).toBeNull();
 
-    await harness.navigateByUrl('/entrar');
+    await harness.navigateByUrl('/consultar');
     conta = contaA;
     context.confirm(contaA);
     page = await harness.navigateByUrl('/nova', CreatePage);

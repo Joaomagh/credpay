@@ -16,7 +16,7 @@ export default defineConfig({
   timeout: 45000,
   globalTimeout: 180000,
   expect: { timeout: 15000 },
-  reporter: listing ? [['list']] : [['./e2e/safe-reporter.ts', {expected: accounts ? 4 : 6}]],
+  reporter: listing ? [['list']] : [['./e2e/safe-reporter.ts', {expected: 6}]],
   outputDir: '../.local/frontend/browser-results',
   use: { baseURL: 'http://127.0.0.1:4300', browserName: 'chromium', trace: 'off', video: 'off', screenshot: 'off' },
   projects: [
@@ -25,7 +25,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'node node_modules/@angular/cli/bin/ng.js serve --host 127.0.0.1 --port 4300'
-      + (accounts ? ' --configuration contas' : ''),
+      + (accounts ? ' --configuration contas' : ' --configuration legado'),
     url: 'http://127.0.0.1:4300',
     reuseExistingServer: false,
     timeout: 60000,

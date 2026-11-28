@@ -50,6 +50,7 @@ describe('Jornada de clientes da conta', () => {
     const fixture = mount();
     primeiraPagina(fixture);
     expect(fixture.nativeElement.textContent).toContain('Cliente Exemplo');
+    expect(fixture.nativeElement.textContent).not.toContain(cliente.id);
   });
 
   it('valida nome antes de enviar e apresenta mensagem acionável', async () => {
@@ -106,7 +107,8 @@ describe('Jornada de clientes da conta', () => {
     (fixture.nativeElement.querySelector('button[aria-label="Ver cadastro de Cliente Exemplo"]') as HTMLButtonElement).click();
     http.expectOne('/clientes/' + cliente.id).flush(cliente);
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain(cliente.id);
+    expect(fixture.nativeElement.textContent).toContain(cliente.nome);
+    expect(fixture.nativeElement.textContent).not.toContain(cliente.id);
     expect(fixture.nativeElement.textContent).toContain('Cadastro do cliente');
   });
 
