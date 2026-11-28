@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import br.com.credpay.transacoes.domain.Cobranca;
 import br.com.credpay.transacoes.domain.PedidoCobranca;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,7 +16,7 @@ class CobrancasService implements Cobrancas {
     private final ClienteRepository clientes;
     private final Clock relogio;
 
-    CobrancasService(CobrancaRepository repository, ClienteRepository clientes, Clock relogio) {
+    CobrancasService(CobrancaRepository repository, ClienteRepository clientes, @Qualifier("clock") Clock relogio) {
         this.repository = repository;
         this.clientes = clientes;
         this.relogio = relogio;

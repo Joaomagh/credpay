@@ -8,6 +8,7 @@ import { Icon } from './icon';
 import { SessionApi } from './session-api';
 import { SessionContext } from './session-context';
 import { retryMessage } from './retry-message';
+import { validEmail } from './email';
 
 @Component({
   selector: 'cp-login', imports: [FormsModule, Icon, RouterLink], templateUrl: './login-page.html',
@@ -46,7 +47,7 @@ export class LoginPage {
     this.note.set('');
     const entrada = this.usuario.trim();
     const usuario = entrada.includes('@') ? entrada.toLowerCase() : entrada;
-    const valido = usuario.includes('@') ? usuario.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(usuario)
+    const valido = usuario.includes('@') ? validEmail(usuario)
       : /^[a-z0-9][a-z0-9._-]{2,63}$/.test(usuario);
     if (!valido || !this.senha || this.senha.length > 256 || Array.from(this.senha).length > 128) {
       this.error.set('Confira o usuário e a senha da sua conta.');

@@ -7,6 +7,7 @@ import { finalize } from 'rxjs';
 import { SessionApi } from './session-api';
 import { Icon } from './icon';
 import { retryMessage } from './retry-message';
+import { validEmail } from './email';
 
 @Component({selector: 'cp-registration', imports: [FormsModule, RouterLink, Icon],
   templateUrl: './registration-page.html', styleUrl: './login-page.css'})
@@ -24,7 +25,7 @@ export class RegistrationPage {
     if (this.busy() || this.accepted()) return;
     this.error.set('');
     const email = this.email.trim().toLowerCase();
-    if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!validEmail(email)) {
       this.error.set('Informe um e-mail válido.');
       return;
     }

@@ -12,7 +12,7 @@
 ## Agora
 
 - [ ] C09: João autorizou cadastro próprio com e-mail/senha em28/11; Google principal e tema só com ícones. Contrato em docs/EMAIL_REGISTRATION.md; começar por domínio/serviço em TDD, depois HTTP/SQL e Angular/Worker. Confirmação de e-mail e recuperação não estão implementadas.
-- Próxima ação única: publicar/validar jornada E2E de cadastro e interface. Backend passou786/0 no CI ec3e2b0; frontend95+2, Worker98/build locais verdes. Senha mínima8 escolhida por João. Depois integrar C09 e retomar HTTP/tela C02.
+- Próxima ação única: validar correções do gate e integrar C09. Head e06ad49 passou786 Java e Compose com6 jornadas de contas+6 legadas; Sonar recusou5 apontamentos, corrigidos sem supressão. Local:76 Java/114 Angular+2 Node/build verdes. Depois retomar HTTP/tela C02.
 
 ## Próximo
 

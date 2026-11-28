@@ -3769,6 +3769,14 @@ Continuidade C09: suíte completa no [run46103702991](https://github.com/Joaomag
 
 Frontend C09: red5/5 pela ausência da tela; green5/0 de campos/mínimo8/confirmação/CSRF/envio único/limite. Login por e-mail e link de cadastro tiveram red2/10 por ausência de link e recusa indevida do e-mail; suíte final95 Angular+2 Node/0. Worker red2/98 por rotas ausentes e green98/0 (linhas98,70%, branches97,52%); check/check:e2e/check:edge e build387,90kB em5,939s passaram. Novo E2E preserva quatro cenários existentes e acrescenta cadastro/conta vazia/cliente/reentrada em desktop/celular:6 casos de contas, sem alterar retries/deadlines; execução real pendente. QA visual no4200: cadastro desktop/390px, tema claro/escuro apenas ícones, confirmação divergente visível e nenhum POST válido enviado ao backend local antigo. Viewport restaurado/aba fechada. Skill/manifesto1.2.0 e documentação atualizados; sem nova dependência. O container local continua na versão integrada anterior até atualização pelo operador, não presumir cadastro local funcionando por causa da tela.
 
+### 9.183 Revisão do gate e jornada real de cadastro
+
+Head e06ad49 passou Java786/0, frontend, Flow, imagens, inventários, Kubernetes e Compose. No [Compose46104398038](https://github.com/Joaomagh/credpay/actions/runs/46104398038), fases/reinícios e jornadas concluíram; reporter exige6 casos legados e6 de contas sem skips/retry, incluindo cadastro e reentrada em desktop/celular. Isso não atualizou o container local do operador.
+
+O gate Sonar recusou o head: cobertura nova89,6% e duplicação0 passaram, mas confiabilidade4. Apontamentos: java:S1845 nome EMAIL confundível com campo email; java:S5998 repetição de regex; typescript:S8786 nas duas validações; java:S9352 pediu distinguir Clock de outros nomes vistos na análise. Não houve falha de runtime por ambiguidade (suíte786 verde); explicitado @Qualifier("clock") no serviço de cobranças. Validação Java passou a separar partes/rótulos e usar classes simples, preservando a gramática e limites. Nenhuma supressão, exclusão ou alteração de gate.
+
+Helper frontend compartilhado elimina repetição de validação e alinha o formato ao backend. Red19 casos/10 falhas por formatos anteriormente aceitos na UI e limites de parte local/rótulo ausentes; green19 e suíte114 Angular+2 Node/0. Verify Java afetado76/0 em41,841s; check/build388,19kB em5,663s passaram. Logs ignorados c09-email-linear-red, c09-quality-ui-green, c09-quality-green-preflight e c09-quality-build. Revalidação remota do código corrigido pendente; evidência e06 não substitui os gates do próximo head.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
