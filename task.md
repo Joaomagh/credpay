@@ -12,7 +12,7 @@
 ## Agora
 
 - [ ] C09: João autorizou cadastro próprio com e-mail/senha em28/11; Google principal e tema só com ícones. Contrato em docs/EMAIL_REGISTRATION.md; começar por domínio/serviço em TDD, depois HTTP/SQL e Angular/Worker. Confirmação de e-mail e recuperação não estão implementadas.
-- Próxima ação única: observar red de PedidoCadastroContaTest e implementar somente suas regras.
+- Próxima ação única: provar green real do cadastro no CI após red7/5 falhas/1 erro no run46103287318. Backend/SQL implementados; preflight76/0. Interface em TDD; senha mínima8 escolhida por João.
 
 ## Próximo
 

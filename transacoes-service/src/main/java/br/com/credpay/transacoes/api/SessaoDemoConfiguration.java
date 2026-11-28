@@ -2,6 +2,7 @@ package br.com.credpay.transacoes.api;
 
 import java.time.Clock;
 import java.util.UUID;
+import java.util.Locale;
 
 import br.com.credpay.transacoes.application.CadastroContaExterna;
 import jakarta.servlet.http.HttpServletRequest;
@@ -63,11 +64,15 @@ class SessaoDemoConfiguration {
             ObjectProvider<SessaoDemoPublica> politicaPublica,
             ObjectProvider<ClientRegistrationRepository> registrosGoogle,
             ObjectProvider<CadastroContaExterna> cadastroExterno) {
-        var autenticador = new DaoAuthenticationProvider(usuario -> jdbc.query("""
-                SELECT id, usuario, senha_hash FROM contas WHERE usuario = ? AND senha_hash IS NOT NULL
-                """, (rs, linha) -> new ContaDemoPrincipal(rs.getObject("id", UUID.class),
-                        rs.getString("usuario"), rs.getString("senha_hash")), usuario)
-                .stream().findFirst().orElseThrow(() -> new UsernameNotFoundException("Conta inválida")));
+        var autenticador = new DaoAuthenticationProvider(usuario -> {
+            var entrada = usuario.contains("@") ? usuario.trim().toLowerCase(Locale.ROOT) : usuario;
+            return jdbc.query("""
+                    SELECT id, COALESCE(email, usuario) AS usuario, senha_hash FROM contas
+                    WHERE (usuario = ? OR email = ?) AND senha_hash IS NOT NULL
+                    """, (rs, linha) -> new ContaDemoPrincipal(rs.getObject("id", UUID.class),
+                            rs.getString("usuario"), rs.getString("senha_hash")), entrada, entrada)
+                    .stream().findFirst().orElseThrow(() -> new UsernameNotFoundException("Conta inválida"));
+        });
         autenticador.setPasswordEncoder(encoder);
 
         var login = PathPatternRequestMatcher.pathPattern(HttpMethod.POST, LOGIN);
@@ -77,6 +82,7 @@ class SessaoDemoConfiguration {
                 .requestCache(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(acesso -> acesso
                         .requestMatchers(HttpMethod.GET, "/auth/csrf", "/auth/metodos", "/actuator/health").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/registro").anonymous()
                         .requestMatchers(HttpMethod.GET, "/auth/sessao", "/transacoes/{id}",
                                 "/clientes", "/clientes/{id}").authenticated()
                         .requestMatchers(HttpMethod.POST, "/transacoes", "/clientes").authenticated()

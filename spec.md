@@ -3763,6 +3763,8 @@ TDD local: PedidoCadastroConta red24/24, serviço red3 (2 falhas e1 erro pelo st
 
 RegistroContaController recebe somente email/senha, limite de corpo8192 herdado do advice real, erro400/422/413 e resposta202 vazia/no-store. ContasEmailJdbc permanece stub e coluna email/migrationV16 não existem neste checkpoint, até observar red real. Sete casos novos em SessaoDemoHttpTest cobrem persistência/conta vazia/hash, duplicação sem alteração, concorrência, constraints, CSRF/login normalizado, resposta genérica e limite antes deCSRF. Foco manual email-registration no workflow existente usa job/concorrência próprios e não publica cobertura parcial; PR/main continuam na suíte completa. Sintaxe YAML validada com SnakeYAML em cache; compilação local não comprova SQL/HTTP integrado. Interface de registro em TDD local, ainda não entregue.
 
+Red real confirmado no run46103287318/job140850334077, headcb5bc02:7 testes,5 falhas e1 erro,0 skips; coluna email ausente, adapter stub e permissão ainda fechada. Depois implementados V16, INSERT único com ON CONFLICT sem sobrescrever, permissão anônima com CSRF e login por email normalizado mantendo usuário legado. Preflight verde76/0 em43,174s; green PostgreSQL real ainda pendente. Nenhuma execução Docker local.
+
 ## 10. Observabilidade e SLOs de aprendizado
 
 
